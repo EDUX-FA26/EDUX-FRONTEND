@@ -61,3 +61,12 @@ export const activateAdminUser = async (id) => {
   const res = await axiosInstance.patch(`/users/${id}/activate`);
   return res.data;
 };
+
+/**
+ * UC 90 — Broadcast Notification
+ * @param {Object} payload - { title, message, target }
+ */
+export const broadcastNotification = async (payload) => {
+  const res = await axiosInstance.post("/notifications/broadcast", payload);
+  return res.data;
+};

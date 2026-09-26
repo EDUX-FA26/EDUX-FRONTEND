@@ -4,6 +4,7 @@ import LoginPage from "../pages/auth/LoginPage";
 import AdminDashboardPage from "../pages/admin/AdminDashboardPage";
 import UserManagement from "../pages/admin/UserManagement";
 import SystemLogsPage from "../pages/admin/SystemLogsPage";
+import AdminReportsPage from "../pages/admin/AdminReportsPage";
 import DashboardLayout from "../layouts/DashboardLayout";
 import ProtectedRoute from "./ProtectedRoute";
 
@@ -26,6 +27,7 @@ const AppRoutes = () => {
         <Route index element={<Navigate to="/admin/dashboard" replace />} />
         <Route path="dashboard" element={<AdminDashboardPage />} />
         <Route path="users" element={<UserManagement />} />
+        <Route path="reports" element={<AdminReportsPage />} />
         <Route path="logs" element={<SystemLogsPage />} />
       </Route>
 

@@ -12,7 +12,8 @@ import {
   Menu,
   X,
   Bell,
-  Search
+  Search,
+  BarChart2
 } from "lucide-react";
 
 const DashboardLayout = () => {
@@ -29,6 +30,7 @@ const DashboardLayout = () => {
   const navItems = [
     { label: "Dashboard", path: "/admin/dashboard", icon: LayoutDashboard },
     { label: "Quản lý Người dùng", path: "/admin/users", icon: Users },
+    { label: "Báo cáo & Thống kê", path: "/admin/reports", icon: BarChart2 },
     { label: "System Logs", path: "/admin/logs", icon: FileText },
   ];
 
