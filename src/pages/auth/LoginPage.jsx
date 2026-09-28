@@ -86,18 +86,28 @@ export default function LoginPage() {
 
           {/* Top: Logo */}
           <div style={{ position: 'relative', zIndex: 1 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
               <div style={{
                 background: 'var(--color-primary)', color: 'white',
-                fontWeight: 800, fontSize: '1.5rem',
-                padding: '6px 16px', borderRadius: '10px',
-                letterSpacing: '2px', fontFamily: 'var(--font-mono)',
+                width: '44px', height: '44px', borderRadius: '12px',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: '0 4px 12px rgba(242, 112, 36, 0.3)', flexShrink: 0,
               }}>
-                EDUX
+                <span className="material-symbols-outlined" style={{ fontSize: '26px' }}>school</span>
               </div>
-              <div style={{ color: 'var(--color-ink-muted)', fontSize: '0.75rem', fontWeight: 500, lineHeight: 1.4 }}>
-                <div style={{ fontWeight: 700, color: 'var(--color-primary-dark)' }}>FPT University</div>
-                <div>Cổng Đào Tạo &amp; Dịch Vụ Sinh Viên</div>
+              <div style={{ lineHeight: 1.2 }}>
+                <div style={{
+                  fontWeight: 900, fontSize: '1.5rem', color: 'var(--color-primary)',
+                  letterSpacing: '1px', fontFamily: 'var(--font-sans)',
+                }}>
+                  EDUX
+                </div>
+                <div style={{
+                  fontSize: '0.6875rem', fontWeight: 800,
+                  color: 'var(--color-primary-dark)', letterSpacing: '0.08em', textTransform: 'uppercase',
+                }}>
+                  FPT UNIVERSITY
+                </div>
               </div>
             </div>
 
@@ -105,7 +115,7 @@ export default function LoginPage() {
             <div style={{
               display: 'inline-flex', alignItems: 'center', gap: '8px',
               padding: '6px 14px', borderRadius: '9999px',
-              background: '#f6ece6', border: '1px solid rgba(224,192,178,0.5)',
+              background: 'rgba(242, 112, 36, 0.1)', border: '1px solid rgba(242, 112, 36, 0.2)',
               color: 'var(--color-primary-dark)', fontSize: '0.6875rem', fontWeight: 700, letterSpacing: '0.05em',
             }}>
               <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--color-primary)', display: 'inline-block', animation: 'pulse-ring 1.5s ease-in-out infinite' }} />
@@ -113,74 +123,92 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Center: Illustration */}
-          <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', margin: '32px 0' }}>
+          {/* Center: Illustration & Title */}
+          <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', margin: '24px 0' }}>
             <div style={{
-              width: '100%', maxWidth: '360px', margin: '0 auto 20px',
-              background: 'var(--color-surface)', borderRadius: '16px',
-              border: '1px solid var(--color-border-medium)', padding: '20px',
-              boxShadow: 'var(--shadow-sm)', transition: 'background 0.3s',
+              width: '100%', maxWidth: '380px', margin: '0 auto 16px',
+              background: 'var(--color-surface)', borderRadius: '20px',
+              border: '1px solid var(--color-border)', padding: '20px 16px 16px',
+              boxShadow: 'var(--shadow-sm)', transition: 'background 0.3s, border-color 0.3s',
             }}>
-              <svg viewBox="0 0 340 180" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%' }}>
-                <rect width="340" height="180" rx="12" fill="var(--color-primary-bg)"/>
-                <rect x="20" y="60" width="50" height="100" rx="6" fill="var(--color-primary-card)"/>
-                <rect x="30" y="50" width="30" height="15" rx="3" fill="var(--color-border-medium)"/>
-                <rect x="30" y="75" width="8" height="30" rx="2" fill="#f27024" opacity="0.5"/>
-                <rect x="44" y="75" width="8" height="30" rx="2" fill="#f27024" opacity="0.5"/>
-                <rect x="30" y="120" width="30" height="40" rx="3" fill="#fff1e7"/>
-                <rect x="90" y="30" width="160" height="130" rx="8" fill="var(--color-surface)" stroke="var(--color-border)" strokeWidth="1.5"/>
-                <rect x="90" y="30" width="160" height="30" rx="8" fill="#f27024"/>
-                <text x="170" y="52" textAnchor="middle" fill="white" fontSize="12" fontWeight="700" fontFamily="sans-serif">EDUX</text>
-                <rect x="105" y="75" width="24" height="20" rx="3" fill="#fff1e7" stroke="var(--color-border)"/>
-                <rect x="140" y="75" width="24" height="20" rx="3" fill="#fff1e7" stroke="var(--color-border)"/>
-                <rect x="175" y="75" width="24" height="20" rx="3" fill="#e6f7f5" stroke="var(--color-border)"/>
-                <rect x="210" y="75" width="24" height="20" rx="3" fill="#fff1e7" stroke="var(--color-border)"/>
-                <rect x="105" y="108" width="24" height="20" rx="3" fill="#fff1e7" stroke="var(--color-border)"/>
-                <rect x="140" y="108" width="24" height="20" rx="3" fill="#e6f7f5" stroke="var(--color-border)"/>
-                <rect x="175" y="108" width="24" height="20" rx="3" fill="#fff1e7" stroke="var(--color-border)"/>
-                <rect x="210" y="108" width="24" height="20" rx="3" fill="#e6f7f5" stroke="var(--color-border)"/>
-                <rect x="152" y="130" width="36" height="30" rx="4" fill="#f27024" opacity="0.3"/>
-                <circle cx="182" cy="146" r="2.5" fill="#a04100"/>
-                <rect x="270" y="70" width="50" height="90" rx="6" fill="var(--color-primary-card)"/>
-                <rect x="280" y="60" width="30" height="15" rx="3" fill="var(--color-border-medium)"/>
-                <rect x="280" y="85" width="8" height="20" rx="2" fill="#006a61" opacity="0.4"/>
-                <rect x="294" y="85" width="8" height="20" rx="2" fill="#006a61" opacity="0.4"/>
-                <rect x="0" y="162" width="340" height="18" fill="var(--color-primary-card)"/>
-                <ellipse cx="75" cy="155" rx="12" ry="10" fill="#006a61" opacity="0.6"/>
-                <rect x="73" y="155" width="4" height="10" fill="#a04100" opacity="0.5"/>
-                <ellipse cx="265" cy="158" rx="10" ry="8" fill="#006a61" opacity="0.5"/>
-                <rect x="263" y="158" width="4" height="7" fill="#a04100" opacity="0.5"/>
+              <svg viewBox="0 0 320 140" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', maxHeight: '140px' }}>
+                <circle cx="250" cy="40" r="40" fill="rgba(242,112,36,0.12)" />
+                <circle cx="70" cy="95" r="30" fill="rgba(0,106,97,0.10)" />
+                <path d="M95 35 L97 42 L104 44 L97 46 L95 53 L93 46 L86 44 L93 42 Z" fill="#f59e0b" />
+                <path d="M235 28 L236.5 33 L241.5 34.5 L236.5 36 L235 41 L233.5 36 L228.5 34.5 L233.5 33 Z" fill="#f27024" />
+                <circle cx="238" cy="70" r="3" fill="#f59e0b" />
+                <rect x="100" y="98" width="120" height="16" rx="4" fill="#006a61" />
+                <rect x="105" y="102" width="110" height="8" rx="2" fill="#e6f7f5" opacity="0.7" />
+                <rect x="106" y="81" width="108" height="16" rx="4" fill="#f27024" />
+                <rect x="111" y="85" width="98" height="8" rx="2" fill="#fff1e7" opacity="0.7" />
+                <path d="M132 65 C132 57 188 57 188 65 L188 77 C188 82 132 82 132 77 Z" fill="#d97706" />
+                <path d="M135 66 C135 60 185 60 185 66 L185 76 C185 80 135 80 135 76 Z" fill="#b45309" />
+                <polygon points="160,35 220,55 160,75 100,55" fill="#ea580c" />
+                <polygon points="160,38 214,55 160,72 106,55" fill="#f97316" />
+                <circle cx="160" cy="55" r="4" fill="#fef08a" />
+                <path d="M160 55 Q 182 61 192 79" stroke="#fef08a" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+                <circle cx="192" cy="81" r="3" fill="#fef08a" />
               </svg>
+
+              <h3 style={{
+                color: 'var(--color-primary-dark)', fontSize: '1.025rem', fontWeight: 800,
+                marginTop: '10px', marginBottom: '4px', letterSpacing: '-0.01em',
+              }}>
+                Cổng Học Tập Số &amp; Đào Tạo Đại Học
+              </h3>
+              <p style={{
+                color: 'var(--color-ink-muted)', fontSize: '0.75rem', fontWeight: 500, margin: 0,
+              }}>
+                Hệ thống thông tin học tập thông minh FPT Edu
+              </p>
             </div>
 
             <p style={{
               color: 'var(--color-ink-warm)', fontSize: '0.8125rem',
-              textAlign: 'left', lineHeight: 1.7,
-              maxWidth: '320px', margin: '0 auto',
+              textAlign: 'left', lineHeight: 1.65,
+              maxWidth: '380px', margin: '0 auto',
             }}>
               {L.brandDesc}
             </p>
           </div>
 
-          {/* Feature pills */}
-          <div style={{ position: 'relative', zIndex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
+          {/* Bottom Feature cards (3 columns matching user image) */}
+          <div style={{ position: 'relative', zIndex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
             {[
-              { icon: 'dashboard', key: 'dashboard', color: 'var(--color-primary)' },
-              { icon: 'assignment', key: 'assignment', color: 'var(--color-accent-teal)' },
-              { icon: 'campaign', key: 'notification', color: 'var(--color-primary-dark)' },
+              { icon: 'calendar_month', key: 'timetable', color: '#f27024', bgColor: 'rgba(242, 112, 36, 0.12)' },
+              { icon: 'school', key: 'lms', color: '#006a61', bgColor: 'rgba(0, 106, 97, 0.12)' },
+              { icon: 'headset_mic', key: 'support', color: '#f27024', bgColor: 'rgba(242, 112, 36, 0.12)' },
             ].map((feat) => {
               const feat_t = L.features?.[feat.key];
               return (
-                <div key={feat.icon} style={{
-                  display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
-                  gap: '6px', padding: '12px',
+                <div key={feat.key} style={{
+                  display: 'flex', alignItems: 'center', gap: '8px',
+                  padding: '10px 8px',
                   background: 'var(--color-surface)', borderRadius: '12px',
                   border: '1px solid var(--color-border)', boxShadow: 'var(--shadow-xs)',
-                  transition: 'background 0.3s',
+                  transition: 'background 0.3s, border-color 0.3s', overflow: 'hidden',
                 }}>
-                  <span className="material-symbols-outlined" style={{ color: feat.color, fontSize: '22px' }}>{feat.icon}</span>
-                  <p style={{ fontSize: '0.6875rem', fontWeight: 700, color: 'var(--color-ink)', margin: 0 }}>{feat_t?.label}</p>
-                  <p style={{ fontSize: '0.625rem', color: 'var(--color-ink-muted)', margin: 0 }}>{feat_t?.sub}</p>
+                  <div style={{
+                    width: '32px', height: '32px', borderRadius: '8px',
+                    background: feat.bgColor, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    flexShrink: 0,
+                  }}>
+                    <span className="material-symbols-outlined" style={{ color: feat.color, fontSize: '18px' }}>{feat.icon}</span>
+                  </div>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <p style={{
+                      fontSize: '0.6875rem', fontWeight: 700, color: 'var(--color-ink)', margin: 0,
+                      whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                    }} title={feat_t?.label}>
+                      {feat_t?.label}
+                    </p>
+                    <p style={{
+                      fontSize: '0.625rem', color: 'var(--color-ink-muted)', margin: 0,
+                      whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                    }} title={feat_t?.sub}>
+                      {feat_t?.sub}
+                    </p>
+                  </div>
                 </div>
               );
             })}

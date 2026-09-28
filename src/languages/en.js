@@ -22,9 +22,9 @@ const en = {
     roleLecturer: 'Lecturer',
     roleAdmin: 'Admin',
     features: {
-      dashboard: { label: 'Dashboard', sub: 'Real-time statistics' },
-      assignment: { label: 'Assignments', sub: 'Manage & submit' },
-      notification: { label: 'Notifications', sub: 'Instant updates' },
+      timetable: { label: 'Schedule & Timetable', sub: 'Instant 24/7' },
+      lms: { label: 'LMS & Coursera', sub: 'Official Resources' },
+      support: { label: '1-on-1 Support', sub: 'Quick Response' },
     },
   },
 

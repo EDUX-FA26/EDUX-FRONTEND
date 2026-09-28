@@ -22,9 +22,9 @@ const vi = {
     roleLecturer: 'Giảng viên',
     roleAdmin: 'Quản trị',
     features: {
-      dashboard: { label: 'Dashboard', sub: 'Thống kê thời gian thực' },
-      assignment: { label: 'Bài tập', sub: 'Quản lý & nộp bài' },
-      notification: { label: 'Thông báo', sub: 'Cập nhật tức thời' },
+      timetable: { label: 'Lịch & Điều hành', sub: 'Tức thời 24/7' },
+      lms: { label: 'LMS & Coursera', sub: 'Tài nguyên chuẩn' },
+      support: { label: 'Hỗ trợ 1-1', sub: 'Phản hồi nhanh' },
     },
   },
 
