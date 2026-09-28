@@ -88,11 +88,27 @@ export default function SettingsToggle({ compact = false }) {
         }}
       >
         {/* Flag emoji */}
-        <span style={{ fontSize: compact ? '14px' : '16px' }}>
-          {lang === 'vi' ? '🇻🇳' : '🇬🇧'}
-        </span>
-        <span style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.05em', color: 'var(--color-primary-dark)' }}>
-          {lang === 'vi' ? 'VI' : 'EN'}
+
+        <span style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          fontFamily: 'var(--font-mono)',
+          letterSpacing: '0.05em',
+          color: 'var(--color-primary-dark)',
+          fontWeight: '600'
+        }}>
+          {lang === 'vi' ? (
+            <>
+              <span className="fi fi-vn" style={{ fontSize: '16px', borderRadius: '2px' }}></span>
+              VI
+            </>
+          ) : (
+            <>
+              <span className="fi fi-gb" style={{ fontSize: '16px', borderRadius: '2px' }}></span>
+              EN
+            </>
+          )}
         </span>
         {/* Pill indicator */}
         <span style={{
