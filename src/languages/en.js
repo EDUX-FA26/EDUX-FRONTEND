@@ -40,6 +40,11 @@ const en = {
   // Nav
   nav: {
     overview: 'Overview',
+    users: 'Users',
+    reports: 'Reports',
+    notifications: 'Notifications',
+    logs: 'System Logs',
+    dashboard: 'Dashboard',
     timetable: 'Timetable',
     grades: 'Grades',
     lms: 'LMS & Coursera',
