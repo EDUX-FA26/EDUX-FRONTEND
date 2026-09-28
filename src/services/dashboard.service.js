@@ -3,9 +3,18 @@ import api from '../config/axios.config';
 /**
  * GET /api/dashboards
  * Requires: Bearer token — role xác định từ JWT
- * Returns: { role, statistics, recentAssignments|recentSubmissions|recentUsers, notifications, unreadCount }
+ * Returns: { role, statistics, recentAssignments|recentSubmissions|recentUsers }
  */
 export const getDashboard = async () => {
   const { data } = await api.get('/dashboards');
+  return data;
+};
+
+/**
+ * GET /api/dashboards/notifications
+ * Returns: { notifications, unreadCount }
+ */
+export const getDashboardNotifications = async () => {
+  const { data } = await api.get('/dashboards/notifications');
   return data;
 };
