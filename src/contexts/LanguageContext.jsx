@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import vi from '../i18n/vi';
-import en from '../i18n/en';
+import vi from '../languages/vi';
+import en from '../languages/en';
 
 const TRANSLATIONS = { vi, en };
 
