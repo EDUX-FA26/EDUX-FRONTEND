@@ -40,6 +40,11 @@ const vi = {
   // Nav
   nav: {
     overview: 'Tổng quan',
+    users: 'Người dùng',
+    reports: 'Báo cáo',
+    notifications: 'Thông báo',
+    logs: 'System Logs',
+    dashboard: 'Bảng điều khiển',
     timetable: 'Thời khóa biểu',
     grades: 'Bảng điểm',
     lms: 'LMS & Coursera',

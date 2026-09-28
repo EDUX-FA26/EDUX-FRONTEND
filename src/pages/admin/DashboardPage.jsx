@@ -155,7 +155,7 @@ export default function AdminDashboardPage() {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span className="material-symbols-outlined" style={{ color: 'var(--color-primary)' }}>notifications</span>
-                <h2 style={{ fontSize: '0.9375rem', fontWeight: 700, color: 'var(--color-ink)' }}>{t.notifications?.title}</h2>
+                <h2 style={{ fontSize: '0.9375rem', fontWeight: 700, color: 'var(--color-ink)' }}>{t.notifications?.title || 'Thông báo'}</h2>
               </div>
               {unreadCount > 0 && <span className="badge badge-orange">{(t.notifications?.newLabel || '{n} mới').replace('{n}', unreadCount)}</span>}
             </div>
