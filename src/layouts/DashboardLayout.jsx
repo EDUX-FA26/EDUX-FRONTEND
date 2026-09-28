@@ -14,7 +14,11 @@ const NAV_BY_ROLE = {
     { id: 'dashboard', icon: 'dashboard', path: '/lecturer/dashboard', key: 'overview' },
   ],
   [ROLES.ADMIN]: [
-    { id: 'dashboard', icon: 'dashboard', path: '/admin/dashboard', key: 'overview' },
+    { id: 'dashboard', icon: 'dashboard', path: '/admin/dashboard', key: 'overview', label: 'Tổng quan' },
+    { id: 'users', icon: 'group', path: '/admin/users', key: 'users', label: 'Người dùng' },
+    { id: 'reports', icon: 'bar_chart', path: '/admin/reports', key: 'reports', label: 'Báo cáo' },
+    { id: 'notifications', icon: 'campaign', path: '/admin/notifications', key: 'notifications', label: 'Tạo thông báo' },
+    { id: 'logs', icon: 'history', path: '/admin/logs', key: 'logs', label: 'System Logs' },
   ],
 };
 
@@ -102,7 +106,7 @@ export default function DashboardLayout() {
           <nav style={{ display: 'flex', alignItems: 'center', gap: '4px', flex: 1, justifyContent: 'center' }}>
             {navItems.map((item) => {
               const isActive = activeId === item.id;
-              const label = t.nav?.[item.key] || item.key;
+              const label = t.nav?.[item.key] || item.label || item.key;
               return (
                 <button
                   key={item.id}
@@ -237,7 +241,7 @@ export default function DashboardLayout() {
         }} className="no-scrollbar">
           {navItems.map((item) => {
             const isActive = activeId === item.id;
-            const label = t.nav?.[item.key] || item.key;
+            const label = t.nav?.[item.key] || item.label || item.key;
             return (
               <button
                 key={item.id}

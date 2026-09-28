@@ -8,6 +8,10 @@ import LoginPage from '../pages/auth/LoginPage';
 import StudentDashboard from '../pages/student/DashboardPage';
 import LecturerDashboard from '../pages/lecturer/DashboardPage';
 import AdminDashboard from '../pages/admin/DashboardPage';
+import UserManagementPage from '../pages/admin/UserManagementPage';
+import SystemLogsPage from '../pages/admin/SystemLogsPage';
+import AdminReportsPage from '../pages/admin/AdminReportsPage';
+import AdminNotificationsPage from '../pages/admin/AdminNotificationsPage';
 import NotFoundPage from '../pages/NotFoundPage';
 
 // Layouts
@@ -66,6 +70,10 @@ export default function AppRoutes() {
         }
       >
         <Route path="dashboard" element={<AdminDashboard />} />
+        <Route path="users" element={<UserManagementPage />} />
+        <Route path="reports" element={<AdminReportsPage />} />
+        <Route path="notifications" element={<AdminNotificationsPage />} />
+        <Route path="logs" element={<SystemLogsPage />} />
         <Route index element={<Navigate to="dashboard" replace />} />
       </Route>
 
