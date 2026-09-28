@@ -713,7 +713,7 @@ a:hover {
   justify-content: center;
   padding: 0;
   width: 48px; 
-  height: 48px;
+  height: 36px;
   margin: 0 auto;
   gap: 0; /* BẮT BUỘC: Xóa khoảng cách gap để icon không bị đẩy lệch */
 }
@@ -847,8 +847,9 @@ a:hover {
     justify-content: center;
     padding: 0;
     width: 48px;
+    min-height: 36px;
     /* Cố định chiều rộng tạo hình vuông */
-    height: 48px;
+    height: 36px;
     /* Cố định chiều cao */
     min-height: 48px;
     margin: 0 auto;
@@ -1292,8 +1293,8 @@ a:hover {
   }
 
   .dashboard-sidebar--collapsed .dashboard-sidebar__item {
-    width: 40px;
-    min-height: 40px;
+    width: 36px;
+    min-height: 36px;
     align-self: center;
     justify-content: center;
     padding: 0;
