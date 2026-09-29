@@ -56,6 +56,9 @@ const en = {
     lms: 'LMS & Coursera',
     services: 'Services',
     streak: 'Learning Streak',
+    search: 'Search',
+    semesters: 'Semesters',
+    subjects: 'Subjects',
   },
 
   // Roles
