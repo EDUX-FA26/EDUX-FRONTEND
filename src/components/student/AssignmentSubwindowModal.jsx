@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { X, Briefcase, AlertCircle } from 'lucide-react';
 import AssignmentService from '../../services/assignment.service';
 
-export default function AssignmentSubwindowModal({ isOpen, onClose, classId }) {
+export default function AssignmentSubwindowModal({ isOpen, onClose, classId, role = 'student' }) {
     const navigate = useNavigate();
 
     const [assignments, setAssignments] = useState([]);
@@ -32,7 +32,7 @@ export default function AssignmentSubwindowModal({ isOpen, onClose, classId }) {
 
     const handleNavigate = (assignmentId) => {
         onClose();
-        navigate(`/student/assignments/${assignmentId}`);
+        navigate(`/${role}/assignments/${assignmentId}`);
     };
 
     if (!isOpen) return null;
@@ -124,3 +124,4 @@ export default function AssignmentSubwindowModal({ isOpen, onClose, classId }) {
         </div>
     );
 }
+

@@ -17,6 +17,7 @@ const NAV_BY_ROLE = {
   ],
   [ROLES.LECTURER]: [
     { id: 'dashboard', icon: FiGrid, path: '/lecturer/dashboard', key: 'overview' },
+    { id: 'classes', icon: LibraryBig, path: '/lecturer/classes', key: 'classes', label: 'Lớp học' },
     { id: 'search', icon: 'search', path: '/lecturer/search', key: 'search' },
   ],
   [ROLES.ADMIN]: [
@@ -335,3 +336,4 @@ export default function DashboardLayout() {
     </div>
   );
 }
+

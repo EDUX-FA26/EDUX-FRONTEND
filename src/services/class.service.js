@@ -6,6 +6,11 @@ const ClassService = {
         return response.data;
     },
 
+    async getLecturerClasses(userId, params = {}) {
+        const response = await api.get('/classes', { params: { lecturerId: userId, ...params } });
+        return response.data;
+    },
+
     async getClassDetail(classId) {
         const response = await api.get(`/classes/${classId}`);
         return response.data;
