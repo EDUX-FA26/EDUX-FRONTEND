@@ -50,6 +50,9 @@ const vi = {
     lms: 'LMS & Coursera',
     services: 'Dịch vụ',
     streak: 'Streak học tập',
+    search: 'Tìm kiếm',
+    semesters: 'Học kỳ',
+    subjects: 'Môn học',
   },
 
   // Roles
