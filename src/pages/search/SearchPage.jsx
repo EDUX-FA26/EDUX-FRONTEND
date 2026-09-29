@@ -25,7 +25,6 @@ export default function SearchPage() {
   const limit = 12;
 
   const runSearch = useCallback(async () => {
-    if (!query) return;
     setLoading(true);
     setError('');
     try {
@@ -45,13 +44,13 @@ export default function SearchPage() {
 
   useEffect(() => { runSearch(); }, [runSearch]);
 
-  const submit = (event) => {
-    event.preventDefault();
-    const nextQuery = draftQuery.trim();
-    if (!nextQuery) return;
-    setPage(1);
-    setQuery(nextQuery);
-  };
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setPage(1);
+      setQuery(draftQuery.trim());
+    }, 300);
+    return () => window.clearTimeout(timer);
+  }, [draftQuery]);
 
   const totalPages = Math.max(1, Math.ceil(total / limit));
 
@@ -62,17 +61,13 @@ export default function SearchPage() {
         <h1 className="module-page__title">Tìm kiếm trong EDUX</h1>
         <p className="module-page__subtitle">Tìm lớp học, bài tập, tài liệu và bộ flashcard mà tài khoản của bạn được phép truy cập.</p>
 
-        <form className="search-form" onSubmit={submit}>
+        <div className="search-form">
           <div className="module-search">
             <span className="material-symbols-outlined" aria-hidden="true">search</span>
             <label className="sr-only" htmlFor="global-search">Nội dung cần tìm</label>
-            <input id="global-search" className="module-input" value={draftQuery} onChange={(event) => setDraftQuery(event.target.value)} placeholder="Nhập tên lớp, bài tập, tài liệu hoặc flashcard" maxLength={100} required autoFocus />
+            <input id="global-search" className="module-input" value={draftQuery} onChange={(event) => setDraftQuery(event.target.value)} placeholder="Nhập để lọc lớp, bài tập, tài liệu hoặc flashcard" maxLength={100} autoFocus />
           </div>
-          <button className="btn btn-primary" type="submit" disabled={loading || !draftQuery.trim()}>
-            <span className="material-symbols-outlined" aria-hidden="true">search</span>
-            {loading ? 'Đang tìm...' : 'Tìm kiếm'}
-          </button>
-        </form>
+        </div>
 
         <div className="search-types" role="group" aria-label="Loại nội dung">
           {TYPES.map((item) => (
@@ -85,22 +80,18 @@ export default function SearchPage() {
 
       {error && <div className="module-alert" role="alert"><span className="material-symbols-outlined" aria-hidden="true">error</span>{error}</div>}
 
-      {!query ? (
-        <section className="card module-state">
-          <div><div className="module-state__icon"><span className="material-symbols-outlined">manage_search</span></div><h2>Bắt đầu bằng một từ khóa</h2><p>Kết quả được giới hạn theo vai trò và các lớp học mà bạn có quyền truy cập.</p></div>
-        </section>
-      ) : loading ? (
+      {loading ? (
         <section className="card module-state" aria-live="polite">
-          <div><div className="module-state__icon"><span className="material-symbols-outlined">progress_activity</span></div><h2>Đang tìm kiếm...</h2><p>EDUX đang kiểm tra nội dung phù hợp với quyền truy cập của bạn.</p></div>
+          <div><div className="module-state__icon"><span className="material-symbols-outlined">progress_activity</span></div><h2>Đang tải nội dung...</h2><p>EDUX đang kiểm tra nội dung phù hợp với quyền truy cập của bạn.</p></div>
         </section>
       ) : results.length === 0 ? (
         <section className="card module-state">
-          <div><div className="module-state__icon"><span className="material-symbols-outlined">search_off</span></div><h2>Không tìm thấy kết quả</h2><p>Thử từ khóa ngắn hơn, kiểm tra chính tả hoặc chọn loại nội dung khác.</p></div>
+          <div><div className="module-state__icon"><span className="material-symbols-outlined">search_off</span></div><h2>Không có nội dung phù hợp</h2><p>{query ? 'Thử từ khóa ngắn hơn, kiểm tra chính tả hoặc chọn loại nội dung khác.' : 'Bộ lọc này chưa có dữ liệu mà tài khoản của bạn được phép truy cập.'}</p></div>
         </section>
       ) : (
         <>
           <div className="module-page__header">
-            <div><h2 style={{ margin: 0, color: 'var(--color-ink)', fontSize: '1.1rem' }}>Kết quả cho “{query}”</h2><p className="module-page__subtitle">Tìm thấy {total} kết quả</p></div>
+            <div><h2 style={{ margin: 0, color: 'var(--color-ink)', fontSize: '1.1rem' }}>{query ? `Kết quả cho “${query}”` : type ? `Tất cả ${TYPE_META[type]?.label.toLowerCase()}` : 'Tất cả nội dung'}</h2><p className="module-page__subtitle">Hiển thị {total} kết quả bạn có quyền truy cập</p></div>
           </div>
           <section className="search-results" aria-label="Kết quả tìm kiếm">
             {results.map((result) => {
