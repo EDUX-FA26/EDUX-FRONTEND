@@ -22,22 +22,33 @@ export default function StreakDetailBySubjectPage() {
                 const res = await LearningService.getSubjectStreak(subjectId);
                 if (!cancelled) {
                     setSubjectData(res?.data || res);
+                    setError(null);
                 }
             } catch (err) {
-                if (!cancelled) setError(err.response?.data?.message || t.streak?.loadingError || 'Không thể tải thông tin chi tiết môn học.');
+                if (!cancelled) {
+                    setError(err.response?.data?.message || t.streak?.loadingError || 'Không thể tải thông tin chi tiết môn học.');
+                }
             } finally {
-                if (!cancelled) setLoading(false);
+                if (!cancelled) {
+                    setLoading(false);
+                }
             }
         }
         fetchSubjectStreak();
         return () => { cancelled = true; };
-    }, [subjectId]);
+    }, [subjectId, t]);
 
     if (loading) {
         return (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%' }}>
-                <div className="skeleton" style={{ width: '200px', height: '32px' }} />
-                <div className="skeleton" style={{ width: '100%', height: '220px', borderRadius: '20px' }} />
+                <div className="skeleton" style={{ width: '200px', height: '32px', borderRadius: '8px' }} />
+                <div className="skeleton" style={{ width: '100%', height: '140px', borderRadius: '20px' }} />
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
+                    <div className="skeleton" style={{ height: '100px', borderRadius: '14px' }} />
+                    <div className="skeleton" style={{ height: '100px', borderRadius: '14px' }} />
+                    <div className="skeleton" style={{ height: '100px', borderRadius: '14px' }} />
+                    <div className="skeleton" style={{ height: '100px', borderRadius: '14px' }} />
+                </div>
             </div>
         );
     }
@@ -51,7 +62,6 @@ export default function StreakDetailBySubjectPage() {
         );
     }
 
-    // Kiểm tra xem hôm nay đã học chưa (dựa theo trạng thái hoặc ngày hoạt động cuối)
     const todayStr = new Date().toISOString().slice(0, 10);
     const isCompletedToday = subjectData?.currentStreak > 0 && subjectData?.lastActivityDate === todayStr;
     const flameColor = isCompletedToday ? 'var(--color-primary)' : 'var(--color-ink-muted)';
@@ -83,7 +93,6 @@ export default function StreakDetailBySubjectPage() {
                         />
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                        {/* Nhóm badge: Chi tiết môn học & Mã môn */}
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                             <span style={{ fontSize: '0.6875rem', fontWeight: 700, fontFamily: 'var(--font-mono)', background: 'rgba(255,255,255,0.15)', color: '#ffdbcc', padding: '3px 10px', borderRadius: '6px', letterSpacing: '0.05em' }}>
                                 {t.streak?.detailTitle || 'CHI TIẾT MÔN HỌC'}

@@ -2,9 +2,10 @@ import { useState, useEffect, useCallback } from 'react';
 import LearningService from '../services/learning.service';
 import { useStreakRealtime } from './useStreakRealtime';
 
-export function useStreak(subjectId = null) {
+// Thêm tham số skipInitialFetch = false để có thể chủ động fetch song song ở component cha nếu cần
+export function useStreak(subjectId = null, skipInitialFetch = false) {
   const [streaks, setStreaks] = useState(subjectId ? null : []);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!skipInitialFetch);
   const [error, setError] = useState(null);
 
   const fetchStreaks = useCallback(async () => {
@@ -23,13 +24,14 @@ export function useStreak(subjectId = null) {
   }, [subjectId]);
 
   useEffect(() => {
-    fetchStreaks();
-  }, [fetchStreaks]);
+    if (!skipInitialFetch) {
+      fetchStreaks();
+    }
+  }, [fetchStreaks, skipInitialFetch]);
 
   // Lắng nghe realtime update từ Socket.IO
   useStreakRealtime((payload) => {
     if (subjectId) {
-      // Nếu đang ở màn hình chi tiết 1 môn học
       if (payload.subjectId === subjectId) {
         setStreaks((prev) => ({
           ...prev,
@@ -41,9 +43,8 @@ export function useStreak(subjectId = null) {
         }));
       }
     } else {
-      // Nếu đang ở Dashboard tổng hợp danh sách các môn
       setStreaks((prevList) =>
-        prevList.map((item) =>
+        (Array.isArray(prevList) ? prevList : []).map((item) =>
           item.subjectId === payload.subjectId
             ? {
                 ...item,
@@ -61,7 +62,7 @@ export function useStreak(subjectId = null) {
 
   const recover = async (targetSubjectId) => {
     const res = await LearningService.recoverSubjectStreak(targetSubjectId);
-    await fetchStreaks(); // Refresh lại dữ liệu sau khi recover thành công
+    await fetchStreaks();
     return res;
   };
 

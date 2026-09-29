@@ -138,9 +138,20 @@ a:hover {
 /* ── Animations ── */
 
 @keyframes flame-pulse {
-  0% { transform: scale(1); filter: drop-shadow(0 0 2px rgba(242, 112, 36, 0.4)); }
-  50% { transform: scale(1.12); filter: drop-shadow(0 0 8px rgba(242, 112, 36, 0.8)); }
-  100% { transform: scale(1); filter: drop-shadow(0 0 2px rgba(242, 112, 36, 0.4)); }
+  0% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 2px rgba(242, 112, 36, 0.4));
+  }
+
+  50% {
+    transform: scale(1.12);
+    filter: drop-shadow(0 0 8px rgba(242, 112, 36, 0.8));
+  }
+
+  100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 2px rgba(242, 112, 36, 0.4));
+  }
 }
 
 .animate-flame {
@@ -652,15 +663,18 @@ a:hover {
 
 .dashboard-sidebar__item--active {
   padding-left: 16px;
-  background: var(--color-primary); /* Màu cam chủ đạo giống hệt như khi hover */
-  color: #ffffff !important; /* Chữ trắng nổi bật */
+  background: var(--color-primary);
+  /* Màu cam chủ đạo giống hệt như khi hover */
+  color: #ffffff !important;
+  /* Chữ trắng nổi bật */
   font-weight: 700;
 }
 
 .dashboard-sidebar__item--active:hover {
   background: var(--color-primary) !important;
   color: #ffffff !important;
-  transform: none; /* Giữ nguyên vị trí không bị lệch khi đang active */
+  transform: none;
+  /* Giữ nguyên vị trí không bị lệch khi đang active */
 }
 
 .dashboard-sidebar__item--active::before {
@@ -729,10 +743,11 @@ a:hover {
 .dashboard-sidebar--collapsed .dashboard-sidebar__item {
   justify-content: center;
   padding: 0;
-  width: 48px; 
+  width: 48px;
   height: 36px;
   margin: 0 auto;
-  gap: 0; /* BẮT BUỘC: Xóa khoảng cách gap để icon không bị đẩy lệch */
+  gap: 0;
+  /* BẮT BUỘC: Xóa khoảng cách gap để icon không bị đẩy lệch */
 }
 
 .dashboard-sidebar--collapsed .dashboard-sidebar__item:hover {
@@ -1322,8 +1337,8 @@ a:hover {
 
   .dashboard-sidebar--collapsed .dashboard-sidebar__item--active {
     padding: 0;
-    background: #fff1e7;
-    color: var(--color-primary-dark);
+    background: var(--color-primary) !important;
+    color: #ffffff !important;
   }
 
   .dashboard-sidebar--collapsed .dashboard-sidebar__item--active::before {

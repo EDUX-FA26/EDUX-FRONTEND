@@ -5,7 +5,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { ROLES, SEMESTER_LABEL } from '../config/constants';
 import SettingsToggle from '../components/common/SettingsToggle';
 import { FiChevronDown, FiGrid, FiLogOut, FiMenu, FiX } from 'react-icons/fi';
-import { Flame } from 'lucide-react';
+import { Flame, LibraryBig } from 'lucide-react';
 
 // Nav config theo role
 const NAV_BY_ROLE = {

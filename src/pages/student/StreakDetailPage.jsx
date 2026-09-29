@@ -12,7 +12,6 @@ export default function StreakDetailPage() {
     const navigate = useNavigate();
     const { t } = useLanguage();
     const { streaks, loading: streakLoading, error: streakError, refresh, recoverStreak } = useStreak();
-
     const [heatmapData, setHeatmapData] = useState([]);
     const [activityHistory, setActivityHistory] = useState([]);
     const [loadingExtra, setLoadingExtra] = useState(true);
@@ -21,26 +20,29 @@ export default function StreakDetailPage() {
     const [notice, setNotice] = useState(null);
     const [hoveredDay, setHoveredDay] = useState(null);
 
+
     useEffect(() => {
         let cancelled = false;
-        async function fetchExtraData() {
+        async function fetchAllData() {
             try {
                 setLoadingExtra(true);
+                // Gọi song song TẤT CẢ các API (streak, heatmap, activity history) cùng một lúc
                 const [heatmapRes, historyRes] = await Promise.all([
                     LearningService.getHeatmap(),
                     LearningService.getActivityHistory({ limit: 10 })
                 ]);
+
                 if (!cancelled) {
                     setHeatmapData(heatmapRes?.data || heatmapRes || []);
                     setActivityHistory(historyRes?.data || historyRes || []);
                 }
             } catch (err) {
-                console.error('Failed to load extra streak analytics', err);
+                console.error('Failed to load analytics', err);
             } finally {
                 if (!cancelled) setLoadingExtra(false);
             }
         }
-        fetchExtraData();
+        fetchAllData();
         return () => { cancelled = true; };
     }, []);
 
