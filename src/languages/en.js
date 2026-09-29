@@ -34,7 +34,7 @@ const en = {
     logout: 'Log out',
     footer: 'Academic & Student Services Online Portal',
     hotline: 'Hotline',
-    copyright: '© 2025 FPT Edu',
+    copyright: '© 2026 FPT Edu',
   },
 
   // Nav
@@ -178,7 +178,7 @@ const en = {
     typeFlashcardCompleted: 'Flashcard Set Completed',
     typeStreakRecovered: 'Streak Recovered',
     typeQuizCompleted: 'Quiz Completed',
-    typeDefault: 'Learning'
+    typeDefault: 'Learning',
   },
 
   // Flashcards
@@ -239,6 +239,15 @@ const en = {
     emptyQueueTitle: 'No cards to study!',
     emptyQueueDesc: 'This deck has no cards or all cards are not yet due.',
     studyLoadError: 'Unable to load the deck.',
+    // Streak Modal
+    streakModalTitle: 'Awesome!',
+    streakSubjectPrefix: 'Subject',
+    streakModalDesc: 'You have a study streak',
+    streakDays: 'days',
+    streakRecord: 'Record',
+    streakProtection: 'Streak Protection',
+    streakRemainingPrefix: 'Remaining',
+    streakContinueBtn: 'Continue',
   },
 
   streak: {
@@ -254,6 +263,15 @@ const en = {
     days: 'days',
     times: 'times',
     loadingError: 'Unable to load subject streak details.',
+    recoverSuccessDesc: 'Your streak has been successfully recovered for this subject. Keep up the good work and maintain your learning streak!',
+    recoverErrorDesc: 'Unable to recover streak at this time. Please try again later or contact support if the issue persists.',
+    recoverBtn: 'Recover Streak',
+    recovering: 'Recovering...',
+    subjectPrefix: 'Subject',
+    record: 'Record',
+    protection: 'Streak Protection',
+    remainingPrefix: 'Remaining',
+    continueBtn: 'Continue',
   },
 
   // 404

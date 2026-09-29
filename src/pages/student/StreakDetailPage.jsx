@@ -19,6 +19,7 @@ export default function StreakDetailPage() {
     const [actionLoadingId, setActionLoadingId] = useState(null);
     const [notice, setNotice] = useState(null);
     const [hoveredDay, setHoveredDay] = useState(null);
+    const todayStr = new Date().toISOString().slice(0, 10);
 
 
     useEffect(() => {
@@ -223,8 +224,8 @@ export default function StreakDetailPage() {
                     ) : (
                         streakList.map((item) => {
                             const isRecoverable = item.status === 'broken_recoverable';
-                            const isCompletedToday = item.status === 'completed_today';
                             const isBusy = actionLoadingId === item.subjectId;
+                            const isCompletedToday = item.currentStreak > 0 && item.lastActivityDate === todayStr;
                             const flameColor = isCompletedToday ? 'var(--color-primary)' : 'var(--color-ink-muted)';
 
                             return (

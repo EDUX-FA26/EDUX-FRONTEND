@@ -34,7 +34,7 @@ const vi = {
     logout: 'Đăng xuất',
     footer: 'Cổng Đào Tạo & Dịch Vụ Sinh Viên Trực Tuyến',
     hotline: 'Hotline',
-    copyright: '© 2025 FPT Edu',
+    copyright: '© 2026 FPT Edu',
   },
 
   // Nav
@@ -178,7 +178,7 @@ const vi = {
     typeFlashcardCompleted: 'Hoàn thành bộ thẻ',
     typeStreakRecovered: 'Khôi phục chuỗi',
     typeQuizCompleted: 'Hoàn thành bài kiểm tra',
-    typeDefault: 'Học tập'
+    typeDefault: 'Học tập',
   },
 
   // Flashcards
@@ -239,6 +239,15 @@ const vi = {
     emptyQueueTitle: 'Không có thẻ nào cần ôn!',
     emptyQueueDesc: 'Bộ thẻ này chưa có thẻ hoặc tất cả thẻ chưa đến hạn.',
     studyLoadError: 'Không thể tải bộ thẻ.',
+    // Streak Modal
+    streakModalTitle: 'Tuyệt vời!',
+    streakSubjectPrefix: 'Môn',
+    streakModalDesc: 'Bạn đang có chuỗi học tập',
+    streakDays: 'ngày',
+    streakRecord: 'Kỷ lục',
+    streakProtection: 'Bảo vệ chuỗi',
+    streakRemainingPrefix: 'Còn',
+    streakContinueBtn: 'Tiếp tục',
   },
 
   streak: {
@@ -254,6 +263,15 @@ const vi = {
     days: 'ngày',
     times: 'lần',
     loadingError: 'Không thể tải thông tin chi tiết môn học.',
+    recoverSuccessDesc: 'Chuỗi học tập của bạn đã được khôi phục thành công cho môn học này. Tiếp tục cố gắng và duy trì chuỗi học tập của bạn!',
+    recoverErrorDesc: 'Không thể khôi phục chuỗi lúc này. Vui lòng thử lại sau hoặc liên hệ với bộ phận hỗ trợ nếu vấn đề vẫn tiếp diễn.',
+    recoverBtn: 'Khôi phục Chuỗi',
+    recovering: 'Đang khôi phục...',
+    subjectPrefix: 'Môn',
+    record: 'Kỷ lục',
+    protection: 'Bảo vệ chuỗi',
+    remainingPrefix: 'Còn',
+    continueBtn: 'Tiếp tục',
   },
 
   // 404
