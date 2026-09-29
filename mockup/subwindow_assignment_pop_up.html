@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Assignment of class SE18D01 - Modal</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+  </style>
+</head>
+<body class="bg-[#f8fafc] text-slate-700 min-h-screen relative flex">
+
+  <!-- ==================== SIDEBAR TRÁI ==================== -->
+  <aside class="w-16 bg-white border-r border-slate-200 flex flex-col items-center py-4 justify-between shrink-0 select-none">
+    <div class="flex flex-col items-center gap-6 w-full">
+      <div class="flex flex-col items-center leading-none">
+        <span class="text-orange-500 font-extrabold text-lg tracking-tighter">FPT</span>
+        <span class="text-sky-500 text-[9px] font-semibold">Education</span>
+      </div>
+      <nav class="flex flex-col items-center gap-5 text-slate-400 w-full">
+        <button class="p-2 hover:text-blue-600"><i class="fa-regular fa-user text-lg"></i></button>
+        <button class="p-2 hover:text-blue-600"><i class="fa-solid fa-house text-lg"></i></button>
+        <button class="p-2 hover:text-blue-600"><i class="fa-regular fa-clipboard text-lg"></i></button>
+        <button class="p-2 hover:text-blue-600"><i class="fa-regular fa-calendar text-lg"></i></button>
+        <button class="p-2 hover:text-blue-600"><i class="fa-solid fa-book-open text-lg"></i></button>
+        <button class="p-2 hover:text-blue-600"><i class="fa-regular fa-address-card text-lg"></i></button>
+      </nav>
+    </div>
+    <div class="flex flex-col items-center gap-2">
+      <button class="text-slate-400 hover:text-blue-600 p-2"><i class="fa-regular fa-circle-question text-lg"></i></button>
+      <span class="text-[9px] text-slate-300 font-mono">12997</span>
+    </div>
+  </aside>
+
+  <!-- ==================== MAIN BACKGROUND (NỀN TRANG CHI TIẾT) ==================== -->
+  <main class="flex-1 p-6 relative">
+    <div class="max-w-6xl mx-auto space-y-4">
+      <!-- Breadcrumb -->
+      <nav class="flex items-center gap-2 text-xs text-slate-400">
+        <span>My Courses</span>
+        <i class="fa-solid fa-chevron-right text-[10px]"></i>
+        <span class="truncate max-w-xl text-slate-500">Server-Side development with NodeJS, Express, and MongoDB_Phát triển Server-Side với NodeJS, Express và MongoDB</span>
+      </nav>
+
+      <!-- Course Header -->
+      <div class="flex items-start justify-between">
+        <div>
+          <h1 class="text-xl font-bold text-slate-800">Server-Side development with NodeJS, Express, and MongoDB_Phát triển Server-Side với NodeJS, Express và MongoDB</h1>
+          <div class="flex items-center gap-2 text-xs mt-1">
+            <span class="text-indigo-600 font-bold">SDN302</span>
+            <span class="text-slate-400">• SE18D01</span>
+          </div>
+        </div>
+        <div class="text-xs text-slate-400">
+          Owner <span class="font-bold text-slate-700">HOAINTT40</span>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex items-center gap-2 pt-1">
+        <button class="flex items-center gap-1.5 px-3 py-1.5 bg-fuchsia-50 text-fuchsia-700 rounded-lg text-xs font-semibold border border-fuchsia-100">
+          <i class="fa-regular fa-clock"></i> Slot histories
+        </button>
+        <button class="flex items-center gap-1.5 px-3 py-1.5 bg-sky-500 text-white rounded-lg text-xs font-semibold">
+          <i class="fa-regular fa-folder"></i> Materials
+        </button>
+        <button onclick="toggleModal(true)" class="flex items-center gap-1.5 px-3 py-1.5 bg-orange-50 text-orange-600 rounded-lg text-xs font-semibold border border-orange-100 cursor-pointer hover:bg-orange-100">
+          <i class="fa-solid fa-file-pen"></i> Assignments
+        </button>
+        <button class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-semibold ml-1">
+          <i class="fa-solid fa-arrows-rotate"></i> Refresh
+        </button>
+      </div>
+    </div>
+  </main>
+
+  <!-- ==================== SUBWINDOW MODAL POPUP ==================== -->
+  <div id="assignment-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-[1px] flex items-center justify-center z-50 p-4">
+    <!-- Modal Card -->
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden border border-slate-100 animate-in fade-in zoom-in-95 duration-200">
+      
+      <!-- Modal Header -->
+      <div class="px-6 py-4 flex items-center justify-between border-b border-slate-100">
+        <h3 class="text-base font-bold text-slate-800">Assignment of class SE18D01</h3>
+        <button onclick="toggleModal(false)" class="text-slate-400 hover:text-slate-600 transition text-lg w-7 h-7 flex items-center justify-center rounded-lg hover:bg-slate-100">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body (Table) -->
+      <div class="p-6 overflow-x-auto">
+        <table class="w-full text-left border-collapse text-xs">
+          <thead>
+            <tr class="border-b border-slate-200 text-slate-700 font-semibold">
+              <th class="pb-3 text-center w-36">Title</th>
+              <th class="pb-3 text-center w-48">DueDate</th>
+              <th class="pb-3 text-center w-28">Content</th>
+              <th class="pb-3 text-center w-28">Link</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100 text-slate-600">
+            <!-- Row 1 -->
+            <tr class="hover:bg-slate-50/60 transition-colors">
+              <td class="py-4 text-center font-medium text-slate-700">Assigment 2</td>
+              <td class="py-4 text-center font-mono text-[11px] text-slate-600">2026-03-12 13:20:00</td>
+              <td class="py-4 text-center">
+                <a href="assignment_detail.html?id=2" class="text-sky-500 font-bold hover:underline tracking-wide">CONTENT</a>
+              </td>
+              <td class="py-4 text-center">
+                <a href="assignment_detail.html?id=2" class="inline-flex items-center gap-1.5 text-sky-500 hover:text-sky-600 font-medium">
+                  <span class="w-6 h-6 rounded bg-rose-50 text-rose-500 flex items-center justify-center text-xs border border-rose-100">
+                    <i class="fa-solid fa-briefcase"></i>
+                  </span>
+                  <span>Click</span>
+                </a>
+              </td>
+            </tr>
+
+            <!-- Row 2 -->
+            <tr class="hover:bg-slate-50/60 transition-colors">
+              <td class="py-4 text-center font-medium text-slate-700">Assignment 4</td>
+              <td class="py-4 text-center font-mono text-[11px] text-slate-600">2026-03-18 05:25:00</td>
+              <td class="py-4 text-center">
+                <a href="assignment_detail.html?id=4" class="text-sky-500 font-bold hover:underline tracking-wide">CONTENT</a>
+              </td>
+              <td class="py-4 text-center">
+                <a href="assignment_detail.html?id=4" class="inline-flex items-center gap-1.5 text-sky-500 hover:text-sky-600 font-medium">
+                  <span class="w-6 h-6 rounded bg-rose-50 text-rose-500 flex items-center justify-center text-xs border border-rose-100">
+                    <i class="fa-solid fa-briefcase"></i>
+                  </span>
+                  <span>Click</span>
+                </a>
+              </td>
+            </tr>
+
+            <!-- Row 3: Nộp Project -->
+            <tr class="hover:bg-slate-50/60 transition-colors">
+              <td class="py-4 text-center font-medium text-slate-700">Nộp Project</td>
+              <td class="py-4 text-center font-mono text-[11px] text-slate-600">2026-03-25 12:50:00</td>
+              <td class="py-4 text-center">
+                <a href="assignment_detail.html?id=project" class="text-sky-500 font-bold hover:underline tracking-wide">CONTENT</a>
+              </td>
+              <td class="py-4 text-center">
+                <a href="assignment_detail.html?id=project" class="inline-flex items-center gap-1.5 text-sky-500 hover:text-sky-600 font-medium">
+                  <span class="w-6 h-6 rounded bg-rose-50 text-rose-500 flex items-center justify-center text-xs border border-rose-100">
+                    <i class="fa-solid fa-briefcase"></i>
+                  </span>
+                  <span>Click</span>
+                </a>
+              </td>
+            </tr>
+
+            <!-- Row 4 -->
+            <tr class="hover:bg-slate-50/60 transition-colors">
+              <td class="py-4 text-center font-medium text-slate-700">Assignment 3</td>
+              <td class="py-4 text-center font-mono text-[11px] text-slate-600">2026-03-13 00:20:00</td>
+              <td class="py-4 text-center">
+                <a href="assignment_detail.html?id=3" class="text-sky-500 font-bold hover:underline tracking-wide">CONTENT</a>
+              </td>
+              <td class="py-4 text-center">
+                <a href="assignment_detail.html?id=3" class="inline-flex items-center gap-1.5 text-sky-500 hover:text-sky-600 font-medium">
+                  <span class="w-6 h-6 rounded bg-rose-50 text-rose-500 flex items-center justify-center text-xs border border-rose-100">
+                    <i class="fa-solid fa-briefcase"></i>
+                  </span>
+                  <span>Click</span>
+                </a>
+              </td>
+            </tr>
+
+            <!-- Row 5 -->
+            <tr class="hover:bg-slate-50/60 transition-colors">
+              <td class="py-4 text-center font-medium text-slate-700">Assignment 1</td>
+              <td class="py-4 text-center font-mono text-[11px] text-slate-600">2026-03-18 17:15:00</td>
+              <td class="py-4 text-center">
+                <a href="assignment_detail.html?id=1" class="text-sky-500 font-bold hover:underline tracking-wide">CONTENT</a>
+              </td>
+              <td class="py-4 text-center">
+                <a href="assignment_detail.html?id=1" class="inline-flex items-center gap-1.5 text-sky-500 hover:text-sky-600 font-medium">
+                  <span class="w-6 h-6 rounded bg-rose-50 text-rose-500 flex items-center justify-center text-xs border border-rose-100">
+                    <i class="fa-solid fa-briefcase"></i>
+                  </span>
+                  <span>Click</span>
+                </a>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="px-6 pb-6 pt-2 flex justify-end">
+        <button onclick="toggleModal(false)" class="px-5 py-2 border border-sky-500 text-sky-500 hover:bg-sky-50 font-semibold rounded-lg text-xs tracking-wider transition uppercase">
+          CANCEL
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    function toggleModal(show) {
+      const modal = document.getElementById('assignment-modal');
+      if (show) {
+        modal.classList.remove('hidden');
+      } else {
+        modal.classList.add('hidden');
+      }
+    }
+  </script>
+</body>
+</html>

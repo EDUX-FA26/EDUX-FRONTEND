@@ -4,6 +4,7 @@ import ClassService from '../../services/class.service';
 import { 
     ChevronRight, Clock, Folder, FilePenLine, RotateCw, Calendar, Code, AlertCircle 
 } from 'lucide-react';
+import AssignmentSubwindowModal from '../../components/student/AssignmentSubwindowModal';
 
 export default function StudentClassDetailPage() {
     const { classId } = useParams();
@@ -16,6 +17,7 @@ export default function StudentClassDetailPage() {
     const [selectedSlotId, setSelectedSlotId] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);
     const [viewAll, setViewAll] = useState(false);
+    const [isAssignmentModalOpen, setIsAssignmentModalOpen] = useState(false);
 
     const fetchData = useCallback(async () => {
         try {
@@ -154,7 +156,7 @@ export default function StudentClassDetailPage() {
                 <button className="btn" onClick={() => navigate(`/student/classes/${classId}/materials`)} style={{ backgroundColor: 'var(--color-accent-teal)', color: '#fff', padding: '0 12px', height: '32px', fontSize: '12px', borderRadius: 'var(--radius-sm)' }}>
                     <Folder size={14} /> Materials
                 </button>
-                <button className="btn btn-primary" onClick={() => navigate(`/student/assignments?classId=${classId}`)} style={{ padding: '0 12px', height: '32px', fontSize: '12px', borderRadius: 'var(--radius-sm)' }}>
+                <button className="btn btn-primary" onClick={() => setIsAssignmentModalOpen(true)} style={{ padding: '0 12px', height: '32px', fontSize: '12px', borderRadius: 'var(--radius-sm)' }}>
                     <FilePenLine size={14} /> Assignments
                 </button>
                 <button className="btn btn-secondary" onClick={fetchData} style={{ padding: '0 12px', height: '32px', fontSize: '12px', borderRadius: 'var(--radius-sm)' }}>
@@ -306,6 +308,13 @@ export default function StudentClassDetailPage() {
 
                 </div>
             </div>
+
+            {/* Assignment Modal */}
+            <AssignmentSubwindowModal 
+                isOpen={isAssignmentModalOpen} 
+                onClose={() => setIsAssignmentModalOpen(false)} 
+                classId={classId} 
+            />
         </div>
     );
 }

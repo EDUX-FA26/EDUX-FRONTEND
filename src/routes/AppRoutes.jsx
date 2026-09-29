@@ -26,6 +26,7 @@ import { ROLE_HOME, ROLES } from '../config/constants';
 import ClassMaterialsPage from '../pages/class/ClassMaterialsPage';
 import StudentClassesPage from '../pages/student/StudentClassesPage';
 import StudentClassDetailPage from '../pages/student/StudentClassDetailPage';
+import StudentAssignmentDetailPage from '../pages/student/StudentAssignmentDetailPage';
 
 function RootRedirect() {
   const { isAuthenticated, user } = useAuth();
@@ -58,6 +59,7 @@ export default function AppRoutes() {
         <Route path="classes" element={<StudentClassesPage />} />
         <Route path="classes/:classId" element={<StudentClassDetailPage />} />
         <Route path="classes/:classId/materials" element={<ClassMaterialsPage />} />
+        <Route path="assignments/:id" element={<StudentAssignmentDetailPage />} />
         <Route index element={<Navigate to="dashboard" replace />} />
       </Route>
 
