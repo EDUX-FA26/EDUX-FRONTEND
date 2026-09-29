@@ -15,6 +15,8 @@ import SystemLogsPage from '../pages/admin/SystemLogsPage';
 import AdminReportsPage from '../pages/admin/AdminReportsPage';
 import AdminNotificationsPage from '../pages/admin/AdminNotificationsPage';
 import NotFoundPage from '../pages/NotFoundPage';
+import FlashcardsPage from '../pages/student/FlashcardsPage';
+import FlashcardStudyPage from '../pages/student/FlashcardStudyPage';
 
 // Layouts
 import DashboardLayout from '../layouts/DashboardLayout';
@@ -49,6 +51,8 @@ export default function AppRoutes() {
         <Route path="dashboard" element={<StudentDashboard />} />
         <Route path="streak" element={<StreakDetailPage />} />
         <Route path="streak/:subjectId" element={<StreakDetailBySubjectPage />} />
+        <Route path="flashcards" element={<FlashcardsPage />} />
+        <Route path="flashcards/:deckId/study" element={<FlashcardStudyPage />} />
         <Route path="classes/:classId/materials" element={<ClassMaterialsPage />} />
         <Route index element={<Navigate to="dashboard" replace />} />
       </Route>
