@@ -4,9 +4,10 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { ROLE_HOME } from '../../config/constants';
 import SettingsToggle from '../../components/common/SettingsToggle';
+import GoogleSignInButton from '../../components/auth/GoogleSignInButton';
 
 export default function LoginPage() {
-  const { login, isAuthenticated, user, loading, error, clearError } = useAuth();
+  const { login, googleLogin, isAuthenticated, user, loading, error, clearError } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
@@ -40,6 +41,15 @@ export default function LoginPage() {
     }
 
     const result = await login(identifier.trim(), password);
+    if (result.success) {
+      navigate(result.redirectTo, { replace: true });
+    }
+  };
+
+  const handleGoogleCredential = async (credential) => {
+    setLocalError('');
+    clearError();
+    const result = await googleLogin(credential);
     if (result.success) {
       navigate(result.redirectTo, { replace: true });
     }
@@ -348,6 +358,29 @@ export default function LoginPage() {
                 )}
               </button>
             </form>
+
+            {/* Existing EDUX accounts may authenticate with Google. */}
+            <div style={{ position: 'relative', margin: '22px 0 16px', textAlign: 'center' }}>
+              <div style={{ position: 'absolute', inset: '50% 0 auto', height: '1px', background: 'var(--color-border)' }} />
+              <span style={{ position: 'relative', background: 'var(--color-surface)', padding: '0 16px', fontSize: '0.6875rem', textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--color-ink-soft)' }}>
+                {L.or}
+              </span>
+            </div>
+
+            <GoogleSignInButton
+              disabled={loading}
+              onCredential={handleGoogleCredential}
+              onError={setLocalError}
+              labels={{
+                signIn: L.googleSignIn,
+                notConfigured: L.googleNotConfigured,
+                unavailable: L.googleUnavailable,
+                failed: L.googleFailed,
+              }}
+            />
+            <p style={{ margin: '10px 0 0', textAlign: 'center', fontSize: '0.7rem', lineHeight: 1.5, color: 'var(--color-ink-muted)' }}>
+              {L.googleExistingOnly}
+            </p>
 
             {/* Divider */}
             <div style={{ position: 'relative', margin: '24px 0', textAlign: 'center' }}>

@@ -10,6 +10,15 @@ export const login = async (identifier, password) => {
 };
 
 /**
+ * POST /api/auth/google
+ * Body: { credential } (Google Identity Services ID token)
+ */
+export const googleLogin = async (credential) => {
+  const { data } = await api.post('/auth/google', { credential });
+  return data;
+};
+
+/**
  * POST /api/auth/logout
  * Requires: Bearer token (injected automatically)
  */
