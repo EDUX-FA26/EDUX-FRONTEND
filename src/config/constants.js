@@ -6,12 +6,10 @@ export const ROLES = {
   STUDENT: 'student',
   LECTURER: 'lecturer',
   ADMIN: 'admin',
-  SUBJECT_HEAD: 'subject_head',
 };
 
 export const ROLE_HOME = {
   student: '/student/dashboard',
   lecturer: '/lecturer/dashboard',
   admin: '/admin/dashboard',
-  subject_head: '/subject-head/dashboard',
 };

@@ -6,6 +6,8 @@ import { useAuth } from '../contexts/AuthContext';
 // Pages
 import LoginPage from '../pages/auth/LoginPage';
 import StudentDashboard from '../pages/student/DashboardPage';
+import StreakDetailPage from '../pages/student/StreakDetailPage';
+import StreakDetailBySubjectPage from '../pages/student/StreakDetailBySubjectPage';
 import LecturerDashboard from '../pages/lecturer/DashboardPage';
 import AdminDashboard from '../pages/admin/DashboardPage';
 import UserManagementPage from '../pages/admin/UserManagementPage';
@@ -44,6 +46,8 @@ export default function AppRoutes() {
         }
       >
         <Route path="dashboard" element={<StudentDashboard />} />
+        <Route path="streak" element={<StreakDetailPage />} />
+        <Route path="streak/:subjectId" element={<StreakDetailBySubjectPage />} />
         <Route index element={<Navigate to="dashboard" replace />} />
       </Route>
 

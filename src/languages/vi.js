@@ -49,6 +49,7 @@ const vi = {
     grades: 'Bảng điểm',
     lms: 'LMS & Coursera',
     services: 'Dịch vụ',
+    streak: 'Streak học tập',
   },
 
   // Roles
@@ -147,6 +148,51 @@ const vi = {
     database: 'Database',
     fileStorage: 'File Storage',
     running: 'Hoạt động',
+  },
+
+  // Streak management
+  streakPage: {
+    badge: 'Hệ thống Quản lý Chuỗi Học tập (Streak)',
+    title: 'Trung tâm Theo dõi Động lực Học tập',
+    desc: 'Duy trì học flashcard mỗi ngày theo múi giờ Việt Nam để thắp sáng ngọn lửa streak, theo dõi bản đồ nhiệt hoạt động và cứu chuỗi kịp thời.',
+    heatmapTitle: 'Bản đồ nhiệt hoạt động học tập (Heatmap)',
+    heatmapSubtitle: 'Hoạt động theo ngày (Múi giờ VN)',
+    heatmapEmpty: 'Chưa có dữ liệu heatmap ghi nhận.',
+    sectionTitle: 'Trạng thái Streak theo từng Môn học',
+    emptySubjects: 'Chưa có dữ liệu streak môn học nào.',
+    completedToday: 'Đã thắp chuỗi hôm nay',
+    recoverable: 'Có thể khôi phục',
+    notStudiedToday: 'Chưa thắp chuỗi hôm nay',
+    currentStreak: 'Chuỗi hiện tại',
+    longestStreak: 'Kỷ lục dài nhất',
+    recoveryQuota: 'Quota cứu chuỗi:',
+    rescueBtn: 'Cứu Streak',
+    rescuing: 'Đang cứu...',
+    days: 'ngày',
+    recoverSuccess: 'Khôi phục streak thành công!',
+    recoverError: 'Không thể khôi phục streak lúc này.',
+    activityHistoryTitle: 'Lịch sử hoạt động gần đây',
+    activityHistorySubtitle: 'Các phiên học flashcard mới nhất',
+    activityEmpty: 'Chưa ghi nhận lịch sử hoạt động nào.',
+    typeFlashcardCompleted: 'Hoàn thành bộ thẻ',
+    typeStreakRecovered: 'Khôi phục chuỗi',
+    typeQuizCompleted: 'Hoàn thành bài kiểm tra',
+    typeDefault: 'Học tập'
+  },
+
+  streak: {
+    backToList: 'Quay lại danh sách Streak',
+    detailTitle: 'CHI TIẾT MÔN HỌC',
+    codePlaceholder: 'MÃ MÔN HỌC',
+    subjectDefault: 'Môn học',
+    currentStreak: 'Chuỗi hiện tại (Current Streak)',
+    longestStreak: 'Kỷ lục dài nhất (Longest Streak)',
+    lastActivity: 'Lần học gần nhất',
+    neverStudied: 'Chưa ghi nhận',
+    recoveryQuota: 'Quota khôi phục còn lại',
+    days: 'ngày',
+    times: 'lần',
+    loadingError: 'Không thể tải thông tin chi tiết môn học.',
   },
 
   // 404

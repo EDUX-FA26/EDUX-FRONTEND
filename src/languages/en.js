@@ -49,6 +49,7 @@ const en = {
     grades: 'Grades',
     lms: 'LMS & Coursera',
     services: 'Services',
+    streak: 'Learning Streak',
   },
 
   // Roles
@@ -147,6 +148,51 @@ const en = {
     database: 'Database',
     fileStorage: 'File Storage',
     running: 'Running',
+  },
+
+  // Streak management
+  streakPage: {
+    badge: 'Streak Management System',
+    title: 'Learning Motivation Tracking Center',
+    desc: 'Maintain your daily flashcard learning in Vietnam timezone to keep your streak alive, track activity heatmaps, and recover missed streaks.',
+    heatmapTitle: 'Learning Activity Heatmap',
+    heatmapSubtitle: 'Activity by day (VN Timezone)',
+    heatmapEmpty: 'No heatmap data recorded yet.',
+    sectionTitle: 'Streak Status by Subject',
+    emptySubjects: 'No subject streak data available.',
+    completedToday: 'Completed today',
+    recoverable: 'Recoverable',
+    notStudiedToday: 'Not studied today',
+    currentStreak: 'Current streak',
+    longestStreak: 'Longest streak',
+    recoveryQuota: 'Recovery quota:',
+    rescueBtn: 'Recover Streak',
+    rescuing: 'Recovering...',
+    days: 'days',
+    recoverSuccess: 'Streak recovered successfully!',
+    recoverError: 'Unable to recover streak at this time.',
+    activityHistoryTitle: 'Activity History',
+    activityHistorySubtitle: 'Most Recent Flashcard Sessions',
+    activityEmpty: 'No activity history recorded yet.',
+    typeFlashcardCompleted: 'Flashcard Set Completed',
+    typeStreakRecovered: 'Streak Recovered',
+    typeQuizCompleted: 'Quiz Completed',
+    typeDefault: 'Learning'
+  },
+
+  streak: {
+    backToList: 'Back to Streak List',
+    detailTitle: 'SUBJECT DETAIL',
+    codePlaceholder: 'SUBJECT CODE',
+    subjectDefault: 'Subject',
+    currentStreak: 'Current Streak',
+    longestStreak: 'Longest Streak',
+    lastActivity: 'Last Activity Date',
+    neverStudied: 'Not recorded yet',
+    recoveryQuota: 'Remaining Recovery Quota',
+    days: 'days',
+    times: 'times',
+    loadingError: 'Unable to load subject streak details.',
   },
 
   // 404

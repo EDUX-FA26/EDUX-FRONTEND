@@ -5,11 +5,13 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { ROLES, SEMESTER_LABEL } from '../config/constants';
 import SettingsToggle from '../components/common/SettingsToggle';
 import { FiChevronDown, FiGrid, FiLogOut, FiMenu, FiX } from 'react-icons/fi';
+import { Flame } from 'lucide-react';
 
 // Nav config theo role
 const NAV_BY_ROLE = {
   [ROLES.STUDENT]: [
     { id: 'dashboard', icon: FiGrid, path: '/student/dashboard', key: 'overview' },
+    { id: 'streak', icon: Flame, path: '/student/streak', key: 'streak' },
   ],
   [ROLES.LECTURER]: [
     { id: 'dashboard', icon: FiGrid, path: '/lecturer/dashboard', key: 'overview' },
