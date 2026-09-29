@@ -30,6 +30,7 @@ export default function GoogleSignInButton({ onCredential, onError, disabled, la
   const onErrorRef = useRef(onError);
   const [scriptFailed, setScriptFailed] = useState(false);
   const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+  const hostedDomain = import.meta.env.VITE_GOOGLE_ALLOWED_DOMAIN;
 
   useEffect(() => {
     onCredentialRef.current = onCredential;
@@ -57,6 +58,7 @@ export default function GoogleSignInButton({ onCredential, onError, disabled, la
           },
           auto_select: false,
           cancel_on_tap_outside: true,
+          hd: hostedDomain || undefined,
         });
         googleIdentity.renderButton(containerRef.current, {
           type: 'standard',
@@ -76,7 +78,7 @@ export default function GoogleSignInButton({ onCredential, onError, disabled, la
       active = false;
       if (containerRef.current) containerRef.current.replaceChildren();
     };
-  }, [clientId, labels.failed]);
+  }, [clientId, hostedDomain, labels.failed]);
 
   if (!clientId || scriptFailed) {
     return (
