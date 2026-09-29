@@ -51,6 +51,9 @@ const vi = {
     services: 'Dịch vụ',
     streak: 'Streak học tập',
     flashcards: 'Flashcard',
+    search: 'Tìm kiếm',
+    semesters: 'Học kỳ',
+    subjects: 'Môn học',
   },
 
   // Roles

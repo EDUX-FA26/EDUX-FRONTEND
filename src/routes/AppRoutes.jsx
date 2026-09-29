@@ -14,6 +14,9 @@ import UserManagementPage from '../pages/admin/UserManagementPage';
 import SystemLogsPage from '../pages/admin/SystemLogsPage';
 import AdminReportsPage from '../pages/admin/AdminReportsPage';
 import AdminNotificationsPage from '../pages/admin/AdminNotificationsPage';
+import SemesterManagementPage from '../pages/admin/SemesterManagementPage';
+import SubjectManagementPage from '../pages/admin/SubjectManagementPage';
+import SearchPage from '../pages/search/SearchPage';
 import NotFoundPage from '../pages/NotFoundPage';
 import FlashcardsPage from '../pages/student/FlashcardsPage';
 import FlashcardStudyPage from '../pages/student/FlashcardStudyPage';
@@ -53,6 +56,7 @@ export default function AppRoutes() {
         <Route path="streak/:subjectId" element={<StreakDetailBySubjectPage />} />
         <Route path="flashcards" element={<FlashcardsPage />} />
         <Route path="flashcards/:deckId/study" element={<FlashcardStudyPage />} />
+        <Route path="search" element={<SearchPage />} />
         <Route path="classes/:classId/materials" element={<ClassMaterialsPage />} />
         <Route index element={<Navigate to="dashboard" replace />} />
       </Route>
@@ -67,6 +71,7 @@ export default function AppRoutes() {
         }
       >
         <Route path="dashboard" element={<LecturerDashboard />} />
+        <Route path="search" element={<SearchPage />} />
         <Route path="classes/:classId/materials" element={<ClassMaterialsPage />} />
         <Route index element={<Navigate to="dashboard" replace />} />
       </Route>
@@ -84,6 +89,9 @@ export default function AppRoutes() {
         <Route path="users" element={<UserManagementPage />} />
         <Route path="reports" element={<AdminReportsPage />} />
         <Route path="notifications" element={<AdminNotificationsPage />} />
+        <Route path="semesters" element={<SemesterManagementPage />} />
+        <Route path="subjects" element={<SubjectManagementPage />} />
+        <Route path="search" element={<SearchPage />} />
         <Route path="logs" element={<SystemLogsPage />} />
         <Route index element={<Navigate to="dashboard" replace />} />
       </Route>

@@ -51,6 +51,9 @@ const en = {
     services: 'Services',
     streak: 'Learning Streak',
     flashcards: 'Flashcards',
+    search: 'Search',
+    semesters: 'Semesters',
+    subjects: 'Subjects',
   },
 
   // Roles
