@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { getDashboard } from '../../services/dashboard.service';
-import { broadcastNotification } from '../../services/admin.service';
+import { getDashboard, getDashboardNotifications } from '../../services/dashboard.service';
 
 function StatCard({ label, value, icon, iconBg, iconColor, sub }) {
   return (
@@ -56,21 +55,33 @@ export default function AdminDashboardPage() {
   const { user } = useAuth();
   const { t } = useLanguage();
   const [data, setData] = useState(null);
+  const [notifData, setNotifData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [notifLoading, setNotifLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
+
+    // 1. Fetch main dashboard metrics
     getDashboard()
       .then((res) => { if (!cancelled) setData(res.data); })
       .catch((err) => { if (!cancelled) setError(err.response?.data?.message || t.dashboard?.noData); })
       .finally(() => { if (!cancelled) setLoading(false); });
+
+    // 2. Fetch notifications separately
+    getDashboardNotifications()
+      .then((res) => { if (!cancelled) setNotifData(res.data); })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setNotifLoading(false); });
+
     return () => { cancelled = true; };
   }, []);
 
   const stats = data?.statistics;
   const recentUsers = data?.recentUsers || [];
-  const notifications = data?.notifications || [];
+  const notifications = notifData?.notifications || [];
+  const unreadCount = notifData?.unreadCount || 0;
   const S = t.stats;
 
   return (
@@ -146,9 +157,9 @@ export default function AdminDashboardPage() {
                 <span className="material-symbols-outlined" style={{ color: 'var(--color-primary)' }}>notifications</span>
                 <h2 style={{ fontSize: '0.9375rem', fontWeight: 700, color: 'var(--color-ink)' }}>{t.notifications?.title || 'Thông báo'}</h2>
               </div>
-              {data?.unreadCount > 0 && <span className="badge badge-orange">{(t.notifications?.newLabel || '{n} mới').replace('{n}', data.unreadCount)}</span>}
+              {unreadCount > 0 && <span className="badge badge-orange">{(t.notifications?.newLabel || '{n} mới').replace('{n}', unreadCount)}</span>}
             </div>
-            {loading ? [1,2].map(i => (
+            {notifLoading ? [1,2].map(i => (
               <div key={i} style={{ padding: '12px', borderRadius: '10px', background: 'var(--color-primary-bg)', marginBottom: '8px' }}>
                 <div className="skeleton" style={{ width: '100%', height: '14px', marginBottom: '6px' }} />
                 <div className="skeleton" style={{ width: '60px', height: '12px' }} />

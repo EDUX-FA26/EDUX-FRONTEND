@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { getDashboard } from '../../services/dashboard.service';
+import { getDashboard, getDashboardNotifications } from '../../services/dashboard.service';
 
 // ─── Skeleton ───
 function StatSkeleton() {
@@ -123,21 +123,33 @@ export default function StudentDashboardPage() {
   const { user } = useAuth();
   const { t } = useLanguage();
   const [data, setData] = useState(null);
+  const [notifData, setNotifData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [notifLoading, setNotifLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
+
+    // 1. Fetch main dashboard metrics
     getDashboard()
       .then((res) => { if (!cancelled) setData(res.data); })
       .catch((err) => { if (!cancelled) setError(err.response?.data?.message || t.dashboard?.noData); })
       .finally(() => { if (!cancelled) setLoading(false); });
+
+    // 2. Fetch notifications separately for fast asynchronous loading
+    getDashboardNotifications()
+      .then((res) => { if (!cancelled) setNotifData(res.data); })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setNotifLoading(false); });
+
     return () => { cancelled = true; };
   }, []);
 
   const stats = data?.statistics;
   const assignments = data?.recentAssignments || [];
-  const notifications = data?.notifications || [];
+  const notifications = notifData?.notifications || [];
+  const unreadCount = notifData?.unreadCount || 0;
   const S = t.stats;
 
   return (
@@ -187,7 +199,7 @@ export default function StudentDashboardPage() {
               subColor={stats?.pendingAssignments > 0 ? '#dc2626' : '#16a34a'} />
             <StatCard label={S?.submittedAssignments} value={stats?.submittedAssignments} icon="task_alt" iconBg="var(--color-accent-teal-light)" iconColor="var(--color-accent-teal)" sub={S?.total} />
             <StatCard label={S?.averageScore}
-              value={stats?.averageScore != null ? stats.averageScore.toFixed(1) : '—'}
+              value={stats?.averageScore != null ? Number(stats.averageScore).toFixed(1) : '—'}
               icon="grade" iconBg="#d5e0f8" iconColor="#1e40af"
               sub={stats?.averageScore != null ? S?.onScale10 : S?.noScore} />
           </>
@@ -236,14 +248,14 @@ export default function StudentDashboardPage() {
               <span className="material-symbols-outlined" style={{ color: 'var(--color-primary)' }}>notifications</span>
               <h2 style={{ fontSize: '0.9375rem', fontWeight: 700, color: 'var(--color-ink)' }}>{t.notifications?.title}</h2>
             </div>
-            {data?.unreadCount > 0 && (
+            {unreadCount > 0 && (
               <span className="badge badge-orange">
-                {(t.notifications?.newLabel || '{n} mới').replace('{n}', data.unreadCount)}
+                {(t.notifications?.newLabel || '{n} mới').replace('{n}', unreadCount)}
               </span>
             )}
           </div>
 
-          {loading ? (
+          {notifLoading ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {[1,2,3].map(i => (
                 <div key={i} style={{ padding: '12px', borderRadius: '10px', background: 'var(--color-primary-bg)' }}>
