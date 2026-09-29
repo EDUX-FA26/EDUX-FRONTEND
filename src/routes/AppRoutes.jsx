@@ -26,6 +26,12 @@ import DashboardLayout from '../layouts/DashboardLayout';
 
 import { ROLE_HOME, ROLES } from '../config/constants';
 import ClassMaterialsPage from '../pages/class/ClassMaterialsPage';
+import StudentClassesPage from '../pages/student/StudentClassesPage';
+import LecturerClassesPage from '../pages/lecturer/LecturerClassesPage';
+import StudentClassDetailPage from '../pages/student/StudentClassDetailPage';
+import LecturerClassDetailPage from '../pages/lecturer/LecturerClassDetailPage';
+import StudentAssignmentDetailPage from '../pages/student/StudentAssignmentDetailPage';
+import LecturerAssignmentDetailPage from '../pages/lecturer/LecturerAssignmentDetailPage';
 
 function RootRedirect() {
   const { isAuthenticated, user } = useAuth();
@@ -57,7 +63,10 @@ export default function AppRoutes() {
         <Route path="flashcards" element={<FlashcardsPage />} />
         <Route path="flashcards/:deckId/study" element={<FlashcardStudyPage />} />
         <Route path="search" element={<SearchPage />} />
+        <Route path="classes" element={<LecturerClassesPage />} />
+        <Route path="classes/:classId" element={<LecturerClassDetailPage />} />
         <Route path="classes/:classId/materials" element={<ClassMaterialsPage />} />
+        <Route path="assignments/:id" element={<LecturerAssignmentDetailPage />} />
         <Route index element={<Navigate to="dashboard" replace />} />
       </Route>
 
@@ -101,3 +110,4 @@ export default function AppRoutes() {
     </Routes>
   );
 }
+
