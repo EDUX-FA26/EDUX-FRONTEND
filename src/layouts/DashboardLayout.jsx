@@ -11,6 +11,7 @@ import { Flame, LibraryBig } from 'lucide-react';
 const NAV_BY_ROLE = {
   [ROLES.STUDENT]: [
     { id: 'dashboard', icon: FiGrid, path: '/student/dashboard', key: 'overview' },
+    { id: 'classes', icon: LibraryBig, path: '/student/classes', key: 'classes', label: 'Lớp học' },
     { id: 'streak', icon: Flame, path: '/student/streak', key: 'streak' },
     { id: 'search', icon: 'search', path: '/student/search', key: 'search' },
   ],
@@ -87,7 +88,7 @@ export default function DashboardLayout() {
         <div className="dashboard-sidebar__items">
           {navItems.map((item) => {
             const isActive = activeId === item.id;
-            const label = t.nav?.[item.key] || item.key;
+            const label = t.nav?.[item.key] || item.label || item.key;
             const Icon = item.icon;
             return (
               <button

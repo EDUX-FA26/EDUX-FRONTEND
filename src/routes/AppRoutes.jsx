@@ -24,6 +24,8 @@ import DashboardLayout from '../layouts/DashboardLayout';
 
 import { ROLE_HOME, ROLES } from '../config/constants';
 import ClassMaterialsPage from '../pages/class/ClassMaterialsPage';
+import StudentClassesPage from '../pages/student/StudentClassesPage';
+import StudentClassDetailPage from '../pages/student/StudentClassDetailPage';
 
 function RootRedirect() {
   const { isAuthenticated, user } = useAuth();
@@ -53,6 +55,8 @@ export default function AppRoutes() {
         <Route path="streak" element={<StreakDetailPage />} />
         <Route path="streak/:subjectId" element={<StreakDetailBySubjectPage />} />
         <Route path="search" element={<SearchPage />} />
+        <Route path="classes" element={<StudentClassesPage />} />
+        <Route path="classes/:classId" element={<StudentClassDetailPage />} />
         <Route path="classes/:classId/materials" element={<ClassMaterialsPage />} />
         <Route index element={<Navigate to="dashboard" replace />} />
       </Route>
