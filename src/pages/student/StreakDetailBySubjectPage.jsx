@@ -4,6 +4,7 @@ import LearningService from '../../services/learning.service';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Flame, Trophy, Calendar, ShieldCheck, ArrowLeft, RefreshCw, AlertCircle, X } from 'lucide-react';
 import { formatDateDMY } from '../../helper/dateFormat';
+import { getTodayVNDate } from '../../helper/VietNamDate';
 
 // ─── Streak Modal Component ──────────────────────────────────────────────────
 function StreakModal({ data, onClose }) {
@@ -168,7 +169,7 @@ export default function StreakDetailBySubjectPage() {
         try {
             setRecovering(true);
             setActionError(null);
-            
+
             const response = await LearningService.recoverSubjectStreak(subjectId);
             const updatedData = response?.data || response;
 
@@ -213,8 +214,10 @@ export default function StreakDetailBySubjectPage() {
         );
     }
 
-    const todayStr = new Date().toISOString().slice(0, 10);
-    const isCompletedToday = subjectData?.currentStreak > 0 && subjectData?.lastActivityDate === todayStr;
+    // Lấy ngày hiện tại chính xác theo múi giờ Việt Nam (YYYY-MM-DD)
+
+    const todayStr = getTodayVNDate();
+    const isCompletedToday = subjectData?.currentStreak > 0 && subjectData?.lastActivityDate?.slice(0, 10) === todayStr;
     const flameColor = isCompletedToday ? 'var(--color-primary)' : 'var(--color-ink-muted)';
 
     const diffDays = subjectData?.lastActivityDate

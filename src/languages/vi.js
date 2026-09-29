@@ -32,6 +32,9 @@ const vi = {
       lms: { label: 'LMS & Coursera', sub: 'Tài nguyên chuẩn' },
       support: { label: 'Hỗ trợ 1-1', sub: 'Phản hồi nhanh' },
     },
+    invalidCredentials: "Tên đăng nhập hoặc mật khẩu không đúng.",
+    accountInactive: "Tài khoản đã bị vô hiệu hóa.",
+    generalError: "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.",
   },
 
   // Layout
@@ -281,6 +284,35 @@ const vi = {
     protection: 'Bảo vệ chuỗi',
     remainingPrefix: 'Còn',
     continueBtn: 'Tiếp tục',
+  },
+  
+  // Search
+  search: {
+    eyebrow: 'Module 3 · Global Search',
+    title: 'Tìm kiếm trong EDUX',
+    subtitle: 'Tìm lớp học, bài tập, tài liệu và bộ flashcard mà tài khoản của bạn được phép truy cập.',
+    inputLabel: 'Nội dung cần tìm',
+    inputPlaceholder: 'Nhập để lọc lớp, bài tập, tài liệu hoặc flashcard',
+    typesAriaLabel: 'Loại nội dung',
+    types: {
+      all: 'Tất cả',
+      class: 'Lớp học',
+      assignment: 'Bài tập',
+      material: 'Tài liệu',
+      flashcard: 'Flashcard'
+    },
+    loadingTitle: 'Đang tải nội dung...',
+    loadingDesc: 'EDUX đang kiểm tra nội dung phù hợp với quyền truy cập của bạn.',
+    emptyTitle: 'Không có nội dung phù hợp',
+    emptyQueryDesc: 'Thử từ khóa ngắn hơn, kiểm tra chính tả hoặc chọn loại nội dung khác.',
+    emptyDefaultDesc: 'Bộ lọc này chưa có dữ liệu mà tài khoản của bạn được phép truy cập.',
+    resultQueryHeader: 'Kết quả cho “{query}”',
+    resultCount: 'Hiển thị {total} kết quả bạn có quyền truy cập',
+    noDescription: 'Không có mô tả',
+    paginationInfo: 'Trang {page}/{totalPages} · {total} kết quả',
+    prevBtn: 'Trước',
+    nextBtn: 'Sau',
+    searchError: 'Không thể thực hiện tìm kiếm. Vui lòng thử lại.'
   },
 
   // 404

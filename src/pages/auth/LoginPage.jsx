@@ -18,6 +18,14 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [localError, setLocalError] = useState('');
+  const [errorKey, setErrorKey] = useState('');
+
+  const getErrorMessage = () => {
+    if (errorKey === 'INVALID_CREDENTIALS') return L.invalidCredentials;
+    if (errorKey === 'ACCOUNT_INACTIVE') return L.accountInactive;
+    if (errorKey === 'GENERAL_ERROR') return L.generalError;
+    return '';
+  };
 
   useEffect(() => {
     if (isAuthenticated && user) {
@@ -26,12 +34,10 @@ export default function LoginPage() {
     }
   }, [isAuthenticated, user, navigate, location]);
 
-  useEffect(() => {
-    if (error) setLocalError(error);
-  }, [error]);
-
   const handleSubmit = async (e) => {
     e.preventDefault();
+    e.stopPropagation();
+
     setLocalError('');
     clearError();
 
@@ -40,9 +46,32 @@ export default function LoginPage() {
       return;
     }
 
-    const result = await login(identifier.trim(), password);
-    if (result.success) {
-      navigate(result.redirectTo, { replace: true });
+    try {
+      const result = await login(identifier.trim(), password);
+
+      if (result && result.success) {
+        navigate(result.redirectTo, { replace: true });
+      } else {
+        const errorMsg = result?.error || '';
+
+        // Gán mã lỗi vào state thay vì gán chết câu chữ
+        if (
+          errorMsg.includes('INVALID_CREDENTIALS') ||
+          errorMsg.includes('Invalid credentials') ||
+          errorMsg.includes('Invalid username or password')
+        ) {
+          setErrorKey('INVALID_CREDENTIALS');
+        } else if (
+          errorMsg.includes('ACCOUNT_INACTIVE') ||
+          errorMsg.includes('Account is inactive')
+        ) {
+          setErrorKey('ACCOUNT_INACTIVE');
+        } else {
+          setErrorKey('GENERAL_ERROR');
+        }
+      }
+    } catch (err) {
+      setErrorKey('GENERAL_ERROR');
     }
   };
 
@@ -52,6 +81,8 @@ export default function LoginPage() {
     const result = await googleLogin(credential);
     if (result.success) {
       navigate(result.redirectTo, { replace: true });
+    } else {
+      setLocalError(result.error);
     }
   };
 
@@ -247,7 +278,7 @@ export default function LoginPage() {
             </div>
 
             {/* Error banner */}
-            {localError && (
+            {errorKey && (
               <div style={{
                 marginBottom: '16px', padding: '12px 16px',
                 background: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.3)',
@@ -255,7 +286,7 @@ export default function LoginPage() {
                 color: '#ef4444', fontSize: '0.8125rem',
               }}>
                 <span className="material-symbols-outlined" style={{ fontSize: '18px', flexShrink: 0 }}>error</span>
-                <span>{localError}</span>
+                <span>{getErrorMessage()}</span>
               </div>
             )}
 

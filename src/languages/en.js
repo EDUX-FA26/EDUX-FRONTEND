@@ -32,6 +32,9 @@ const en = {
       lms: { label: 'LMS & Coursera', sub: 'Official Resources' },
       support: { label: '1-on-1 Support', sub: 'Quick Response' },
     },
+    invalidCredentials: "Invalid username or password.",
+    accountInactive: "Account has been deactivated.",
+    generalError: "Login failed. Please check your information.",
   },
 
   // Layout
@@ -281,6 +284,35 @@ const en = {
     protection: 'Streak Protection',
     remainingPrefix: 'Remaining',
     continueBtn: 'Continue',
+  },
+
+  // Search
+  search: {
+    eyebrow: 'Module 3 · Global Search',
+    title: 'Search in EDUX',
+    subtitle: 'Find classes, assignments, materials, and flashcards that your account is authorized to access.',
+    inputLabel: 'Content to search',
+    inputPlaceholder: 'Enter to filter classes, assignments, materials, or flashcards',
+    typesAriaLabel: 'Content type',
+    types: {
+      all: 'All',
+      class: 'Class',
+      assignment: 'Assignment',
+      material: 'Material',
+      flashcard: 'Flashcard'
+    },
+    loadingTitle: 'Loading content...',
+    loadingDesc: 'EDUX is checking content that matches your access permissions.',
+    emptyTitle: 'No matching content',
+    emptyQueryDesc: 'Try a shorter keyword, check the spelling, or select a different content type.',
+    emptyDefaultDesc: 'This filter has no data that your account is authorized to access.',
+    resultQueryHeader: 'Results for “{query}”',
+    resultCount: 'Showing {total} results you have access to',
+    noDescription: 'No description available',
+    paginationInfo: 'Page {page}/{totalPages} · {total} results',
+    prevBtn: 'Previous',
+    nextBtn: 'Next',
+    searchError: 'Unable to perform search. Please try again.'
   },
 
   // 404

@@ -7,6 +7,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { Flame, Trophy, LayoutGrid, RefreshCw, BookOpen } from 'lucide-react';
 import { generateCalendarHeatmap } from '../../helper/calendar';
 import { formatDateDMY } from '../../helper/dateFormat';
+import { getTodayVNDate } from '../../helper/VietNamDate';
 
 export default function StreakDetailPage() {
     const navigate = useNavigate();
@@ -19,7 +20,9 @@ export default function StreakDetailPage() {
     const [actionLoadingId, setActionLoadingId] = useState(null);
     const [notice, setNotice] = useState(null);
     const [hoveredDay, setHoveredDay] = useState(null);
-    const todayStr = new Date().toISOString().slice(0, 10);
+
+
+    const todayStr = getTodayVNDate();
 
 
     useEffect(() => {

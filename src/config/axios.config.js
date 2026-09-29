@@ -24,9 +24,12 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('user');
-      window.location.href = '/login';
+      // 💡 Thêm điều kiện: CHỈ redirect nếu KHÔNG PHẢI đang ở trang login
+      if (window.location.pathname !== '/login') {
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }
