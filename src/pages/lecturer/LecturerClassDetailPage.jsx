@@ -3,7 +3,8 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import ClassService from '../../services/class.service';
 import {
-    ChevronRight, Clock, Folder, FilePenLine, RotateCw, Calendar, Code, AlertCircle, Users
+    ChevronRight, Clock, Folder, FilePenLine, RotateCw, Calendar, Code, AlertCircle, Users,
+    Flame
 } from 'lucide-react';
 import { PlusCircle, FileText, Upload } from 'lucide-react';
 import AssignmentSubwindowModal from '../../components/student/AssignmentSubwindowModal';
@@ -401,29 +402,52 @@ export default function LecturerClassDetailPage() {
                                 </div>
                             ) : (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                    {members.map((member, idx) => (
-                                        <div
-                                            key={member.id || member._id || idx}
-                                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)' }}
-                                        >
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                                <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: 'var(--color-primary-bg)', color: 'var(--color-primary-dark)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '12px' }}>
-                                                    {member.full_name ? member.full_name.charAt(0).toUpperCase() : (member.student_code || 'S').charAt(0)}
-                                                </div>
-                                                <div>
-                                                    <div style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--color-ink)' }}>
-                                                        {member.full_name || member.name || 'N/A'}
+                                    {members.map((member, idx) => {
+                                        const streak = member.currentStreak || 0;
+                                        const fullName = member.fullName || member.full_name || member.name || 'N/A';
+                                        const studentCode = member.studentCode || member.student_code || member.email || 'No Code';
+
+                                        return (
+                                            <div
+                                                key={member.studentId || member.student_id || idx}
+                                                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)' }}
+                                            >
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                    <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: 'var(--color-primary-bg)', color: 'var(--color-primary-dark)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '12px' }}>
+                                                        {fullName.charAt(0).toUpperCase()}
                                                     </div>
-                                                    <div style={{ fontSize: '11px', color: 'var(--color-ink-muted)' }}>
-                                                        {member.student_code || member.email || 'No Code'}
+                                                    <div>
+                                                        <div style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--color-ink)' }}>
+                                                            {fullName}
+                                                        </div>
+                                                        <div style={{ fontSize: '11px', color: 'var(--color-ink-muted)' }}>
+                                                            {studentCode}
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Khối bên phải: Badge Streak + Badge Role */}
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                    {/* Badge Streak */}
+                                                    <div style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '4px',
+                                                        fontSize: '11px',
+                                                        fontWeight: 'bold',
+                                                        padding: '2px 8px',
+                                                        borderRadius: '12px',
+                                                        backgroundColor: streak > 0 ? '#fff7ed' : '#f3f4f6',
+                                                        color: streak > 0 ? '#ea580c' : '#9ca3af',
+                                                        border: `1px solid ${streak > 0 ? '#ffedd5' : '#e5e7eb'}`
+                                                    }}>
+                                                        <Flame size={13} fill={streak > 0 ? '#f97316' : 'none'} color={streak > 0 ? '#ea580c' : '#9ca3af'} />
+                                                        <span>{streak} {streak === 1}</span>
                                                     </div>
                                                 </div>
                                             </div>
-                                            <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '12px', backgroundColor: 'var(--color-primary-bg)', color: 'var(--color-primary-dark)', fontWeight: '500' }}>
-                                                {member.role || 'Student'}
-                                            </span>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             )}
                         </div>
