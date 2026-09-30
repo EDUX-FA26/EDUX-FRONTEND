@@ -108,6 +108,34 @@ const FlashcardService = {
     const response = await api.get(`/flashcards/decks/${deckId}/reviews/stats`);
     return response.data;
   },
+
+  // ─────────────────────────────────────────────
+  // FLASHCARD TESTS
+  // ─────────────────────────────────────────────
+
+  /** POST /api/flashcards/decks/:deckId/tests — Tạo lượt làm bài kiểm tra */
+  async createTest(deckId) {
+    const response = await api.post(`/flashcards/decks/${deckId}/tests`);
+    return response.data;
+  },
+
+  /** GET /api/flashcards/tests/:testId — Lấy thông tin bài kiểm tra */
+  async getTest(testId) {
+    const response = await api.get(`/flashcards/tests/${testId}`);
+    return response.data;
+  },
+
+  /** POST /api/flashcards/tests/:testId/submit — Nộp bài kiểm tra */
+  async submitTest(testId, answers) {
+    const response = await api.post(`/flashcards/tests/${testId}/submit`, { answers });
+    return response.data;
+  },
+
+  /** GET /api/flashcards/tests/:testId/result — Xem kết quả chi tiết */
+  async getTestResult(testId) {
+    const response = await api.get(`/flashcards/tests/${testId}/result`);
+    return response.data;
+  },
 };
 
 export default FlashcardService;

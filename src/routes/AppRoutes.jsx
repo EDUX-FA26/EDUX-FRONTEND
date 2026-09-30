@@ -23,6 +23,8 @@ import NotFoundPage from '../pages/NotFoundPage';
 import FlashcardsPage from '../pages/student/FlashcardsPage';
 import FlashcardStudyPage from '../pages/student/FlashcardStudyPage';
 import StudentFlashcardSelectPage from '../pages/student/StudentFlashcardSelectPage';
+import FlashcardTestPage from '../pages/student/FlashcardTestPage';
+import FlashcardTestResultPage from '../pages/student/FlashcardTestResultPage';
 
 // Layouts
 import DashboardLayout from '../layouts/DashboardLayout';
@@ -66,6 +68,9 @@ export default function AppRoutes() {
         <Route path="flashcards" element={<StudentFlashcardSelectPage />} />
         <Route path="flashcards/subject/:subjectId" element={<FlashcardsPage />} />
         <Route path="flashcards/:deckId/study" element={<FlashcardStudyPage />} />
+        <Route path="flashcards/:deckId/test" element={<FlashcardTestPage />} />
+        <Route path="flashcards/tests/:testId" element={<FlashcardTestPage />} />
+        <Route path="flashcards/tests/:testId/result" element={<FlashcardTestResultPage />} />
         <Route path="search" element={<SearchPage />} />
         <Route path="classes" element={<StudentClassesPage />} />
         <Route path="classes/:classId" element={<StudentClassDetailPage />} />
