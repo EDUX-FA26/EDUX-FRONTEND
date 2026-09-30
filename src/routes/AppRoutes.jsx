@@ -63,10 +63,10 @@ export default function AppRoutes() {
         <Route path="flashcards" element={<FlashcardsPage />} />
         <Route path="flashcards/:deckId/study" element={<FlashcardStudyPage />} />
         <Route path="search" element={<SearchPage />} />
-        <Route path="classes" element={<LecturerClassesPage />} />
-        <Route path="classes/:classId" element={<LecturerClassDetailPage />} />
+        <Route path="classes" element={<StudentClassesPage />} />
+        <Route path="classes/:classId" element={<StudentClassDetailPage />} />
         <Route path="classes/:classId/materials" element={<ClassMaterialsPage />} />
-        <Route path="assignments/:id" element={<LecturerAssignmentDetailPage />} />
+        <Route path="assignments/:id" element={<StudentAssignmentDetailPage />} />
         <Route index element={<Navigate to="dashboard" replace />} />
       </Route>
 
@@ -81,7 +81,10 @@ export default function AppRoutes() {
       >
         <Route path="dashboard" element={<LecturerDashboard />} />
         <Route path="search" element={<SearchPage />} />
+        <Route path="classes" element={<LecturerClassesPage />} />
+        <Route path="classes/:classId" element={<LecturerClassDetailPage />} />
         <Route path="classes/:classId/materials" element={<ClassMaterialsPage />} />
+        <Route path="assignments/:id" element={<LecturerAssignmentDetailPage />} />
         <Route index element={<Navigate to="dashboard" replace />} />
       </Route>
 
@@ -110,4 +113,3 @@ export default function AppRoutes() {
     </Routes>
   );
 }
-

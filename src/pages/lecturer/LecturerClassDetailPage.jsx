@@ -30,7 +30,7 @@ export default function LecturerClassDetailPage() {
             
             const sData = slotsRes?.data || slotsRes || [];
             let parsedSlots = Array.isArray(sData) ? sData : sData.data || [];
-            
+
             if (parsedSlots.length < 20) {
                 const existingLength = parsedSlots.length;
                 const mockSlots = Array.from({ length: 20 - existingLength }, (_, i) => {
@@ -47,6 +47,9 @@ export default function LecturerClassDetailPage() {
                 });
                 parsedSlots = [...parsedSlots, ...mockSlots];
             }
+
+            
+            
             
             setSlots(parsedSlots);
 
@@ -61,8 +64,10 @@ export default function LecturerClassDetailPage() {
                 id: classId,
                 subject_code: classId === 'mock-2' ? 'SWD392' : classId === 'mock-3' ? 'MMA301' : 'PRJ301',
                 subject_name: classId === 'mock-2' ? 'Software Architecture and Design' : classId === 'mock-3' ? 'Mobile Application Development' : 'Java Web Application Development',
+                class_code: 'SE20A09',
                 class_name: 'SE20A09',
-                owner_name: 'LoiNX'
+                owner_name: 'LoiNX',
+                lecturer_name: 'LoiNX'
             });
             
             const mockSlots = Array.from({ length: 20 }, (_, i) => ({
@@ -140,7 +145,7 @@ export default function LecturerClassDetailPage() {
                     </h1>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px' }}>
                         <span style={{ color: 'var(--color-primary-dark)', fontWeight: 'bold' }}>{classData.subject_code || 'CODE'}</span>
-                        <span style={{ color: 'var(--color-ink-muted)' }}>• {classData.class_name || classData.class_code || 'N/A'}</span>
+                        <span style={{ color: 'var(--color-ink-muted)' }}>• {classData.class_code || classData.class_name || 'N/A'}</span>
                     </div>
                 </div>
                 <div style={{ fontSize: '12px', color: 'var(--color-ink-muted)' }}>
@@ -182,7 +187,7 @@ export default function LecturerClassDetailPage() {
                         </div>
                         <div className="card" style={{ padding: '10px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', fontWeight: '600', color: 'var(--color-ink)' }}>
                             <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--color-success)', flexShrink: 0 }}></span>
-                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{classData.class_name || classData.class_code || 'N/A'}</span>
+                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{classData.class_code || classData.class_name || 'N/A'}</span>
                         </div>
                     </div>
 

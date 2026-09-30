@@ -15,7 +15,7 @@ export default function StudentClassesPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    const activeSemester = searchParams.get('semester') || 'SPRING_2026';
+    const activeSemester = searchParams.get('semester') || 'TERM1';
 
     const fetchClasses = () => {
         setLoading(true);
@@ -24,23 +24,11 @@ export default function StudentClassesPage() {
                 const listData = res?.data || res || [];
                 let parsedClasses = Array.isArray(listData) ? listData : listData.data || [];
                 
-                if (parsedClasses.length === 0) {
-                    parsedClasses = [
-                        { id: 'mock-1', subject_code: 'PRJ301', subject_name: 'Java Web Application Development', description: 'Web dev with Java and Spring', class_name: 'SE20A09', lecturer_name: 'LoiNX' },
-                        { id: 'mock-2', subject_code: 'SWD392', subject_name: 'Software Architecture and Design', description: 'Design patterns and architectures', class_name: 'SE20A09', lecturer_name: 'LoiNX' },
-                        { id: 'mock-3', subject_code: 'MMA301', subject_name: 'Mobile Application Development', description: 'Android/iOS app dev', class_name: 'SE20A09', lecturer_name: 'LoiNX' }
-                    ];
-                }
-                
                 setClasses(parsedClasses);
                 setError(null);
             })
             .catch(err => {
-                setClasses([
-                    { id: 'mock-1', subject_code: 'PRJ301', subject_name: 'Java Web Application Development', description: 'Web dev with Java and Spring', class_name: 'SE20A09', lecturer_name: 'LoiNX' },
-                    { id: 'mock-2', subject_code: 'SWD392', subject_name: 'Software Architecture and Design', description: 'Design patterns and architectures', class_name: 'SE20A09', lecturer_name: 'LoiNX' },
-                    { id: 'mock-3', subject_code: 'MMA301', subject_name: 'Mobile Application Development', description: 'Android/iOS app dev', class_name: 'SE20A09', lecturer_name: 'LoiNX' }
-                ]);
+                setClasses([]);
                 setError(err.response?.data?.message || 'Lỗi API. Hiển thị dữ liệu mẫu.');
             })
             .finally(() => {
@@ -111,7 +99,7 @@ export default function StudentClassesPage() {
                         ))}
 
                         <div style={{ fontSize: '10px', color: 'var(--color-ink-soft)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginTop: '8px' }}>Spring</div>
-                        {['SPRING_2026'].map(sem => (
+                        {['TERM1'].map(sem => (
                             <div 
                                 key={sem}
                                 onClick={() => handleSemesterChange(sem)}
@@ -183,16 +171,16 @@ export default function StudentClassesPage() {
                             classes.map(course => (
                                 <div className="card" key={course.id || course._id} style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <div style={{ width: '36px', height: '36px', borderRadius: 'var(--radius-sm)', backgroundColor: 'var(--color-primary-bg)', color: 'var(--color-primary-dark)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '12px' }}>
-                                            {course.subject_code ? course.subject_code.substring(0, 2).toUpperCase() : 'CO'}
+                                        <div style={{ padding: '4px 10px', borderRadius: 'var(--radius-sm)', backgroundColor: 'var(--color-primary-bg)', color: 'var(--color-primary-dark)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '12px' }}>
+                                            {course.subject_code || 'CODE'}
                                         </div>
                                         <span className="badge badge-orange">General</span>
                                     </div>
                                     
                                     <div>
-                                        <div style={{ fontSize: '12px', fontWeight: '600', color: 'var(--color-ink-soft)' }}>{course.subject_code || 'CODE'}</div>
+                                        
                                         <h3 style={{ fontSize: '16px', fontWeight: 'bold', margin: '4px 0', color: 'var(--color-ink)', lineHeight: '1.4' }}>{course.subject_name || course.name}</h3>
-                                        <p style={{ fontSize: '12px', color: 'var(--color-ink-muted)' }}>Class: <strong>{course.class_name || 'SE20A09'}</strong> | GV: <strong>{course.lecturer_name || 'LoiNX'}</strong></p>
+                                        <p style={{ fontSize: '12px', color: 'var(--color-ink-muted)' }}>Class: <strong>{course.class_code || course.class_name || 'N/A'}</strong> | GV: <strong>{course.lecturer_name || 'Chưa cập nhật'}</strong></p>
                                     </div>
                                     
                                     <div 
