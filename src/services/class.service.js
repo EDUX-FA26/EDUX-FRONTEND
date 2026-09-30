@@ -16,6 +16,11 @@ const ClassService = {
         return response.data;
     },
 
+    async getClassMembers(classId, params = {}) {
+        const response = await api.get(`/classes/${classId}/members`, { params });
+        return response.data;
+    },
+
     async getClassSlots(classId) {
         const response = await api.get(`/classes/${classId}/slots`);
         return response.data;

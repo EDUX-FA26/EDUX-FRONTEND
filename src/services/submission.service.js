@@ -15,8 +15,27 @@ const SubmissionService = {
         return response.data;
     },
 
-    async getMySubmissions() {
-        const response = await api.get('/submissions/my-submissions');
+    async getAssignmentSubmissions(assignmentId, query = {}) { 
+        const params = new URLSearchParams(query).toString(); 
+        const url = params ? `/submissions/assignments/${assignmentId}?${params}` : `/submissions/assignments/${assignmentId}`; 
+        const response = await api.get(url); 
+        return response.data; 
+    },
+
+    async getSubmissionById(id, includeHistory = false) {
+        const response = await api.get(`/submissions/${id}?include_history=${includeHistory}`);
+        return response.data;
+    },
+
+    async getSubmissionFile(submissionId, fileId) {
+        const response = await api.get(`/submissions/${submissionId}/files/${fileId}`);
+        return response.data;
+    },
+
+    async getMySubmissions(query = {}) {
+        const params = new URLSearchParams(query).toString();
+        const url = params ? `/submissions/my-submissions?${params}` : '/submissions/my-submissions';
+        const response = await api.get(url);
         return response.data;
     }
 };

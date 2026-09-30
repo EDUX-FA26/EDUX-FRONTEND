@@ -327,7 +327,7 @@ export default function LecturerClassDetailPage() {
             </div>
 
             {/* Assignment Modal */}
-            <AssignmentSubwindowModal isOpen={isAssignmentModalOpen} onClose={() => setIsAssignmentModalOpen(false)} classId={classId} role="lecturer" />
+            <AssignmentSubwindowModal isOpen={isAssignmentModalOpen} onClose={() => setIsAssignmentModalOpen(false)} classId={classId} classCode={classData?.class_code || classData?.class_name} role="lecturer" />
         </div>
     );
 }
