@@ -16,6 +16,7 @@ const NAV_BY_ROLE = {
   ],
   [ROLES.LECTURER]: [
     { id: 'dashboard', icon: FiGrid, path: '/lecturer/dashboard', key: 'overview' },
+    { id: 'flashcards', icon: BookMarked, path: '/lecturer/flashcards', key: 'flashcards' },
   ],
   [ROLES.ADMIN]: [
     { id: 'dashboard', icon: 'dashboard', path: '/admin/dashboard', key: 'overview', label: 'Tổng quan' },
@@ -297,30 +298,32 @@ export default function DashboardLayout() {
           <Outlet />
         </main>
 
-        {/* ─── FOOTER ─── */}
-        <footer style={{
-          background: 'var(--color-surface)',
-          borderTop: '1px solid var(--color-border)',
-          padding: '16px 24px',
-          transition: 'background 0.3s',
-        }}>
-          <div style={{
-            maxWidth: '1440px', margin: '0 auto',
-            display: 'flex', flexWrap: 'wrap',
-            alignItems: 'center', justifyContent: 'space-between', gap: '12px',
+        {/* ─── FOOTER ─── (ẩn ở trang flashcard) */}
+        {!location.pathname.startsWith('/student/flashcards') && !location.pathname.startsWith('/lecturer/flashcards') && (
+          <footer style={{
+            background: 'var(--color-surface)',
+            borderTop: '1px solid var(--color-border)',
+            padding: '16px 24px',
+            transition: 'background 0.3s',
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.75rem' }}>
-              <span style={{ fontWeight: 800, color: 'var(--color-primary-dark)' }}>EDUX FPT UNIVERSITY</span>
-              <span style={{ color: 'var(--color-border-medium)' }}>•</span>
-              <span style={{ color: 'var(--color-ink-muted)' }}>{t.layout?.footer}</span>
+            <div style={{
+              maxWidth: '1440px', margin: '0 auto',
+              display: 'flex', flexWrap: 'wrap',
+              alignItems: 'center', justifyContent: 'space-between', gap: '12px',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.75rem' }}>
+                <span style={{ fontWeight: 800, color: 'var(--color-primary-dark)' }}>EDUX FPT UNIVERSITY</span>
+                <span style={{ color: 'var(--color-border-medium)' }}>•</span>
+                <span style={{ color: 'var(--color-ink-muted)' }}>{t.layout?.footer}</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '0.75rem', color: 'var(--color-ink-soft)' }}>
+                <span>{t.layout?.hotline}: (024) 7300 1866</span>
+                <span>itsupport@fpt.edu.vn</span>
+                <span>{t.layout?.copyright}</span>
+              </div>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '0.75rem', color: 'var(--color-ink-soft)' }}>
-              <span>{t.layout?.hotline}: (024) 7300 1866</span>
-              <span>itsupport@fpt.edu.vn</span>
-              <span>{t.layout?.copyright}</span>
-            </div>
-          </div>
-        </footer>
+          </footer>
+        )}
 
         {/* Click outside overlay */}
         {showUserMenu && (

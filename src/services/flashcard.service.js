@@ -47,6 +47,18 @@ const FlashcardService = {
     return response.data;
   },
 
+  /** GET /api/flashcards/decks/:deckId/class-access — Lấy danh sách lớp được phép xem */
+  async getClassAccess(deckId) {
+    const response = await api.get(`/flashcards/decks/${deckId}/class-access`);
+    return response.data;
+  },
+
+  /** PUT /api/flashcards/decks/:deckId/class-access — Cập nhật lớp được phép xem */
+  async setClassAccess(deckId, classIds) {
+    const response = await api.put(`/flashcards/decks/${deckId}/class-access`, { class_ids: classIds });
+    return response.data;
+  },
+
   // ─────────────────────────────────────────────
   // CARD
   // ─────────────────────────────────────────────

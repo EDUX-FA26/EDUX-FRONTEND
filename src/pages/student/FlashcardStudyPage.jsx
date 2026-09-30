@@ -402,11 +402,19 @@ export default function FlashcardStudyPage() {
     );
   }
 
+  const handleBack = () => {
+    if (deck?.subject_id) {
+      navigate(`/student/flashcards/subject/${deck.subject_id}`);
+    } else {
+      navigate(-1);
+    }
+  };
+
   if (queue.length === 0) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         {/* Back btn */}
-        <button id="btn-back-empty" onClick={() => navigate('/student/flashcards')} style={{
+        <button id="btn-back-empty" onClick={handleBack} style={{
           display: 'inline-flex', alignItems: 'center', gap: '6px',
           background: 'none', border: 'none', cursor: 'pointer',
           fontSize: '0.8125rem', fontWeight: 600, color: 'var(--color-ink-muted)',
@@ -435,7 +443,7 @@ export default function FlashcardStudyPage() {
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
         <button
           id="btn-back-study"
-          onClick={() => navigate('/student/flashcards')}
+          onClick={handleBack}
           style={{
             display: 'inline-flex', alignItems: 'center', gap: '6px',
             background: 'none', border: 'none', cursor: 'pointer',
@@ -492,7 +500,7 @@ export default function FlashcardStudyPage() {
           stats={sessionStats}
           deckTitle={deck?.title || ''}
           onRestart={loadStudy}
-          onBack={() => navigate('/student/flashcards')}
+          onBack={handleBack}
           t={t}
         />
       ) : (

@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useLanguage } from '../../contexts/LanguageContext';
 import FlashcardService from '../../services/flashcard.service';
 import {
   BookOpen, Layers, Globe, Lock, Search, BarChart2,
-  CheckCircle, Clock, Zap, ChevronRight, RefreshCw,
+  CheckCircle, Clock, Zap, ChevronRight, RefreshCw, ArrowLeft,
 } from 'lucide-react';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -167,7 +167,8 @@ function DeckCard({ deck, stats, onStudy, t }) {
 
 export default function FlashcardsPage() {
   const navigate = useNavigate();
-  const { t, lang } = useLanguage();
+  const { subjectId } = useParams();
+  const { t } = useLanguage();
   const F = t.flashcards || {};
 
   const [decks, setDecks] = useState([]);
@@ -188,6 +189,7 @@ export default function FlashcardsPage() {
     setError(null);
     try {
       const params = { page, limit: LIMIT };
+      if (subjectId) params.subject_id = subjectId;
       if (filterPublic !== 'all') params.is_public = filterPublic;
       const res = await FlashcardService.getDecks(params);
       const list = res.data || [];
@@ -211,11 +213,17 @@ export default function FlashcardsPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, filterPublic]);
+  }, [page, filterPublic, subjectId]);
 
   useEffect(() => {
     fetchDecks();
-  }, [fetchDecks]);
+    if (subjectId) {
+      localStorage.setItem('student_last_subject_id', subjectId);
+    }
+  }, [fetchDecks, subjectId]);
+
+  // Subject title from first deck if available
+  const currentSubjectInfo = decks.find((d) => d.subject_name) || null;
 
   // Client-side search filter
   const filtered = decks.filter((d) =>
@@ -229,6 +237,29 @@ export default function FlashcardsPage() {
 
   return (
     <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+
+      {/* ── Top Back Button ── */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <button
+          onClick={() => {
+            localStorage.removeItem('student_last_subject_id');
+            navigate('/student/flashcards?select=true');
+          }}
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: '6px',
+            padding: '8px 16px', borderRadius: '10px',
+            border: '1px solid var(--color-border)', background: 'var(--color-surface)',
+            color: 'var(--color-ink)', fontSize: '0.8125rem', fontWeight: 600,
+            cursor: 'pointer', fontFamily: 'var(--font-sans)',
+            transition: 'all 0.15s',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--color-primary)'; e.currentTarget.style.color = 'var(--color-primary-dark)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.color = 'var(--color-ink)'; }}
+        >
+          <ArrowLeft style={{ width: '15px', height: '15px' }} />
+          Chọn môn học khác
+        </button>
+      </div>
 
       {/* ── Hero Banner ── */}
       <div style={{
@@ -254,10 +285,10 @@ export default function FlashcardsPage() {
             fontSize: '0.75rem', color: '#c7d2fe', fontWeight: 600, marginBottom: '12px',
           }}>
             <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#818cf8', display: 'inline-block' }} />
-            {F.heroBadge || 'Hệ thống Flashcard · SRS'}
+            {currentSubjectInfo?.subject_code ? `${currentSubjectInfo.subject_code} · ${currentSubjectInfo.subject_name}` : (F.heroBadge || 'Hệ thống Flashcard · SRS')}
           </div>
           <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: 0, letterSpacing: '-0.02em' }}>
-            {F.heroTitle || 'Bộ thẻ ghi nhớ'}
+            {currentSubjectInfo?.subject_name ? `Bộ thẻ: ${currentSubjectInfo.subject_name}` : (F.heroTitle || 'Bộ thẻ ghi nhớ')}
           </h1>
           <p style={{ marginTop: '8px', color: '#94a3b8', fontSize: '0.875rem', maxWidth: '520px' }}>
             {F.heroDesc || 'Học flashcard theo thuật toán SRS để ghi nhớ sâu và duy trì streak mỗi ngày.'}

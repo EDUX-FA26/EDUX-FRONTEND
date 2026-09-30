@@ -9,6 +9,8 @@ import StudentDashboard from '../pages/student/DashboardPage';
 import StreakDetailPage from '../pages/student/StreakDetailPage';
 import StreakDetailBySubjectPage from '../pages/student/StreakDetailBySubjectPage';
 import LecturerDashboard from '../pages/lecturer/DashboardPage';
+import LecturerFlashcardsPage from '../pages/lecturer/LecturerFlashcardsPage';
+import LecturerFlashclassSelectPage from '../pages/lecturer/LecturerFlashclassSelectPage';
 import AdminDashboard from '../pages/admin/DashboardPage';
 import UserManagementPage from '../pages/admin/UserManagementPage';
 import SystemLogsPage from '../pages/admin/SystemLogsPage';
@@ -17,6 +19,7 @@ import AdminNotificationsPage from '../pages/admin/AdminNotificationsPage';
 import NotFoundPage from '../pages/NotFoundPage';
 import FlashcardsPage from '../pages/student/FlashcardsPage';
 import FlashcardStudyPage from '../pages/student/FlashcardStudyPage';
+import StudentFlashcardSelectPage from '../pages/student/StudentFlashcardSelectPage';
 
 // Layouts
 import DashboardLayout from '../layouts/DashboardLayout';
@@ -51,7 +54,8 @@ export default function AppRoutes() {
         <Route path="dashboard" element={<StudentDashboard />} />
         <Route path="streak" element={<StreakDetailPage />} />
         <Route path="streak/:subjectId" element={<StreakDetailBySubjectPage />} />
-        <Route path="flashcards" element={<FlashcardsPage />} />
+        <Route path="flashcards" element={<StudentFlashcardSelectPage />} />
+        <Route path="flashcards/subject/:subjectId" element={<FlashcardsPage />} />
         <Route path="flashcards/:deckId/study" element={<FlashcardStudyPage />} />
         <Route path="classes/:classId/materials" element={<ClassMaterialsPage />} />
         <Route index element={<Navigate to="dashboard" replace />} />
@@ -67,6 +71,10 @@ export default function AppRoutes() {
         }
       >
         <Route path="dashboard" element={<LecturerDashboard />} />
+        {/* Bước 1: chọn môn học */}
+        <Route path="flashcards" element={<LecturerFlashclassSelectPage />} />
+        {/* Bước 2: quản lý flashcard theo môn */}
+        <Route path="flashcards/subject/:subjectId" element={<LecturerFlashcardsPage />} />
         <Route path="classes/:classId/materials" element={<ClassMaterialsPage />} />
         <Route index element={<Navigate to="dashboard" replace />} />
       </Route>
