@@ -304,7 +304,7 @@ function RatingButtons({ onRate, disabled, t }) {
 
 // ─── Completion Screen ────────────────────────────────────────────────────────
 
-function CompletionScreen({ stats, deckTitle, onRestart, onBack, t }) {
+function CompletionScreen({ stats, deckTitle, onRestart, onTakeTest, onBack, t }) {
   const F = t.flashcards || {};
   const pct = stats.total > 0 ? Math.round(((stats.good + stats.easy) / stats.total) * 100) : 0;
 
@@ -358,15 +358,29 @@ function CompletionScreen({ stats, deckTitle, onRestart, onBack, t }) {
       </div>
 
       {/* Actions */}
-      <div style={{ display: 'flex', gap: '12px' }}>
+      <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center' }}>
+        <button
+          id="btn-take-test"
+          onClick={onTakeTest}
+          style={{
+            display: 'flex', alignItems: 'center', gap: '8px',
+            padding: '11px 22px', borderRadius: '10px',
+            background: 'linear-gradient(135deg, var(--color-primary) 0%, #6366f1 100%)', color: 'white',
+            border: 'none', fontSize: '0.875rem', fontWeight: 700,
+            cursor: 'pointer', fontFamily: 'var(--font-sans)', boxShadow: 'var(--shadow-sm)',
+          }}
+        >
+          <CheckCircle style={{ width: '16px', height: '16px' }} />
+          Kiểm tra ngay
+        </button>
         <button
           id="btn-restart-study"
           onClick={onRestart}
           style={{
             display: 'flex', alignItems: 'center', gap: '8px',
             padding: '11px 22px', borderRadius: '10px',
-            background: 'var(--color-primary)', color: 'white',
-            border: 'none', fontSize: '0.875rem', fontWeight: 700,
+            background: 'var(--color-primary-card)', color: 'var(--color-primary-dark)',
+            border: '1px solid var(--color-border)', fontSize: '0.875rem', fontWeight: 700,
             cursor: 'pointer', fontFamily: 'var(--font-sans)',
           }}
         >
@@ -624,6 +638,7 @@ export default function FlashcardStudyPage() {
           stats={sessionStats}
           deckTitle={deck?.title || ''}
           onRestart={loadStudy}
+          onTakeTest={() => navigate(`/student/flashcards/${deckId}/test`)}
           onBack={handleBack}
           t={t}
         />

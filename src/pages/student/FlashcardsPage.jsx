@@ -4,7 +4,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import FlashcardService from '../../services/flashcard.service';
 import {
   BookOpen, Layers, Globe, Lock, Search, BarChart2,
-  CheckCircle, Clock, Zap, ChevronRight, RefreshCw, ArrowLeft,
+  CheckCircle, Clock, Zap, ChevronRight, RefreshCw, ArrowLeft, FileCheck,
 } from 'lucide-react';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -66,7 +66,7 @@ function StatsBar({ stats }) {
   );
 }
 
-function DeckCard({ deck, stats, onStudy, t }) {
+function DeckCard({ deck, stats, onStudy, onTest, t }) {
   const F = t.flashcards || {};
   const [hovered, setHovered] = useState(false);
 
@@ -77,15 +77,10 @@ function DeckCard({ deck, stats, onStudy, t }) {
       onMouseLeave={() => setHovered(false)}
       style={{
         padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px',
-        cursor: 'pointer', transition: 'transform 0.2s, box-shadow 0.2s',
+        transition: 'transform 0.2s, box-shadow 0.2s',
         transform: hovered ? 'translateY(-3px)' : 'none',
         boxShadow: hovered ? 'var(--shadow-lg)' : 'var(--shadow-md)',
       }}
-      onClick={() => onStudy(deck.id)}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => e.key === 'Enter' && onStudy(deck.id)}
-      aria-label={`Học deck: ${deck.title}`}
     >
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px' }}>
@@ -139,25 +134,42 @@ function DeckCard({ deck, stats, onStudy, t }) {
       {/* Stats bar */}
       <StatsBar stats={stats} />
 
-      {/* Study CTA */}
+      {/* Actions: Study CTA & Test CTA */}
       <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        display: 'flex', alignItems: 'center', gap: '8px',
         paddingTop: '12px', borderTop: '1px solid var(--color-border)', marginTop: '2px',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          {stats?.total_cards > 0 && stats?.reviewed_cards === stats?.total_cards ? (
-            <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', fontWeight: 600, color: '#16a34a' }}>
-              <CheckCircle style={{ width: '14px', height: '14px' }} />
-              {F.allReviewed || 'Đã ôn hết'}
-            </span>
-          ) : (
-            <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-primary)' }}>
-              <Clock style={{ width: '14px', height: '14px' }} />
-              {F.studyNow || 'Học ngay'}
-            </span>
-          )}
-        </div>
-        <ChevronRight style={{ width: '18px', height: '18px', color: 'var(--color-ink-soft)', transition: 'transform 0.2s', transform: hovered ? 'translateX(3px)' : 'none' }} />
+        <button
+          onClick={() => onStudy(deck.id)}
+          style={{
+            flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+            padding: '8px 12px', borderRadius: '9px',
+            background: 'var(--color-primary-card)', color: 'var(--color-primary-dark)',
+            border: '1px solid var(--color-border)', fontSize: '0.8125rem', fontWeight: 700,
+            cursor: 'pointer', fontFamily: 'var(--font-sans)', transition: 'all 0.15s',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--color-primary)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--color-border)'; }}
+        >
+          <Clock style={{ width: '14px', height: '14px' }} />
+          {F.studyNow || 'Học ngay'}
+        </button>
+
+        <button
+          onClick={() => onTest(deck.id)}
+          style={{
+            flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+            padding: '8px 12px', borderRadius: '9px',
+            background: 'linear-gradient(135deg, var(--color-primary) 0%, #6366f1 100%)',
+            color: 'white', border: 'none', fontSize: '0.8125rem', fontWeight: 700,
+            cursor: 'pointer', fontFamily: 'var(--font-sans)', transition: 'transform 0.15s',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.02)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.transform = 'none'; }}
+        >
+          <FileCheck style={{ width: '14px', height: '14px' }} />
+          Kiểm tra
+        </button>
       </div>
     </div>
   );
@@ -415,6 +427,7 @@ export default function FlashcardsPage() {
               deck={deck}
               stats={deckStats[deck.id]}
               onStudy={(id) => navigate(`/student/flashcards/${id}/study`)}
+              onTest={(id) => navigate(`/student/flashcards/${id}/test`)}
               t={t}
             />
           ))}
