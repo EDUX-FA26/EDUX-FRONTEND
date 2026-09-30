@@ -41,6 +41,7 @@ const en = {
   nav: {
     overview: 'Overview',
     users: 'Users',
+    classes: 'Classes',
     reports: 'Reports',
     notifications: 'Notifications',
     logs: 'System Logs',

@@ -9,6 +9,7 @@ import StudentDashboard from '../pages/student/DashboardPage';
 import LecturerDashboard from '../pages/lecturer/DashboardPage';
 import AdminDashboard from '../pages/admin/DashboardPage';
 import UserManagementPage from '../pages/admin/UserManagementPage';
+import ClassManagementPage from '../pages/admin/ClassManagementPage';
 import SystemLogsPage from '../pages/admin/SystemLogsPage';
 import AdminReportsPage from '../pages/admin/AdminReportsPage';
 import AdminNotificationsPage from '../pages/admin/AdminNotificationsPage';
@@ -71,6 +72,7 @@ export default function AppRoutes() {
       >
         <Route path="dashboard" element={<AdminDashboard />} />
         <Route path="users" element={<UserManagementPage />} />
+        <Route path="classes" element={<ClassManagementPage />} />
         <Route path="reports" element={<AdminReportsPage />} />
         <Route path="notifications" element={<AdminNotificationsPage />} />
         <Route path="logs" element={<SystemLogsPage />} />

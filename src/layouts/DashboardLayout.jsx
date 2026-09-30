@@ -17,6 +17,7 @@ const NAV_BY_ROLE = {
   [ROLES.ADMIN]: [
     { id: 'dashboard', icon: 'dashboard', path: '/admin/dashboard', key: 'overview', label: 'Tổng quan' },
     { id: 'users', icon: 'group', path: '/admin/users', key: 'users', label: 'Người dùng' },
+    { id: 'classes', icon: 'school', path: '/admin/classes', key: 'classes', label: 'Lớp học' },
     { id: 'reports', icon: 'bar_chart', path: '/admin/reports', key: 'reports', label: 'Báo cáo' },
     { id: 'notifications', icon: 'campaign', path: '/admin/notifications', key: 'notifications', label: 'Tạo thông báo' },
     { id: 'logs', icon: 'history', path: '/admin/logs', key: 'logs', label: 'System Logs' },

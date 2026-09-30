@@ -44,3 +44,30 @@ export const getSystemNotifications = async () => {
   const response = await axiosInstance.get('/notifications');
   return response.data;
 };
+
+export const importExcel = async (file) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  const response = await axiosInstance.post('/users/import', formData);
+  return response.data;
+};
+
+export const getAllClasses = async () => {
+  const response = await axiosInstance.get('/classes');
+  return response.data;
+};
+
+export const getClassStudents = async (id) => {
+  const response = await axiosInstance.get(`/classes/${id}/students`);
+  return response.data;
+};
+
+export const updateClass = async (id, data) => {
+  const response = await axiosInstance.patch(`/classes/${id}`, data);
+  return response.data;
+};
+
+export const deleteClass = async (id) => {
+  const response = await axiosInstance.delete(`/classes/${id}`);
+  return response.data;
+};
