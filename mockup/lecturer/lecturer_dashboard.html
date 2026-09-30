@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ART-AI Lecturer Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #F4F7FE; }
+        .fpt-orange-gradient { background: linear-gradient(135deg, #F26F21 0%, #F79C65 100%); }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden">
+
+    <!-- LECTURER SIDEBAR (DARK THEME) -->
+    <aside class="w-[280px] bg-[#1B2559] flex flex-col h-full shadow-2xl relative z-20">
+        <!-- Logo -->
+        <a href="lecturer_dashboard.html" class="h-24 flex items-center px-8 cursor-pointer border-b border-white/10">
+            <div class="w-10 h-10 rounded-xl fpt-orange-gradient flex items-center justify-center text-white font-bold text-xl mr-3 shadow-lg shadow-orange-500/30">
+                <i data-lucide="brain-circuit" class="w-6 h-6"></i>
+            </div>
+            <span class="text-2xl font-extrabold text-white tracking-tight">ART-AI<span class="text-[#F26F21] text-xs align-top ml-1">LECTURER</span></span>
+        </a>
+
+        <!-- Navigation Links -->
+        <nav class="flex-1 px-4 py-8 space-y-1 overflow-y-auto">
+            <a href="lecturer_dashboard.html" class="flex items-center px-4 py-3.5 bg-white/10 text-white font-bold rounded-xl transition-all relative">
+                <div class="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-[#F26F21] rounded-r-full"></div>
+                <i data-lucide="layout-dashboard" class="w-5 h-5 mr-4 text-[#F26F21]"></i>
+                Dashboard
+            </a>
+            
+            <a href="lecturer_subjects.html" class="flex items-center px-4 py-3.5 text-blue-200 hover:text-white font-medium rounded-xl transition-all hover:bg-white/5">
+                <i data-lucide="book-open" class="w-5 h-5 mr-4 opacity-70"></i>
+                My Subjects
+            </a>
+
+            <a href="lecturer_grading_subjects.html" class="flex items-center px-4 py-3.5 text-blue-200 hover:text-white font-medium rounded-xl transition-all hover:bg-white/5">
+                <i data-lucide="file-check-2" class="w-5 h-5 mr-4 opacity-70"></i>
+                Grading
+                <span class="ml-auto bg-[#F26F21] text-white text-xs font-bold px-2 py-0.5 rounded-full">12</span>
+            </a>
+
+            <a href="lecturer_reports.html" class="flex items-center px-4 py-3.5 text-blue-200 hover:text-white font-medium rounded-xl transition-all hover:bg-white/5">
+                <i data-lucide="bar-chart-2" class="w-5 h-5 mr-4 opacity-70"></i>
+                Reports
+            </a>
+
+            <a href="lecturer_news.html" class="flex items-center px-4 py-3.5 text-blue-200 hover:text-white font-medium rounded-xl transition-all hover:bg-white/5">
+                <i data-lucide="newspaper" class="w-5 h-5 mr-4 opacity-70"></i>
+                News
+            </a>
+
+            <div class="pt-8 pb-2">
+                <p class="px-4 text-xs font-bold text-blue-400 uppercase tracking-wider">Account</p>
+            </div>
+            
+            <a href="lecturer_messages.html" class="flex items-center px-4 py-3.5 text-blue-200 hover:text-white font-medium rounded-xl transition-all hover:bg-white/5">
+                <i data-lucide="message-circle" class="w-5 h-5 mr-4 opacity-70"></i>
+                Messages
+            </a>
+
+            <a href="lecturer_settings.html" class="flex items-center px-4 py-3.5 text-blue-200 hover:text-white font-medium rounded-xl transition-all hover:bg-white/5">
+                <i data-lucide="settings" class="w-5 h-5 mr-4 opacity-70"></i>
+                Settings
+            </a>
+        </nav>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="flex-1 flex flex-col h-full overflow-hidden relative">
+        <!-- TOP HEADER -->
+        <header class="h-24 bg-white/80 backdrop-blur-md border-b border-gray-100 flex items-center justify-between px-10 sticky top-0 z-10">
+            <div>
+                <h1 class="text-2xl font-extrabold text-[#1B2559]">Lecturer Dashboard</h1>
+                <p class="text-sm font-medium text-gray-500 mt-1">Overview of your classes and pending evaluations</p>
+            </div>
+            
+            <div class="flex items-center space-x-6">
+                <!-- Semester Selector -->
+                <div class="relative">
+                    <select class="appearance-none bg-gray-50 border border-gray-200 text-[#1B2559] text-sm font-bold rounded-xl px-4 py-2.5 pr-10 focus:outline-none focus:ring-2 focus:ring-[#F26F21]/20 focus:border-[#F26F21] transition-all cursor-pointer">
+                        <option value="SP2026">Spring 2026</option>
+                        <option value="FA2025">Fall 2025</option>
+                    </select>
+                    <i data-lucide="chevron-down" class="w-4 h-4 text-gray-500 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+                </div>
+
+                
+                <button class="relative p-2.5 text-gray-400 hover:text-[#F26F21] hover:bg-orange-50 rounded-xl transition-all">
+                    <i data-lucide="bell" class="w-6 h-6"></i>
+                    <span class="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
+                </button>
+
+                <div class="flex items-center pl-6 border-l border-gray-200 gap-3">
+                    <div class="text-right">
+                        <p class="text-sm font-bold text-[#1B2559]">Dr. Nguyen Van A</p>
+                        <p class="text-xs font-medium text-gray-500">Lecturer</p>
+                    </div>
+                    <img src="https://ui-avatars.com/api/?name=Lecturer&background=f97316&color=fff" class="w-10 h-10 rounded-full shadow-md cursor-pointer border-2 border-white">
+                </div>
+            </div>
+        </header>
+
+        <!-- DASHBOARD CONTENT -->
+        <div class="flex-1 overflow-y-auto p-10 scroll-smooth">
+            <div class="max-w-7xl mx-auto space-y-8">
+                
+                <!-- Stats Row -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <div class="bg-white p-6 rounded-[24px] border border-gray-100 shadow-sm flex items-center">
+                        <div class="w-14 h-14 rounded-full bg-blue-50 flex items-center justify-center text-[#4318FF] mr-4">
+                            <i data-lucide="users" class="w-7 h-7"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-bold text-gray-400">Total Students</p>
+                            <h3 class="text-2xl font-extrabold text-[#1B2559]">124</h3>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white p-6 rounded-[24px] border border-gray-100 shadow-sm flex items-center">
+                        <div class="w-14 h-14 rounded-full bg-orange-50 flex items-center justify-center text-[#F26F21] mr-4">
+                            <i data-lucide="file-check-2" class="w-7 h-7"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-bold text-gray-400">Pending Grading</p>
+                            <h3 class="text-2xl font-extrabold text-[#1B2559]">12</h3>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-[24px] border border-gray-100 shadow-sm flex items-center">
+                        <div class="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center text-red-500 mr-4">
+                            <i data-lucide="alert-triangle" class="w-7 h-7"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-bold text-gray-400">AI Discrepancies</p>
+                            <h3 class="text-2xl font-extrabold text-[#1B2559]">3</h3>
+                        </div>
+                    </div>
+
+                    <div class="bg-[#1B2559] p-6 rounded-[24px] shadow-lg shadow-blue-900/20 flex flex-col justify-center relative overflow-hidden">
+                        <div class="absolute right-[-20px] bottom-[-20px] opacity-10">
+                            <i data-lucide="brain-circuit" class="w-32 h-32 text-white"></i>
+                        </div>
+                        <p class="text-sm font-bold text-blue-200 relative z-10">System Status</p>
+                        <div class="flex items-center mt-1 relative z-10">
+                            <div class="w-2.5 h-2.5 bg-green-400 rounded-full mr-2 shadow-[0_0_8px_rgba(74,222,128,0.8)]"></div>
+                            <span class="text-white font-bold">All Services Online</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Classes and Urgent Tasks -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <!-- My Classes List -->
+                    <div class="lg:col-span-2 space-y-6">
+                        <div class="flex items-center justify-between">
+                            <h2 class="text-xl font-extrabold text-[#1B2559]">My Classes</h2>
+                            <button class="text-sm font-bold text-[#F26F21] hover:underline">View All</button>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Class Card -->
+                            <a href="lecturer_class_detail.html" class="bg-white p-6 rounded-[24px] border border-gray-100 shadow-sm hover:shadow-md transition-all group block">
+                                <div class="flex justify-between items-start mb-4">
+                                    <div class="w-12 h-12 rounded-xl bg-orange-50 text-[#F26F21] flex items-center justify-center font-bold">PRJ</div>
+                                    <span class="px-3 py-1 bg-green-50 text-green-600 text-xs font-bold rounded-full">Active</span>
+                                </div>
+                                <h3 class="text-lg font-bold text-[#1B2559] group-hover:text-[#F26F21] transition-colors">Java Web Application</h3>
+                                <p class="text-sm text-gray-500 font-medium mb-4">PRJ301 • Class SE20A09</p>
+                                <div class="flex items-center justify-between text-sm border-t border-gray-100 pt-4">
+                                    <span class="text-gray-500 font-medium">35 Students</span>
+                                    <span class="text-[#4318FF] font-bold">1 Assignment Due</span>
+                                </div>
+                            </a>
+
+                            <!-- Class Card -->
+                            <a href="#" class="bg-white p-6 rounded-[24px] border border-gray-100 shadow-sm hover:shadow-md transition-all group block">
+                                <div class="flex justify-between items-start mb-4">
+                                    <div class="w-12 h-12 rounded-xl bg-blue-50 text-[#4318FF] flex items-center justify-center font-bold">SWT</div>
+                                    <span class="px-3 py-1 bg-green-50 text-green-600 text-xs font-bold rounded-full">Active</span>
+                                </div>
+                                <h3 class="text-lg font-bold text-[#1B2559] group-hover:text-[#4318FF] transition-colors">Software Testing</h3>
+                                <p class="text-sm text-gray-500 font-medium mb-4">SWT301 • Class SE20A10</p>
+                                <div class="flex items-center justify-between text-sm border-t border-gray-100 pt-4">
+                                    <span class="text-gray-500 font-medium">32 Students</span>
+                                    <span class="text-gray-400 font-bold">No pending tasks</span>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Pending Actions -->
+                    <div class="space-y-6">
+                        <h2 class="text-xl font-extrabold text-[#1B2559]">Needs Attention</h2>
+                        
+                        <div class="bg-white rounded-[24px] border border-gray-100 shadow-sm p-6 space-y-4">
+                            
+                            <!-- Action Item -->
+                            <div class="flex items-start pb-4 border-b border-gray-100">
+                                <div class="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center text-red-500 mr-3 shrink-0">
+                                    <i data-lucide="alert-circle" class="w-5 h-5"></i>
+                                </div>
+                                <div>
+                                    <h4 class="text-sm font-bold text-[#1B2559]">High AI Discrepancy</h4>
+                                    <p class="text-xs text-gray-500 mt-1 leading-relaxed">Student Nguyen Van Duc (PRJ301) submitted code with 95% AI detection vs 10% declared.</p>
+                                    <a href="lecturer_grading_detail.html" class="inline-block mt-2 text-xs font-bold text-[#F26F21] hover:underline">Review Submission</a>
+                                </div>
+                            </div>
+
+                            <!-- Action Item -->
+                            <div class="flex items-start pb-4 border-b border-gray-100">
+                                <div class="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center text-[#F26F21] mr-3 shrink-0">
+                                    <i data-lucide="file-edit" class="w-5 h-5"></i>
+                                </div>
+                                <div>
+                                    <h4 class="text-sm font-bold text-[#1B2559]">Grade Practical Exam</h4>
+                                    <p class="text-xs text-gray-500 mt-1 leading-relaxed">12 ungraded submissions for PRJ301 Practical Exam.</p>
+                                    <a href="lecturer_grading_subjects.html" class="inline-block mt-2 text-xs font-bold text-[#F26F21] hover:underline">Go to Grading</a>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

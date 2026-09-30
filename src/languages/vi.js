@@ -14,6 +14,12 @@ const vi = {
     rememberMe: 'Ghi nhớ đăng nhập trên thiết bị này',
     submit: 'Đăng nhập vào hệ thống',
     submitting: 'Đang xử lý đăng nhập...',
+    or: 'Hoặc',
+    googleSignIn: 'Đăng nhập bằng Google',
+    googleExistingOnly: 'Chỉ tài khoản đã có trong hệ thống EDUX mới đăng nhập được.',
+    googleNotConfigured: 'Chưa cấu hình Google Client ID.',
+    googleUnavailable: 'Không thể tải dịch vụ đăng nhập Google.',
+    googleFailed: 'Đăng nhập Google thất bại. Vui lòng thử lại.',
     support: 'Hỗ trợ kỹ thuật',
     copyright: '© 2025 FPT University. Cổng Đào Tạo & Dịch Vụ Sinh Viên EDUX.',
     validationError: 'Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu.',
@@ -26,6 +32,9 @@ const vi = {
       lms: { label: 'LMS & Coursera', sub: 'Tài nguyên chuẩn' },
       support: { label: 'Hỗ trợ 1-1', sub: 'Phản hồi nhanh' },
     },
+    invalidCredentials: "Tên đăng nhập hoặc mật khẩu không đúng.",
+    accountInactive: "Tài khoản đã bị vô hiệu hóa.",
+    generalError: "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.",
   },
 
   // Layout
@@ -34,7 +43,7 @@ const vi = {
     logout: 'Đăng xuất',
     footer: 'Cổng Đào Tạo & Dịch Vụ Sinh Viên Trực Tuyến',
     hotline: 'Hotline',
-    copyright: '© 2025 FPT Edu',
+    copyright: '© 2026 FPT Edu',
   },
 
   // Nav
@@ -51,6 +60,9 @@ const vi = {
     services: 'Dịch vụ',
     streak: 'Streak học tập',
     flashcards: 'Flashcard',
+    search: 'Tìm kiếm',
+    semesters: 'Học kỳ',
+    subjects: 'Môn học',
   },
 
   // Roles
@@ -178,7 +190,7 @@ const vi = {
     typeFlashcardCompleted: 'Hoàn thành bộ thẻ',
     typeStreakRecovered: 'Khôi phục chuỗi',
     typeQuizCompleted: 'Hoàn thành bài kiểm tra',
-    typeDefault: 'Học tập'
+    typeDefault: 'Học tập',
   },
 
   // Flashcards
@@ -239,6 +251,15 @@ const vi = {
     emptyQueueTitle: 'Không có thẻ nào cần ôn!',
     emptyQueueDesc: 'Bộ thẻ này chưa có thẻ hoặc tất cả thẻ chưa đến hạn.',
     studyLoadError: 'Không thể tải bộ thẻ.',
+    // Streak Modal
+    streakModalTitle: 'Tuyệt vời!',
+    streakSubjectPrefix: 'Môn',
+    streakModalDesc: 'Bạn đang có chuỗi học tập',
+    streakDays: 'ngày',
+    streakRecord: 'Kỷ lục',
+    streakProtection: 'Bảo vệ chuỗi',
+    streakRemainingPrefix: 'Còn',
+    streakContinueBtn: 'Tiếp tục',
   },
 
   streak: {
@@ -254,6 +275,44 @@ const vi = {
     days: 'ngày',
     times: 'lần',
     loadingError: 'Không thể tải thông tin chi tiết môn học.',
+    recoverSuccessDesc: 'Chuỗi học tập của bạn đã được khôi phục thành công cho môn học này. Tiếp tục cố gắng và duy trì chuỗi học tập của bạn!',
+    recoverErrorDesc: 'Không thể khôi phục chuỗi lúc này. Vui lòng thử lại sau hoặc liên hệ với bộ phận hỗ trợ nếu vấn đề vẫn tiếp diễn.',
+    recoverBtn: 'Khôi phục Chuỗi',
+    recovering: 'Đang khôi phục...',
+    subjectPrefix: 'Môn',
+    record: 'Kỷ lục',
+    protection: 'Bảo vệ chuỗi',
+    remainingPrefix: 'Còn',
+    continueBtn: 'Tiếp tục',
+  },
+  
+  // Search
+  search: {
+    eyebrow: 'Module 3 · Global Search',
+    title: 'Tìm kiếm trong EDUX',
+    subtitle: 'Tìm lớp học, bài tập, tài liệu và bộ flashcard mà tài khoản của bạn được phép truy cập.',
+    inputLabel: 'Nội dung cần tìm',
+    inputPlaceholder: 'Nhập để lọc lớp, bài tập, tài liệu hoặc flashcard',
+    typesAriaLabel: 'Loại nội dung',
+    types: {
+      all: 'Tất cả',
+      class: 'Lớp học',
+      assignment: 'Bài tập',
+      material: 'Tài liệu',
+      flashcard: 'Flashcard'
+    },
+    loadingTitle: 'Đang tải nội dung...',
+    loadingDesc: 'EDUX đang kiểm tra nội dung phù hợp với quyền truy cập của bạn.',
+    emptyTitle: 'Không có nội dung phù hợp',
+    emptyQueryDesc: 'Thử từ khóa ngắn hơn, kiểm tra chính tả hoặc chọn loại nội dung khác.',
+    emptyDefaultDesc: 'Bộ lọc này chưa có dữ liệu mà tài khoản của bạn được phép truy cập.',
+    resultQueryHeader: 'Kết quả cho “{query}”',
+    resultCount: 'Hiển thị {total} kết quả bạn có quyền truy cập',
+    noDescription: 'Không có mô tả',
+    paginationInfo: 'Trang {page}/{totalPages} · {total} kết quả',
+    prevBtn: 'Trước',
+    nextBtn: 'Sau',
+    searchError: 'Không thể thực hiện tìm kiếm. Vui lòng thử lại.'
   },
 
   // 404

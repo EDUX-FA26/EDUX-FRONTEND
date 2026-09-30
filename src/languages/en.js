@@ -14,6 +14,12 @@ const en = {
     rememberMe: 'Remember me on this device',
     submit: 'Sign in to the system',
     submitting: 'Signing in...',
+    or: 'Or',
+    googleSignIn: 'Sign in with Google',
+    googleExistingOnly: 'Only accounts already registered in EDUX can sign in.',
+    googleNotConfigured: 'Google Client ID has not been configured.',
+    googleUnavailable: 'Google sign-in is currently unavailable.',
+    googleFailed: 'Google sign-in failed. Please try again.',
     support: 'Technical Support',
     copyright: '© 2025 FPT University. EDUX Academic & Student Services Portal.',
     validationError: 'Please enter your username and password.',
@@ -26,6 +32,9 @@ const en = {
       lms: { label: 'LMS & Coursera', sub: 'Official Resources' },
       support: { label: '1-on-1 Support', sub: 'Quick Response' },
     },
+    invalidCredentials: "Invalid username or password.",
+    accountInactive: "Account has been deactivated.",
+    generalError: "Login failed. Please check your information.",
   },
 
   // Layout
@@ -34,7 +43,7 @@ const en = {
     logout: 'Log out',
     footer: 'Academic & Student Services Online Portal',
     hotline: 'Hotline',
-    copyright: '© 2025 FPT Edu',
+    copyright: '© 2026 FPT Edu',
   },
 
   // Nav
@@ -51,6 +60,9 @@ const en = {
     services: 'Services',
     streak: 'Learning Streak',
     flashcards: 'Flashcards',
+    search: 'Search',
+    semesters: 'Semesters',
+    subjects: 'Subjects',
   },
 
   // Roles
@@ -178,7 +190,7 @@ const en = {
     typeFlashcardCompleted: 'Flashcard Set Completed',
     typeStreakRecovered: 'Streak Recovered',
     typeQuizCompleted: 'Quiz Completed',
-    typeDefault: 'Learning'
+    typeDefault: 'Learning',
   },
 
   // Flashcards
@@ -239,6 +251,15 @@ const en = {
     emptyQueueTitle: 'No cards to study!',
     emptyQueueDesc: 'This deck has no cards or all cards are not yet due.',
     studyLoadError: 'Unable to load the deck.',
+    // Streak Modal
+    streakModalTitle: 'Awesome!',
+    streakSubjectPrefix: 'Subject',
+    streakModalDesc: 'You have a study streak',
+    streakDays: 'days',
+    streakRecord: 'Record',
+    streakProtection: 'Streak Protection',
+    streakRemainingPrefix: 'Remaining',
+    streakContinueBtn: 'Continue',
   },
 
   streak: {
@@ -254,6 +275,44 @@ const en = {
     days: 'days',
     times: 'times',
     loadingError: 'Unable to load subject streak details.',
+    recoverSuccessDesc: 'Your streak has been successfully recovered for this subject. Keep up the good work and maintain your learning streak!',
+    recoverErrorDesc: 'Unable to recover streak at this time. Please try again later or contact support if the issue persists.',
+    recoverBtn: 'Recover Streak',
+    recovering: 'Recovering...',
+    subjectPrefix: 'Subject',
+    record: 'Record',
+    protection: 'Streak Protection',
+    remainingPrefix: 'Remaining',
+    continueBtn: 'Continue',
+  },
+
+  // Search
+  search: {
+    eyebrow: 'Module 3 · Global Search',
+    title: 'Search in EDUX',
+    subtitle: 'Find classes, assignments, materials, and flashcards that your account is authorized to access.',
+    inputLabel: 'Content to search',
+    inputPlaceholder: 'Enter to filter classes, assignments, materials, or flashcards',
+    typesAriaLabel: 'Content type',
+    types: {
+      all: 'All',
+      class: 'Class',
+      assignment: 'Assignment',
+      material: 'Material',
+      flashcard: 'Flashcard'
+    },
+    loadingTitle: 'Loading content...',
+    loadingDesc: 'EDUX is checking content that matches your access permissions.',
+    emptyTitle: 'No matching content',
+    emptyQueryDesc: 'Try a shorter keyword, check the spelling, or select a different content type.',
+    emptyDefaultDesc: 'This filter has no data that your account is authorized to access.',
+    resultQueryHeader: 'Results for “{query}”',
+    resultCount: 'Showing {total} results you have access to',
+    noDescription: 'No description available',
+    paginationInfo: 'Page {page}/{totalPages} · {total} results',
+    prevBtn: 'Previous',
+    nextBtn: 'Next',
+    searchError: 'Unable to perform search. Please try again.'
   },
 
   // 404

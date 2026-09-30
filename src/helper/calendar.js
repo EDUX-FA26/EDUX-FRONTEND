@@ -1,3 +1,5 @@
+import { getTodayVNDate } from "./VietNamDate";
+
 // Hàm tạo mảng các ngày liên tục từ startDate đến endDate và nhóm theo tháng
 function generateCalendarHeatmap(rawData, totalDays = 90) {
   const map = new Map();
@@ -11,7 +13,7 @@ function generateCalendarHeatmap(rawData, totalDays = 90) {
     });
   }
 
-  const today = new Date();
+  const today = getTodayVNDate();
   const daysList = [];
 
   // Tạo danh sách từ totalDays ngày trước đến hôm nay

@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EduNext Interface Mockup</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+  </style>
+</head>
+<body class="bg-[#f8fafc] text-slate-700 min-h-screen flex flex-col">
+
+  <!-- Switcher Test (Dùng chuyển đổi xem 2 màn hình) -->
+  <header class="bg-slate-800 text-white px-6 py-2 flex items-center justify-between text-xs sticky top-0 z-50">
+    <div class="font-medium">Chế độ xem giao diện:</div>
+    <div class="space-x-2">
+      <button onclick="showPage('home')" id="btn-home" class="px-3 py-1 rounded bg-blue-600 hover:bg-blue-500 font-semibold">Ảnh 2: My Courses</button>
+      <button onclick="showPage('detail')" id="btn-detail" class="px-3 py-1 rounded bg-slate-700 hover:bg-slate-600">Ảnh 1: Course Detail & Sessions</button>
+    </div>
+  </header>
+
+  <div class="flex flex-1">
+    <!-- SIDEBAR BÊN TRÁI -->
+    <aside class="w-16 bg-white border-r border-slate-200 flex flex-col items-center py-4 justify-between shrink-0 select-none">
+      <div class="flex flex-col items-center gap-6 w-full">
+        <!-- Logo -->
+        <div class="flex flex-col items-center leading-none">
+          <span class="text-orange-500 font-extrabold text-lg tracking-tighter">FPT</span>
+          <span class="text-sky-500 text-[9px] font-semibold">Education</span>
+        </div>
+
+        <!-- Navigation Icons -->
+        <nav class="flex flex-col items-center gap-5 text-slate-400 w-full">
+          <button class="hover:text-blue-600"><i class="fa-regular fa-user text-lg"></i></button>
+          <button class="hover:text-blue-600"><i class="fa-solid fa-house text-lg"></i></button>
+          <button class="hover:text-blue-600"><i class="fa-regular fa-clipboard text-lg"></i></button>
+          <button class="hover:text-blue-600"><i class="fa-regular fa-calendar text-lg"></i></button>
+          <button class="hover:text-blue-600"><i class="fa-solid fa-book-open text-lg"></i></button>
+          <button class="hover:text-blue-600"><i class="fa-regular fa-address-card text-lg"></i></button>
+        </nav>
+      </div>
+
+      <div>
+        <button class="text-slate-400 hover:text-blue-600">
+          <i class="fa-regular fa-circle-question text-lg"></i>
+        </button>
+      </div>
+    </aside>
+
+    <!-- NỘI DUNG CHÍNH -->
+    <main class="flex-1 overflow-x-hidden p-6">
+
+      <!-- ================== MÀN HÌNH 2: MY COURSES ================== -->
+      <div id="page-home" class="max-w-6xl mx-auto space-y-5">
+        <!-- Top Filter Tabs -->
+        <div class="flex items-center gap-2 bg-[#f1f3f7] p-1 rounded-xl w-fit text-sm font-medium text-slate-600">
+          <button class="bg-white text-slate-800 px-5 py-1.5 rounded-lg shadow-sm font-semibold">Courses</button>
+          <button class="px-5 py-1.5 hover:text-slate-900">Projects</button>
+          <button class="px-5 py-1.5 hover:text-slate-900">Title Confirmation</button>
+          <button class="px-5 py-1.5 hover:text-slate-900">Reference</button>
+        </div>
+
+        <!-- Header Greeting & Title -->
+        <div class="flex items-end justify-between pt-2">
+          <div>
+            <p class="text-xs text-slate-400 mb-1">Welcome back, Student</p>
+            <h1 class="text-2xl font-bold text-slate-800">My Courses</h1>
+          </div>
+          <button class="flex items-center gap-1.5 text-xs font-semibold text-slate-600 border border-slate-200 bg-white px-3 py-1.5 rounded-lg hover:bg-slate-50 shadow-sm">
+            <i class="fa-solid fa-arrows-rotate text-slate-400"></i> Refresh
+          </button>
+        </div>
+
+        <!-- Banner thông báo bộ nhớ đệm -->
+        <div class="bg-blue-50 border border-blue-100 text-blue-600 text-xs px-4 py-2.5 rounded-lg flex items-center gap-2">
+          <i class="fa-regular fa-circle-exclamation"></i>
+          <span>Cached 10 min ago. Data auto-refreshes every 60 min.</span>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="flex justify-end">
+          <div class="relative w-72">
+            <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 text-xs"></i>
+            <input type="text" placeholder="Search courses..." class="w-full text-xs pl-8 pr-4 py-2 border border-slate-200 rounded-lg outline-none focus:border-blue-400">
+          </div>
+        </div>
+
+        <!-- Khung Semester & Danh sách môn học -->
+        <div class="flex gap-6 items-start">
+          <!-- Sidebar Semester -->
+          <div class="w-40 bg-white border border-slate-200 rounded-2xl p-3 text-xs space-y-3 shrink-0">
+            <div class="flex justify-between items-center text-slate-700 font-semibold border-b pb-2">
+              <span>Semesters</span>
+              <span class="bg-slate-100 text-slate-500 rounded-full px-1.5 py-0.5 text-[10px]">6</span>
+            </div>
+            <div>
+              <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Trial</div>
+            </div>
+            <div>
+              <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Summer</div>
+              <div class="space-y-1 text-slate-600">
+                <p class="px-2 py-1 cursor-pointer hover:bg-slate-50 rounded font-medium">2026</p>
+                <p class="px-2 py-1 cursor-pointer hover:bg-slate-50 rounded">2025</p>
+              </div>
+            </div>
+            <div>
+              <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Spring</div>
+              <div class="bg-indigo-600 text-white rounded-lg px-2.5 py-1.5 font-semibold text-center cursor-pointer">
+                2026
+              </div>
+            </div>
+            <div>
+              <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Fall</div>
+              <div class="space-y-1 text-slate-600">
+                <div class="flex items-center justify-between px-2 py-1 cursor-pointer hover:bg-slate-50 rounded">
+                  <span>2026</span>
+                  <span class="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
+                </div>
+                <p class="px-2 py-1 cursor-pointer hover:bg-slate-50 rounded">2025</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Cards Grid -->
+          <div class="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <!-- Card 1 -->
+            <div class="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col justify-between hover:shadow-md transition">
+              <div>
+                <div class="flex justify-between items-center mb-3">
+                  <div class="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-xs">SD</div>
+                  <span class="text-[10px] bg-slate-100 text-slate-500 font-semibold px-2 py-0.5 rounded uppercase">General</span>
+                </div>
+                <div class="text-[11px] font-semibold text-slate-400">SDN302</div>
+                <h3 class="font-bold text-slate-800 text-sm leading-snug mt-1">Server-Side development with NodeJS, Express, and MongoDB</h3>
+                <p class="text-xs text-slate-500 mt-1 line-clamp-1">Phát triển Server-Side với NodeJS, Express và MongoDB</p>
+              </div>
+              <div class="flex items-center justify-between pt-6 border-t border-slate-100 mt-6 text-xs text-slate-600 font-medium cursor-pointer hover:text-blue-600">
+                <span class="flex items-center gap-1.5"><i class="fa-regular fa-folder-open"></i> Get started</span>
+                <i class="fa-solid fa-arrow-right text-[10px] text-slate-400"></i>
+              </div>
+            </div>
+
+            <!-- Card 2 -->
+            <div class="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col justify-between hover:shadow-md transition">
+              <div>
+                <div class="flex justify-between items-center mb-3">
+                  <div class="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs">SW</div>
+                  <span class="text-[10px] bg-slate-100 text-slate-500 font-semibold px-2 py-0.5 rounded uppercase">General</span>
+                </div>
+                <div class="text-[11px] font-semibold text-slate-400">SWD392</div>
+                <h3 class="font-bold text-slate-800 text-sm leading-snug mt-1">Software Architecture and Design</h3>
+                <p class="text-xs text-slate-500 mt-1 line-clamp-1">Kiến trúc và thiết kế phần mềm</p>
+              </div>
+              <div class="flex items-center justify-between pt-6 border-t border-slate-100 mt-6 text-xs text-slate-600 font-medium cursor-pointer hover:text-blue-600">
+                <span class="flex items-center gap-1.5"><i class="fa-regular fa-folder-open"></i> Get started</span>
+                <i class="fa-solid fa-arrow-right text-[10px] text-slate-400"></i>
+              </div>
+            </div>
+
+            <!-- Card 3 -->
+            <div class="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col justify-between hover:shadow-md transition">
+              <div>
+                <div class="flex justify-between items-center mb-3">
+                  <div class="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-xs">MM</div>
+                  <span class="text-[10px] bg-slate-100 text-slate-500 font-semibold px-2 py-0.5 rounded uppercase">General</span>
+                </div>
+                <div class="text-[11px] font-semibold text-slate-400">MMA301</div>
+                <h3 class="font-bold text-slate-800 text-sm leading-snug mt-1">Multiplatform Mobile App Development</h3>
+                <p class="text-xs text-slate-500 mt-1 line-clamp-1">Phát triển ứng dụng di động đa nền tảng</p>
+              </div>
+              <div class="flex items-center justify-between pt-6 border-t border-slate-100 mt-6 text-xs text-slate-600 font-medium cursor-pointer hover:text-blue-600">
+                <span class="flex items-center gap-1.5"><i class="fa-regular fa-folder-open"></i> Get started</span>
+                <i class="fa-solid fa-arrow-right text-[10px] text-slate-400"></i>
+              </div>
+            </div>
+
+            <!-- Card 4 -->
+            <div class="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col justify-between hover:shadow-md transition">
+              <div>
+                <div class="flex justify-between items-center mb-3">
+                  <div class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-xs">EX</div>
+                  <span class="text-[10px] bg-slate-100 text-slate-500 font-semibold px-2 py-0.5 rounded uppercase">Business</span>
+                </div>
+                <div class="text-[11px] font-semibold text-slate-400">EXE101</div>
+                <h3 class="font-bold text-slate-800 text-sm leading-snug mt-1">Experiential Entrepreneurship 1 - Trải nghiệm khởi nghiệp 1</h3>
+              </div>
+              <div class="flex items-center justify-between pt-6 border-t border-slate-100 mt-6 text-xs text-slate-600 font-medium cursor-pointer hover:text-blue-600">
+                <span class="flex items-center gap-1.5"><i class="fa-regular fa-folder-open"></i> Get started</span>
+                <i class="fa-solid fa-arrow-right text-[10px] text-slate-400"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- ================== MÀN HÌNH 1: CHI TIẾT KHÓA HỌC ================== -->
+      <div id="page-detail" class="max-w-6xl mx-auto space-y-4 hidden">
+        <!-- Breadcrumb -->
+        <nav class="flex items-center gap-2 text-xs text-slate-400">
+          <a href="#" class="hover:underline">My Courses</a>
+          <i class="fa-solid fa-chevron-right text-[10px]"></i>
+          <span class="truncate max-w-lg text-slate-500">Server-Side development with NodeJS, Express, and MongoDB_Phát triển Server-Side với NodeJS, Express và MongoDB</span>
+        </nav>
+
+        <!-- Course Title Header -->
+        <div class="flex items-start justify-between">
+          <div>
+            <h1 class="text-xl font-bold text-slate-800">Server-Side development with NodeJS, Express, and MongoDB_Phát triển Server-Side với NodeJS, Express và MongoDB</h1>
+            <div class="flex items-center gap-2 text-xs mt-1">
+              <span class="text-indigo-600 font-bold">SDN302</span>
+              <span class="text-slate-400">• SE18D01</span>
+            </div>
+          </div>
+          <div class="text-xs text-slate-400">
+            Owner <span class="font-bold text-slate-700">HOAINTT40</span>
+          </div>
+        </div>
+
+        <!-- Action Pill Buttons -->
+        <div class="flex items-center gap-2 pt-2">
+          <button class="flex items-center gap-1.5 px-3 py-1.5 bg-fuchsia-50 text-fuchsia-700 rounded-lg text-xs font-semibold border border-fuchsia-100">
+            <i class="fa-regular fa-clock"></i> Slot histories
+          </button>
+          <button class="flex items-center gap-1.5 px-3 py-1.5 bg-sky-500 text-white rounded-lg text-xs font-semibold">
+            <i class="fa-regular fa-folder"></i> Materials
+          </button>
+          <button class="flex items-center gap-1.5 px-3 py-1.5 bg-orange-50 text-orange-600 rounded-lg text-xs font-semibold border border-orange-100">
+            <i class="fa-solid fa-file-pen"></i> Assignments
+          </button>
+          <button class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-semibold ml-2">
+            <i class="fa-solid fa-arrows-rotate"></i> Refresh
+          </button>
+        </div>
+
+        <!-- 3 Columns Layout: Classes, Slots, Class sessions -->
+        <div class="grid grid-cols-12 gap-5 pt-3 items-start">
+          
+          <!-- Column 1: Classes -->
+          <div class="col-span-2">
+            <div class="flex items-center justify-between text-xs mb-2">
+              <span class="font-bold text-slate-700">Classes</span>
+              <span class="text-slate-400 text-[11px]">1 class</span>
+            </div>
+            <div class="bg-slate-50 border border-slate-200 rounded-xl p-2.5 flex items-center gap-2 text-xs font-semibold text-slate-700">
+              <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+              SE18D01
+            </div>
+          </div>
+
+          <!-- Column 2: Slots -->
+          <div class="col-span-2">
+            <div class="flex items-center justify-between text-xs mb-2">
+              <span class="font-bold text-slate-700">Slots</span>
+              <span class="text-slate-400 text-[11px]">20 sessions</span>
+            </div>
+            <div class="space-y-1.5 max-h-[500px] overflow-y-auto pr-1">
+              <!-- Slot 1 (Active) -->
+              <div class="flex items-center gap-2.5 bg-white border border-orange-400 rounded-xl p-2 shadow-sm">
+                <div class="w-7 h-7 rounded-lg bg-orange-500 text-white flex items-center justify-center font-bold text-xs shrink-0">1</div>
+                <div class="text-[10px] leading-tight text-slate-700 font-semibold">
+                  <div>06/01/2026</div>
+                  <div class="text-slate-400 font-normal">12:30-14:45</div>
+                </div>
+              </div>
+              <!-- Slot 2 -->
+              <div class="flex items-center gap-2.5 bg-white border border-slate-100 rounded-xl p-2 hover:bg-slate-50 cursor-pointer">
+                <div class="w-7 h-7 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center font-bold text-xs shrink-0">2</div>
+                <div class="text-[10px] leading-tight text-slate-700 font-semibold">
+                  <div>09/01/2026</div>
+                  <div class="text-slate-400 font-normal">15:00-17:15</div>
+                </div>
+              </div>
+              <!-- Slot 3 -->
+              <div class="flex items-center gap-2.5 bg-white border border-slate-100 rounded-xl p-2 hover:bg-slate-50 cursor-pointer">
+                <div class="w-7 h-7 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center font-bold text-xs shrink-0">3</div>
+                <div class="text-[10px] leading-tight text-slate-700 font-semibold">
+                  <div>16/01/2026</div>
+                  <div class="text-slate-400 font-normal">15:00-17:15</div>
+                </div>
+              </div>
+              <!-- Slot 4 -->
+              <div class="flex items-center gap-2.5 bg-white border border-slate-100 rounded-xl p-2 hover:bg-slate-50 cursor-pointer">
+                <div class="w-7 h-7 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center font-bold text-xs shrink-0">4</div>
+                <div class="text-[10px] leading-tight text-slate-700 font-semibold">
+                  <div>20/01/2026</div>
+                  <div class="text-slate-400 font-normal">12:30-14:45</div>
+                </div>
+              </div>
+              <!-- Slot 5 -->
+              <div class="flex items-center gap-2.5 bg-white border border-slate-100 rounded-xl p-2 hover:bg-slate-50 cursor-pointer">
+                <div class="w-7 h-7 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center font-bold text-xs shrink-0">5</div>
+                <div class="text-[10px] leading-tight text-slate-700 font-semibold">
+                  <div>22/01/2026</div>
+                  <div class="text-slate-400 font-normal">12:30-14:45</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Pagination Slots -->
+            <div class="flex items-center justify-between text-[11px] text-slate-400 pt-2 border-t mt-2">
+              <button class="hover:text-slate-700">&lt;</button>
+              <span>1 / 2</span>
+              <button class="hover:text-slate-700">&gt;</button>
+              <button class="border border-slate-200 px-1 rounded text-[10px] text-slate-600">All</button>
+            </div>
+          </div>
+
+          <!-- Column 3: Class sessions Details -->
+          <div class="col-span-8 bg-white border border-slate-200 rounded-2xl p-5 min-h-[350px] relative">
+            <div class="flex justify-between items-center border-b pb-3 mb-4">
+              <div>
+                <h2 class="text-base font-bold text-slate-800">Class sessions</h2>
+                <span class="text-[11px] text-slate-400">20 sessions • Page 1 of 2</span>
+              </div>
+              <div class="text-[11px] text-slate-400">
+                Updated <span class="text-emerald-500 font-semibold">0 minutes ago</span>
+              </div>
+            </div>
+
+            <!-- Session Item Card -->
+            <div class="flex items-start gap-3 p-3 rounded-xl bg-slate-50/70 border border-slate-100">
+              <div class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-xs shrink-0">
+                1
+              </div>
+              <div class="flex-1">
+                <h4 class="text-xs font-bold text-slate-800 leading-snug">
+                  Course Introduction: 1.1 Full Stack Web Development: The Big Picture 1.2 NodeJS Introduction 2.1 Features of node.js - Single Threaded but Highly Scalable - Event-driven and Asynchronous - Event Loop 3.1 Node.js - Environment setup - Setting up node.js...
+                </h4>
+                <div class="text-[11px] text-slate-400 mt-1 flex items-center gap-1.5">
+                  <i class="fa-regular fa-calendar"></i>
+                  <span>12:30 06/01/2026 - 14:45 06/01/2026</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Content Area Empty Text -->
+            <div class="mt-8 text-xs text-slate-600 font-normal">
+              This slot has no content
+            </div>
+
+            <!-- Floating Sidebar Badge -->
+            <div class="absolute right-0 top-1/2 -translate-y-1/2 bg-white border border-slate-200 shadow-sm py-3 px-1 rounded-l text-[10px] text-indigo-600 font-bold [writing-mode:vertical-rl] tracking-wider uppercase cursor-pointer hover:bg-slate-50">
+              Class Tools
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Script điều khiển chuyển tab xem trước -->
+  <script>
+    function showPage(page) {
+      const pageHome = document.getElementById('page-home');
+      const pageDetail = document.getElementById('page-detail');
+      const btnHome = document.getElementById('btn-home');
+      const btnDetail = document.getElementById('btn-detail');
+
+      if (page === 'home') {
+        pageHome.classList.remove('hidden');
+        pageDetail.classList.add('hidden');
+        btnHome.className = 'px-3 py-1 rounded bg-blue-600 hover:bg-blue-500 font-semibold';
+        btnDetail.className = 'px-3 py-1 rounded bg-slate-700 hover:bg-slate-600';
+      } else {
+        pageHome.classList.add('hidden');
+        pageDetail.classList.remove('hidden');
+        btnDetail.className = 'px-3 py-1 rounded bg-blue-600 hover:bg-blue-500 font-semibold';
+        btnHome.className = 'px-3 py-1 rounded bg-slate-700 hover:bg-slate-600';
+      }
+    }
+  </script>
+</body>
+</html>

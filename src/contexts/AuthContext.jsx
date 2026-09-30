@@ -1,5 +1,9 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
-import { login as loginApi, logout as logoutApi } from '../services/auth.service';
+import {
+  login as loginApi,
+  googleLogin as googleLoginApi,
+  logout as logoutApi,
+} from '../services/auth.service';
 import { ROLE_HOME } from '../config/constants';
 
 const AuthContext = createContext(null);
@@ -18,16 +22,19 @@ export function AuthProvider({ children }) {
 
   const isAuthenticated = !!user && !!localStorage.getItem('accessToken');
 
+  const saveSession = useCallback((session) => {
+    localStorage.setItem('accessToken', session.accessToken);
+    localStorage.setItem('user', JSON.stringify(session.user));
+    setUser(session.user);
+    return { success: true, redirectTo: ROLE_HOME[session.user.role] || '/' };
+  }, []);
+
   const login = useCallback(async (identifier, password) => {
     setLoading(true);
     setError(null);
     try {
       const res = await loginApi(identifier, password);
-      const { user: userData, accessToken } = res.data;
-      localStorage.setItem('accessToken', accessToken);
-      localStorage.setItem('user', JSON.stringify(userData));
-      setUser(userData);
-      return { success: true, redirectTo: ROLE_HOME[userData.role] || '/' };
+      return saveSession(res.data);
     } catch (err) {
       const msg = err.response?.data?.message || 'Đăng nhập thất bại. Vui lòng thử lại.';
       setError(msg);
@@ -35,7 +42,22 @@ export function AuthProvider({ children }) {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [saveSession]);
+
+  const googleLogin = useCallback(async (credential) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await googleLoginApi(credential);
+      return saveSession(res.data);
+    } catch (err) {
+      const msg = err.response?.data?.message || 'Đăng nhập Google thất bại. Vui lòng thử lại.';
+      setError(msg);
+      return { success: false, error: msg };
+    } finally {
+      setLoading(false);
+    }
+  }, [saveSession]);
 
   const logout = useCallback(async () => {
     try {
@@ -52,7 +74,7 @@ export function AuthProvider({ children }) {
   const clearError = useCallback(() => setError(null), []);
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated, loading, error, login, logout, clearError }}>
+    <AuthContext.Provider value={{ user, isAuthenticated, loading, error, login, googleLogin, logout, clearError }}>
       {children}
     </AuthContext.Provider>
   );

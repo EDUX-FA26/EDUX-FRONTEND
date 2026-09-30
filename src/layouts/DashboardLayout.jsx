@@ -11,18 +11,25 @@ import { Flame, LibraryBig, BookMarked } from 'lucide-react';
 const NAV_BY_ROLE = {
   [ROLES.STUDENT]: [
     { id: 'dashboard', icon: FiGrid, path: '/student/dashboard', key: 'overview' },
+    { id: 'classes', icon: LibraryBig, path: '/student/classes', key: 'classes', label: 'Lớp học' },
     { id: 'streak', icon: Flame, path: '/student/streak', key: 'streak' },
     { id: 'flashcards', icon: BookMarked, path: '/student/flashcards', key: 'flashcards' },
+    { id: 'search', icon: 'search', path: '/student/search', key: 'search' },
   ],
   [ROLES.LECTURER]: [
     { id: 'dashboard', icon: FiGrid, path: '/lecturer/dashboard', key: 'overview' },
     { id: 'flashcards', icon: BookMarked, path: '/lecturer/flashcards', key: 'flashcards' },
+    { id: 'classes', icon: LibraryBig, path: '/lecturer/classes', key: 'classes', label: 'Lớp học' },
+    { id: 'search', icon: 'search', path: '/lecturer/search', key: 'search' },
   ],
   [ROLES.ADMIN]: [
     { id: 'dashboard', icon: 'dashboard', path: '/admin/dashboard', key: 'overview', label: 'Tổng quan' },
     { id: 'users', icon: 'group', path: '/admin/users', key: 'users', label: 'Người dùng' },
     { id: 'reports', icon: 'bar_chart', path: '/admin/reports', key: 'reports', label: 'Báo cáo' },
     { id: 'notifications', icon: 'campaign', path: '/admin/notifications', key: 'notifications', label: 'Tạo thông báo' },
+    { id: 'semesters', icon: 'calendar_month', path: '/admin/semesters', key: 'semesters', label: 'Học kỳ' },
+    { id: 'subjects', icon: 'menu_book', path: '/admin/subjects', key: 'subjects', label: 'Môn học' },
+    { id: 'search', icon: 'search', path: '/admin/search', key: 'search', label: 'Tìm kiếm' },
     { id: 'logs', icon: 'history', path: '/admin/logs', key: 'logs', label: 'System Logs' },
   ],
 };
@@ -84,7 +91,7 @@ export default function DashboardLayout() {
         <div className="dashboard-sidebar__items">
           {navItems.map((item) => {
             const isActive = activeId === item.id;
-            const label = t.nav?.[item.key] || item.key;
+            const label = t.nav?.[item.key] || item.label || item.key;
             const Icon = item.icon;
             return (
               <button
@@ -333,3 +340,4 @@ export default function DashboardLayout() {
     </div>
   );
 }
+

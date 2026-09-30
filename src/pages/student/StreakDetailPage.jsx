@@ -7,6 +7,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { Flame, Trophy, LayoutGrid, RefreshCw, BookOpen } from 'lucide-react';
 import { generateCalendarHeatmap } from '../../helper/calendar';
 import { formatDateDMY } from '../../helper/dateFormat';
+import { getTodayVNDate } from '../../helper/VietNamDate';
 
 export default function StreakDetailPage() {
     const navigate = useNavigate();
@@ -19,6 +20,9 @@ export default function StreakDetailPage() {
     const [actionLoadingId, setActionLoadingId] = useState(null);
     const [notice, setNotice] = useState(null);
     const [hoveredDay, setHoveredDay] = useState(null);
+
+
+    const todayStr = getTodayVNDate();
 
 
     useEffect(() => {
@@ -223,8 +227,8 @@ export default function StreakDetailPage() {
                     ) : (
                         streakList.map((item) => {
                             const isRecoverable = item.status === 'broken_recoverable';
-                            const isCompletedToday = item.status === 'completed_today';
                             const isBusy = actionLoadingId === item.subjectId;
+                            const isCompletedToday = item.currentStreak > 0 && item.lastActivityDate === todayStr;
                             const flameColor = isCompletedToday ? 'var(--color-primary)' : 'var(--color-ink-muted)';
 
                             return (

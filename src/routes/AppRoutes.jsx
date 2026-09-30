@@ -16,6 +16,9 @@ import UserManagementPage from '../pages/admin/UserManagementPage';
 import SystemLogsPage from '../pages/admin/SystemLogsPage';
 import AdminReportsPage from '../pages/admin/AdminReportsPage';
 import AdminNotificationsPage from '../pages/admin/AdminNotificationsPage';
+import SemesterManagementPage from '../pages/admin/SemesterManagementPage';
+import SubjectManagementPage from '../pages/admin/SubjectManagementPage';
+import SearchPage from '../pages/search/SearchPage';
 import NotFoundPage from '../pages/NotFoundPage';
 import FlashcardsPage from '../pages/student/FlashcardsPage';
 import FlashcardStudyPage from '../pages/student/FlashcardStudyPage';
@@ -26,6 +29,12 @@ import DashboardLayout from '../layouts/DashboardLayout';
 
 import { ROLE_HOME, ROLES } from '../config/constants';
 import ClassMaterialsPage from '../pages/class/ClassMaterialsPage';
+import StudentClassesPage from '../pages/student/StudentClassesPage';
+import LecturerClassesPage from '../pages/lecturer/LecturerClassesPage';
+import StudentClassDetailPage from '../pages/student/StudentClassDetailPage';
+import LecturerClassDetailPage from '../pages/lecturer/LecturerClassDetailPage';
+import StudentAssignmentDetailPage from '../pages/student/StudentAssignmentDetailPage';
+import LecturerAssignmentDetailPage from '../pages/lecturer/LecturerAssignmentDetailPage';
 
 function RootRedirect() {
   const { isAuthenticated, user } = useAuth();
@@ -57,7 +66,11 @@ export default function AppRoutes() {
         <Route path="flashcards" element={<StudentFlashcardSelectPage />} />
         <Route path="flashcards/subject/:subjectId" element={<FlashcardsPage />} />
         <Route path="flashcards/:deckId/study" element={<FlashcardStudyPage />} />
+        <Route path="search" element={<SearchPage />} />
+        <Route path="classes" element={<StudentClassesPage />} />
+        <Route path="classes/:classId" element={<StudentClassDetailPage />} />
         <Route path="classes/:classId/materials" element={<ClassMaterialsPage />} />
+        <Route path="assignments/:id" element={<StudentAssignmentDetailPage />} />
         <Route index element={<Navigate to="dashboard" replace />} />
       </Route>
 
@@ -75,7 +88,11 @@ export default function AppRoutes() {
         <Route path="flashcards" element={<LecturerFlashclassSelectPage />} />
         {/* Bước 2: quản lý flashcard theo môn */}
         <Route path="flashcards/subject/:subjectId" element={<LecturerFlashcardsPage />} />
+        <Route path="search" element={<SearchPage />} />
+        <Route path="classes" element={<LecturerClassesPage />} />
+        <Route path="classes/:classId" element={<LecturerClassDetailPage />} />
         <Route path="classes/:classId/materials" element={<ClassMaterialsPage />} />
+        <Route path="assignments/:id" element={<LecturerAssignmentDetailPage />} />
         <Route index element={<Navigate to="dashboard" replace />} />
       </Route>
 
@@ -92,6 +109,9 @@ export default function AppRoutes() {
         <Route path="users" element={<UserManagementPage />} />
         <Route path="reports" element={<AdminReportsPage />} />
         <Route path="notifications" element={<AdminNotificationsPage />} />
+        <Route path="semesters" element={<SemesterManagementPage />} />
+        <Route path="subjects" element={<SubjectManagementPage />} />
+        <Route path="search" element={<SearchPage />} />
         <Route path="logs" element={<SystemLogsPage />} />
         <Route index element={<Navigate to="dashboard" replace />} />
       </Route>

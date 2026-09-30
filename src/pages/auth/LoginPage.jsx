@@ -4,9 +4,10 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { ROLE_HOME } from '../../config/constants';
 import SettingsToggle from '../../components/common/SettingsToggle';
+import GoogleSignInButton from '../../components/auth/GoogleSignInButton';
 
 export default function LoginPage() {
-  const { login, isAuthenticated, user, loading, error, clearError } = useAuth();
+  const { login, googleLogin, isAuthenticated, user, loading, error, clearError } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
@@ -17,6 +18,14 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [localError, setLocalError] = useState('');
+  const [errorKey, setErrorKey] = useState('');
+
+  const getErrorMessage = () => {
+    if (errorKey === 'INVALID_CREDENTIALS') return L.invalidCredentials;
+    if (errorKey === 'ACCOUNT_INACTIVE') return L.accountInactive;
+    if (errorKey === 'GENERAL_ERROR') return L.generalError;
+    return '';
+  };
 
   useEffect(() => {
     if (isAuthenticated && user) {
@@ -25,12 +34,10 @@ export default function LoginPage() {
     }
   }, [isAuthenticated, user, navigate, location]);
 
-  useEffect(() => {
-    if (error) setLocalError(error);
-  }, [error]);
-
   const handleSubmit = async (e) => {
     e.preventDefault();
+    e.stopPropagation();
+
     setLocalError('');
     clearError();
 
@@ -39,9 +46,43 @@ export default function LoginPage() {
       return;
     }
 
-    const result = await login(identifier.trim(), password);
+    try {
+      const result = await login(identifier.trim(), password);
+
+      if (result && result.success) {
+        navigate(result.redirectTo, { replace: true });
+      } else {
+        const errorMsg = result?.error || '';
+
+        // Gán mã lỗi vào state thay vì gán chết câu chữ
+        if (
+          errorMsg.includes('INVALID_CREDENTIALS') ||
+          errorMsg.includes('Invalid credentials') ||
+          errorMsg.includes('Invalid username or password')
+        ) {
+          setErrorKey('INVALID_CREDENTIALS');
+        } else if (
+          errorMsg.includes('ACCOUNT_INACTIVE') ||
+          errorMsg.includes('Account is inactive')
+        ) {
+          setErrorKey('ACCOUNT_INACTIVE');
+        } else {
+          setErrorKey('GENERAL_ERROR');
+        }
+      }
+    } catch (err) {
+      setErrorKey('GENERAL_ERROR');
+    }
+  };
+
+  const handleGoogleCredential = async (credential) => {
+    setLocalError('');
+    clearError();
+    const result = await googleLogin(credential);
     if (result.success) {
       navigate(result.redirectTo, { replace: true });
+    } else {
+      setLocalError(result.error);
     }
   };
 
@@ -237,7 +278,7 @@ export default function LoginPage() {
             </div>
 
             {/* Error banner */}
-            {localError && (
+            {errorKey && (
               <div style={{
                 marginBottom: '16px', padding: '12px 16px',
                 background: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.3)',
@@ -245,7 +286,7 @@ export default function LoginPage() {
                 color: '#ef4444', fontSize: '0.8125rem',
               }}>
                 <span className="material-symbols-outlined" style={{ fontSize: '18px', flexShrink: 0 }}>error</span>
-                <span>{localError}</span>
+                <span>{getErrorMessage()}</span>
               </div>
             )}
 
@@ -348,6 +389,29 @@ export default function LoginPage() {
                 )}
               </button>
             </form>
+
+            {/* Existing EDUX accounts may authenticate with Google. */}
+            <div style={{ position: 'relative', margin: '22px 0 16px', textAlign: 'center' }}>
+              <div style={{ position: 'absolute', inset: '50% 0 auto', height: '1px', background: 'var(--color-border)' }} />
+              <span style={{ position: 'relative', background: 'var(--color-surface)', padding: '0 16px', fontSize: '0.6875rem', textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--color-ink-soft)' }}>
+                {L.or}
+              </span>
+            </div>
+
+            <GoogleSignInButton
+              disabled={loading}
+              onCredential={handleGoogleCredential}
+              onError={setLocalError}
+              labels={{
+                signIn: L.googleSignIn,
+                notConfigured: L.googleNotConfigured,
+                unavailable: L.googleUnavailable,
+                failed: L.googleFailed,
+              }}
+            />
+            <p style={{ margin: '10px 0 0', textAlign: 'center', fontSize: '0.7rem', lineHeight: 1.5, color: 'var(--color-ink-muted)' }}>
+              {L.googleExistingOnly}
+            </p>
 
             {/* Divider */}
             <div style={{ position: 'relative', margin: '24px 0', textAlign: 'center' }}>

@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ART-AI Assignments</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #F4F7FE; }
+        .fpt-orange-gradient { background: linear-gradient(135deg, #F26F21 0%, #F79C65 100%); }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="h-screen flex overflow-hidden text-gray-800">
+    
+    <!-- Sidebar -->
+    <aside class="w-[280px] bg-white fixed h-full z-20 flex flex-col shadow-[4px_0_24px_rgba(0,0,0,0.02)] border-r border-gray-100">
+        <!-- Logo -->
+        <a href="home.html" class="h-24 flex items-center px-8 cursor-pointer">
+            <div class="w-10 h-10 rounded-xl fpt-orange-gradient flex items-center justify-center text-white mr-3 shadow-lg shadow-orange-200">
+                <i data-lucide="brain-circuit" class="w-6 h-6"></i>
+            </div>
+            <span class="text-2xl font-extrabold text-[#1B2559]">ART-AI</span>
+        </a>
+        
+        <!-- Navigation -->
+        <nav class="flex-1 px-4 py-4 space-y-1 overflow-y-auto hide-scrollbar">
+            <a href="home.html" class="flex items-center px-4 py-3.5 text-gray-500 hover:text-gray-900 font-medium rounded-xl transition-all hover:bg-gray-50">
+                <i data-lucide="home" class="w-5 h-5 mr-4"></i> Home Dashboard
+            </a>
+            <a href="subjects.html" class="flex items-center px-4 py-3.5 text-gray-500 hover:text-gray-900 font-medium rounded-xl transition-all hover:bg-gray-50">
+                <i data-lucide="book-open" class="w-5 h-5 mr-4"></i> My Subjects
+            </a>
+            <a href="schedule.html" class="flex items-center px-4 py-3.5 text-gray-500 hover:text-gray-900 font-medium rounded-xl transition-all hover:bg-gray-50">
+                <i data-lucide="calendar" class="w-5 h-5 mr-4"></i> Schedule
+            </a>
+            <a href="assignments.html" class="flex items-center px-4 py-3.5 bg-[#F4F7FE] text-[#4318FF] font-bold rounded-xl transition-all relative">
+                <div class="absolute left-0 top-2 bottom-2 w-1 bg-[#4318FF] rounded-r-lg"></div>
+                <i data-lucide="file-check-2" class="w-5 h-5 mr-4"></i> Assignments
+            </a>
+            <!-- Reports Dropdown -->
+            <div class="relative">
+                <button class="w-full flex items-center justify-between px-4 py-3.5 text-gray-500 hover:text-gray-900 font-medium rounded-xl transition-all hover:bg-gray-50" onclick="this.nextElementSibling.classList.toggle('hidden'); const icon = this.querySelector('.chevron-icon'); if(icon) icon.classList.toggle('rotate-180');">
+                    <div class="flex items-center">
+                        <i data-lucide="bar-chart-2" class="w-5 h-5 mr-4"></i> Reports
+                    </div>
+                    <i data-lucide="chevron-down" class="w-4 h-4 chevron-icon transition-transform"></i>
+                </button>
+                <div class="hidden flex-col pl-12 pr-4 py-1 space-y-1 mt-1 border-l-2 border-gray-100 ml-6">
+                    <a href="student_attendance.html" class="block py-2 text-sm text-gray-500 hover:text-[#4318FF] font-medium transition-colors relative before:absolute before:-left-[18px] before:top-1/2 before:-translate-y-1/2 before:w-3 before:h-0.5 before:bg-gray-200 hover:before:bg-[#4318FF]">Attendance</a>
+                    <a href="gradebook.html" class="block py-2 text-sm text-gray-500 hover:text-[#4318FF] font-medium transition-colors relative before:absolute before:-left-[18px] before:top-1/2 before:-translate-y-1/2 before:w-3 before:h-0.5 before:bg-gray-200 hover:before:bg-[#4318FF]">Mark Report</a>
+                    <a href="student_transcript.html" class="block py-2 text-sm text-gray-500 hover:text-[#4318FF] font-medium transition-colors relative before:absolute before:-left-[18px] before:top-1/2 before:-translate-y-1/2 before:w-3 before:h-0.5 before:bg-gray-200 hover:before:bg-[#4318FF]">Academic Transcript</a>
+                    <a href="student_curriculum.html" class="block py-2 text-sm text-gray-500 hover:text-[#4318FF] font-medium transition-colors relative before:absolute before:-left-[18px] before:top-1/2 before:-translate-y-1/2 before:w-3 before:h-0.5 before:bg-gray-200 hover:before:bg-[#4318FF]">Curriculum</a>
+                    
+                </div>
+            </div>
+            <a href="news.html" class="flex items-center px-4 py-3.5 text-gray-500 hover:text-gray-900 font-medium rounded-xl transition-all hover:bg-gray-50">
+                <i data-lucide="newspaper" class="w-5 h-5 mr-4"></i> News
+            </a>
+            
+            <div class="pt-8 pb-2">
+                <p class="px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Account</p>
+            </div>
+            <a href="chat.html" class="flex items-center px-4 py-3.5 text-gray-500 hover:text-gray-900 font-medium rounded-xl transition-all hover:bg-gray-50">
+                <i data-lucide="message-circle" class="w-5 h-5 mr-4"></i> Messages
+            </a>
+            <a href="settings.html" class="flex items-center px-4 py-3.5 text-gray-500 hover:text-gray-900 font-medium rounded-xl transition-all hover:bg-gray-50">
+                <i data-lucide="settings" class="w-5 h-5 mr-4"></i> Settings
+            </a>
+        </nav>
+    </aside>
+
+    <!-- Main Wrapper -->
+    <main class="flex-1 ml-[280px] flex flex-col h-screen relative">
+        
+        <!-- Header with Global Semester Selector -->
+        <header class="h-24 bg-[#F4F7FE] flex items-center justify-between px-8 sticky top-0 z-10 shrink-0">
+            <!-- Search & Semester -->
+            <div class="flex items-center space-x-6 w-full max-w-2xl">
+                <!-- Search -->
+                <div class="flex items-center flex-1 bg-white rounded-full px-5 py-3 shadow-[0_2px_12px_rgba(0,0,0,0.04)]">
+                    <i data-lucide="search" class="w-5 h-5 text-gray-400"></i>
+                    <input type="text" placeholder="Search assignments..." class="bg-transparent border-none outline-none ml-3 w-full text-sm font-medium text-gray-700 placeholder-gray-400">
+                </div>
+                
+                <!-- Global Semester Selector -->
+                <div class="flex items-center bg-white rounded-full px-5 py-3 shadow-[0_2px_12px_rgba(0,0,0,0.04)]">
+                    <i data-lucide="calendar-days" class="w-5 h-5 text-[#4318FF] mr-3"></i>
+                    <select class="bg-transparent text-sm font-bold text-[#1B2559] outline-none cursor-pointer pr-4 appearance-none">
+                        <option selected>Summer 2026</option>
+                        <option>Spring 2026</option>
+                        <option>Fall 2025</option>
+                    </select>
+                    <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400 pointer-events-none -ml-2"></i>
+                </div>
+            </div>
+            
+            <!-- Right Actions -->
+            <div class="flex items-center space-x-6">
+                <div class="flex items-center space-x-3">
+                    <a href="notifications.html" class="relative p-2 text-gray-400 hover:text-orange-500 transition-colors block">
+                        <i data-lucide="bell" class="w-6 h-6"></i>
+                        <span class="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-[#F4F7FE]"></span>
+                    </a>
+                </div>
+                <div class="flex items-center pl-4 border-l border-gray-300 gap-3">
+                    <div class="text-right">
+                        <p class="text-sm font-bold text-[#1B2559]">Viet Khoa</p>
+                        <p class="text-xs font-medium text-gray-500">Student</p>
+                    </div>
+                    <img src="https://ui-avatars.com/api/?name=Viet+Khoa&background=F26F21&color=fff" class="w-10 h-10 rounded-full shadow-md cursor-pointer">
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="p-8 overflow-y-auto flex-1 hide-scrollbar">
+            
+            <!-- Header Section -->
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+                <div>
+                    <h1 class="text-3xl font-extrabold text-[#1B2559]">My Assignments</h1>
+                    <p class="text-gray-500 font-medium mt-1">Track your upcoming deadlines and past submissions</p>
+                </div>
+                
+                <!-- Filters -->
+                <div class="flex items-center space-x-3 mt-4 md:mt-0 bg-white p-1 rounded-xl shadow-sm border border-gray-100">
+                    <button class="px-4 py-2 bg-[#4318FF] text-white rounded-lg text-sm font-bold shadow-sm">Upcoming</button>
+                    <button class="px-4 py-2 text-gray-500 hover:text-[#1B2559] hover:bg-gray-50 rounded-lg text-sm font-bold transition-colors">Past Due</button>
+                    <button class="px-4 py-2 text-gray-500 hover:text-[#1B2559] hover:bg-gray-50 rounded-lg text-sm font-bold transition-colors">Completed</button>
+                </div>
+            </div>
+
+            <!-- Subject Filter -->
+            <div class="mb-6">
+                <select class="bg-white border border-gray-200 text-sm font-bold text-gray-600 rounded-xl px-4 py-3 outline-none focus:border-[#4318FF] shadow-sm w-full max-w-xs">
+                    <option selected>All Subjects</option>
+                    <option>SWD392 - Software Architecture</option>
+                    <option>PRM392 - Mobile Programming</option>
+                    <option>SWT301 - Software Testing</option>
+                </select>
+            </div>
+
+            <!-- Assignments List -->
+            <div class="space-y-4">
+                
+                <!-- Active/Urgent Assignment -->
+                <div class="bg-white rounded-[24px] shadow-sm border border-orange-200 p-6 flex flex-col md:flex-row md:items-center justify-between relative overflow-hidden group hover:shadow-md transition-shadow">
+                    <div class="absolute top-0 left-0 w-1.5 h-full bg-orange-500"></div>
+                    
+                    <div class="flex-1 flex flex-col md:flex-row md:items-center ml-2">
+                        <div class="w-12 h-12 rounded-xl bg-orange-50 text-orange-500 flex items-center justify-center font-bold text-lg mr-6 mb-4 md:mb-0 shrink-0">
+                            <i data-lucide="clock" class="w-6 h-6"></i>
+                        </div>
+                        
+                        <div class="flex-1">
+                            <div class="flex items-center space-x-3 mb-1">
+                                <span class="px-2.5 py-1 bg-gray-100 text-gray-600 text-xs font-bold rounded-lg border border-gray-200">SWD392</span>
+                                <span class="text-xs font-bold text-orange-500 bg-orange-50 px-2 py-1 rounded-md">Due in 2 days</span>
+                            </div>
+                            <h3 class="text-lg font-bold text-[#1B2559]">Software Architecture Diagram Proposal</h3>
+                            <p class="text-sm text-gray-500 font-medium mt-1">Design the C4 Model diagram for the e-commerce system module. AI declaration required.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6 md:mt-0 md:ml-8 flex flex-col items-start md:items-end shrink-0">
+                        <p class="text-xs font-bold text-gray-400 uppercase mb-3">Not Submitted</p>
+                        <a href="submission.html" class="px-6 py-2.5 fpt-orange-gradient text-white rounded-xl text-sm font-bold shadow-lg shadow-orange-200 hover:opacity-90 transition-opacity flex items-center">
+                            Start Assignment <i data-lucide="arrow-right" class="w-4 h-4 ml-2"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Upcoming Assignment -->
+                <div class="bg-white rounded-[24px] shadow-sm border border-gray-100 p-6 flex flex-col md:flex-row md:items-center justify-between relative overflow-hidden hover:shadow-md transition-shadow">
+                    <div class="absolute top-0 left-0 w-1.5 h-full bg-blue-400"></div>
+                    
+                    <div class="flex-1 flex flex-col md:flex-row md:items-center ml-2">
+                        <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center font-bold text-lg mr-6 mb-4 md:mb-0 shrink-0">
+                            <i data-lucide="calendar" class="w-6 h-6"></i>
+                        </div>
+                        
+                        <div class="flex-1">
+                            <div class="flex items-center space-x-3 mb-1">
+                                <span class="px-2.5 py-1 bg-gray-100 text-gray-600 text-xs font-bold rounded-lg border border-gray-200">PRM392</span>
+                                <span class="text-xs font-bold text-gray-500">Due: 20 Jun 2026</span>
+                            </div>
+                            <h3 class="text-lg font-bold text-[#1B2559]">React Native UI Mockup</h3>
+                            <p class="text-sm text-gray-500 font-medium mt-1">Implement the Home Screen UI using React Native CLI.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6 md:mt-0 md:ml-8 flex flex-col items-start md:items-end shrink-0">
+                        <p class="text-xs font-bold text-gray-400 uppercase mb-3">Not Submitted</p>
+                        <a href="submission.html" class="px-6 py-2.5 bg-[#4318FF] text-white rounded-xl text-sm font-bold shadow-md shadow-blue-200 hover:bg-blue-700 transition-colors flex items-center">
+                            Start Assignment <i data-lucide="arrow-right" class="w-4 h-4 ml-2"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Upcoming Assignment (Quiz) -->
+                <div class="bg-white rounded-[24px] shadow-sm border border-gray-100 p-6 flex flex-col md:flex-row md:items-center justify-between relative overflow-hidden hover:shadow-md transition-shadow">
+                    <div class="absolute top-0 left-0 w-1.5 h-full bg-purple-400"></div>
+                    
+                    <div class="flex-1 flex flex-col md:flex-row md:items-center ml-2">
+                        <div class="w-12 h-12 rounded-xl bg-purple-50 text-purple-500 flex items-center justify-center font-bold text-lg mr-6 mb-4 md:mb-0 shrink-0">
+                            <i data-lucide="help-circle" class="w-6 h-6"></i>
+                        </div>
+                        
+                        <div class="flex-1">
+                            <div class="flex items-center space-x-3 mb-1">
+                                <span class="px-2.5 py-1 bg-gray-100 text-gray-600 text-xs font-bold rounded-lg border border-gray-200">SWT301</span>
+                                <span class="text-xs font-bold text-gray-500">Due: 22 Jun 2026</span>
+                            </div>
+                            <h3 class="text-lg font-bold text-[#1B2559]">Quiz 2: Whitebox Testing</h3>
+                            <p class="text-sm text-gray-500 font-medium mt-1">Multiple choice quiz on EduNext platform. 30 Minutes.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6 md:mt-0 md:ml-8 flex flex-col items-start md:items-end shrink-0">
+                        <p class="text-xs font-bold text-gray-400 uppercase mb-3">Pending</p>
+                        <button class="px-6 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl text-sm font-bold hover:bg-gray-50 transition-colors flex items-center">
+                            Go to EduNext <i data-lucide="external-link" class="w-4 h-4 ml-2"></i>
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>
+

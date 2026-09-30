@@ -4,7 +4,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import FlashcardService from '../../services/flashcard.service';
 import {
   ArrowLeft, CheckCircle, BarChart2, Zap, RotateCcw,
-  ChevronLeft, ChevronRight, Eye, EyeOff, Trophy, Layers,
+  ChevronLeft, ChevronRight, Eye, EyeOff, Trophy, Layers, Flame, X
 } from 'lucide-react';
 
 // ─── Card Flip Component ──────────────────────────────────────────────────────
@@ -23,6 +23,8 @@ function FlipCard({ card, flipped, onFlip, t }) {
     medium: F.diffMedium || 'Trung bình',
     hard: F.diffHard || 'Khó',
   };
+
+
 
   return (
     <div style={{ perspective: '1200px', width: '100%', maxWidth: '640px', margin: '0 auto' }}>
@@ -149,6 +151,114 @@ function FlipCard({ card, flipped, onFlip, t }) {
   );
 }
 
+// ─── Streak Modal Component ──────────────────────────────────────────────────
+function StreakModal({ data, onClose }) {
+  const { t } = useLanguage();
+  const F = t?.flashcards || {};
+
+  if (!data) return null;
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 9999,
+      background: 'rgba(0, 0, 0, 0.6)', backdropFilter: 'blur(4px)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      padding: '20px', animation: 'fadeIn 0.3s ease'
+    }}>
+      <div style={{
+        background: 'var(--color-surface)', borderRadius: '24px',
+        padding: '32px 24px', width: '100%', maxWidth: '360px',
+        textAlign: 'center', position: 'relative',
+        boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
+        animation: 'slideUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+      }}>
+        {/* Nút đóng */}
+        <button onClick={onClose} style={{
+          position: 'absolute', top: '16px', right: '16px',
+          background: 'var(--color-primary-bg)', border: 'none',
+          borderRadius: '50%', width: '32px', height: '32px',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          cursor: 'pointer', color: 'var(--color-ink-muted)'
+        }}>
+          <X size={18} />
+        </button>
+
+        {/* Icon Ngọn lửa */}
+        <div style={{
+          width: '80px', height: '80px', margin: '0 auto 16px',
+          borderRadius: '50%', background: 'linear-gradient(135deg, #ffedd5 0%, #fed7aa 100%)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          boxShadow: '0 8px 24px rgba(249, 115, 22, 0.3)',
+        }}>
+          <Flame size={44} color="#ea580c" fill="#ea580c" />
+        </div>
+
+        <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--color-ink)', marginBottom: '8px' }}>
+          {F.streakModalTitle || 'Awesome!'}
+        </h2>
+
+        {/* Mã môn học */}
+        {data.subjectCode && (
+          <div style={{ marginBottom: '12px' }}>
+            <span style={{
+              fontSize: '0.75rem', fontWeight: 700, fontFamily: 'var(--font-mono)',
+              background: 'var(--color-primary-card)', color: 'var(--color-primary-dark)',
+              padding: '4px 10px', borderRadius: '8px', border: '1px solid var(--color-border)',
+              display: 'inline-block'
+            }}>
+              {F.streakSubjectPrefix || 'Subject'}: {data.subjectCode}
+            </span>
+          </div>
+        )}
+
+        <p style={{ fontSize: '1rem', color: 'var(--color-ink-muted)', marginBottom: '24px', lineHeight: 1.5 }}>
+          {F.streakModalDesc || 'You are on a learning streak of'} <br />
+          <strong style={{ fontSize: '1.5rem', color: '#ea580c' }}>
+            {data.currentStreak} {F.streakDays || 'days'}
+          </strong>
+        </p>
+
+        <div style={{
+          display: 'flex', justifyContent: 'space-around',
+          background: 'var(--color-primary-bg)', padding: '16px',
+          borderRadius: '16px', marginBottom: '24px'
+        }}>
+          <div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--color-ink-muted)', fontWeight: 600 }}>
+              {F.streakRecord || 'Record'}
+            </div>
+            <div style={{ fontSize: '1.125rem', fontWeight: 700, color: 'var(--color-ink)' }}>
+              {data.longestStreak} {F.streakDays || 'days'}
+            </div>
+          </div>
+          <div style={{ width: '1px', background: 'var(--color-border)' }}></div>
+          <div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--color-ink-muted)', fontWeight: 600 }}>
+              {F.streakProtection || 'Streak Freeze'}
+            </div>
+            <div style={{ fontSize: '1.125rem', fontWeight: 700, color: data.recoveryRemaining > 0 ? '#16a34a' : '#dc2626' }}>
+              {F.streakRemainingPrefix || 'Left'} {data.recoveryRemaining}
+            </div>
+          </div>
+        </div>
+
+        <button onClick={onClose} style={{
+          width: '100%', padding: '14px', borderRadius: '14px',
+          background: 'var(--color-primary)', color: 'white',
+          border: 'none', fontSize: '1rem', fontWeight: 700, cursor: 'pointer',
+          boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)'
+        }}>
+          {F.streakContinueBtn || 'Continue'}
+        </button>
+      </div>
+
+      <style>{`
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+      `}</style>
+    </div>
+  );
+}
 // ─── Rating Buttons ───────────────────────────────────────────────────────────
 
 function RatingButtons({ onRate, disabled, t }) {
@@ -300,6 +410,8 @@ export default function FlashcardStudyPage() {
   const [completed, setCompleted] = useState(false);
   const [sessionStats, setSessionStats] = useState({ total: 0, again: 0, hard: 0, good: 0, easy: 0 });
   const completedRef = useRef(false);
+  const [streakData, setStreakData] = useState(null);
+  const [showStreakModal, setShowStreakModal] = useState(false);
 
   const loadStudy = useCallback(async () => {
     setLoading(true);
@@ -356,7 +468,19 @@ export default function FlashcardStudyPage() {
         // Session complete
         if (!completedRef.current) {
           completedRef.current = true;
-          try { await FlashcardService.completeDeck(deckId); } catch { /* non-blocking */ }
+          try {
+            // 2. CẬP NHẬT ĐOẠN NÀY ĐỂ BẮT RESPONSE VÀ HIỆN MODAL
+            const response = await FlashcardService.completeDeck(deckId);
+
+            // Tùy theo cấu trúc axios (thường là response.data.data chứa object streak)
+            const responseData = response?.data?.data || response?.data;
+            if (responseData && responseData.currentStreak !== undefined) {
+              setStreakData(responseData);
+              setShowStreakModal(true); // Mở modal
+            }
+          } catch (err) {
+            console.error('Complete deck or record activity error', err);
+          }
           setCompleted(true);
         }
       } else {
@@ -544,6 +668,13 @@ export default function FlashcardStudyPage() {
           </div>
         </>
       )}
+      {showStreakModal && (
+        <StreakModal
+          data={streakData}
+          onClose={() => setShowStreakModal(false)}
+        />
+      )}
+
     </div>
   );
 }

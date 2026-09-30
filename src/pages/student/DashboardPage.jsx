@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { getDashboard, getDashboardNotifications } from '../../services/dashboard.service';
@@ -18,9 +19,9 @@ function StatSkeleton() {
 }
 
 // ─── Stat Card ───
-function StatCard({ label, value, icon, iconBg, iconColor, sub, subColor }) {
+function StatCard({ label, value, icon, iconBg, iconColor, sub, subColor, onClick, className = '' }) {
   return (
-    <div className="stat-card animate-fade-in">
+    <div className={`stat-card animate-fade-in ${className}`} onClick={onClick}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
         <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-ink-muted)' }}>{label}</span>
         <div className="stat-card__icon" style={{ background: iconBg, color: iconColor }}>
@@ -122,6 +123,7 @@ function NotifRow({ notif, t }) {
 export default function StudentDashboardPage() {
   const { user } = useAuth();
   const { t } = useLanguage();
+  const navigate = useNavigate();
   const [data, setData] = useState(null);
   const [notifData, setNotifData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -193,7 +195,16 @@ export default function StudentDashboardPage() {
           </div>
         ) : (
           <>
-            <StatCard label={S?.totalClasses} value={stats?.totalClasses} icon="class" iconBg="#fff1e7" iconColor="var(--color-primary)" sub={S?.currentSemester} />
+            <StatCard 
+              label={S?.totalClasses} 
+              value={stats?.totalClasses} 
+              icon="class" 
+              iconBg="#fff1e7" 
+              iconColor="var(--color-primary)" 
+              sub={S?.currentSemester} 
+              onClick={() => navigate('/student/classes?semester=FALL_2026')}
+              className="cursor-pointer hover:shadow-md transition-all hover:scale-[1.02]"
+            />
             <StatCard label={S?.pendingAssignments} value={stats?.pendingAssignments} icon="pending_actions" iconBg="rgba(220,38,38,0.1)" iconColor="#dc2626"
               sub={stats?.pendingAssignments > 0 ? S?.needDone : S?.allDone}
               subColor={stats?.pendingAssignments > 0 ? '#dc2626' : '#16a34a'} />
