@@ -74,17 +74,6 @@ export default function DashboardLayout() {
         className={`dashboard-sidebar${sidebarCollapsed ? ' dashboard-sidebar--collapsed' : ''}${mobileSidebarOpen ? ' dashboard-sidebar--mobile-open' : ''}`}
         aria-label={t.layout?.navigation || 'Main navigation'}
       >
-        <div className="dashboard-sidebar__brand-row">
-          <button
-            className="dashboard-sidebar__mobile-close"
-            type="button"
-            onClick={() => setMobileSidebarOpen(false)}
-            aria-label="Close navigation"
-          >
-            <FiX aria-hidden="true" />
-          </button>
-        </div>
-
         <div className="dashboard-sidebar__section-label">
           {lang === 'vi' ? 'KHÔNG GIAN HỌC TẬP' : 'LEARNING SPACE'}
         </div>
@@ -128,8 +117,8 @@ export default function DashboardLayout() {
               className="dashboard-header__menu"
               type="button"
               onClick={() => {
-                if (window.matchMedia('(max-width: 760px)').matches) {
-                  setMobileSidebarOpen(true);
+                if (window.matchMedia('(max-width: 768px)').matches) {
+                  setMobileSidebarOpen((prev) => !prev);
                 } else {
                   setSidebarCollapsed((collapsed) => !collapsed);
                 }

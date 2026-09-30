@@ -63,6 +63,7 @@ const vi = {
     search: 'Tìm kiếm',
     semesters: 'Học kỳ',
     subjects: 'Môn học',
+    classes: 'Lớp học',
   },
 
   // Roles
