@@ -50,6 +50,7 @@ const vi = {
   nav: {
     overview: 'Tổng quan',
     users: 'Người dùng',
+    classes: 'Lớp học',
     reports: 'Báo cáo',
     notifications: 'Thông báo',
     logs: 'System Logs',
@@ -63,6 +64,7 @@ const vi = {
     search: 'Tìm kiếm',
     semesters: 'Học kỳ',
     subjects: 'Môn học',
+    classes: 'Lớp học',
   },
 
   // Roles

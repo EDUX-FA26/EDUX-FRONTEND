@@ -25,6 +25,7 @@ const NAV_BY_ROLE = {
   [ROLES.ADMIN]: [
     { id: 'dashboard', icon: 'dashboard', path: '/admin/dashboard', key: 'overview', label: 'Tổng quan' },
     { id: 'users', icon: 'group', path: '/admin/users', key: 'users', label: 'Người dùng' },
+    { id: 'classes', icon: 'school', path: '/admin/classes', key: 'classes', label: 'Lớp học' },
     { id: 'reports', icon: 'bar_chart', path: '/admin/reports', key: 'reports', label: 'Báo cáo' },
     { id: 'notifications', icon: 'campaign', path: '/admin/notifications', key: 'notifications', label: 'Tạo thông báo' },
     { id: 'semesters', icon: 'calendar_month', path: '/admin/semesters', key: 'semesters', label: 'Học kỳ' },
@@ -74,17 +75,6 @@ export default function DashboardLayout() {
         className={`dashboard-sidebar${sidebarCollapsed ? ' dashboard-sidebar--collapsed' : ''}${mobileSidebarOpen ? ' dashboard-sidebar--mobile-open' : ''}`}
         aria-label={t.layout?.navigation || 'Main navigation'}
       >
-        <div className="dashboard-sidebar__brand-row">
-          <button
-            className="dashboard-sidebar__mobile-close"
-            type="button"
-            onClick={() => setMobileSidebarOpen(false)}
-            aria-label="Close navigation"
-          >
-            <FiX aria-hidden="true" />
-          </button>
-        </div>
-
         <div className="dashboard-sidebar__section-label">
           {lang === 'vi' ? 'KHÔNG GIAN HỌC TẬP' : 'LEARNING SPACE'}
         </div>
@@ -128,8 +118,8 @@ export default function DashboardLayout() {
               className="dashboard-header__menu"
               type="button"
               onClick={() => {
-                if (window.matchMedia('(max-width: 760px)').matches) {
-                  setMobileSidebarOpen(true);
+                if (window.matchMedia('(max-width: 768px)').matches) {
+                  setMobileSidebarOpen((prev) => !prev);
                 } else {
                   setSidebarCollapsed((collapsed) => !collapsed);
                 }
