@@ -50,6 +50,7 @@ const vi = {
   nav: {
     overview: 'Tổng quan',
     users: 'Người dùng',
+    classes: 'Lớp học',
     reports: 'Báo cáo',
     notifications: 'Thông báo',
     logs: 'System Logs',
