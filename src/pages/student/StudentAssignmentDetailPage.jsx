@@ -12,25 +12,58 @@ export default function StudentAssignmentDetailPage() {
     const fileInputRef = React.useRef(null);
 
     const [assignment, setAssignment] = useState(null);
+    const [submission, setSubmission] = useState(null);
+    const [detailedSubmission, setDetailedSubmission] = useState(null);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
 
     useEffect(() => {
         const fetchDetail = async () => {
             try {
-                // If id is our mock 'asm-1', don't call backend to avoid 404 error logs in console for mock data
                 if (id && !id.startsWith('asm-')) {
                     const data = await AssignmentService.getAssignmentDetail(id);
                     setAssignment(data);
+                    
+                    const subData = await SubmissionService.getMySubmissions({ assignment_id: id });
+                    if (subData && subData.data && subData.data.length > 0) {
+                        const sub = subData.data[0];
+                        setSubmission(sub);
+                        try {
+                            const detail = await SubmissionService.getSubmissionById(sub.id);
+                            if (detail.success) setDetailedSubmission(detail.data);
+                        } catch (err) { console.error(err); }
+                    } else {
+                        setSubmission(null);
+                    }
                 }
             } catch (error) {
-                console.error("Failed to fetch assignment:", error);
+                console.error("Failed to fetch assignment or submission:", error);
             } finally {
                 setLoading(false);
             }
         };
         fetchDetail();
     }, [id]);
+
+    
+    const handleDownloadFile = async (fileId) => {
+        if (!submission) return;
+        try {
+            const res = await SubmissionService.getSubmissionFile(submission.id, fileId);
+            if (res.success && res.data.url) {
+                const a = document.createElement("a");
+    a.href = res.data.url;
+    a.target = "_blank";
+    a.download = "";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+            }
+        } catch (error) {
+            console.error("Failed to download file:", error);
+            alert("Có lỗi xảy ra khi tải file. Vui lòng thử lại sau.");
+        }
+    };
 
     const handleSubmit = async () => {
         try {
@@ -48,7 +81,16 @@ export default function StudentAssignmentDetailPage() {
             }
             
             setIsSubmitting(false);
-            // In a real app, we would re-fetch the submission status here
+            // Re-fetch submission
+            const subData = await SubmissionService.getMySubmissions({ assignment_id: id });
+            if (subData && subData.data && subData.data.length > 0) {
+                const sub = subData.data[0];
+                setSubmission(sub);
+                try {
+                    const detail = await SubmissionService.getSubmissionById(sub.id);
+                    if (detail.success) setDetailedSubmission(detail.data);
+                } catch (err) { console.error(err); }
+            }
         } catch (error) {
             console.error("Submit failed:", error);
             alert(error.response?.data?.message || "Có lỗi xảy ra khi nộp bài");
@@ -95,7 +137,7 @@ export default function StudentAssignmentDetailPage() {
                     style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', backgroundColor: isSubmitting ? 'var(--color-surface)' : 'var(--color-primary-bg)', color: isSubmitting ? 'var(--color-ink)' : 'var(--color-primary-dark)', border: isSubmitting ? '1px solid var(--color-border)' : '1px solid var(--color-primary)', fontSize: '12px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.5px' }}
                 >
                     <FileText size={16} />
-                    {isSubmitting ? 'CANCEL SUBMISSION' : 'SUBMIT ASSIGNMENT'}
+                    {isSubmitting ? 'CANCEL' : (submission ? 'EDIT SUBMISSION' : 'SUBMIT ASSIGNMENT')}
                 </button>
             </div>
 
@@ -286,16 +328,22 @@ export default function StudentAssignmentDetailPage() {
                                         <div style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--color-ink-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>
                                             SUBMISSION STATUS
                                         </div>
-                                        <span className="badge" style={{ backgroundColor: 'var(--color-border)', color: 'var(--color-ink-soft)', padding: '4px 12px', fontSize: '12px' }}>
-                                            Missing
-                                        </span>
+                                        {submission ? (
+        <span className="badge" style={{ backgroundColor: 'rgba(34, 197, 94, 0.1)', color: '#16a34a', padding: '4px 12px', fontSize: '12px', border: '1px solid #16a34a' }}>
+            Submitted
+        </span>
+    ) : (
+        <span className="badge" style={{ backgroundColor: 'var(--color-border)', color: 'var(--color-ink-soft)', padding: '4px 12px', fontSize: '12px' }}>
+            Missing
+        </span>
+    )}
                                     </div>
                                     <div>
                                         <div style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--color-ink-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>
                                             SUBMISSION TIME
                                         </div>
                                         <span style={{ fontSize: '12px', color: 'var(--color-ink-soft)', fontWeight: '500' }}>
-                                            (GMT+07)
+                                            {submission ? new Date(submission.submitted_at || submission.last_submitted_at || submission.updated_at).toLocaleString() : '(GMT+07)'}
                                         </span>
                                     </div>
                                 </div>
@@ -306,7 +354,26 @@ export default function StudentAssignmentDetailPage() {
                                         LINK/FILE ASSIGNMENT
                                     </div>
                                     <div style={{ fontSize: '12px', color: 'var(--color-ink-muted)', fontStyle: 'italic' }}>
-                                        {/* Trống theo hình */}
+                                        {detailedSubmission && detailedSubmission.versions && detailedSubmission.versions.length > 0 ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {(() => {
+                const latestVer = detailedSubmission.versions[0];
+                let files = [];
+                try { files = typeof latestVer.files === 'string' ? JSON.parse(latestVer.files) : latestVer.files; } catch(e){}
+                if (!files || files.length === 0) return <span>No files submitted.</span>;
+                return files.map(file => (
+                    <div key={file.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--color-primary)' }}>
+                        <FileIcon size={16} />
+                        <a href="#" style={{ color: 'var(--color-primary)', fontWeight: '600', textDecoration: 'none' }} onClick={(e) => { e.preventDefault(); handleDownloadFile(file.id); }} onMouseEnter={e => e.currentTarget.style.textDecoration='underline'} onMouseLeave={e => e.currentTarget.style.textDecoration='none'}>
+                            {file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)
+                        </a>
+                    </div>
+                ));
+            })()}
+        </div>
+    ) : (
+        "—"
+    )}
                                     </div>
                                 </div>
 
@@ -316,7 +383,9 @@ export default function StudentAssignmentDetailPage() {
                                         COMMENT
                                     </div>
                                     <div style={{ fontSize: '12px', color: 'var(--color-ink)' }}>
-                                        —
+                                        {submission && submission.status === 'submitted' ? (
+                                            <span style={{ fontStyle: 'italic', color: 'var(--color-ink-soft)' }}>Submitted successfully. Waiting for grading.</span>
+                                        ) : "—"}
                                     </div>
                                 </div>
                             </div>

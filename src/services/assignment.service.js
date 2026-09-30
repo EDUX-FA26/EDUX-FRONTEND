@@ -6,6 +6,10 @@ const AssignmentService = {
         return response.data;
     },
 
+    async createAssignment(data) {
+        const response = await api.post('/assignments', data);
+        return response.data;
+    },
     async getAssignmentDetail(assignmentId) {
         const response = await api.get(`/assignments/${assignmentId}`);
         return response.data;
