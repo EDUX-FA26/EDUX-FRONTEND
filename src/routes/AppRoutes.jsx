@@ -32,6 +32,7 @@ import StudentClassDetailPage from '../pages/student/StudentClassDetailPage';
 import LecturerClassDetailPage from '../pages/lecturer/LecturerClassDetailPage';
 import StudentAssignmentDetailPage from '../pages/student/StudentAssignmentDetailPage';
 import LecturerAssignmentDetailPage from '../pages/lecturer/LecturerAssignmentDetailPage';
+import LecturerAssignmentGradingPage from '../pages/lecturer/LecturerAssignmentGradingPage';
 
 function RootRedirect() {
   const { isAuthenticated, user } = useAuth();
@@ -85,6 +86,7 @@ export default function AppRoutes() {
         <Route path="classes/:classId" element={<LecturerClassDetailPage />} />
         <Route path="classes/:classId/materials" element={<ClassMaterialsPage />} />
         <Route path="assignments/:id" element={<LecturerAssignmentDetailPage />} />
+        <Route path="/lecturer/assignments/:id/grade" element={<LecturerAssignmentGradingPage />} />
         <Route index element={<Navigate to="dashboard" replace />} />
       </Route>
 
