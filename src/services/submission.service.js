@@ -15,6 +15,13 @@ const SubmissionService = {
         return response.data;
     },
 
+    async getAssignmentSubmissions(assignmentId, query = {}) { 
+        const params = new URLSearchParams(query).toString(); 
+        const url = params ? `/submissions/assignments/${assignmentId}?${params}` : `/submissions/assignments/${assignmentId}`; 
+        const response = await api.get(url); 
+        return response.data; 
+    },
+
     async getSubmissionById(id, includeHistory = false) {
         const response = await api.get(`/submissions/${id}?include_history=${includeHistory}`);
         return response.data;
