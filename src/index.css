@@ -4,6 +4,8 @@
    EDUX — Global Styles
    Design System: FPT Orange Warm
    ================================ */
+/* Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 @import "tailwindcss";
 
@@ -823,6 +825,15 @@ a:hover {
 }
 
 @media (max-width: 760px) {
+  .dashboard-sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    display: block;
+    border: 0;
+    background: rgba(31, 27, 23, .38);
+    opacity: 1;
+  }
 
   .dashboard-sidebar,
   .dashboard-sidebar--collapsed,
@@ -832,39 +843,16 @@ a:hover {
     bottom: 0;
     left: 0;
     z-index: 81;
-    width: min(290px, calc(100vw - 56px));
+    width: min(280px, calc(100vw - 48px));
     height: 100dvh;
-    flex-basis: min(290px, calc(100vw - 56px));
+    flex-basis: min(280px, calc(100vw - 48px));
     box-shadow: 12px 0 34px rgba(31, 27, 23, .18);
     transform: translateX(-105%);
+    padding: 20px 16px;
   }
 
-  .dashboard-sidebar--mobile-open {
+  .dashboard-sidebar.dashboard-sidebar--mobile-open {
     transform: translateX(0);
-  }
-
-  .dashboard-sidebar--collapsed .dashboard-sidebar__brand-row {
-    flex-direction: row;
-    justify-content: space-between;
-    padding: 0 2px 0 4px;
-  }
-
-  .dashboard-sidebar--collapsed .dashboard-sidebar__brand {
-    flex: 1;
-    justify-content: flex-start;
-    padding: 0 4px;
-  }
-
-  .dashboard-sidebar--collapsed .dashboard-sidebar__brand-name,
-  .dashboard-sidebar--collapsed .dashboard-sidebar__section-label,
-  .dashboard-sidebar--collapsed .dashboard-sidebar__item-label,
-  .dashboard-sidebar--collapsed .dashboard-sidebar__footer {
-    width: auto;
-    opacity: 1;
-  }
-
-  .dashboard-sidebar--collapsed .dashboard-sidebar__collapse {
-    display: none;
   }
 
   .dashboard-sidebar__mobile-close {
@@ -872,39 +860,41 @@ a:hover {
   }
 
   .dashboard-sidebar__section-label {
-    margin-top: 34px !important;
+    margin-top: 24px !important;
+    display: block !important;
+    opacity: 1 !important;
   }
 
+  /* Sửa lại item để hiện đủ chữ và icon căn trái thay vì bị bóp thành ô vuông */
   .dashboard-sidebar__item,
   .dashboard-sidebar--collapsed .dashboard-sidebar__item {
-    justify-content: center;
-    padding: 0;
-    width: 48px;
-    min-height: 36px;
-    /* Cố định chiều rộng tạo hình vuông */
-    height: 36px;
-    /* Cố định chiều cao */
-    min-height: 48px;
-    margin: 0 auto;
-    /* Đẩy cái nút ra chính giữa thanh sidebar */
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    padding: 10px 14px !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 42px !important;
+    margin: 4px 0 !important;
+    gap: 12px !important;
   }
 
-  .dashboard-sidebar__item--active,
-  .dashboard-sidebar--collapsed .dashboard-sidebar__item--active {
-    padding-left: 16px;
+  .dashboard-sidebar__item-label {
+    display: inline-block !important;
+    opacity: 1 !important;
+    width: auto !important;
   }
 
-  .dashboard-sidebar-backdrop {
-    position: fixed;
-    inset: 0;
-    z-index: 80;
-    display: block;
-    border: 0;
-    background: rgba(31, 27, 23, .38);
-    opacity: 1;
-    animation: dashboard-backdrop-in .2s ease both;
+  .dashboard-sidebar__footer {
+    display: block !important;
+    opacity: 1 !important;
   }
 
+  .dashboard-sidebar__collapse {
+    display: none !important;
+  }
+
+  /* Header adjustments */
   .dashboard-header__inner {
     min-height: 64px;
     gap: 10px;
@@ -1116,8 +1106,7 @@ a:hover {
   grid-column: 1 / -1;
   grid-row: 3;
 }
-
-@media (max-width: 760px) {
+@media (max-width: 768px) {
   .dashboard-layout {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
@@ -1211,21 +1200,15 @@ a:hover {
     padding-top: 15px;
     box-shadow: 12px 0 34px rgba(31, 27, 23, .18);
     transform: translateX(-105%);
+    transition: transform 0.3s ease-in-out; /* Đảm bảo có hiệu ứng trượt mượt mà */
   }
 
   .dashboard-sidebar--mobile-open {
-    transform: translateX(0);
+    transform: translateX(0) !important; /* Ép hiển thị khi có class mở */
   }
 
   .dashboard-sidebar__brand-row {
-    display: flex;
-    min-height: 38px;
-    justify-content: flex-end;
-    padding: 0 3px;
-  }
-
-  .dashboard-sidebar__mobile-close {
-    display: grid;
+    display: none; /* Ẩn hẳn hàng chứa nút X đi */
   }
 
   .dashboard-sidebar__section-label {
@@ -1303,7 +1286,7 @@ a:hover {
   }
 }
 
-@media (min-width: 761px) {
+@media (min-width: 769px) {
   .dashboard-sidebar {
     padding-top: 11px;
   }
@@ -1346,7 +1329,6 @@ a:hover {
     display: none;
   }
 }
-
 .dashboard-header__inner {
   position: relative;
   padding-left: 68px !important;

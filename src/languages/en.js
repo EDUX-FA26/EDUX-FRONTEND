@@ -63,6 +63,7 @@ const en = {
     search: 'Search',
     semesters: 'Semesters',
     subjects: 'Subjects',
+    classes: 'Classes',
   },
 
   // Roles

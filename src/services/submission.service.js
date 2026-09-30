@@ -6,7 +6,7 @@ const SubmissionService = {
         if (file) formData.append('files', file);
         if (note) formData.append('note', note);
         // Assuming link is passed as note or not fully supported yet in DB, we'll put link in note for now
-        
+
         const response = await api.post(`/submissions/${assignmentId}/files`, formData, {
             headers: {
                 'Content-Type': 'multipart/form-data'
@@ -37,7 +37,7 @@ const SubmissionService = {
         const url = params ? `/submissions/my-submissions?${params}` : '/submissions/my-submissions';
         const response = await api.get(url);
         return response.data;
-    }
+    },
 };
 
 export default SubmissionService;
