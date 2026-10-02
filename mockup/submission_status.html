@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ART-AI - Submission Status & AI Declaration</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide / FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+  </style>
+</head>
+<body class="bg-[#f8fafc] text-slate-700 min-h-screen flex">
+
+  <!-- ==================== SIDEBAR TRÁI ==================== -->
+  <aside class="w-64 bg-white border-r border-slate-100 flex flex-col justify-between py-6 px-4 shrink-0 select-none">
+    <div class="space-y-6">
+      <!-- Logo ART-AI -->
+      <div class="flex items-center gap-3 px-2">
+        <div class="w-10 h-10 rounded-xl bg-orange-500 text-white flex items-center justify-center text-xl shadow-sm shadow-orange-200">
+          <i class="fa-solid fa-brain"></i>
+        </div>
+        <span class="text-xl font-extrabold text-slate-800 tracking-tight">ART-AI</span>
+      </div>
+
+      <!-- Menu Items -->
+      <nav class="space-y-1 text-sm font-medium text-slate-600">
+        <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-50 transition">
+          <i class="fa-regular fa-house text-slate-400 w-5"></i>
+          <span>Home Dashboard</span>
+        </a>
+        <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-50 transition">
+          <i class="fa-regular fa-book-open text-slate-400 w-5"></i>
+          <span>My Subjects</span>
+        </a>
+        <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-50 transition">
+          <i class="fa-regular fa-calendar text-slate-400 w-5"></i>
+          <span>Schedule</span>
+        </a>
+        <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-blue-50/70 text-blue-600 border-l-4 border-blue-600 font-semibold">
+          <i class="fa-regular fa-file-lines w-5"></i>
+          <span>Assignments</span>
+        </a>
+
+        <!-- Accordion Reports -->
+        <div class="pt-2">
+          <button class="w-full flex items-center justify-between px-3 py-2.5 text-slate-600 hover:bg-slate-50 rounded-xl transition">
+            <span class="flex items-center gap-3">
+              <i class="fa-solid fa-chart-simple text-slate-400 w-5"></i>
+              <span>Reports</span>
+            </span>
+            <i class="fa-solid fa-chevron-up text-xs text-slate-400"></i>
+          </button>
+          <div class="pl-11 pr-3 py-1 space-y-1 text-xs text-slate-500">
+            <a href="#" class="block py-1 hover:text-slate-800">— Attendance</a>
+            <a href="#" class="block py-1 hover:text-slate-800">— Mark Report</a>
+          </div>
+        </div>
+
+        <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-50 transition">
+          <i class="fa-regular fa-newspaper text-slate-400 w-5"></i>
+          <span>News</span>
+        </a>
+      </nav>
+    </div>
+
+    <!-- Account section -->
+    <div class="space-y-1 text-sm font-medium text-slate-600 border-t border-slate-100 pt-4">
+      <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-3 mb-2">Account</div>
+      <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-slate-50 transition">
+        <i class="fa-regular fa-message text-slate-400 w-5"></i>
+        <span>Messages</span>
+      </a>
+      <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-slate-50 transition">
+        <i class="fa-solid fa-gear text-slate-400 w-5"></i>
+        <span>Settings</span>
+      </a>
+      <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-xl text-rose-500 hover:bg-rose-50 transition">
+        <i class="fa-solid fa-arrow-right-from-bracket w-5"></i>
+        <span>Logout</span>
+      </a>
+    </div>
+  </aside>
+
+  <!-- ==================== KHUNG NỘI DUNG CHÍNH ==================== -->
+  <main class="flex-1 p-8 overflow-y-auto">
+    <div class="max-w-6xl mx-auto space-y-6">
+
+      <!-- Back Link -->
+      <a href="#" class="inline-flex items-center gap-2 text-xs font-semibold text-slate-500 hover:text-slate-800 transition">
+        <i class="fa-solid fa-arrow-left"></i>
+        <span>Back to SWD392</span>
+      </a>
+
+      <!-- Layout 2 cột: Bên trái thông tin bài tập, Bên phải Form Submission -->
+      <div class="grid grid-cols-12 gap-6 items-start">
+        
+        <!-- CỘT TRÁI: Thông tin Assignment -->
+        <div class="col-span-12 lg:col-span-4 bg-white border border-slate-100 rounded-3xl p-6 shadow-sm space-y-4">
+          <div class="flex items-center justify-between">
+            <span class="bg-blue-50 text-blue-600 text-xs font-bold px-3 py-1 rounded-full">
+              Assignment
+            </span>
+            <span class="inline-flex items-center gap-1.5 bg-amber-50 text-amber-700 text-[11px] font-semibold px-2.5 py-1 rounded-full border border-amber-200/50">
+              <i class="fa-regular fa-clock text-amber-500"></i>
+              <span>Due: Invalid Date</span>
+            </span>
+          </div>
+
+          <div class="flex items-center gap-2.5 pt-1">
+            <div class="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs">
+              LE
+            </div>
+            <span class="text-xs font-medium text-slate-700">Posted by Lecturer</span>
+          </div>
+
+          <div class="pt-4 border-t border-slate-50 text-xs text-slate-500 leading-relaxed min-h-[140px]">
+            No detailed instructions provided.
+          </div>
+        </div>
+
+        <!-- CỘT PHẢI: KHỐI SUBMISSION STATUS (CẦN DESIGN LẠI) -->
+        <div class="col-span-12 lg:col-span-8 bg-white border border-slate-100 rounded-3xl p-8 shadow-sm space-y-6">
+
+          <!-- 1. HEADER CỦA FORM: Tiêu đề & Stepper (1 -> 2) -->
+          <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+            <h2 class="text-xl font-bold text-slate-900 tracking-tight">Submission Status</h2>
+            
+            <!-- Step Indicators -->
+            <div class="flex items-center gap-2">
+              <!-- Step 1 Button -->
+              <button onclick="goToStep(1)" id="step1-indicator" class="w-7 h-7 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center transition">
+                1
+              </button>
+              <!-- Connecting Line -->
+              <div id="step-connector" class="w-8 h-0.5 bg-slate-200 transition"></div>
+              <!-- Step 2 Button -->
+              <button onclick="goToStep(2)" id="step2-indicator" class="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-slate-400 font-bold text-xs transition">
+                <span class="w-6 h-6 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center text-xs">2</span>
+                <span class="text-[10px] tracking-wider uppercase">T_SUBMITTED</span>
+              </button>
+            </div>
+          </div>
+
+
+          <!-- ==================== GIAI ĐOẠN 1: STEP 1 UPLOAD FILE ==================== -->
+          <div id="step1-content" class="space-y-6">
+            <div class="flex items-center gap-2 text-xs font-bold text-slate-600 tracking-wide uppercase">
+              <i class="fa-solid fa-arrow-up-from-bracket text-blue-600"></i>
+              <span>STEP 1: UPLOAD SUBMISSION FILE</span>
+            </div>
+
+            <!-- Drag & Drop Box -->
+            <div class="border-2 border-dashed border-slate-200 rounded-2xl p-12 flex flex-col items-center justify-center text-center hover:border-blue-400 hover:bg-blue-50/20 transition cursor-pointer group">
+              <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-lg mb-3 group-hover:scale-110 transition">
+                <i class="fa-solid fa-arrow-up-from-bracket"></i>
+              </div>
+              <p class="text-xs font-bold text-slate-800">Click to browse or drag and drop</p>
+              <p class="text-[11px] text-slate-400 mt-1">PDF, ZIP, RAR, DOCX, TXT (Max 10MB)</p>
+            </div>
+
+            <!-- Footer Buttons Step 1 -->
+            <div class="flex items-center justify-end gap-3 pt-4">
+              <button type="button" class="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-semibold text-xs transition">
+                Save as Draft
+              </button>
+              <button type="button" onclick="goToStep(2)" class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold text-xs flex items-center gap-2 hover:opacity-95 shadow-md shadow-orange-500/20 transition">
+                <span>Next: AI Declaration</span>
+                <i class="fa-solid fa-arrow-right text-[11px]"></i>
+              </button>
+            </div>
+          </div>
+
+
+          <!-- ==================== GIAI ĐOẠN 2: STEP 2 AI DECLARATION ==================== -->
+          <div id="step2-content" class="space-y-6 hidden">
+            <!-- Header Step 2 -->
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2 text-xs font-bold text-blue-600 tracking-wide uppercase">
+                <i class="fa-solid fa-cube"></i>
+                <span>STEP 2: AI DECLARATION (REQUIRED)</span>
+              </div>
+              <span class="text-[11px] text-slate-400 border border-slate-200 rounded-full px-3 py-0.5 font-medium">
+                Complete 5-10 declarations
+              </span>
+            </div>
+
+            <!-- Layout AI Rubrics: Bên trái chọn tiêu chí, bên phải form chi tiết -->
+            <div class="grid grid-cols-12 gap-5 items-start">
+              
+              <!-- Danh sách Rubric Items bên trái (5 tiêu chí) -->
+              <div class="col-span-12 md:col-span-4 space-y-2" id="rubric-list">
+                <!-- Sẽ được render hoặc active động -->
+                <div onclick="selectRubric('decomposition')" id="rubric-btn-decomposition" class="flex items-start gap-3 p-3 rounded-2xl border-l-4 border-blue-600 bg-white shadow-xs cursor-pointer">
+                  <span class="w-6 h-6 rounded-full bg-blue-50 text-blue-600 font-bold text-xs flex items-center justify-center shrink-0">1</span>
+                  <div class="leading-tight">
+                    <div class="text-xs font-bold text-slate-800">Decomposition</div>
+                    <span class="text-[10px] text-slate-400 uppercase font-semibold">NOT DECLARED</span>
+                  </div>
+                </div>
+
+                <div onclick="selectRubric('pattern')" id="rubric-btn-pattern" class="flex items-start gap-3 p-3 rounded-2xl border-l-4 border-transparent hover:bg-slate-50 cursor-pointer">
+                  <span class="w-6 h-6 rounded-full bg-slate-100 text-slate-500 font-bold text-xs flex items-center justify-center shrink-0">2</span>
+                  <div class="leading-tight">
+                    <div class="text-xs font-bold text-slate-700">Pattern Recognition</div>
+                    <span class="text-[10px] text-slate-400 uppercase font-semibold">NOT DECLARED</span>
+                  </div>
+                </div>
+
+                <div onclick="selectRubric('abstraction')" id="rubric-btn-abstraction" class="flex items-start gap-3 p-3 rounded-2xl border-l-4 border-transparent hover:bg-slate-50 cursor-pointer">
+                  <span class="w-6 h-6 rounded-full bg-slate-100 text-slate-500 font-bold text-xs flex items-center justify-center shrink-0">3</span>
+                  <div class="leading-tight">
+                    <div class="text-xs font-bold text-slate-700">Abstraction</div>
+                    <span class="text-[10px] text-slate-400 uppercase font-semibold">NOT DECLARED</span>
+                  </div>
+                </div>
+
+                <div onclick="selectRubric('algorithmic')" id="rubric-btn-algorithmic" class="flex items-start gap-3 p-3 rounded-2xl border-l-4 border-transparent hover:bg-slate-50 cursor-pointer">
+                  <span class="w-6 h-6 rounded-full bg-slate-100 text-slate-500 font-bold text-xs flex items-center justify-center shrink-0">4</span>
+                  <div class="leading-tight">
+                    <div class="text-xs font-bold text-slate-700">Algorithmic Thinking</div>
+                    <span class="text-[10px] text-slate-400 uppercase font-semibold">NOT DECLARED</span>
+                  </div>
+                </div>
+
+                <div onclick="selectRubric('reflection')" id="rubric-btn-reflection" class="flex items-start gap-3 p-3 rounded-2xl border-l-4 border-transparent hover:bg-slate-50 cursor-pointer">
+                  <span class="w-6 h-6 rounded-full bg-slate-100 text-slate-500 font-bold text-xs flex items-center justify-center shrink-0">5</span>
+                  <div class="leading-tight">
+                    <div class="text-xs font-bold text-slate-700">Reflection</div>
+                    <span class="text-[10px] text-slate-400 uppercase font-semibold">NOT DECLARED</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Form Điền Nội Dung Của Rubric Được Chọn (Bên phải) -->
+              <div class="col-span-12 md:col-span-8 bg-slate-50/60 border border-slate-100 rounded-2xl p-5 space-y-4">
+                
+                <!-- Tiêu đề Rubric đang điền -->
+                <div class="flex items-start gap-3 border-b border-slate-200/60 pb-3">
+                  <div class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center text-sm shrink-0">
+                    <i class="fa-solid fa-puzzle-piece"></i>
+                  </div>
+                  <div>
+                    <h4 class="text-xs font-bold text-slate-800" id="rubric-title">Decomposition</h4>
+                    <p class="text-[11px] text-slate-500 mt-0.5" id="rubric-desc">
+                      Breaking down complex problems into smaller, manageable parts.
+                    </p>
+                  </div>
+                </div>
+
+                <!-- Inputs 1: AI Tool & Decision -->
+                <div class="grid grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-[11px] font-bold text-slate-700 mb-1">AI Tool Used</label>
+                    <select class="w-full text-xs bg-white border border-slate-200 rounded-xl px-3 py-2 outline-none focus:border-blue-500">
+                      <option>ChatGPT</option>
+                      <option>Claude</option>
+                      <option>Gemini</option>
+                      <option>GitHub Copilot</option>
+                      <option>Other</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="block text-[11px] font-bold text-slate-700 mb-1">Your Decision</label>
+                    <select class="w-full text-xs bg-white border border-slate-200 rounded-xl px-3 py-2 outline-none focus:border-blue-500">
+                      <option>Fully Accepted</option>
+                      <option>Partially Modified</option>
+                      <option>Heavily Adapted</option>
+                      <option>Rejected</option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Inputs 2: Prompt / Input Used -->
+                <div>
+                  <label class="block text-[11px] font-bold text-slate-700 mb-1">Prompt / Input Used</label>
+                  <textarea rows="2" placeholder="e.g., Help me apply decomposition for this task..." class="w-full text-xs bg-white border border-slate-200 rounded-xl p-3 outline-none focus:border-blue-500 resize-y"></textarea>
+                </div>
+
+                <!-- Inputs 3: AI Response Summary -->
+                <div>
+                  <label class="block text-[11px] font-bold text-slate-700 mb-1">AI Response Summary</label>
+                  <textarea rows="2" placeholder="Briefly summarize what the AI suggested..." class="w-full text-xs bg-white border border-slate-200 rounded-xl p-3 outline-none focus:border-blue-500 resize-y"></textarea>
+                </div>
+
+                <!-- Inputs 4: Self-Reflection -->
+                <div>
+                  <label class="block text-[11px] font-bold text-slate-700 mb-1">Self-Reflection</label>
+                  <textarea rows="2" placeholder="Explain how you used this suggestion in your work, what you changed, and why..." class="w-full text-xs bg-white border border-slate-200 rounded-xl p-3 outline-none focus:border-blue-500 resize-y"></textarea>
+                </div>
+
+                <!-- Actions điều hướng trong Step 2 -->
+                <div class="flex items-center justify-between pt-2">
+                  <button type="button" onclick="goToStep(1)" class="text-xs font-semibold text-slate-500 hover:text-slate-800 flex items-center gap-1.5">
+                    <i class="fa-solid fa-chevron-left text-[10px]"></i>
+                    <span>Previous</span>
+                  </button>
+                  <button type="button" class="px-5 py-2 rounded-xl bg-slate-900 text-white font-bold text-xs flex items-center gap-1.5 hover:bg-slate-800 transition">
+                    <span>Next</span>
+                    <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                  </button>
+                </div>
+
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+
+  <!-- SCRIPT CHUYỂN BƯỚC VÀ CHỌN TIÊU CHÍ RUBRIC -->
+  <script>
+    const rubricData = {
+      decomposition: {
+        title: "Decomposition",
+        desc: "Breaking down complex problems into smaller, manageable parts."
+      },
+      pattern: {
+        title: "Pattern Recognition",
+        desc: "Identifying trends, similarities, or recurring rules in the problem or data."
+      },
+      abstraction: {
+        title: "Abstraction",
+        desc: "Focusing on important information only, ignoring irrelevant details."
+      },
+      algorithmic: {
+        title: "Algorithmic Thinking",
+        desc: "Developing step-by-step solutions or rules to solve the problem."
+      },
+      reflection: {
+        title: "Reflection",
+        desc: "Critically assessing AI suggestions and evaluating learning outcomes."
+      }
+    };
+
+    function goToStep(stepNumber) {
+      const step1Content = document.getElementById('step1-content');
+      const step2Content = document.getElementById('step2-content');
+      const step1Indicator = document.getElementById('step1-indicator');
+      const step2Indicator = document.getElementById('step2-indicator');
+      const stepConnector = document.getElementById('step-connector');
+
+      if (stepNumber === 1) {
+        step1Content.classList.remove('hidden');
+        step2Content.classList.add('hidden');
+
+        // Step 1 Active
+        step1Indicator.className = "w-7 h-7 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center transition";
+        stepConnector.className = "w-8 h-0.5 bg-slate-200 transition";
+        step2Indicator.innerHTML = `
+          <span class="w-6 h-6 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center text-xs">2</span>
+          <span class="text-[10px] tracking-wider uppercase text-slate-400">T_SUBMITTED</span>
+        `;
+      } else {
+        step1Content.classList.add('hidden');
+        step2Content.classList.remove('hidden');
+
+        // Step 2 Active
+        step1Indicator.className = "w-6 h-6 rounded-full bg-emerald-500 text-white font-bold text-xs flex items-center justify-center transition";
+        stepConnector.className = "w-8 h-0.5 bg-emerald-500 transition";
+        step2Indicator.innerHTML = `
+          <span class="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold">2</span>
+          <span class="text-[10px] tracking-wider uppercase text-blue-600 font-bold">T_SUBMITTED</span>
+        `;
+      }
+    }
+
+    function selectRubric(key) {
+      const keys = ['decomposition', 'pattern', 'abstraction', 'algorithmic', 'reflection'];
+      keys.forEach(k => {
+        const el = document.getElementById(`rubric-btn-${k}`);
+        if (k === key) {
+          el.className = "flex items-start gap-3 p-3 rounded-2xl border-l-4 border-blue-600 bg-white shadow-xs cursor-pointer";
+          el.querySelector('span').className = "w-6 h-6 rounded-full bg-blue-50 text-blue-600 font-bold text-xs flex items-center justify-center shrink-0";
+          el.querySelector('.font-bold').className = "text-xs font-bold text-slate-800";
+        } else {
+          el.className = "flex items-start gap-3 p-3 rounded-2xl border-l-4 border-transparent hover:bg-slate-50 cursor-pointer";
+          el.querySelector('span').className = "w-6 h-6 rounded-full bg-slate-100 text-slate-500 font-bold text-xs flex items-center justify-center shrink-0";
+          el.querySelector('.font-bold').className = "text-xs font-bold text-slate-700";
+        }
+      });
+
+      // Update form header
+      if (rubricData[key]) {
+        document.getElementById('rubric-title').innerText = rubricData[key].title;
+        document.getElementById('rubric-desc').innerText = rubricData[key].desc;
+      }
+    }
+  </script>
+</body>
+</html>
