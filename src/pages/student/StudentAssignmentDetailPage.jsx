@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { ChevronRight, FileText, ChevronDown, Briefcase, UploadCloud, X as XIcon, File as FileIcon } from 'lucide-react';
 import AssignmentService from '../../services/assignment.service';
 import SubmissionService from '../../services/submission.service';
+import SubmissionStatusForm from '../../components/SubmissionStatusForm';
 
 export default function StudentAssignmentDetailPage() {
     const { id } = useParams();
@@ -142,16 +143,10 @@ export default function StudentAssignmentDetailPage() {
             </div>
 
             {/* Main Layout: 2 Cột */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', alignItems: 'start' }}>
-                <style>{`
-                    @media (min-width: 1024px) {
-                        .assignment-layout { grid-template-columns: 4fr 8fr !important; }
-                    }
-                `}</style>
-                <div className="assignment-layout" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '24px', width: '100%', gridColumn: '1 / -1' }}>
-                    
-                    {/* CỘT TRÁI */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <div className="grid grid-cols-12 gap-6 items-start w-full">
+                
+                {/* CỘT TRÁI */}
+                <div className="col-span-12 lg:col-span-4 space-y-6">
                         
                         {/* Card 1: Table of contents */}
                         <div className="card" style={{ padding: '20px' }}>
@@ -195,132 +190,19 @@ export default function StudentAssignmentDetailPage() {
                     </div>
 
                     {/* CỘT PHẢI: Khung Submission Status Lớn / Form Nộp */}
-                    <div className="card" style={{ padding: '24px', minHeight: '350px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                        
-                        {isSubmitting ? (
-                            <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                                <div style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--color-ink)', textTransform: 'uppercase', borderBottom: '1px solid var(--color-border)', paddingBottom: '12px' }}>
-                                    Your Submission
-                                </div>
-
-                                {/* Drag and Drop File Upload */}
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                    <label style={{ fontSize: '12px', fontWeight: '600', color: 'var(--color-ink)' }}>Upload File (ZIP, PDF, DOCX...)</label>
-                                    
-                                    {!submitForm.file ? (
-                                        <div 
-                                            onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-                                            onDragLeave={() => setIsDragging(false)}
-                                            onDrop={(e) => {
-                                                e.preventDefault();
-                                                setIsDragging(false);
-                                                if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-                                                    setSubmitForm({ ...submitForm, file: e.dataTransfer.files[0] });
-                                                }
-                                            }}
-                                            onClick={() => fileInputRef.current?.click()}
-                                            style={{
-                                                border: isDragging ? '2px dashed var(--color-primary)' : '2px dashed var(--color-border)',
-                                                backgroundColor: isDragging ? 'var(--color-primary-bg)' : 'var(--color-surface)',
-                                                borderRadius: 'var(--radius-md)',
-                                                padding: '32px 16px',
-                                                display: 'flex',
-                                                flexDirection: 'column',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                gap: '8px',
-                                                cursor: 'pointer',
-                                                transition: 'all 0.2s ease',
-                                                textAlign: 'center'
-                                            }}
-                                        >
-                                            <UploadCloud size={32} style={{ color: isDragging ? 'var(--color-primary)' : 'var(--color-ink-muted)' }} />
-                                            <div style={{ fontSize: '13px', color: 'var(--color-ink)' }}>
-                                                <span style={{ color: 'var(--color-primary)', fontWeight: '600' }}>Click to upload</span> or drag and drop
-                                            </div>
-                                            <div style={{ fontSize: '11px', color: 'var(--color-ink-soft)' }}>
-                                                Maximum file size 50 MB
-                                            </div>
-                                            <input 
-                                                type="file" 
-                                                ref={fileInputRef} 
-                                                onChange={(e) => {
-                                                    if (e.target.files && e.target.files.length > 0) {
-                                                        setSubmitForm({ ...submitForm, file: e.target.files[0] });
-                                                    }
-                                                }}
-                                                style={{ display: 'none' }} 
-                                            />
-                                        </div>
-                                    ) : (
-                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--color-surface)' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                                <div style={{ width: '36px', height: '36px', backgroundColor: 'var(--color-primary-bg)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-primary)' }}>
-                                                    <FileIcon size={20} />
-                                                </div>
-                                                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                                    <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--color-ink)' }}>{submitForm.file.name}</span>
-                                                    <span style={{ fontSize: '11px', color: 'var(--color-ink-soft)' }}>{(submitForm.file.size / 1024 / 1024).toFixed(2)} MB</span>
-                                                </div>
-                                            </div>
-                                            <button 
-                                                onClick={() => setSubmitForm({ ...submitForm, file: null })}
-                                                style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--color-ink-muted)' }}
-                                            >
-                                                <XIcon size={18} />
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
-                                
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                                    <hr style={{ flex: 1, borderColor: 'var(--color-border)' }} />
-                                    <span style={{ fontSize: '10px', fontWeight: 'bold', color: 'var(--color-ink-muted)', textTransform: 'uppercase' }}>OR</span>
-                                    <hr style={{ flex: 1, borderColor: 'var(--color-border)' }} />
-                                </div>
-
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                    <label style={{ fontSize: '12px', fontWeight: '600', color: 'var(--color-ink)' }}>Link (Google Drive, GitHub, etc.)</label>
-                                    <input 
-                                        type="url" 
-                                        placeholder="https://..." 
-                                        value={submitForm.link}
-                                        onChange={(e) => setSubmitForm({...submitForm, link: e.target.value})}
-                                        style={{ width: '100%', padding: '10px 12px', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', fontSize: '13px' }}
-                                    />
-                                </div>
-                                
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                    <label style={{ fontSize: '12px', fontWeight: '600', color: 'var(--color-ink)' }}>Comment / Message</label>
-                                    <textarea 
-                                        placeholder="Add a comment to your submission..."
-                                        rows="4"
-                                        value={submitForm.comment}
-                                        onChange={(e) => setSubmitForm({...submitForm, comment: e.target.value})}
-                                        style={{ width: '100%', padding: '10px 12px', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', fontSize: '13px', resize: 'vertical' }}
-                                    ></textarea>
-                                </div>
-
-                                <div style={{ marginTop: '8px', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-                                    <button 
-                                        className="btn btn-secondary" 
-                                        onClick={() => setIsSubmitting(false)}
-                                        style={{ padding: '8px 16px', fontSize: '12px', fontWeight: '600' }}
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button 
-                                        className="btn btn-primary" 
-                                        onClick={handleSubmit}
-                                        disabled={submitting}
-                                        style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', fontSize: '12px', fontWeight: 'bold', opacity: submitting ? 0.7 : 1, cursor: submitting ? 'not-allowed' : 'pointer' }}
-                                    >
-                                        <UploadCloud size={16} />
-                                        {submitting ? 'SAVING...' : 'SAVE CHANGES'}
-                                    </button>
-                                </div>
-                            </div>
-                        ) : (
+                    {isSubmitting ? (
+                        <div className="col-span-12 lg:col-span-8 w-full min-w-0">
+                            <SubmissionStatusForm 
+                                initialFile={submitForm.file}
+                                onCancel={() => setIsSubmitting(false)}
+                                onSubmitSuccess={({ file, rubricData }) => {
+                                    setSubmitForm(prev => ({ ...prev, file }));
+                                    handleSubmit();
+                                }}
+                            />
+                        </div>
+                    ) : (
+                        <div className="col-span-12 lg:col-span-8 w-full min-w-0 card" style={{ padding: '24px', minHeight: '350px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
                             <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                                 {/* Hàng 1 */}
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
@@ -329,14 +211,14 @@ export default function StudentAssignmentDetailPage() {
                                             SUBMISSION STATUS
                                         </div>
                                         {submission ? (
-        <span className="badge" style={{ backgroundColor: 'rgba(34, 197, 94, 0.1)', color: '#16a34a', padding: '4px 12px', fontSize: '12px', border: '1px solid #16a34a' }}>
-            Submitted
-        </span>
-    ) : (
-        <span className="badge" style={{ backgroundColor: 'var(--color-border)', color: 'var(--color-ink-soft)', padding: '4px 12px', fontSize: '12px' }}>
-            Missing
-        </span>
-    )}
+                                            <span className="badge" style={{ backgroundColor: 'rgba(34, 197, 94, 0.1)', color: '#16a34a', padding: '4px 12px', fontSize: '12px', border: '1px solid #16a34a' }}>
+                                                Submitted
+                                            </span>
+                                        ) : (
+                                            <span className="badge" style={{ backgroundColor: 'var(--color-border)', color: 'var(--color-ink-soft)', padding: '4px 12px', fontSize: '12px' }}>
+                                                Missing
+                                            </span>
+                                        )}
                                     </div>
                                     <div>
                                         <div style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--color-ink-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>
@@ -355,25 +237,25 @@ export default function StudentAssignmentDetailPage() {
                                     </div>
                                     <div style={{ fontSize: '12px', color: 'var(--color-ink-muted)', fontStyle: 'italic' }}>
                                         {detailedSubmission && detailedSubmission.versions && detailedSubmission.versions.length > 0 ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {(() => {
-                const latestVer = detailedSubmission.versions[0];
-                let files = [];
-                try { files = typeof latestVer.files === 'string' ? JSON.parse(latestVer.files) : latestVer.files; } catch(e){}
-                if (!files || files.length === 0) return <span>No files submitted.</span>;
-                return files.map(file => (
-                    <div key={file.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--color-primary)' }}>
-                        <FileIcon size={16} />
-                        <a href="#" style={{ color: 'var(--color-primary)', fontWeight: '600', textDecoration: 'none' }} onClick={(e) => { e.preventDefault(); handleDownloadFile(file.id); }} onMouseEnter={e => e.currentTarget.style.textDecoration='underline'} onMouseLeave={e => e.currentTarget.style.textDecoration='none'}>
-                            {file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)
-                        </a>
-                    </div>
-                ));
-            })()}
-        </div>
-    ) : (
-        "—"
-    )}
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                {(() => {
+                                                    const latestVer = detailedSubmission.versions[0];
+                                                    let files = [];
+                                                    try { files = typeof latestVer.files === 'string' ? JSON.parse(latestVer.files) : latestVer.files; } catch(e){}
+                                                    if (!files || files.length === 0) return <span>No files submitted.</span>;
+                                                    return files.map(file => (
+                                                        <div key={file.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--color-primary)' }}>
+                                                            <FileIcon size={16} />
+                                                            <a href="#" style={{ color: 'var(--color-primary)', fontWeight: '600', textDecoration: 'none' }} onClick={(e) => { e.preventDefault(); handleDownloadFile(file.id); }} onMouseEnter={e => e.currentTarget.style.textDecoration='underline'} onMouseLeave={e => e.currentTarget.style.textDecoration='none'}>
+                                                                {file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)
+                                                            </a>
+                                                        </div>
+                                                    ));
+                                                })()}
+                                            </div>
+                                        ) : (
+                                            "—"
+                                        )}
                                     </div>
                                 </div>
 
@@ -389,11 +271,8 @@ export default function StudentAssignmentDetailPage() {
                                     </div>
                                 </div>
                             </div>
-                        )}
-
-                    </div>
-
-                </div>
+                        </div>
+                    )}
             </div>
         </div>
     );
