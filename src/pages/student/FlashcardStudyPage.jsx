@@ -12,7 +12,6 @@ import {
 function FlipCard({ card, flipped, onFlip, t }) {
   const F = t.flashcards || {};
   const typeLabels = {
-    essay: F.typeEssay || 'Tự luận',
     multiple_choice: F.typeMultiple || 'Trắc nghiệm',
     true_false: F.typeTrueFalse || 'Đúng/Sai',
   };

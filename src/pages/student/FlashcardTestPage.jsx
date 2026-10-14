@@ -213,7 +213,7 @@ export default function FlashcardTestPage() {
               fontSize: '0.6875rem', fontWeight: 700, padding: '3px 10px', borderRadius: '6px',
               background: 'var(--color-primary-card)', color: 'var(--color-primary-dark)',
             }}>
-              {currentQuestion.question_type === 'multiple_choice' ? 'Trắc nghiệm' : 'Tự luận'}
+              Trắc nghiệm
             </span>
             <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-ink-muted)' }}>
               Câu hỏi #{currentIdx + 1}
@@ -225,63 +225,40 @@ export default function FlashcardTestPage() {
             {currentQuestion.question}
           </h2>
 
-          {/* Answer Inputs */}
+          {/* Answer Inputs — Multiple Choice only */}
           <div style={{ marginTop: '8px' }}>
-            {currentQuestion.question_type === 'multiple_choice' && Array.isArray(currentQuestion.options) && currentQuestion.options.length > 0 ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {currentQuestion.options.map((opt, optIdx) => {
-                  const isSelected = answers[currentQuestion.id] === opt;
-                  return (
-                    <button
-                      key={optIdx}
-                      type="button"
-                      onClick={() => handleAnswerChange(currentQuestion.id, opt)}
-                      style={{
-                        padding: '14px 18px', borderRadius: '12px', border: '1.5px solid',
-                        borderColor: isSelected ? 'var(--color-primary)' : 'var(--color-border)',
-                        background: isSelected ? 'var(--color-primary-card)' : 'var(--color-surface)',
-                        color: isSelected ? 'var(--color-primary-dark)' : 'var(--color-ink)',
-                        fontSize: '0.9375rem', fontWeight: isSelected ? 700 : 500,
-                        textAlign: 'left', cursor: 'pointer', fontFamily: 'var(--font-sans)',
-                        display: 'flex', alignItems: 'center', gap: '12px',
-                        transition: 'all 0.15s',
-                      }}
-                    >
-                      <div style={{
-                        width: '22px', height: '22px', borderRadius: '50%', border: '2px solid',
-                        borderColor: isSelected ? 'var(--color-primary)' : 'var(--color-border-medium)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        flexShrink: 0, background: isSelected ? 'var(--color-primary)' : 'transparent',
-                      }}>
-                        {isSelected && <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'white' }} />}
-                      </div>
-                      <span>{opt}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            ) : (
-              <div>
-                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--color-ink-muted)', marginBottom: '8px' }}>
-                  Nhập câu trả lời của bạn:
-                </label>
-                <textarea
-                  rows={4}
-                  value={answers[currentQuestion.id] || ''}
-                  onChange={(e) => handleAnswerChange(currentQuestion.id, e.target.value)}
-                  placeholder="Gõ câu trả lời tại đây..."
-                  style={{
-                    width: '100%', boxSizing: 'border-box', padding: '14px',
-                    borderRadius: '12px', border: '1.5px solid var(--color-border)',
-                    background: 'var(--color-surface)', color: 'var(--color-ink)',
-                    fontSize: '0.9375rem', fontFamily: 'var(--font-sans)', outline: 'none',
-                    resize: 'vertical', transition: 'border-color 0.15s',
-                  }}
-                  onFocus={(e) => e.target.style.borderColor = 'var(--color-primary)'}
-                  onBlur={(e) => e.target.style.borderColor = 'var(--color-border)'}
-                />
-              </div>
-            )}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {(currentQuestion.options || []).map((opt, optIdx) => {
+                const isSelected = answers[currentQuestion.id] === opt;
+                return (
+                  <button
+                    key={optIdx}
+                    type="button"
+                    onClick={() => handleAnswerChange(currentQuestion.id, opt)}
+                    style={{
+                      padding: '14px 18px', borderRadius: '12px', border: '1.5px solid',
+                      borderColor: isSelected ? 'var(--color-primary)' : 'var(--color-border)',
+                      background: isSelected ? 'var(--color-primary-card)' : 'var(--color-surface)',
+                      color: isSelected ? 'var(--color-primary-dark)' : 'var(--color-ink)',
+                      fontSize: '0.9375rem', fontWeight: isSelected ? 700 : 500,
+                      textAlign: 'left', cursor: 'pointer', fontFamily: 'var(--font-sans)',
+                      display: 'flex', alignItems: 'center', gap: '12px',
+                      transition: 'all 0.15s',
+                    }}
+                  >
+                    <div style={{
+                      width: '22px', height: '22px', borderRadius: '50%', border: '2px solid',
+                      borderColor: isSelected ? 'var(--color-primary)' : 'var(--color-border-medium)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      flexShrink: 0, background: isSelected ? 'var(--color-primary)' : 'transparent',
+                    }}>
+                      {isSelected && <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'white' }} />}
+                    </div>
+                    <span>{opt}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}

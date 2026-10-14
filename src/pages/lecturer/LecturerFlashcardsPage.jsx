@@ -245,25 +245,76 @@ function DeckFormModal({ deck, onClose, onSaved, classInfo }) {
 
 function CardFormModal({ deckId, card, onClose, onSaved }) {
   const isEdit = !!card;
-  const [form, setForm] = useState({
-    type: card?.type || 'essay',
-    question: card?.question || '',
-    answer: card?.answer || '',
-    explanation: card?.explanation || '',
-    difficulty: card?.difficulty || 'medium',
-  });
+
+  // Khởi tạo options từ card (khi edit) hoặc 2 ô trống (khi tạo mới)
+  const initOptions = () => {
+    if (isEdit && Array.isArray(card.options) && card.options.length >= 2) {
+      return card.options.map(String);
+    }
+    return ['', ''];
+  };
+  const initCorrectIdx = () => {
+    if (isEdit && card.answer && Array.isArray(card.options)) {
+      const idx = card.options.findIndex(
+        (o) => String(o).trim().toLowerCase() === String(card.answer).trim().toLowerCase()
+      );
+      return idx >= 0 ? idx : 0;
+    }
+    return 0;
+  };
+
+  const [question, setQuestion] = useState(card?.question || '');
+  const [options, setOptions] = useState(initOptions);
+  const [correctIdx, setCorrectIdx] = useState(initCorrectIdx);
+  const [explanation, setExplanation] = useState(card?.explanation || '');
+  const [difficulty, setDifficulty] = useState(card?.difficulty || 'medium');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
 
+  const handleOptionChange = (idx, val) => {
+    setOptions((prev) => prev.map((o, i) => (i === idx ? val : o)));
+  };
+
+  const handleAddOption = () => {
+    if (options.length >= 6) return;
+    setOptions((prev) => [...prev, '']);
+  };
+
+  const handleRemoveOption = (idx) => {
+    if (options.length <= 2) return;
+    const next = options.filter((_, i) => i !== idx);
+    // Adjust correctIdx if needed
+    setCorrectIdx((prev) => {
+      if (idx === prev) return 0;
+      if (idx < prev) return prev - 1;
+      return prev;
+    });
+    setOptions(next);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.question.trim() || !form.answer.trim()) { setError('Câu hỏi và đáp án không được để trống'); return; }
+    if (!question.trim()) { setError('Câu hỏi không được để trống'); return; }
+    const filled = options.map((o) => o.trim()).filter(Boolean);
+    if (filled.length < 2) { setError('Cần ít nhất 2 lựa chọn có nội dung'); return; }
+    // Phải chọn đáp án đúng
+    if (!options[correctIdx]?.trim()) { setError('Vui lòng chọn đáp án đúng hợp lệ'); return; }
+
+    const payload = {
+      type: 'multiple_choice',
+      question: question.trim(),
+      options: options.map((o) => o.trim()).filter(Boolean),
+      answer: options[correctIdx].trim(),
+      explanation: explanation.trim(),
+      difficulty,
+    };
+
     setSaving(true); setError(null);
     try {
       if (isEdit) {
-        await FlashcardService.updateCard(deckId, { ...form, cardId: card.id });
+        await FlashcardService.updateCard(deckId, card.id, payload);
       } else {
-        await FlashcardService.createCard(deckId, form);
+        await FlashcardService.createCard(deckId, payload);
       }
       onSaved();
     } catch (err) {
@@ -273,35 +324,161 @@ function CardFormModal({ deckId, card, onClose, onSaved }) {
     }
   };
 
+  const OPTION_LABELS = ['A', 'B', 'C', 'D', 'E', 'F'];
+
   return (
-    <Modal title={isEdit ? '✏️ Sửa thẻ' : '➕ Thêm thẻ mới'} onClose={onClose} width="580px" padding="16px 20px">
+    <Modal title={isEdit ? '✏️ Sửa thẻ trắc nghiệm' : '➕ Thêm thẻ trắc nghiệm'} onClose={onClose} width="600px" padding="16px 20px">
       <form onSubmit={handleSubmit}>
-        <Field label="Loại thẻ">
-          <div style={{ display: 'flex', gap: '8px' }}>
-            {[{ val: 'essay', label: '📝 Tự luận' }, { val: 'multiple_choice', label: '🔘 Trắc nghiệm' }].map(({ val, label }) => (
-              <button key={val} type="button" onClick={() => setForm(f => ({ ...f, type: val }))} style={{ flex: 1, padding: '6px 10px', borderRadius: '8px', border: '1.5px solid', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 700, transition: 'all 0.15s', fontFamily: 'var(--font-sans)', borderColor: form.type === val ? 'var(--color-primary)' : 'var(--color-border)', background: form.type === val ? 'var(--color-primary-card)' : 'var(--color-surface)', color: form.type === val ? 'var(--color-primary-dark)' : 'var(--color-ink-muted)' }}>
-                {label}
-              </button>
-            ))}
-          </div>
-        </Field>
 
+        {/* Câu hỏi */}
         <Field label="Câu hỏi" required>
-          <textarea rows={2} style={{ ...inputStyle, minHeight: '40px', resize: 'vertical', padding: '6px 10px' }} value={form.question} onChange={e => setForm(f => ({ ...f, question: e.target.value }))} placeholder="Nhập câu hỏi..." />
+          <textarea
+            rows={2}
+            style={{ ...inputStyle, minHeight: '44px', resize: 'vertical', padding: '8px 10px' }}
+            value={question}
+            onChange={(e) => setQuestion(e.target.value)}
+            placeholder="Nhập câu hỏi trắc nghiệm..."
+          />
         </Field>
 
-        <Field label="Đáp án" required>
-          <textarea rows={2} style={{ ...inputStyle, minHeight: '40px', resize: 'vertical', padding: '6px 10px' }} value={form.answer} onChange={e => setForm(f => ({ ...f, answer: e.target.value }))} placeholder="Nhập đáp án chính xác..." />
+        {/* Các lựa chọn */}
+        <Field label="Các lựa chọn" required>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {options.map((opt, idx) => {
+              const isCorrect = idx === correctIdx;
+              return (
+                <div
+                  key={idx}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '8px',
+                    padding: '8px 10px', borderRadius: '10px',
+                    border: `1.5px solid ${isCorrect ? 'var(--color-primary)' : 'var(--color-border)'}`,
+                    background: isCorrect ? 'var(--color-primary-card)' : 'var(--color-surface)',
+                    transition: 'all 0.15s',
+                  }}
+                >
+                  {/* Label chữ cái */}
+                  <span style={{
+                    width: '22px', height: '22px', flexShrink: 0,
+                    borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: '0.75rem', fontWeight: 800,
+                    background: isCorrect ? 'var(--color-primary)' : 'var(--color-border)',
+                    color: isCorrect ? 'white' : 'var(--color-ink-muted)',
+                  }}>
+                    {OPTION_LABELS[idx]}
+                  </span>
+
+                  {/* Input text */}
+                  <input
+                    type="text"
+                    value={opt}
+                    onChange={(e) => handleOptionChange(idx, e.target.value)}
+                    placeholder={`Lựa chọn ${OPTION_LABELS[idx]}${isCorrect ? ' (đáp án đúng)' : ' (gây nhiễu)'}`}
+                    style={{
+                      flex: 1, padding: '6px 8px', border: 'none', outline: 'none',
+                      background: 'transparent', fontSize: '0.875rem',
+                      fontFamily: 'var(--font-sans)', color: 'var(--color-ink)',
+                    }}
+                  />
+
+                  {/* Nút chọn đáp án đúng */}
+                  <button
+                    type="button"
+                    onClick={() => setCorrectIdx(idx)}
+                    title={isCorrect ? 'Đây là đáp án đúng' : 'Chọn làm đáp án đúng'}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '4px',
+                      padding: '4px 8px', borderRadius: '6px', border: '1px solid',
+                      cursor: 'pointer', fontSize: '0.6875rem', fontWeight: 700,
+                      flexShrink: 0, fontFamily: 'var(--font-sans)',
+                      borderColor: isCorrect ? 'var(--color-primary)' : 'var(--color-border)',
+                      background: isCorrect ? 'var(--color-primary)' : 'transparent',
+                      color: isCorrect ? 'white' : 'var(--color-ink-muted)',
+                      transition: 'all 0.15s',
+                    }}
+                  >
+                    {isCorrect ? '✓ Đúng' : 'Chọn'}
+                  </button>
+
+                  {/* Nút xóa */}
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveOption(idx)}
+                    disabled={options.length <= 2}
+                    title="Xóa lựa chọn này"
+                    style={{
+                      width: '24px', height: '24px', borderRadius: '6px',
+                      border: '1px solid var(--color-border)', background: 'transparent',
+                      cursor: options.length <= 2 ? 'not-allowed' : 'pointer',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      color: 'var(--color-ink-muted)', opacity: options.length <= 2 ? 0.35 : 1,
+                      flexShrink: 0, transition: 'all 0.15s',
+                      fontSize: '0.875rem',
+                    }}
+                    onMouseEnter={(e) => { if (options.length > 2) e.currentTarget.style.borderColor = '#fca5a5'; e.currentTarget.style.color = '#dc2626'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.color = 'var(--color-ink-muted)'; }}
+                  >
+                    ×
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Nút thêm lựa chọn */}
+          {options.length < 6 && (
+            <button
+              type="button"
+              onClick={handleAddOption}
+              style={{
+                marginTop: '8px',
+                display: 'flex', alignItems: 'center', gap: '6px',
+                padding: '7px 14px', borderRadius: '8px',
+                border: '1.5px dashed var(--color-border)',
+                background: 'transparent', color: 'var(--color-ink-muted)',
+                fontSize: '0.8125rem', fontWeight: 600, cursor: 'pointer',
+                fontFamily: 'var(--font-sans)', transition: 'all 0.15s',
+                width: '100%', justifyContent: 'center',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--color-primary)'; e.currentTarget.style.color = 'var(--color-primary-dark)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.color = 'var(--color-ink-muted)'; }}
+            >
+              + Thêm lựa chọn ({options.length}/6)
+            </button>
+          )}
+
+          <p style={{ fontSize: '0.6875rem', color: 'var(--color-ink-muted)', marginTop: '6px' }}>
+            💡 Nhấn <strong>Chọn</strong> để đánh dấu đáp án đúng. Các lựa chọn còn lại là đáp án gây nhiễu.
+          </p>
         </Field>
 
-        <Field label="Giải thích (tùy chọn)">
-          <textarea rows={1} style={{ ...inputStyle, minHeight: '34px', resize: 'vertical', padding: '6px 10px' }} value={form.explanation} onChange={e => setForm(f => ({ ...f, explanation: e.target.value }))} placeholder="Giải thích thêm (hiển thị sau khi lật thẻ)..." />
+        {/* Giải thích */}
+        <Field label="Giải thích đáp án (tùy chọn)">
+          <textarea
+            rows={2}
+            style={{ ...inputStyle, minHeight: '40px', resize: 'vertical', padding: '6px 10px' }}
+            value={explanation}
+            onChange={(e) => setExplanation(e.target.value)}
+            placeholder="Giải thích vì sao đáp án đúng (hiển thị trong kết quả kiểm tra)..."
+          />
         </Field>
 
+        {/* Độ khó */}
         <Field label="Độ khó">
           <div style={{ display: 'flex', gap: '8px' }}>
             {Object.entries(DIFF_META).map(([val, { label, color, bg }]) => (
-              <button key={val} type="button" onClick={() => setForm(f => ({ ...f, difficulty: val }))} style={{ flex: 1, padding: '6px 10px', borderRadius: '8px', border: '1.5px solid', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 700, transition: 'all 0.15s', fontFamily: 'var(--font-sans)', borderColor: form.difficulty === val ? color : 'var(--color-border)', background: form.difficulty === val ? bg : 'var(--color-surface)', color: form.difficulty === val ? color : 'var(--color-ink-muted)' }}>
+              <button
+                key={val} type="button"
+                onClick={() => setDifficulty(val)}
+                style={{
+                  flex: 1, padding: '6px 10px', borderRadius: '8px', border: '1.5px solid',
+                  cursor: 'pointer', fontSize: '0.75rem', fontWeight: 700,
+                  transition: 'all 0.15s', fontFamily: 'var(--font-sans)',
+                  borderColor: difficulty === val ? color : 'var(--color-border)',
+                  background: difficulty === val ? bg : 'var(--color-surface)',
+                  color: difficulty === val ? color : 'var(--color-ink-muted)',
+                }}
+              >
                 {label}
               </button>
             ))}
@@ -327,7 +504,6 @@ function CardFormModal({ deckId, card, onClose, onSaved }) {
     </Modal>
   );
 }
-
 
 
 // ─── ClassAccessModal ──────────────────────────────────────────────────

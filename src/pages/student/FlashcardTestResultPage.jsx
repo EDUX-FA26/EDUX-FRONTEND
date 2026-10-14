@@ -205,10 +205,10 @@ export default function FlashcardTestResultPage() {
                 </span>
                 <span style={{
                   fontSize: '0.6875rem', fontWeight: 700, padding: '2px 8px', borderRadius: '6px',
-                  background: q.question_type === 'multiple_choice' ? 'rgba(99,102,241,0.12)' : 'rgba(249,115,22,0.12)',
-                  color: q.question_type === 'multiple_choice' ? '#6366f1' : '#ea580c',
+                  background: 'rgba(99,102,241,0.12)',
+                  color: '#6366f1',
                 }}>
-                  {q.question_type === 'multiple_choice' ? 'Trắc nghiệm' : 'Tự luận'}
+                  Trắc nghiệm
                 </span>
               </div>
 

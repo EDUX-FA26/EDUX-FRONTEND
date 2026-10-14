@@ -75,15 +75,15 @@ const FlashcardService = {
     return response.data;
   },
 
-  /** PUT /api/flashcards/decks/:deckId/cards — Sửa card */
-  async updateCard(deckId, data) {
-    const response = await api.put(`/flashcards/decks/${deckId}/cards`, data);
+  /** PUT /api/flashcards/decks/:deckId/cards/:cardId — Sửa card */
+  async updateCard(deckId, cardId, data) {
+    const response = await api.put(`/flashcards/decks/${deckId}/cards/${cardId}`, data);
     return response.data;
   },
 
-  /** DELETE /api/flashcards/decks/:deckId/cards — Xóa card */
+  /** DELETE /api/flashcards/decks/:deckId/cards/:cardId — Xóa card */
   async deleteCard(deckId, cardId) {
-    const response = await api.delete(`/flashcards/decks/${deckId}/cards`, { data: { cardId } });
+    const response = await api.delete(`/flashcards/decks/${deckId}/cards/${cardId}`);
     return response.data;
   },
 
