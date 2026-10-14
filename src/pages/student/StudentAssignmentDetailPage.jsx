@@ -26,13 +26,34 @@ export default function StudentAssignmentDetailPage() {
                     setAssignment(data);
 
                     const subData = await SubmissionService.getMySubmissions({ assignment_id: id });
+                    console.log("========== GET MY SUBMISSIONS ==========");
+                    console.log("Assignment ID:", id);
+                    console.log("Raw subData:", subData);
+                    console.log("subData.data:", subData?.data);
+                    console.log("subData.data.length:", subData?.data?.length);
+                    console.log("=========================================");
                     if (subData && subData.data && subData.data.length > 0) {
                         const sub = subData.data[0];
+                        console.log("========== SELECTED SUBMISSION ==========");
+                        console.log("Selected submission:", sub);
+                        console.log("Submission ID:", sub?.id);
+                        console.log("Assignment ID:", sub?.assignment_id);
+                        console.log("Student ID:", sub?.student_id);
+                        console.log("Status:", sub?.status);
+                        console.log("Submitted at:", sub?.submitted_at);
+                        console.log("Last submitted at:", sub?.last_submitted_at);
+                        console.log("Updated at:", sub?.updated_at);
+                        console.log("=========================================");
+
                         setSubmission(sub);
                         try {
                             const detail = await SubmissionService.getSubmissionById(sub.id);
+                            console.log("========== SUBMISSION DETAIL ==========");
+                            console.log("Detail response:", detail);
+                            console.log("Detail data:", detail?.data);
+                            console.log("=======================================");
                             if (detail.success) setDetailedSubmission(detail.data);
-                        } catch (err) { console.error(err); }
+                        } catch (err) { console.error("Get submission detail error:", err); }
                     } else {
                         setSubmission(null);
                     }
@@ -112,9 +133,12 @@ export default function StudentAssignmentDetailPage() {
         'asm-4': 'MongoDB Aggregation',
         'asm-5': 'Final Backend Architecture'
     };
-
-    const title = assignment?.title || titleMap[id] || `Assignment ${id}`;
-
+    const title =
+        submission?.assignment_title ||
+        assignment?.title ||
+        titleMap[id] ||
+        `Assignment ${id}`;
+        
     return (
         <div className="animate-fade-in" style={{ maxWidth: '1152px', margin: '0 auto', width: '100%', display: 'flex', flexDirection: 'column', gap: '24px', padding: '16px 0' }}>
 
@@ -190,7 +214,15 @@ export default function StudentAssignmentDetailPage() {
                             </div>
                             <div style={{ fontSize: '12px', fontWeight: 'bold' }}>
                                 <span style={{ color: 'var(--color-ink-soft)', fontWeight: 'normal' }}>(GMT+07)</span>
-                                <span style={{ color: 'var(--color-danger)' }}> - SCORE: N/A</span>
+                                <span
+                                    style={{
+                                        color: submission?.score != null
+                                            ? 'var(--color-success)'
+                                            : 'var(--color-danger)'
+                                    }}
+                                >
+                                    - SCORE: {submission?.score != null ? submission.score : 'N/A'}
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -330,11 +362,41 @@ export default function StudentAssignmentDetailPage() {
                                             SUBMISSION STATUS
                                         </div>
                                         {submission ? (
-                                            <span className="badge" style={{ backgroundColor: 'rgba(34, 197, 94, 0.1)', color: '#16a34a', padding: '4px 12px', fontSize: '12px', border: '1px solid #16a34a' }}>
-                                                Submitted
+                                            <span
+                                                className="badge"
+                                                style={{
+                                                    backgroundColor:
+                                                        submission.status === 'graded'
+                                                            ? 'rgba(59, 130, 246, 0.1)'
+                                                            : 'rgba(34, 197, 94, 0.1)',
+                                                    color:
+                                                        submission.status === 'graded'
+                                                            ? '#2563eb'
+                                                            : '#16a34a',
+                                                    padding: '4px 12px',
+                                                    fontSize: '12px',
+                                                    border:
+                                                        submission.status === 'graded'
+                                                            ? '1px solid #2563eb'
+                                                            : '1px solid #16a34a'
+                                                }}
+                                            >
+                                                {submission.status === 'graded'
+                                                    ? 'Graded'
+                                                    : submission.status === 'submitted'
+                                                        ? 'Submitted'
+                                                        : submission.status}
                                             </span>
                                         ) : (
-                                            <span className="badge" style={{ backgroundColor: 'var(--color-border)', color: 'var(--color-ink-soft)', padding: '4px 12px', fontSize: '12px' }}>
+                                            <span
+                                                className="badge"
+                                                style={{
+                                                    backgroundColor: 'var(--color-border)',
+                                                    color: 'var(--color-ink-soft)',
+                                                    padding: '4px 12px',
+                                                    fontSize: '12px'
+                                                }}
+                                            >
                                                 Missing
                                             </span>
                                         )}
@@ -384,13 +446,33 @@ export default function StudentAssignmentDetailPage() {
 
                                 {/* Hàng 3 */}
                                 <div>
-                                    <div style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--color-ink-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>
-                                        COMMENT
+                                    <div>
+                                        <div
+                                            style={{
+                                                fontSize: '11px',
+                                                fontWeight: 'bold',
+                                                color: 'var(--color-ink-muted)',
+                                                textTransform: 'uppercase',
+                                                letterSpacing: '0.5px',
+                                                marginBottom: '8px'
+                                            }}
+                                        >
+                                            FEEDBACK
+                                        </div>
+
+                                        <div
+                                            style={{
+                                                fontSize: '12px',
+                                                color: 'var(--color-ink)'
+                                            }}
+                                        >
+                                            {submission?.feedback || 'No feedback yet.'}
+                                        </div>
                                     </div>
                                     <div style={{ fontSize: '12px', color: 'var(--color-ink)' }}>
                                         {submission && submission.status === 'submitted' ? (
                                             <span style={{ fontStyle: 'italic', color: 'var(--color-ink-soft)' }}>Submitted successfully. Waiting for grading.</span>
-                                        ) : "—"}
+                                        ) : ""}
                                     </div>
                                 </div>
                             </div>

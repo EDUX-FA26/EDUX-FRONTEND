@@ -4,7 +4,8 @@ import { createPortal } from 'react-dom';
 import ClassService from '../../services/class.service';
 import {
     ChevronRight, Clock, Folder, FilePenLine, RotateCw, Calendar, Code, AlertCircle, Users,
-    Flame
+    Flame,
+    Download
 } from 'lucide-react';
 import { PlusCircle, FileText, Upload } from 'lucide-react';
 import AssignmentSubwindowModal from '../../components/student/AssignmentSubwindowModal';
@@ -373,21 +374,82 @@ export default function LecturerClassDetailPage() {
                     <div className="card" style={{ width: '100%', maxWidth: '650px', maxHeight: '80vh', display: 'flex', flexDirection: 'column', padding: '20px', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--color-surface)' }}>
 
                         {/* Modal Header */}
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '12px', borderBottom: '1px solid var(--color-border)' }}>
+                        <div
+                            style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                paddingBottom: '12px',
+                                borderBottom: '1px solid var(--color-border)'
+                            }}
+                        >
                             <div>
-                                <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 'bold', color: 'var(--color-ink)' }}>
+                                <h3
+                                    style={{
+                                        margin: 0,
+                                        fontSize: '16px',
+                                        fontWeight: 'bold',
+                                        color: 'var(--color-ink)'
+                                    }}
+                                >
                                     Class Members ({members.length})
                                 </h3>
-                                <span style={{ fontSize: '12px', color: 'var(--color-ink-muted)' }}>
+
+                                <span
+                                    style={{
+                                        fontSize: '12px',
+                                        color: 'var(--color-ink-muted)'
+                                    }}
+                                >
                                     {classData?.class_code || classData?.class_name}
                                 </span>
                             </div>
-                            <button
-                                onClick={() => setIsMembersModalOpen(false)}
-                                style={{ background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer', color: 'var(--color-ink-muted)' }}
+
+                            {/* Actions */}
+                            <div
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px'
+                                }}
                             >
-                                ✕
-                            </button>
+                                {/* Export Class */}
+                                <button
+                                    disabled={members.length === 0}
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '6px',
+                                        padding: '6px 10px',
+                                        border: '1px solid var(--color-border)',
+                                        borderRadius: 'var(--radius-sm)',
+                                        backgroundColor: 'var(--color-surface)',
+                                        color: 'var(--color-ink)',
+                                        fontSize: '12px',
+                                        fontWeight: '600',
+                                        cursor: members.length === 0 ? 'not-allowed' : 'pointer',
+                                        opacity: members.length === 0 ? 0.5 : 1
+                                    }}
+                                    title="Export class members"
+                                >
+                                    <Download size={14} />
+                                    Export Class
+                                </button>
+
+                                {/* Close */}
+                                <button
+                                    onClick={() => setIsMembersModalOpen(false)}
+                                    style={{
+                                        background: 'none',
+                                        border: 'none',
+                                        fontSize: '18px',
+                                        cursor: 'pointer',
+                                        color: 'var(--color-ink-muted)'
+                                    }}
+                                >
+                                    ✕
+                                </button>
+                            </div>
                         </div>
 
                         {/* Modal Body */}
@@ -451,14 +513,6 @@ export default function LecturerClassDetailPage() {
                                 </div>
                             )}
                         </div>
-
-                        {/* Modal Footer */}
-                        <div style={{ paddingTop: '12px', borderTop: '1px solid var(--color-border)', textAlign: 'right' }}>
-                            <button className="btn btn-secondary" onClick={() => setIsMembersModalOpen(false)} style={{ padding: '0 16px', height: '32px', fontSize: '12px' }}>
-                                Close
-                            </button>
-                        </div>
-
                     </div>
                 </div>,
                 document.body
