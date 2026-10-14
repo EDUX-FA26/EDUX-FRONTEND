@@ -960,7 +960,6 @@ export default function LecturerFlashcardsPage() {
   // Lấy thông tin môn từ danh sách lớp
   useEffect(() => {
     if (!subjectId) { setSubjectLoading(false); return; }
-    localStorage.setItem('lecturer_last_subject_id', subjectId);
     setSubjectLoading(true);
     ClassService.getMyClasses()
       .then((res) => {
@@ -1026,7 +1025,7 @@ export default function LecturerFlashcardsPage() {
           <button
             onClick={() => {
               localStorage.removeItem('lecturer_last_subject_id');
-              navigate('/lecturer/flashcards?select=true');
+              navigate('/lecturer/flashcards');
             }}
             style={{
               display: 'inline-flex', alignItems: 'center', gap: '6px',

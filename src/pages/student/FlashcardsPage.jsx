@@ -255,7 +255,7 @@ export default function FlashcardsPage() {
         <button
           onClick={() => {
             localStorage.removeItem('student_last_subject_id');
-            navigate('/student/flashcards?select=true');
+            navigate('/student/flashcards');
           }}
           style={{
             display: 'inline-flex', alignItems: 'center', gap: '6px',

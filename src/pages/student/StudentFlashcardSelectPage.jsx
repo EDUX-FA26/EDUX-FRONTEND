@@ -144,15 +144,8 @@ export default function StudentFlashcardSelectPage() {
   };
 
   useEffect(() => {
-    const searchParams = new URLSearchParams(window.location.search);
-    const forceSelect = searchParams.get('select') === 'true';
-    const lastSubjectId = localStorage.getItem('student_last_subject_id');
-    if (!forceSelect && lastSubjectId) {
-      navigate(`/student/flashcards/subject/${lastSubjectId}`, { replace: true });
-      return;
-    }
     fetchClasses();
-  }, [navigate]);
+  }, []);
 
   // Group theo môn học
   const subjects = useMemo(() => {
@@ -314,7 +307,6 @@ export default function StudentFlashcardSelectPage() {
               key={subject.id}
               subject={subject}
               onClick={() => {
-                localStorage.setItem('student_last_subject_id', subject.id);
                 navigate(`/student/flashcards/subject/${subject.id}`);
               }}
             />
