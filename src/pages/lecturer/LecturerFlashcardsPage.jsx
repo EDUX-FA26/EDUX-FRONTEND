@@ -7,7 +7,7 @@ import {
   Plus, Pencil, Trash2, Globe, Lock, Layers, BookOpen,
   BarChart2, ChevronDown, ChevronUp, X, Save, Eye,
   CheckCircle, RefreshCw, Zap, AlertTriangle, ArrowLeft,
-  Users, Share2,
+  Users, Share2, FileSpreadsheet, Upload, Download,
 } from 'lucide-react';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -192,32 +192,6 @@ function DeckFormModal({ deck, onClose, onSaved, classInfo }) {
             <p style={{ fontSize: '0.6875rem', color: 'var(--color-ink-muted)', marginTop: '4px' }}>
               UUID của môn học trong hệ thống.
             </p>
-          </Field>
-        )}
-
-        {!isEdit && (
-          <Field label="Hiển thị">
-            <div style={{ display: 'flex', gap: '10px' }}>
-              {[
-                { val: false, label: '🔒 Riêng tư', desc: 'Chỉ mình bạn xem được' },
-                { val: true,  label: '🌐 Công khai', desc: 'Mọi sinh viên đều thấy' },
-              ].map(({ val, label, desc }) => (
-                <button
-                  key={String(val)}
-                  type="button"
-                  onClick={() => setForm(f => ({ ...f, is_public: val }))}
-                  style={{
-                    flex: 1, padding: '10px', borderRadius: '10px', border: '1.5px solid',
-                    cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s',
-                    borderColor: form.is_public === val ? 'var(--color-primary)' : 'var(--color-border)',
-                    background: form.is_public === val ? 'var(--color-primary-card)' : 'var(--color-surface)',
-                  }}
-                >
-                  <p style={{ fontSize: '0.8125rem', fontWeight: 700, color: form.is_public === val ? 'var(--color-primary-dark)' : 'var(--color-ink)', margin: '0 0 2px' }}>{label}</p>
-                  <p style={{ fontSize: '0.6875rem', color: 'var(--color-ink-muted)', margin: 0 }}>{desc}</p>
-                </button>
-              ))}
-            </div>
           </Field>
         )}
 
@@ -725,11 +699,181 @@ function ClassAccessModal({ deck, onClose, onSaved }) {
   );
 }
 
+// ─── Excel Import Modal ───────────────────────────────────────────────────────
+
+function ExcelImportModal({ deckId, onClose, onSaved }) {
+  const [file, setFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [downloadingTemplate, setDownloadingTemplate] = useState(false);
+  const [result, setResult] = useState(null);
+  const [error, setError] = useState(null);
+
+  const handleDownloadTemplate = async () => {
+    setDownloadingTemplate(true);
+    try {
+      const blob = await FlashcardService.downloadExcelTemplate();
+      const url = window.URL.createObjectURL(new Blob([blob]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'flashcard_template.xlsx');
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+    } catch {
+      alert('Không thể tải file mẫu. Vui lòng thử lại sau.');
+    } finally {
+      setDownloadingTemplate(false);
+    }
+  };
+
+  const handleUpload = async (e) => {
+    e.preventDefault();
+    if (!file) {
+      setError('Vui lòng chọn một file Excel (.xlsx, .xls) hoặc .csv');
+      return;
+    }
+    setUploading(true);
+    setError(null);
+    setResult(null);
+
+    try {
+      const res = await FlashcardService.importCardsFromExcel(deckId, file);
+      setResult(res);
+      if (res.imported_count > 0) {
+        onSaved();
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Có lỗi xảy ra khi nhập file Excel');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <Modal title="📥 Nhập thẻ từ file Excel" onClose={onClose}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        {/* Banner download template */}
+        <div style={{
+          padding: '14px 16px', borderRadius: '12px',
+          background: 'var(--color-primary-card)', border: '1px solid var(--color-border)',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px',
+        }}>
+          <div>
+            <p style={{ margin: '0 0 2px', fontSize: '0.875rem', fontWeight: 700, color: 'var(--color-primary-dark)' }}>
+              Tải file mẫu Excel
+            </p>
+            <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--color-ink-muted)' }}>
+              Điền câu hỏi và các lựa chọn đáp án theo đúng định dạng mẫu.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={handleDownloadTemplate}
+            disabled={downloadingTemplate}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: '6px',
+              padding: '8px 14px', borderRadius: '8px',
+              background: 'var(--color-surface)', border: '1px solid var(--color-border)',
+              color: 'var(--color-ink)', fontSize: '0.8125rem', fontWeight: 600,
+              cursor: 'pointer', flexShrink: 0,
+            }}
+          >
+            <Download style={{ width: '14px', height: '14px' }} />
+            {downloadingTemplate ? 'Đang tải...' : 'Tải template (.xlsx)'}
+          </button>
+        </div>
+
+        {/* Form upload file */}
+        <form onSubmit={handleUpload}>
+          <Field label="Chọn file Excel từ máy tính (.xlsx, .xls, .csv)" required>
+            <input
+              type="file"
+              accept=".xlsx,.xls,.csv"
+              onChange={(e) => {
+                setFile(e.target.files[0] || null);
+                setError(null);
+                setResult(null);
+              }}
+              style={{
+                width: '100%', boxSizing: 'border-box',
+                padding: '10px 12px', borderRadius: '10px',
+                border: '1.5px dashed var(--color-border)',
+                background: 'var(--color-surface)', color: 'var(--color-ink)',
+                fontSize: '0.875rem', cursor: 'pointer',
+              }}
+            />
+          </Field>
+
+          {error && (
+            <div style={{
+              padding: '10px 14px', borderRadius: '10px',
+              background: 'rgba(220,38,38,0.08)', color: '#dc2626',
+              fontSize: '0.8125rem', marginTop: '12px',
+            }}>
+              {error}
+            </div>
+          )}
+
+          {result && (
+            <div style={{
+              padding: '12px 14px', borderRadius: '10px', marginTop: '12px',
+              background: result.success ? 'rgba(22,163,74,0.08)' : 'rgba(220,38,38,0.08)',
+              color: result.success ? '#15803d' : '#dc2626', fontSize: '0.8125rem',
+            }}>
+              <p style={{ margin: '0 0 4px', fontWeight: 700 }}>{result.message}</p>
+              {result.errors && result.errors.length > 0 && (
+                <div style={{ marginTop: '8px', maxHeight: '120px', overflowY: 'auto' }}>
+                  <p style={{ margin: '0 0 4px', fontWeight: 600, color: '#b91c1c' }}>Các dòng có cảnh báo/lỗi:</p>
+                  <ul style={{ margin: 0, paddingLeft: '18px' }}>
+                    {result.errors.map((err, i) => (
+                      <li key={i}>Dòng {err.row}: {err.message}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+
+          <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '20px' }}>
+            <button
+              type="button"
+              onClick={onClose}
+              style={{
+                padding: '9px 18px', borderRadius: '9px',
+                border: '1px solid var(--color-border)', background: 'var(--color-surface)',
+                color: 'var(--color-ink)', fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer',
+              }}
+            >
+              Đóng
+            </button>
+            <button
+              type="submit"
+              disabled={uploading || !file}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: '6px',
+                padding: '9px 20px', borderRadius: '9px',
+                background: 'var(--color-primary)', color: 'white',
+                border: 'none', fontSize: '0.875rem', fontWeight: 700,
+                cursor: (uploading || !file) ? 'not-allowed' : 'pointer',
+                opacity: (uploading || !file) ? 0.6 : 1,
+              }}
+            >
+              <Upload style={{ width: '14px', height: '14px' }} />
+              {uploading ? 'Đang tải lên...' : 'Tải lên & Nhập thẻ'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </Modal>
+  );
+}
+
 function DeckRow({ deck, onEdit, onDelete, onRefresh }) {
   const [open, setOpen] = useState(false);
   const [cards, setCards] = useState([]);
   const [loadingCards, setLoadingCards] = useState(false);
   const [cardModal, setCardModal] = useState(null);
+  const [excelModal, setExcelModal] = useState(false);
   const [deletingCard, setDeletingCard] = useState(null);
   const [shareModal, setShareModal] = useState(false);
   const [notice, setNotice] = useState(null);
@@ -788,6 +932,16 @@ function DeckRow({ deck, onEdit, onDelete, onRefresh }) {
           card={cardModal === 'create' ? null : cardModal}
           onClose={() => setCardModal(null)}
           onSaved={() => { setCardModal(null); loadDeckDetails(); }}
+        />
+      )}
+      {excelModal && (
+        <ExcelImportModal
+          deckId={deck.id}
+          onClose={() => setExcelModal(false)}
+          onSaved={() => {
+            loadDeckDetails();
+            onRefresh();
+          }}
         />
       )}
 
@@ -880,6 +1034,24 @@ function DeckRow({ deck, onEdit, onDelete, onRefresh }) {
                 >
                   <Plus style={{ width: '13px', height: '13px' }} /> Thêm thẻ
                 </button>
+                <button
+                  id={`btn-import-excel-${deck.id}`}
+                  onClick={() => setExcelModal(true)}
+                  title="Nhập danh sách thẻ từ file Excel"
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '5px',
+                    padding: '6px 12px', borderRadius: '8px',
+                    background: 'var(--color-surface)', color: 'var(--color-primary-dark)',
+                    border: '1px solid var(--color-border)', fontSize: '0.75rem',
+                    fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font-sans)',
+                    transition: 'all 0.15s',
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--color-primary)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--color-border)'; }}
+                >
+                  <FileSpreadsheet style={{ width: '13px', height: '13px', color: '#16a34a' }} />
+                  Nhập Excel
+                </button>
               </div>
             </div>
 
@@ -887,9 +1059,23 @@ function DeckRow({ deck, onEdit, onDelete, onRefresh }) {
             {loadingCards ? (
               [1,2].map(i => <div key={i} className="skeleton" style={{ width: '100%', height: '56px', borderRadius: '10px', marginBottom: '8px' }} />)
             ) : cards.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '30px', color: 'var(--color-ink-muted)', background: 'var(--color-primary-bg)', borderRadius: '12px', border: '1px dashed var(--color-border)' }}>
+              <div style={{ textAlign: 'center', padding: '30px 20px', color: 'var(--color-ink-muted)', background: 'var(--color-primary-bg)', borderRadius: '12px', border: '1px dashed var(--color-border)' }}>
                 <Layers style={{ width: '28px', height: '28px', opacity: 0.3, display: 'block', margin: '0 auto 8px' }} />
-                <p style={{ fontSize: '0.8125rem' }}>Chưa có thẻ nào. Nhấn "Thêm thẻ" để bắt đầu.</p>
+                <p style={{ fontSize: '0.8125rem', margin: '0 0 12px' }}>Chưa có thẻ nào trong bộ thẻ này.</p>
+                <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                  <button
+                    onClick={() => setCardModal('create')}
+                    style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '7px 14px', borderRadius: '8px', background: 'var(--color-primary)', color: 'white', border: 'none', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}
+                  >
+                    <Plus style={{ width: '13px', height: '13px' }} /> Thêm thẻ thủ công
+                  </button>
+                  <button
+                    onClick={() => setExcelModal(true)}
+                    style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '7px 14px', borderRadius: '8px', background: 'var(--color-surface)', color: 'var(--color-primary-dark)', border: '1px solid var(--color-border)', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}
+                  >
+                    <FileSpreadsheet style={{ width: '13px', height: '13px', color: '#16a34a' }} /> Nhập từ Excel
+                  </button>
+                </div>
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>

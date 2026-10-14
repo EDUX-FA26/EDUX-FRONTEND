@@ -87,6 +87,24 @@ const FlashcardService = {
     return response.data;
   },
 
+  /** GET /api/flashcards/template/excel — Tải file Excel mẫu */
+  async downloadExcelTemplate() {
+    const response = await api.get('/flashcards/template/excel', {
+      responseType: 'blob',
+    });
+    return response.data;
+  },
+
+  /** POST /api/flashcards/decks/:deckId/cards/import-excel — Import cards từ file Excel */
+  async importCardsFromExcel(deckId, file) {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await api.post(`/flashcards/decks/${deckId}/cards/import-excel`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  },
+
   // ─────────────────────────────────────────────
   // REVIEW & SRS
   // ─────────────────────────────────────────────
