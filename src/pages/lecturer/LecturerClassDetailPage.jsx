@@ -3,7 +3,9 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import ClassService from '../../services/class.service';
 import {
-    ChevronRight, Clock, Folder, FilePenLine, RotateCw, Calendar, Code, AlertCircle, Users
+    ChevronRight, Clock, Folder, FilePenLine, RotateCw, Calendar, Code, AlertCircle, Users,
+    Flame,
+    Download
 } from 'lucide-react';
 import { PlusCircle, FileText, Upload } from 'lucide-react';
 import AssignmentSubwindowModal from '../../components/student/AssignmentSubwindowModal';
@@ -372,21 +374,82 @@ export default function LecturerClassDetailPage() {
                     <div className="card" style={{ width: '100%', maxWidth: '650px', maxHeight: '80vh', display: 'flex', flexDirection: 'column', padding: '20px', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--color-surface)' }}>
 
                         {/* Modal Header */}
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '12px', borderBottom: '1px solid var(--color-border)' }}>
+                        <div
+                            style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                paddingBottom: '12px',
+                                borderBottom: '1px solid var(--color-border)'
+                            }}
+                        >
                             <div>
-                                <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 'bold', color: 'var(--color-ink)' }}>
+                                <h3
+                                    style={{
+                                        margin: 0,
+                                        fontSize: '16px',
+                                        fontWeight: 'bold',
+                                        color: 'var(--color-ink)'
+                                    }}
+                                >
                                     Class Members ({members.length})
                                 </h3>
-                                <span style={{ fontSize: '12px', color: 'var(--color-ink-muted)' }}>
+
+                                <span
+                                    style={{
+                                        fontSize: '12px',
+                                        color: 'var(--color-ink-muted)'
+                                    }}
+                                >
                                     {classData?.class_code || classData?.class_name}
                                 </span>
                             </div>
-                            <button
-                                onClick={() => setIsMembersModalOpen(false)}
-                                style={{ background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer', color: 'var(--color-ink-muted)' }}
+
+                            {/* Actions */}
+                            <div
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px'
+                                }}
                             >
-                                ✕
-                            </button>
+                                {/* Export Class */}
+                                <button
+                                    disabled={members.length === 0}
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '6px',
+                                        padding: '6px 10px',
+                                        border: '1px solid var(--color-border)',
+                                        borderRadius: 'var(--radius-sm)',
+                                        backgroundColor: 'var(--color-surface)',
+                                        color: 'var(--color-ink)',
+                                        fontSize: '12px',
+                                        fontWeight: '600',
+                                        cursor: members.length === 0 ? 'not-allowed' : 'pointer',
+                                        opacity: members.length === 0 ? 0.5 : 1
+                                    }}
+                                    title="Export class members"
+                                >
+                                    <Download size={14} />
+                                    Export Class
+                                </button>
+
+                                {/* Close */}
+                                <button
+                                    onClick={() => setIsMembersModalOpen(false)}
+                                    style={{
+                                        background: 'none',
+                                        border: 'none',
+                                        fontSize: '18px',
+                                        cursor: 'pointer',
+                                        color: 'var(--color-ink-muted)'
+                                    }}
+                                >
+                                    ✕
+                                </button>
+                            </div>
                         </div>
 
                         {/* Modal Body */}
@@ -401,40 +464,55 @@ export default function LecturerClassDetailPage() {
                                 </div>
                             ) : (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                    {members.map((member, idx) => (
-                                        <div
-                                            key={member.id || member._id || idx}
-                                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)' }}
-                                        >
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                                <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: 'var(--color-primary-bg)', color: 'var(--color-primary-dark)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '12px' }}>
-                                                    {member.full_name ? member.full_name.charAt(0).toUpperCase() : (member.student_code || 'S').charAt(0)}
-                                                </div>
-                                                <div>
-                                                    <div style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--color-ink)' }}>
-                                                        {member.full_name || member.name || 'N/A'}
+                                    {members.map((member, idx) => {
+                                        const streak = member.currentStreak || 0;
+                                        const fullName = member.fullName || member.full_name || member.name || 'N/A';
+                                        const studentCode = member.studentCode || member.student_code || member.email || 'No Code';
+
+                                        return (
+                                            <div
+                                                key={member.studentId || member.student_id || idx}
+                                                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)' }}
+                                            >
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                    <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: 'var(--color-primary-bg)', color: 'var(--color-primary-dark)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '12px' }}>
+                                                        {fullName.charAt(0).toUpperCase()}
                                                     </div>
-                                                    <div style={{ fontSize: '11px', color: 'var(--color-ink-muted)' }}>
-                                                        {member.student_code || member.email || 'No Code'}
+                                                    <div>
+                                                        <div style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--color-ink)' }}>
+                                                            {fullName}
+                                                        </div>
+                                                        <div style={{ fontSize: '11px', color: 'var(--color-ink-muted)' }}>
+                                                            {studentCode}
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Khối bên phải: Badge Streak + Badge Role */}
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                    {/* Badge Streak */}
+                                                    <div style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '4px',
+                                                        fontSize: '11px',
+                                                        fontWeight: 'bold',
+                                                        padding: '2px 8px',
+                                                        borderRadius: '12px',
+                                                        backgroundColor: streak > 0 ? '#fff7ed' : '#f3f4f6',
+                                                        color: streak > 0 ? '#ea580c' : '#9ca3af',
+                                                        border: `1px solid ${streak > 0 ? '#ffedd5' : '#e5e7eb'}`
+                                                    }}>
+                                                        <Flame size={13} fill={streak > 0 ? '#f97316' : 'none'} color={streak > 0 ? '#ea580c' : '#9ca3af'} />
+                                                        <span>{streak} {streak === 1}</span>
                                                     </div>
                                                 </div>
                                             </div>
-                                            <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '12px', backgroundColor: 'var(--color-primary-bg)', color: 'var(--color-primary-dark)', fontWeight: '500' }}>
-                                                {member.role || 'Student'}
-                                            </span>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             )}
                         </div>
-
-                        {/* Modal Footer */}
-                        <div style={{ paddingTop: '12px', borderTop: '1px solid var(--color-border)', textAlign: 'right' }}>
-                            <button className="btn btn-secondary" onClick={() => setIsMembersModalOpen(false)} style={{ padding: '0 16px', height: '32px', fontSize: '12px' }}>
-                                Close
-                            </button>
-                        </div>
-
                     </div>
                 </div>,
                 document.body

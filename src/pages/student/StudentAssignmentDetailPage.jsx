@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { ChevronRight, FileText, ChevronDown, Briefcase, UploadCloud, X as XIcon, File as FileIcon } from 'lucide-react';
 import AssignmentService from '../../services/assignment.service';
 import SubmissionService from '../../services/submission.service';
-import SubmissionStatusForm from '../../components/SubmissionStatusForm';
+import { formatDateDMY } from '../../helper/dateFormat';
 
 export default function StudentAssignmentDetailPage() {
     const { id } = useParams();
@@ -24,15 +24,36 @@ export default function StudentAssignmentDetailPage() {
                 if (id && !id.startsWith('asm-')) {
                     const data = await AssignmentService.getAssignmentDetail(id);
                     setAssignment(data);
-                    
+
                     const subData = await SubmissionService.getMySubmissions({ assignment_id: id });
+                    console.log("========== GET MY SUBMISSIONS ==========");
+                    console.log("Assignment ID:", id);
+                    console.log("Raw subData:", subData);
+                    console.log("subData.data:", subData?.data);
+                    console.log("subData.data.length:", subData?.data?.length);
+                    console.log("=========================================");
                     if (subData && subData.data && subData.data.length > 0) {
                         const sub = subData.data[0];
+                        console.log("========== SELECTED SUBMISSION ==========");
+                        console.log("Selected submission:", sub);
+                        console.log("Submission ID:", sub?.id);
+                        console.log("Assignment ID:", sub?.assignment_id);
+                        console.log("Student ID:", sub?.student_id);
+                        console.log("Status:", sub?.status);
+                        console.log("Submitted at:", sub?.submitted_at);
+                        console.log("Last submitted at:", sub?.last_submitted_at);
+                        console.log("Updated at:", sub?.updated_at);
+                        console.log("=========================================");
+
                         setSubmission(sub);
                         try {
                             const detail = await SubmissionService.getSubmissionById(sub.id);
+                            console.log("========== SUBMISSION DETAIL ==========");
+                            console.log("Detail response:", detail);
+                            console.log("Detail data:", detail?.data);
+                            console.log("=======================================");
                             if (detail.success) setDetailedSubmission(detail.data);
-                        } catch (err) { console.error(err); }
+                        } catch (err) { console.error("Get submission detail error:", err); }
                     } else {
                         setSubmission(null);
                     }
@@ -46,19 +67,19 @@ export default function StudentAssignmentDetailPage() {
         fetchDetail();
     }, [id]);
 
-    
+
     const handleDownloadFile = async (fileId) => {
         if (!submission) return;
         try {
             const res = await SubmissionService.getSubmissionFile(submission.id, fileId);
             if (res.success && res.data.url) {
                 const a = document.createElement("a");
-    a.href = res.data.url;
-    a.target = "_blank";
-    a.download = "";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+                a.href = res.data.url;
+                a.target = "_blank";
+                a.download = "";
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
             }
         } catch (error) {
             console.error("Failed to download file:", error);
@@ -70,7 +91,7 @@ export default function StudentAssignmentDetailPage() {
         try {
             setSubmitting(true);
             const note = submitForm.link ? `${submitForm.comment}\nLink: ${submitForm.link}` : submitForm.comment;
-            
+
             if (id && id.startsWith('asm-')) {
                 // Simulate API call for dummy data
                 await new Promise(resolve => setTimeout(resolve, 1000));
@@ -80,7 +101,7 @@ export default function StudentAssignmentDetailPage() {
                 await SubmissionService.submitAssignment(id, submitForm.file, note);
                 alert("Nộp bài thành công lên hệ thống!");
             }
-            
+
             setIsSubmitting(false);
             // Re-fetch submission
             const subData = await SubmissionService.getMySubmissions({ assignment_id: id });
@@ -112,17 +133,20 @@ export default function StudentAssignmentDetailPage() {
         'asm-4': 'MongoDB Aggregation',
         'asm-5': 'Final Backend Architecture'
     };
-    
-    const title = assignment?.title || titleMap[id] || `Assignment ${id}`;
-
+    const title =
+        submission?.assignment_title ||
+        assignment?.title ||
+        titleMap[id] ||
+        `Assignment ${id}`;
+        
     return (
         <div className="animate-fade-in" style={{ maxWidth: '1152px', margin: '0 auto', width: '100%', display: 'flex', flexDirection: 'column', gap: '24px', padding: '16px 0' }}>
-            
+
             {/* Breadcrumbs */}
             <nav style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', fontWeight: '500' }}>
-                <Link to="/student/classes" style={{ color: 'var(--color-primary)', textDecoration: 'none' }} onMouseEnter={e => e.currentTarget.style.textDecoration='underline'} onMouseLeave={e => e.currentTarget.style.textDecoration='none'}>Home</Link>
+                <Link to="/student/classes" style={{ color: 'var(--color-primary)', textDecoration: 'none' }} onMouseEnter={e => e.currentTarget.style.textDecoration = 'underline'} onMouseLeave={e => e.currentTarget.style.textDecoration = 'none'}>Home</Link>
                 <span style={{ color: 'var(--color-ink-muted)' }}>/</span>
-                <Link to="/student/classes/mock-1" style={{ color: 'var(--color-primary)', textDecoration: 'none', maxWidth: '300px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} onMouseEnter={e => e.currentTarget.style.textDecoration='underline'} onMouseLeave={e => e.currentTarget.style.textDecoration='none'}>
+                <Link to="/student/classes/mock-1" style={{ color: 'var(--color-primary)', textDecoration: 'none', maxWidth: '300px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} onMouseEnter={e => e.currentTarget.style.textDecoration = 'underline'} onMouseLeave={e => e.currentTarget.style.textDecoration = 'none'}>
                     Server-Side development with NodeJS...
                 </Link>
                 <span style={{ color: 'var(--color-ink-muted)' }}>/</span>
@@ -132,8 +156,8 @@ export default function StudentAssignmentDetailPage() {
             {/* Page Title & Submit Action Button */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
                 <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--color-ink)', margin: 0, letterSpacing: '-0.5px' }}>{title}</h1>
-                <button 
-                    className="btn" 
+                <button
+                    className="btn"
                     onClick={() => setIsSubmitting(!isSubmitting)}
                     style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', backgroundColor: isSubmitting ? 'var(--color-surface)' : 'var(--color-primary-bg)', color: isSubmitting ? 'var(--color-ink)' : 'var(--color-primary-dark)', border: isSubmitting ? '1px solid var(--color-border)' : '1px solid var(--color-primary)', fontSize: '12px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.5px' }}
                 >
@@ -143,11 +167,17 @@ export default function StudentAssignmentDetailPage() {
             </div>
 
             {/* Main Layout: 2 Cột */}
-            <div className="grid grid-cols-12 gap-6 items-start w-full">
-                
-                {/* CỘT TRÁI */}
-                <div className="col-span-12 lg:col-span-4 space-y-6">
-                        
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', alignItems: 'start' }}>
+                <style>{`
+                    @media (min-width: 1024px) {
+                        .assignment-layout { grid-template-columns: 4fr 8fr !important; }
+                    }
+                `}</style>
+                <div className="assignment-layout" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '24px', width: '100%', gridColumn: '1 / -1' }}>
+
+                    {/* CỘT TRÁI */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+
                         {/* Card 1: Table of contents */}
                         <div className="card" style={{ padding: '20px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontWeight: 'bold', color: 'var(--color-ink)', fontSize: '14px', cursor: 'pointer', marginBottom: '12px' }}>
@@ -183,26 +213,147 @@ export default function StudentAssignmentDetailPage() {
                                 <span style={{ fontWeight: 'bold', color: 'var(--color-ink)' }}>DUE DATE:</span> 2026-03-25 12:50:00
                             </div>
                             <div style={{ fontSize: '12px', fontWeight: 'bold' }}>
-                                <span style={{ color: 'var(--color-ink-soft)', fontWeight: 'normal' }}>(GMT+07)</span> 
-                                <span style={{ color: 'var(--color-danger)' }}> - SCORE: N/A</span>
+                                <span style={{ color: 'var(--color-ink-soft)', fontWeight: 'normal' }}>(GMT+07)</span>
+                                <span
+                                    style={{
+                                        color: submission?.score != null
+                                            ? 'var(--color-success)'
+                                            : 'var(--color-danger)'
+                                    }}
+                                >
+                                    - SCORE: {submission?.score != null ? submission.score : 'N/A'}
+                                </span>
                             </div>
                         </div>
                     </div>
 
                     {/* CỘT PHẢI: Khung Submission Status Lớn / Form Nộp */}
-                    {isSubmitting ? (
-                        <div className="col-span-12 lg:col-span-8 w-full min-w-0">
-                            <SubmissionStatusForm 
-                                initialFile={submitForm.file}
-                                onCancel={() => setIsSubmitting(false)}
-                                onSubmitSuccess={({ file, rubricData }) => {
-                                    setSubmitForm(prev => ({ ...prev, file }));
-                                    handleSubmit();
-                                }}
-                            />
-                        </div>
-                    ) : (
-                        <div className="col-span-12 lg:col-span-8 w-full min-w-0 card" style={{ padding: '24px', minHeight: '350px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                    <div className="card" style={{ padding: '24px', minHeight: '350px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+
+                        {isSubmitting ? (
+                            <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                <div style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--color-ink)', textTransform: 'uppercase', borderBottom: '1px solid var(--color-border)', paddingBottom: '12px' }}>
+                                    Your Submission
+                                </div>
+
+                                {/* Drag and Drop File Upload */}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                    <label style={{ fontSize: '12px', fontWeight: '600', color: 'var(--color-ink)' }}>Upload File (ZIP, PDF, DOCX...)</label>
+
+                                    {!submitForm.file ? (
+                                        <div
+                                            onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                                            onDragLeave={() => setIsDragging(false)}
+                                            onDrop={(e) => {
+                                                e.preventDefault();
+                                                setIsDragging(false);
+                                                if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                                                    setSubmitForm({ ...submitForm, file: e.dataTransfer.files[0] });
+                                                }
+                                            }}
+                                            onClick={() => fileInputRef.current?.click()}
+                                            style={{
+                                                border: isDragging ? '2px dashed var(--color-primary)' : '2px dashed var(--color-border)',
+                                                backgroundColor: isDragging ? 'var(--color-primary-bg)' : 'var(--color-surface)',
+                                                borderRadius: 'var(--radius-md)',
+                                                padding: '32px 16px',
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                gap: '8px',
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s ease',
+                                                textAlign: 'center'
+                                            }}
+                                        >
+                                            <UploadCloud size={32} style={{ color: isDragging ? 'var(--color-primary)' : 'var(--color-ink-muted)' }} />
+                                            <div style={{ fontSize: '13px', color: 'var(--color-ink)' }}>
+                                                <span style={{ color: 'var(--color-primary)', fontWeight: '600' }}>Click to upload</span> or drag and drop
+                                            </div>
+                                            <div style={{ fontSize: '11px', color: 'var(--color-ink-soft)' }}>
+                                                Maximum file size 50 MB
+                                            </div>
+                                            <input
+                                                type="file"
+                                                ref={fileInputRef}
+                                                onChange={(e) => {
+                                                    if (e.target.files && e.target.files.length > 0) {
+                                                        setSubmitForm({ ...submitForm, file: e.target.files[0] });
+                                                    }
+                                                }}
+                                                style={{ display: 'none' }}
+                                            />
+                                        </div>
+                                    ) : (
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--color-surface)' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                                <div style={{ width: '36px', height: '36px', backgroundColor: 'var(--color-primary-bg)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-primary)' }}>
+                                                    <FileIcon size={20} />
+                                                </div>
+                                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                                    <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--color-ink)' }}>{submitForm.file.name}</span>
+                                                    <span style={{ fontSize: '11px', color: 'var(--color-ink-soft)' }}>{(submitForm.file.size / 1024 / 1024).toFixed(2)} MB</span>
+                                                </div>
+                                            </div>
+                                            <button
+                                                onClick={() => setSubmitForm({ ...submitForm, file: null })}
+                                                style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--color-ink-muted)' }}
+                                            >
+                                                <XIcon size={18} />
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                                    <hr style={{ flex: 1, borderColor: 'var(--color-border)' }} />
+                                    <span style={{ fontSize: '10px', fontWeight: 'bold', color: 'var(--color-ink-muted)', textTransform: 'uppercase' }}>OR</span>
+                                    <hr style={{ flex: 1, borderColor: 'var(--color-border)' }} />
+                                </div>
+
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                    <label style={{ fontSize: '12px', fontWeight: '600', color: 'var(--color-ink)' }}>Link (Google Drive, GitHub, etc.)</label>
+                                    <input
+                                        type="url"
+                                        placeholder="https://..."
+                                        value={submitForm.link}
+                                        onChange={(e) => setSubmitForm({ ...submitForm, link: e.target.value })}
+                                        style={{ width: '100%', padding: '10px 12px', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', fontSize: '13px' }}
+                                    />
+                                </div>
+
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                    <label style={{ fontSize: '12px', fontWeight: '600', color: 'var(--color-ink)' }}>Comment / Message</label>
+                                    <textarea
+                                        placeholder="Add a comment to your submission..."
+                                        rows="4"
+                                        value={submitForm.comment}
+                                        onChange={(e) => setSubmitForm({ ...submitForm, comment: e.target.value })}
+                                        style={{ width: '100%', padding: '10px 12px', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', fontSize: '13px', resize: 'vertical' }}
+                                    ></textarea>
+                                </div>
+
+                                <div style={{ marginTop: '8px', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+                                    <button
+                                        className="btn btn-secondary"
+                                        onClick={() => setIsSubmitting(false)}
+                                        style={{ padding: '8px 16px', fontSize: '12px', fontWeight: '600' }}
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        className="btn btn-primary"
+                                        onClick={handleSubmit}
+                                        disabled={submitting}
+                                        style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', fontSize: '12px', fontWeight: 'bold', opacity: submitting ? 0.7 : 1, cursor: submitting ? 'not-allowed' : 'pointer' }}
+                                    >
+                                        <UploadCloud size={16} />
+                                        {submitting ? 'SAVING...' : 'SAVE CHANGES'}
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
                             <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                                 {/* Hàng 1 */}
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
@@ -211,11 +362,41 @@ export default function StudentAssignmentDetailPage() {
                                             SUBMISSION STATUS
                                         </div>
                                         {submission ? (
-                                            <span className="badge" style={{ backgroundColor: 'rgba(34, 197, 94, 0.1)', color: '#16a34a', padding: '4px 12px', fontSize: '12px', border: '1px solid #16a34a' }}>
-                                                Submitted
+                                            <span
+                                                className="badge"
+                                                style={{
+                                                    backgroundColor:
+                                                        submission.status === 'graded'
+                                                            ? 'rgba(59, 130, 246, 0.1)'
+                                                            : 'rgba(34, 197, 94, 0.1)',
+                                                    color:
+                                                        submission.status === 'graded'
+                                                            ? '#2563eb'
+                                                            : '#16a34a',
+                                                    padding: '4px 12px',
+                                                    fontSize: '12px',
+                                                    border:
+                                                        submission.status === 'graded'
+                                                            ? '1px solid #2563eb'
+                                                            : '1px solid #16a34a'
+                                                }}
+                                            >
+                                                {submission.status === 'graded'
+                                                    ? 'Graded'
+                                                    : submission.status === 'submitted'
+                                                        ? 'Submitted'
+                                                        : submission.status}
                                             </span>
                                         ) : (
-                                            <span className="badge" style={{ backgroundColor: 'var(--color-border)', color: 'var(--color-ink-soft)', padding: '4px 12px', fontSize: '12px' }}>
+                                            <span
+                                                className="badge"
+                                                style={{
+                                                    backgroundColor: 'var(--color-border)',
+                                                    color: 'var(--color-ink-soft)',
+                                                    padding: '4px 12px',
+                                                    fontSize: '12px'
+                                                }}
+                                            >
                                                 Missing
                                             </span>
                                         )}
@@ -225,7 +406,11 @@ export default function StudentAssignmentDetailPage() {
                                             SUBMISSION TIME
                                         </div>
                                         <span style={{ fontSize: '12px', color: 'var(--color-ink-soft)', fontWeight: '500' }}>
-                                            {submission ? new Date(submission.submitted_at || submission.last_submitted_at || submission.updated_at).toLocaleString() : '(GMT+07)'}
+                                            {formatDateDMY(
+                                                submission
+                                                    ? (submission.submitted_at || submission.last_submitted_at || submission.updated_at)
+                                                    : null
+                                            )}
                                         </span>
                                     </div>
                                 </div>
@@ -241,12 +426,12 @@ export default function StudentAssignmentDetailPage() {
                                                 {(() => {
                                                     const latestVer = detailedSubmission.versions[0];
                                                     let files = [];
-                                                    try { files = typeof latestVer.files === 'string' ? JSON.parse(latestVer.files) : latestVer.files; } catch(e){}
+                                                    try { files = typeof latestVer.files === 'string' ? JSON.parse(latestVer.files) : latestVer.files; } catch (e) { }
                                                     if (!files || files.length === 0) return <span>No files submitted.</span>;
                                                     return files.map(file => (
                                                         <div key={file.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--color-primary)' }}>
                                                             <FileIcon size={16} />
-                                                            <a href="#" style={{ color: 'var(--color-primary)', fontWeight: '600', textDecoration: 'none' }} onClick={(e) => { e.preventDefault(); handleDownloadFile(file.id); }} onMouseEnter={e => e.currentTarget.style.textDecoration='underline'} onMouseLeave={e => e.currentTarget.style.textDecoration='none'}>
+                                                            <a href="#" style={{ color: 'var(--color-primary)', fontWeight: '600', textDecoration: 'none' }} onClick={(e) => { e.preventDefault(); handleDownloadFile(file.id); }} onMouseEnter={e => e.currentTarget.style.textDecoration = 'underline'} onMouseLeave={e => e.currentTarget.style.textDecoration = 'none'}>
                                                                 {file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)
                                                             </a>
                                                         </div>
@@ -261,18 +446,41 @@ export default function StudentAssignmentDetailPage() {
 
                                 {/* Hàng 3 */}
                                 <div>
-                                    <div style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--color-ink-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>
-                                        COMMENT
+                                    <div>
+                                        <div
+                                            style={{
+                                                fontSize: '11px',
+                                                fontWeight: 'bold',
+                                                color: 'var(--color-ink-muted)',
+                                                textTransform: 'uppercase',
+                                                letterSpacing: '0.5px',
+                                                marginBottom: '8px'
+                                            }}
+                                        >
+                                            FEEDBACK
+                                        </div>
+
+                                        <div
+                                            style={{
+                                                fontSize: '12px',
+                                                color: 'var(--color-ink)'
+                                            }}
+                                        >
+                                            {submission?.feedback || 'No feedback yet.'}
+                                        </div>
                                     </div>
                                     <div style={{ fontSize: '12px', color: 'var(--color-ink)' }}>
                                         {submission && submission.status === 'submitted' ? (
                                             <span style={{ fontStyle: 'italic', color: 'var(--color-ink-soft)' }}>Submitted successfully. Waiting for grading.</span>
-                                        ) : "—"}
+                                        ) : ""}
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    )}
+                        )}
+
+                    </div>
+
+                </div>
             </div>
         </div>
     );

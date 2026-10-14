@@ -50,31 +50,70 @@ export default function LecturerAssignmentDetailPage() {
                 }
 
                 const subData = await SubmissionService.getAssignmentSubmissions(id);
+
+                console.log('📦 SUBMISSION API RESPONSE:', subData);
+
                 let submissionsData = [];
+
                 if (subData && subData.data) {
                     submissionsData = subData.data;
                 }
 
-                if (classMembers.length > 0) {
-                    const combined = classMembers.map(m => {
-                        const sub = submissionsData.find(s => s.student_id === m.student_id);
-                        if (sub) return sub;
+                console.log('📋 SUBMISSIONS DATA:', submissionsData);
+
+                // ========================================
+                // MERGE CLASS MEMBERS + SUBMISSIONS
+                // ========================================
+
+                const submissionMap = new Map(
+                    submissionsData.map(sub => [sub.student_id, sub])
+                );
+
+                const classMemberIds = new Set(
+                    classMembers
+                        .map(member => member.studentId)
+                        .filter(Boolean)
+                );
+
+                const combined = classMembers.map(member => {
+                    const studentId = member.studentId;
+
+                    const submission = submissionMap.get(studentId);
+
+                    if (submission) {
                         return {
-                            id: `missing-${m.student_id}`,
-                            student_id: m.student_id,
-                            student_name: m.full_name || m.student_name,
-                            student_email: m.email || m.student_email,
-                            student_code: m.student_code,
-                            status: 'Missing',
-                            latest_files: null,
-                            latest_note: null,
-                            submitted_at: null
+                            ...submission,
+                            student_code:
+                                submission.student_code ||
+                                member.studentCode ||
+                                '',
                         };
-                    });
-                    setSubmissions(combined);
-                } else {
-                    setSubmissions(submissionsData);
-                }
+                    }
+
+                    return {
+                        id: `missing-${studentId}`,
+                        student_id: studentId,
+                        student_name: member.fullName || 'Unknown Student',
+                        student_email: member.email || '',
+                        student_code: member.studentCode || '',
+                        status: 'Missing',
+                        latest_files: [],
+                        latest_note: null,
+                        submitted_at: null,
+                        score: null,
+                        feedback: null,
+                        grade_id: null,
+                    };
+                });
+
+                const unmatchedSubmissions = submissionsData.filter(
+                    submission => !classMemberIds.has(submission.student_id)
+                );
+
+                setSubmissions([
+                    ...combined,
+                    ...unmatchedSubmissions
+                ]);
             }
         } catch (error) {
             console.error("Failed to fetch assignment details:", error);
@@ -317,7 +356,11 @@ export default function LecturerAssignmentDetailPage() {
                                                         <span className="badge" style={{ backgroundColor: 'var(--color-border)', color: 'var(--color-ink-soft)', padding: '4px 8px', fontSize: '10px', borderRadius: '4px' }}>{sub.status || 'Missing'}</span>
                                                     )}
                                                 </td>
-                                                <td style={{ padding: '8px' }}>{formatDateDMY(sub.submitted_at)}</td>                                                <td style={{ padding: '8px' }}>
+                                                <td style={{ padding: '8px' }}>
+                                                    {formatDateDMY(sub.submitted_at)}
+                                                </td>
+
+                                                <td style={{ padding: '8px' }}>
                                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                                                         {files && files.length > 0 ? files.map(file => (
                                                             <div key={file.id} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
