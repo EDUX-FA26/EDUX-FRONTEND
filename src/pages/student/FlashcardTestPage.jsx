@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLanguage } from '../../contexts/LanguageContext';
 import FlashcardService from '../../services/flashcard.service';
+import MathText from '../../components/common/MathText';
 import {
   ArrowLeft, CheckCircle, HelpCircle, Send, Clock,
   ChevronLeft, ChevronRight, AlertCircle, RefreshCw, FileText
@@ -229,9 +230,9 @@ export default function FlashcardTestPage() {
           </div>
 
           {/* Question Text */}
-          <h2 style={{ fontSize: '1.125rem', fontWeight: 700, color: 'var(--color-ink)', lineHeight: 1.6, margin: 0 }}>
-            {currentQuestion.question}
-          </h2>
+          <div style={{ fontSize: '1.125rem', fontWeight: 700, color: 'var(--color-ink)', lineHeight: 1.6, margin: 0 }}>
+            <MathText content={currentQuestion.question} />
+          </div>
 
           {/* Answer Inputs — Multiple Choice only */}
           <div style={{ marginTop: '8px' }}>
@@ -262,7 +263,7 @@ export default function FlashcardTestPage() {
                     }}>
                       {isSelected && <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'white' }} />}
                     </div>
-                    <span>{opt}</span>
+                    <span><MathText content={opt} inline /></span>
                   </button>
                 );
               })}

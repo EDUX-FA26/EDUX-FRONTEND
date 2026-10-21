@@ -1361,3 +1361,16 @@ a:hover {
     flex-basis: 42px;
   }
 }
+
+
+/* KaTeX custom responsive styles */
+.katex {
+  font-size: 1.05em;
+  text-rendering: auto;
+}
+.katex-display {
+  margin: 0.5em 0 !important;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 4px 0;
+}

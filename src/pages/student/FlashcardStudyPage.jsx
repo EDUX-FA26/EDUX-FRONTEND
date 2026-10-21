@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLanguage } from '../../contexts/LanguageContext';
 import FlashcardService from '../../services/flashcard.service';
+import MathText from '../../components/common/MathText';
 import {
   ArrowLeft, CheckCircle, BarChart2, Zap, RotateCcw,
   ChevronLeft, ChevronRight, Eye, EyeOff, Trophy, Layers, Flame
@@ -82,12 +83,12 @@ function FlipCard({ card, flipped, onFlip, t }) {
             flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
             padding: '28px 32px', textAlign: 'center',
           }}>
-            <p style={{
+            <div style={{
               fontSize: '1.125rem', fontWeight: 600, color: 'var(--color-ink)',
               lineHeight: 1.65, margin: 0,
             }}>
-              {card.question}
-            </p>
+              <MathText content={card.question} />
+            </div>
           </div>
         </div>
 
@@ -120,12 +121,12 @@ function FlipCard({ card, flipped, onFlip, t }) {
             flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
             padding: '24px 32px', textAlign: 'center', gap: '16px',
           }}>
-            <p style={{
+            <div style={{
               fontSize: '1.125rem', fontWeight: 700, color: 'var(--color-primary-dark)',
               lineHeight: 1.65, margin: 0,
             }}>
-              {card.answer}
-            </p>
+              <MathText content={card.answer} />
+            </div>
             {card.explanation && (
               <div style={{
                 padding: '12px 16px', borderRadius: '12px',
@@ -136,9 +137,9 @@ function FlipCard({ card, flipped, onFlip, t }) {
                 <p style={{ fontSize: '0.6875rem', fontWeight: 700, color: 'var(--color-ink-muted)', marginBottom: '4px' }}>
                   {F.explanation || 'Giải thích'}
                 </p>
-                <p style={{ fontSize: '0.8125rem', color: 'var(--color-ink)', margin: 0, lineHeight: 1.6 }}>
-                  {card.explanation}
-                </p>
+                <div style={{ fontSize: '0.8125rem', color: 'var(--color-ink)', margin: 0, lineHeight: 1.6 }}>
+                  <MathText content={card.explanation} />
+                </div>
               </div>
             )}
           </div>

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useLanguage } from '../../contexts/LanguageContext';
 import FlashcardService from '../../services/flashcard.service';
+import MathText from '../../components/common/MathText';
 import {
   ArrowLeft, CheckCircle, XCircle, Trophy, RotateCcw,
   BookOpen, Layers, AlertCircle, HelpCircle, FileText, Flame, X
@@ -359,10 +360,10 @@ export default function FlashcardTestResultPage() {
               </div>
             </div>
 
-            {/* Question Text */}
-            <p style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--color-ink)', margin: 0, lineHeight: 1.5 }}>
-              {q.question}
-            </p>
+            {/* Question Text with MathText */}
+            <div style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--color-ink)', margin: 0, lineHeight: 1.5 }}>
+              <MathText content={q.question} />
+            </div>
 
             {/* Answers Comparison */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '12px' }}>
@@ -375,13 +376,13 @@ export default function FlashcardTestResultPage() {
                 <span style={{ fontSize: '0.6875rem', fontWeight: 700, color: 'var(--color-ink-muted)', display: 'block', marginBottom: '4px' }}>
                   Câu trả lời của bạn:
                 </span>
-                <p style={{
+                <div style={{
                   fontSize: '0.875rem', fontWeight: 600,
                   color: q.student_answer ? (q.is_correct ? '#15803d' : '#b91c1c') : 'var(--color-ink-soft)',
                   margin: 0, fontStyle: q.student_answer ? 'normal' : 'italic',
                 }}>
-                  {q.student_answer || '(Bỏ trống - Chưa trả lời)'}
-                </p>
+                  {q.student_answer ? <MathText content={q.student_answer} inline /> : '(Bỏ trống - Chưa trả lời)'}
+                </div>
               </div>
 
               {/* Correct Answer */}
@@ -393,9 +394,9 @@ export default function FlashcardTestResultPage() {
                 <span style={{ fontSize: '0.6875rem', fontWeight: 700, color: 'var(--color-accent-teal)', display: 'block', marginBottom: '4px' }}>
                   Đáp án chuẩn:
                 </span>
-                <p style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--color-ink)', margin: 0 }}>
-                  {q.correct_answer}
-                </p>
+                <div style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--color-ink)', margin: 0 }}>
+                  <MathText content={q.correct_answer} inline />
+                </div>
               </div>
             </div>
 
@@ -408,9 +409,9 @@ export default function FlashcardTestResultPage() {
                 <span style={{ fontSize: '0.6875rem', fontWeight: 700, color: 'var(--color-ink-muted)', display: 'block', marginBottom: '4px' }}>
                   Giải thích đáp án:
                 </span>
-                <p style={{ fontSize: '0.8125rem', color: 'var(--color-ink)', margin: 0, lineHeight: 1.5 }}>
-                  {q.explanation}
-                </p>
+                <div style={{ fontSize: '0.8125rem', color: 'var(--color-ink)', margin: 0, lineHeight: 1.5 }}>
+                  <MathText content={q.explanation} />
+                </div>
               </div>
             )}
           </div>

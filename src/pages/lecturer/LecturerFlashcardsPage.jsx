@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useLanguage } from '../../contexts/LanguageContext';
 import FlashcardService from '../../services/flashcard.service';
 import ClassService from '../../services/class.service';
+import MathText from '../../components/common/MathText';
+import LatexToolbar from '../../components/common/LatexToolbar';
 import {
   Plus, Pencil, Trash2, Globe, Lock, Layers, BookOpen,
   BarChart2, ChevronDown, ChevronUp, X, Save, Eye,
@@ -306,6 +308,7 @@ function CardFormModal({ deckId, card, onClose, onSaved }) {
 
         {/* Câu hỏi */}
         <Field label="Câu hỏi" required>
+          <LatexToolbar onInsert={(f) => setQuestion(prev => prev ? prev + ' ' + f : f)} />
           <textarea
             rows={2}
             style={{ ...inputStyle, minHeight: '44px', resize: 'vertical', padding: '8px 10px' }}
@@ -313,6 +316,19 @@ function CardFormModal({ deckId, card, onClose, onSaved }) {
             onChange={(e) => setQuestion(e.target.value)}
             placeholder="Nhập câu hỏi trắc nghiệm..."
           />
+          {question.trim() && (
+            <div style={{
+              marginTop: '6px', padding: '8px 12px', borderRadius: '8px',
+              background: 'var(--color-primary-bg)', border: '1px solid var(--color-border)',
+            }}>
+              <span style={{ fontSize: '0.6875rem', fontWeight: 700, color: 'var(--color-primary-dark)', display: 'block', marginBottom: '2px' }}>
+                👁️ Xem trước công thức câu hỏi:
+              </span>
+              <div style={{ fontSize: '0.875rem', color: 'var(--color-ink)', lineHeight: 1.5 }}>
+                <MathText content={question} />
+              </div>
+            </div>
+          )}
         </Field>
 
         {/* Các lựa chọn */}
@@ -435,6 +451,19 @@ function CardFormModal({ deckId, card, onClose, onSaved }) {
             onChange={(e) => setExplanation(e.target.value)}
             placeholder="Giải thích vì sao đáp án đúng (hiển thị trong kết quả kiểm tra)..."
           />
+          {explanation.trim() && (
+            <div style={{
+              marginTop: '6px', padding: '6px 10px', borderRadius: '8px',
+              background: 'var(--color-primary-bg)', border: '1px solid var(--color-border)',
+            }}>
+              <span style={{ fontSize: '0.6875rem', fontWeight: 700, color: 'var(--color-primary-dark)', display: 'block', marginBottom: '2px' }}>
+                👁️ Xem trước giải thích:
+              </span>
+              <div style={{ fontSize: '0.8125rem', color: 'var(--color-ink)', lineHeight: 1.5 }}>
+                <MathText content={explanation} />
+              </div>
+            </div>
+          )}
         </Field>
 
         {/* Độ khó */}
@@ -1093,11 +1122,11 @@ function DeckRow({ deck, onEdit, onDelete, onRefresh }) {
                       </span>
                       {/* Content */}
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <p style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--color-ink)', margin: '0 0 4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {card.question}
+                        <p style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--color-ink)', margin: '0 0 4px', lineHeight: 1.5 }}>
+                          <MathText content={card.question} />
                         </p>
-                        <p style={{ fontSize: '0.8125rem', color: 'var(--color-ink-muted)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          → {card.answer}
+                        <p style={{ fontSize: '0.8125rem', color: 'var(--color-ink-muted)', margin: 0, lineHeight: 1.5 }}>
+                          <span>→ </span><MathText content={card.answer} inline />
                         </p>
                       </div>
                       {/* Diff badge */}
