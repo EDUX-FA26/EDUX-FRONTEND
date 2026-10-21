@@ -60,6 +60,7 @@ const en = {
     lms: 'LMS & Coursera',
     services: 'Services',
     streak: 'Learning Streak',
+    studyPlan: 'Study Plan',
     flashcards: 'Flashcards',
     search: 'Search',
     semesters: 'Semesters',

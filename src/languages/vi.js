@@ -60,6 +60,7 @@ const vi = {
     lms: 'LMS & Coursera',
     services: 'Dịch vụ',
     streak: 'Streak học tập',
+    studyPlan: 'Học tập cá nhân',
     flashcards: 'Flashcard',
     search: 'Tìm kiếm',
     semesters: 'Học kỳ',

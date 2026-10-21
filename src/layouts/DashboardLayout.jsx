@@ -5,12 +5,13 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { ROLES, SEMESTER_LABEL } from '../config/constants';
 import SettingsToggle from '../components/common/SettingsToggle';
 import { FiChevronDown, FiGrid, FiLogOut, FiMenu, FiX } from 'react-icons/fi';
-import { Flame, LibraryBig, BookMarked } from 'lucide-react';
+import { Flame, LibraryBig, BookMarked, Sparkles } from 'lucide-react';
 
 // Nav config theo role
 const NAV_BY_ROLE = {
   [ROLES.STUDENT]: [
     { id: 'dashboard', icon: FiGrid, path: '/student/dashboard', key: 'overview' },
+    { id: 'study-plan', icon: Sparkles, path: '/student/study-plan', key: 'studyPlan', label: 'Học tập cá nhân' },
     { id: 'classes', icon: LibraryBig, path: '/student/classes', key: 'classes', label: 'Lớp học' },
     { id: 'streak', icon: Flame, path: '/student/streak', key: 'streak' },
     { id: 'flashcards', icon: BookMarked, path: '/student/flashcards', key: 'flashcards' },

@@ -26,6 +26,7 @@ import FlashcardStudyPage from '../pages/student/FlashcardStudyPage';
 import StudentFlashcardSelectPage from '../pages/student/StudentFlashcardSelectPage';
 import FlashcardTestPage from '../pages/student/FlashcardTestPage';
 import FlashcardTestResultPage from '../pages/student/FlashcardTestResultPage';
+import PersonalizedLearningPage from '../pages/student/PersonalizedLearningPage';
 
 // Layouts
 import DashboardLayout from '../layouts/DashboardLayout';
@@ -64,6 +65,7 @@ export default function AppRoutes() {
         }
       >
         <Route path="dashboard" element={<StudentDashboard />} />
+        <Route path="study-plan" element={<PersonalizedLearningPage />} />
         <Route path="streak" element={<StreakDetailPage />} />
         <Route path="streak/:subjectId" element={<StreakDetailBySubjectPage />} />
         <Route path="flashcards" element={<StudentFlashcardSelectPage />} />
