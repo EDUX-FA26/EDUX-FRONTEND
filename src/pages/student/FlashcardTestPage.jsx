@@ -79,7 +79,15 @@ export default function FlashcardTestPage() {
 
       const res = await FlashcardService.submitTest(activeTestId, formattedAnswers);
       setShowConfirmModal(false);
-      navigate(`/student/flashcards/tests/${activeTestId}/result`, { replace: true });
+      navigate(`/student/flashcards/tests/${activeTestId}/result`, {
+        replace: true,
+        state: {
+          streakData: res.data?.streak,
+          passedStreak: res.data?.passed_streak,
+          percentage: res.data?.percentage,
+          score: res.data?.score,
+        },
+      });
     } catch (err) {
       setError(err.response?.data?.message || 'Không thể nộp bài kiểm tra. Vui lòng thử lại.');
       setShowConfirmModal(false);

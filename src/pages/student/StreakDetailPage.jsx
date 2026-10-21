@@ -96,7 +96,7 @@ export default function StreakDetailPage() {
             case 'quiz_completed':
                 return S.typeQuizCompleted || 'Hoàn thành bài kiểm tra';
             default:
-                return S.typeDefault || 'Học tập';
+                return S.typeDefault || 'Kiểm tra';
         }
     }
     return (
@@ -323,7 +323,7 @@ export default function StreakDetailPage() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <BookOpen style={{ color: 'var(--color-primary)', width: '20px', height: '20px' }} />
                         <h2 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--color-ink)', margin: 0 }}>
-                            {S.activityHistoryTitle || 'Lịch sử hoạt động gần đây'}
+                            {S.activityHistoryTitle || 'Lịch sử thắp chuỗi gần đây'}
                         </h2>
                     </div>
                     <span style={{ fontSize: '0.75rem', color: 'var(--color-ink-muted)' }}>

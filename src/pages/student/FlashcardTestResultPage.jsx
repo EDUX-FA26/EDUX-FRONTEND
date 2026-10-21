@@ -1,15 +1,121 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useLanguage } from '../../contexts/LanguageContext';
 import FlashcardService from '../../services/flashcard.service';
 import {
   ArrowLeft, CheckCircle, XCircle, Trophy, RotateCcw,
-  BookOpen, Layers, AlertCircle, HelpCircle, FileText
+  BookOpen, Layers, AlertCircle, HelpCircle, FileText, Flame, X
 } from 'lucide-react';
+
+// ─── Streak Modal Component ──────────────────────────────────────────────────
+function StreakModal({ data, onClose }) {
+  if (!data) return null;
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 9999,
+      background: 'rgba(0, 0, 0, 0.6)', backdropFilter: 'blur(4px)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      padding: '20px', animation: 'fadeIn 0.3s ease'
+    }}>
+      <div style={{
+        background: 'var(--color-surface)', borderRadius: '24px',
+        padding: '32px 24px', width: '100%', maxWidth: '360px',
+        textAlign: 'center', position: 'relative',
+        boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
+        animation: 'slideUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+      }}>
+        {/* Nút đóng */}
+        <button onClick={onClose} style={{
+          position: 'absolute', top: '16px', right: '16px',
+          background: 'var(--color-primary-bg)', border: 'none',
+          borderRadius: '50%', width: '32px', height: '32px',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          cursor: 'pointer', color: 'var(--color-ink-muted)'
+        }}>
+          <X size={18} />
+        </button>
+
+        {/* Icon Ngọn lửa */}
+        <div style={{
+          width: '80px', height: '80px', margin: '0 auto 16px',
+          borderRadius: '50%', background: 'linear-gradient(135deg, #ffedd5 0%, #fed7aa 100%)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          boxShadow: '0 8px 24px rgba(249, 115, 22, 0.3)',
+        }}>
+          <Flame size={44} color="#ea580c" fill="#ea580c" />
+        </div>
+
+        <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--color-ink)', marginBottom: '8px' }}>
+          Tuyệt vời!
+        </h2>
+
+        {data.subjectCode && (
+          <div style={{ marginBottom: '12px' }}>
+            <span style={{
+              fontSize: '0.75rem', fontWeight: 700, fontFamily: 'var(--font-mono)',
+              background: 'var(--color-primary-card)', color: 'var(--color-primary-dark)',
+              padding: '4px 10px', borderRadius: '8px', border: '1px solid var(--color-border)',
+              display: 'inline-block'
+            }}>
+              Môn học: {data.subjectCode}
+            </span>
+          </div>
+        )}
+
+        <p style={{ fontSize: '1rem', color: 'var(--color-ink-muted)', marginBottom: '24px', lineHeight: 1.5 }}>
+          Bạn đang duy trì chuỗi học tập <br />
+          <strong style={{ fontSize: '1.5rem', color: '#ea580c' }}>
+            {data.currentStreak} ngày liên tiếp
+          </strong>
+        </p>
+
+        <div style={{
+          display: 'flex', justifyContent: 'space-around',
+          background: 'var(--color-primary-bg)', padding: '16px',
+          borderRadius: '16px', marginBottom: '24px'
+        }}>
+          <div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--color-ink-muted)', fontWeight: 600 }}>
+              Kỷ lục
+            </div>
+            <div style={{ fontSize: '1.125rem', fontWeight: 700, color: 'var(--color-ink)' }}>
+              {data.longestStreak} ngày
+            </div>
+          </div>
+          <div style={{ width: '1px', background: 'var(--color-border)' }}></div>
+          <div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--color-ink-muted)', fontWeight: 600 }}>
+              Bảo vệ chuỗi
+            </div>
+            <div style={{ fontSize: '1.125rem', fontWeight: 700, color: data.recoveryRemaining > 0 ? '#16a34a' : '#dc2626' }}>
+              Còn {data.recoveryRemaining}
+            </div>
+          </div>
+        </div>
+
+        <button onClick={onClose} style={{
+          width: '100%', padding: '14px', borderRadius: '14px',
+          background: 'var(--color-primary)', color: 'white',
+          border: 'none', fontSize: '1rem', fontWeight: 700, cursor: 'pointer',
+          boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)'
+        }}>
+          Tiếp tục
+        </button>
+      </div>
+
+      <style>{`
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+      `}</style>
+    </div>
+  );
+}
 
 export default function FlashcardTestResultPage() {
   const { testId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { t } = useLanguage();
   const F = t.flashcards || {};
 
@@ -17,18 +123,27 @@ export default function FlashcardTestResultPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Streak state from navigation or fetched result
+  const navStreakData = location.state?.streakData;
+  const navPassedStreak = location.state?.passedStreak;
+  const [streakData, setStreakData] = useState(navStreakData || null);
+  const [showStreakModal, setShowStreakModal] = useState(Boolean(navStreakData && navPassedStreak));
+
   const fetchResult = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const res = await FlashcardService.getTestResult(testId);
       setResult(res.data);
+      if (!streakData && res.data?.streak) {
+        setStreakData(res.data.streak);
+      }
     } catch (err) {
       setError(err.response?.data?.message || 'Không thể tải kết quả bài kiểm tra.');
     } finally {
       setLoading(false);
     }
-  }, [testId]);
+  }, [testId, streakData]);
 
   useEffect(() => {
     fetchResult();
@@ -41,6 +156,14 @@ export default function FlashcardTestResultPage() {
       navigate(`/student/flashcards/tests/${res.data.test_id}`, { replace: true });
     } catch (err) {
       alert(err.response?.data?.message || 'Không thể tạo lượt kiểm tra mới.');
+    }
+  };
+
+  const handleBackToDeckList = () => {
+    if (result?.subject_id) {
+      navigate(`/student/flashcards/subject/${result.subject_id}`);
+    } else {
+      navigate('/student/flashcards');
     }
   };
 
@@ -64,7 +187,7 @@ export default function FlashcardTestResultPage() {
           <AlertCircle style={{ width: '36px', height: '36px', display: 'block', margin: '0 auto 12px' }} />
           <p style={{ fontSize: '0.9375rem', fontWeight: 600, margin: '0 0 12px' }}>{error}</p>
           <button
-            onClick={() => navigate('/student/flashcards')}
+            onClick={handleBackToDeckList}
             style={{
               padding: '8px 18px', borderRadius: '10px',
               background: 'var(--color-surface)', border: '1px solid var(--color-border)',
@@ -78,7 +201,9 @@ export default function FlashcardTestResultPage() {
     );
   }
 
-  const scorePct = result ? Math.round((result.correct / (result.total_questions || 1)) * 100) : 0;
+  const scorePct = result?.percentage !== undefined
+    ? result.percentage
+    : (result ? Math.round((result.correct / (result.total_questions || 1)) * 100) : 0);
   const isHighPass = result?.score >= 7.0;
 
   return (
@@ -87,7 +212,7 @@ export default function FlashcardTestResultPage() {
       {/* ── Top Bar ── */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <button
-          onClick={() => navigate(`/student/flashcards`)}
+          onClick={handleBackToDeckList}
           style={{
             display: 'inline-flex', alignItems: 'center', gap: '6px',
             background: 'none', border: 'none', cursor: 'pointer',
@@ -291,6 +416,14 @@ export default function FlashcardTestResultPage() {
           </div>
         ))}
       </div>
+
+      {/* Streak Modal popup */}
+      {showStreakModal && (
+        <StreakModal
+          data={streakData}
+          onClose={() => setShowStreakModal(false)}
+        />
+      )}
 
     </div>
   );
