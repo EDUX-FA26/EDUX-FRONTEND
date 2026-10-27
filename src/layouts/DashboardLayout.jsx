@@ -49,6 +49,14 @@ export default function DashboardLayout() {
 
   const navItems = NAV_BY_ROLE[user?.role] || [];
   const activeId = navItems.find((n) => location.pathname.startsWith(n.path))?.id;
+  const isFocusRoom = location.pathname.startsWith('/student/focus');
+
+  // Tự động thu gọn sidebar khi vào phòng học tập trung để không gian phòng học rộng rãi và chạy ra chính giữa
+  React.useEffect(() => {
+    if (isFocusRoom) {
+      setSidebarCollapsed(true);
+    }
+  }, [isFocusRoom]);
 
   const handleLogout = async () => {
     setShowUserMenu(false);
@@ -289,17 +297,12 @@ export default function DashboardLayout() {
         </header>
 
         {/* ─── MAIN CONTENT ─── */}
-        <main style={{
-          flex: 1,
-          maxWidth: '1440px', width: '100%',
-          margin: '0 auto',
-          padding: '24px 24px 80px',
-        }}>
+        <main style={isFocusRoom ? { flex: 1, width: '100%', maxWidth: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', height: 'calc(100vh - var(--dashboard-header-height, 64px))', overflow: 'hidden' } : { flex: 1, maxWidth: '1440px', width: '100%', margin: '0 auto', padding: '24px 24px 80px' }}>
           <Outlet />
         </main>
 
         {/* ─── FOOTER ─── (ẩn ở trang flashcard) */}
-        {!location.pathname.startsWith('/student/flashcards') && !location.pathname.startsWith('/lecturer/flashcards') && (
+        {!location.pathname.startsWith('/student/flashcards') && !location.pathname.startsWith('/lecturer/flashcards') && !isFocusRoom && (
           <footer style={{
             background: 'var(--color-surface)',
             borderTop: '1px solid var(--color-border)',

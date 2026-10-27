@@ -189,7 +189,7 @@ export default function FocusScene({ id = 'cottage', className = '', children })
     <div className={`relative isolate overflow-hidden ${className}`}>
       <style>{KEYFRAMES}</style>
       <Scene />
-      <div className="relative z-10 h-full">{children}</div>
+      <div className="relative z-10 h-full w-full flex flex-col justify-between">{children}</div>
     </div>
   );
 }
