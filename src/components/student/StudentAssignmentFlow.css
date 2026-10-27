@@ -1,0 +1,288 @@
+/* ==========================================================================
+   ART-AI Student Assignment Flow — Component Stylesheet
+   Ensures consistent, resilient styling across all environments & build modes
+   ========================================================================== */
+
+/* Main Containers */
+.saf-container {
+  font-family: var(--font-sans, 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, sans-serif);
+}
+
+.saf-card {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 24px !important;
+  padding: 28px 32px !important;
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.04) !important;
+}
+
+@media (max-width: 640px) {
+  .saf-card {
+    padding: 20px 16px !important;
+    border-radius: 18px !important;
+  }
+}
+
+.saf-overview-card {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 18px !important;
+  padding: 20px !important;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.04) !important;
+}
+
+/* Segmented Control / Button Group (Keep vs Replace) */
+.saf-segmented-group {
+  display: inline-flex !important;
+  align-items: center !important;
+  background: #f1f5f9 !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 12px !important;
+  padding: 4px !important;
+  gap: 4px !important;
+}
+
+.saf-segmented-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  padding: 6px 14px !important;
+  border-radius: 8px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: #64748b !important;
+  background: transparent !important;
+  border: none !important;
+  cursor: pointer !important;
+  transition: all 0.18s ease-in-out !important;
+  white-space: nowrap !important;
+}
+
+.saf-segmented-btn:hover {
+  color: #0f172a !important;
+}
+
+.saf-segmented-btn--active {
+  background: #ffffff !important;
+  color: #2563eb !important;
+  font-weight: 700 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+}
+
+/* File Display Box (Kept file in Edit Mode) */
+.saf-file-kept-box {
+  background: rgba(236, 253, 245, 0.7) !important;
+  border: 2px solid #a7f3d0 !important;
+  border-radius: 18px !important;
+  padding: 18px 22px !important;
+}
+
+/* Drag & Drop File Zone */
+.saf-dropzone {
+  border: 2px dashed #cbd5e1 !important;
+  border-radius: 18px !important;
+  padding: 36px 20px !important;
+  text-align: center !important;
+  cursor: pointer !important;
+  background: #f8fafc !important;
+  transition: all 0.2s ease !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.saf-dropzone:hover {
+  border-color: #3b82f6 !important;
+  background: rgba(239, 246, 255, 0.45) !important;
+}
+
+.saf-dropzone--active {
+  border-color: #2563eb !important;
+  background: rgba(239, 246, 255, 0.7) !important;
+  transform: scale(1.01) !important;
+}
+
+/* Step 2 Rubric Navigation Items (Left sidebar in Step 2) */
+.saf-rubric-item {
+  display: flex !important;
+  align-items: flex-start !important;
+  gap: 12px !important;
+  padding: 12px 14px !important;
+  border-radius: 14px !important;
+  border-left: 4px solid transparent !important;
+  border-top: 1px solid #f1f5f9 !important;
+  border-right: 1px solid #f1f5f9 !important;
+  border-bottom: 1px solid #f1f5f9 !important;
+  background: #ffffff !important;
+  margin-bottom: 8px !important;
+  cursor: pointer !important;
+  transition: all 0.18s ease-in-out !important;
+  user-select: none !important;
+}
+
+.saf-rubric-item:hover {
+  background: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+}
+
+.saf-rubric-item--active {
+  border-left-color: #2563eb !important;
+  background: rgba(239, 246, 255, 0.7) !important;
+  border-top-color: #bfdbfe !important;
+  border-right-color: #bfdbfe !important;
+  border-bottom-color: #bfdbfe !important;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.08) !important;
+}
+
+/* Step 2 Form Inputs */
+.saf-input-label {
+  display: block !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  color: #334155 !important;
+  margin-bottom: 6px !important;
+}
+
+.saf-select {
+  width: 100% !important;
+  height: 42px !important;
+  border: 1.5px solid #cbd5e1 !important;
+  border-radius: 12px !important;
+  padding: 0 14px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  color: #1e293b !important;
+  background-color: #ffffff !important;
+  outline: none !important;
+  transition: border-color 0.2s, box-shadow 0.2s !important;
+  cursor: pointer !important;
+}
+
+.saf-select:focus {
+  border-color: #2563eb !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
+}
+
+.saf-textarea {
+  width: 100% !important;
+  min-height: 90px !important;
+  border: 1.5px solid #cbd5e1 !important;
+  border-radius: 12px !important;
+  padding: 12px 14px !important;
+  font-size: 12px !important;
+  font-family: var(--font-mono, 'JetBrains Mono', Consolas, monospace) !important;
+  line-height: 1.55 !important;
+  color: #1e293b !important;
+  background-color: #ffffff !important;
+  outline: none !important;
+  resize: vertical !important;
+  transition: border-color 0.2s, box-shadow 0.2s !important;
+}
+
+.saf-textarea:focus {
+  border-color: #2563eb !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
+}
+
+.saf-textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+/* Buttons */
+.saf-btn-primary {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  padding: 10px 22px !important;
+  border-radius: 12px !important;
+  font-weight: 700 !important;
+  font-size: 13px !important;
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #f27024, #ea580c) !important;
+  border: none !important;
+  cursor: pointer !important;
+  box-shadow: 0 2px 10px rgba(242, 112, 36, 0.3) !important;
+  transition: all 0.18s ease !important;
+  white-space: nowrap !important;
+}
+
+.saf-btn-primary:hover:not(:disabled) {
+  opacity: 0.95 !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 14px rgba(242, 112, 36, 0.4) !important;
+}
+
+.saf-btn-primary:active:not(:disabled) {
+  transform: translateY(0) !important;
+}
+
+.saf-btn-dark {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  padding: 10px 22px !important;
+  border-radius: 12px !important;
+  font-weight: 700 !important;
+  font-size: 13px !important;
+  color: #ffffff !important;
+  background: #0f172a !important;
+  border: none !important;
+  cursor: pointer !important;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.2) !important;
+  transition: all 0.18s ease !important;
+  white-space: nowrap !important;
+}
+
+.saf-btn-dark:hover:not(:disabled) {
+  background: #1e293b !important;
+  transform: translateY(-1px) !important;
+}
+
+.saf-btn-outline {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  padding: 10px 18px !important;
+  border-radius: 12px !important;
+  font-weight: 600 !important;
+  font-size: 13px !important;
+  color: #475569 !important;
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  cursor: pointer !important;
+  transition: all 0.18s ease !important;
+  white-space: nowrap !important;
+}
+
+.saf-btn-outline:hover:not(:disabled) {
+  background: #f8fafc !important;
+  color: #0f172a !important;
+  border-color: #94a3b8 !important;
+}
+
+.saf-btn-nav {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  padding: 8px 12px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: #64748b !important;
+  background: transparent !important;
+  border: none !important;
+  cursor: pointer !important;
+  transition: color 0.18s !important;
+}
+
+.saf-btn-nav:hover:not(:disabled) {
+  color: #2563eb !important;
+}
+
+.saf-btn-nav:disabled {
+  opacity: 0.35 !important;
+  cursor: not-allowed !important;
+}
