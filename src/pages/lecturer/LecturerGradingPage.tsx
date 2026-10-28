@@ -15,6 +15,8 @@ import LecturerAcademicEvaluation, {
 import SubmissionService from '../../services/submission.service';
 import AssignmentService from '../../services/assignment.service';
 import GradingService from '../../services/grading.service';
+import MockSubmissionService from '../../services/mockSubmissionService';
+import { SubmissionFile } from '../../types/submission';
 
 export default function LecturerGradingPage() {
   const { assignmentId, submissionId } = useParams();
@@ -28,6 +30,7 @@ export default function LecturerGradingPage() {
     name: 'SE18D01_TranThiB_BackendArchitecture.ts',
     lines: DEFAULT_SUBMISSION_CODE_LINES,
   });
+  const [currentFile, setCurrentFile] = useState<SubmissionFile | undefined>(undefined);
   const [aiDeclarations, setAiDeclarations] = useState<AiDeclarationPhase[]>(DEFAULT_AI_DECLARATIONS);
   const [existingGradeId, setExistingGradeId] = useState<string | null>(null);
   const [initialScores, setInitialScores] = useState<RubricScores>({ r1: 0, r2: 0, r3: 0 });
@@ -60,12 +63,14 @@ export default function LecturerGradingPage() {
         }
 
         // 2. Load Submission info
-        if (submissionId && !submissionId.startsWith('mock-')) {
+        let subDataLoaded = false;
+        if (submissionId && !submissionId.startsWith('mock-') && !submissionId.startsWith('sub-')) {
           try {
             const subRes = await SubmissionService.getSubmissionById(submissionId, true);
             const subData = subRes?.data || subRes;
 
             if (subData) {
+              subDataLoaded = true;
               // Student Info
               setStudentInfo({
                 name: subData.student_name || stateData?.student_name || 'Tran Thi B',
@@ -80,7 +85,6 @@ export default function LecturerGradingPage() {
                 const gradeObj = subData.grade || {};
                 setExistingGradeId(gradeObj.id || subData.grade_id || null);
                 const scoreNum = Number(subData.score || gradeObj.score || 0);
-                // Distribute score across rubrics proportionally if not individually broken down
                 const r1Val = parseFloat((scoreNum * 0.4).toFixed(2));
                 const r2Val = parseFloat((scoreNum * 0.4).toFixed(2));
                 const r3Val = parseFloat((scoreNum - r1Val - r2Val).toFixed(2));
@@ -100,13 +104,11 @@ export default function LecturerGradingPage() {
                   files = typeof latestVer.files === 'string' ? JSON.parse(latestVer.files) : latestVer.files;
                 } catch (e) {}
 
-                // Check note for AI Declarations JSON payload
                 if (latestVer.note) {
                   try {
                     const parsedNote = typeof latestVer.note === 'string' ? JSON.parse(latestVer.note) : latestVer.note;
                     if (parsedNote && parsedNote.declarations) {
                       const decs = parsedNote.declarations;
-                      // Map declarations into the 5 phases
                       const mappedPhases: AiDeclarationPhase[] = [
                         {
                           phaseKey: 'reflection',
@@ -191,26 +193,116 @@ export default function LecturerGradingPage() {
               }
             }
           } catch (e) {
-            console.warn('Submission load failed, using mock data', e);
+            console.warn('Real backend submission load failed, trying MockSubmissionService', e);
           }
-        } else if (stateData) {
-          // If state passed from table click
-          if (stateData.student_name) {
-            setStudentInfo({
-              name: stateData.student_name,
-              code: stateData.student_code || 'DE181802',
-              email: stateData.student_email || '',
-              aiRiskLevel: 'low',
-              aiRiskLabel: 'low AI-transparency risk',
-            });
-          }
-          if (stateData.score != null) {
-            const sc = Number(stateData.score);
-            const r1 = parseFloat((sc * 0.4).toFixed(2));
-            const r2 = parseFloat((sc * 0.4).toFixed(2));
-            const r3 = parseFloat((sc - r1 - r2).toFixed(2));
-            setInitialScores({ r1, r2, r3 });
-            setInitialFeedback(stateData.feedback || '');
+        }
+
+        // Fallback to MockSubmissionService (Case 1, Case 2, Case 3, etc.)
+        if (!subDataLoaded) {
+          try {
+            const mockSub = await MockSubmissionService.getSubmissionById(
+              assignmentId || 'asg-swd392-01',
+              submissionId || 'sub-de181802'
+            );
+            if (mockSub) {
+              setStudentInfo({
+                name: mockSub.studentName,
+                code: mockSub.studentCode,
+                email: mockSub.studentEmail || 'tranb.de181802@fpt.edu.vn',
+                aiRiskLevel: mockSub.aiRiskLevel || 'low',
+                aiRiskLabel: mockSub.aiRiskLabel || 'low AI-transparency risk',
+              });
+
+              if (mockSub.file) {
+                setCurrentFile(mockSub.file);
+                setSubmissionFile({
+                  name: mockSub.file.name,
+                  size: mockSub.file.size,
+                  url: mockSub.file.url,
+                  lines: DEFAULT_SUBMISSION_CODE_LINES,
+                });
+              }
+
+              // Xử lý Empty State nếu không khai báo AI
+              if (!mockSub.aiAuditLog || !mockSub.aiAuditLog.isDeclared) {
+                setAiDeclarations([]);
+              } else {
+                setAiDeclarations([
+                  {
+                    phaseKey: 'reflection',
+                    phaseName: 'AI REFLECTION',
+                    badgeBg: 'bg-purple-50',
+                    badgeText: 'text-purple-700',
+                    aiTool: mockSub.aiAuditLog.reflection?.aiTool || 'Claude 3.5 Sonnet',
+                    decision: (mockSub.aiAuditLog.reflection?.decision as any) || 'Fully Accepted',
+                    decisionBg: mockSub.aiAuditLog.reflection?.decision === 'Rejected' ? 'bg-rose-50' : 'bg-emerald-50',
+                    decisionText: mockSub.aiAuditLog.reflection?.decision === 'Rejected' ? 'text-rose-700' : 'text-emerald-700',
+                    prompt: mockSub.aiAuditLog.reflection?.prompt || '',
+                    aiResponseSummary: mockSub.aiAuditLog.reflection?.responseSummary || '',
+                    studentReflection: mockSub.aiAuditLog.reflection?.reflection || '',
+                  },
+                  {
+                    phaseKey: 'decomposition',
+                    phaseName: 'DECOMPOSITION',
+                    badgeBg: 'bg-blue-50',
+                    badgeText: 'text-blue-700',
+                    aiTool: mockSub.aiAuditLog.decomposition?.aiTool || 'ChatGPT-4o',
+                    decision: (mockSub.aiAuditLog.decomposition?.decision as any) || 'Partially Modified',
+                    decisionBg: 'bg-blue-50',
+                    decisionText: 'text-blue-700',
+                    prompt: mockSub.aiAuditLog.decomposition?.prompt || '',
+                    aiResponseSummary: mockSub.aiAuditLog.decomposition?.responseSummary || '',
+                    studentReflection: mockSub.aiAuditLog.decomposition?.reflection || '',
+                  },
+                  {
+                    phaseKey: 'pattern',
+                    phaseName: 'PATTERN RECOGNITION',
+                    badgeBg: 'bg-indigo-50',
+                    badgeText: 'text-indigo-700',
+                    aiTool: mockSub.aiAuditLog.pattern?.aiTool || 'GitHub Copilot',
+                    decision: (mockSub.aiAuditLog.pattern?.decision as any) || 'Heavily Adapted',
+                    decisionBg: 'bg-amber-50',
+                    decisionText: 'text-amber-700',
+                    prompt: mockSub.aiAuditLog.pattern?.prompt || '',
+                    aiResponseSummary: mockSub.aiAuditLog.pattern?.responseSummary || '',
+                    studentReflection: mockSub.aiAuditLog.pattern?.reflection || '',
+                  },
+                  {
+                    phaseKey: 'abstraction',
+                    phaseName: 'ABSTRACTION',
+                    badgeBg: 'bg-cyan-50',
+                    badgeText: 'text-cyan-700',
+                    aiTool: mockSub.aiAuditLog.abstraction?.aiTool || 'ChatGPT-4o',
+                    decision: (mockSub.aiAuditLog.abstraction?.decision as any) || 'Fully Accepted',
+                    decisionBg: 'bg-emerald-50',
+                    decisionText: 'text-emerald-700',
+                    prompt: mockSub.aiAuditLog.abstraction?.prompt || '',
+                    aiResponseSummary: mockSub.aiAuditLog.abstraction?.responseSummary || '',
+                    studentReflection: mockSub.aiAuditLog.abstraction?.reflection || '',
+                  },
+                  {
+                    phaseKey: 'algorithmic',
+                    phaseName: 'ALGORITHMIC THINKING',
+                    badgeBg: 'bg-teal-50',
+                    badgeText: 'text-teal-700',
+                    aiTool: mockSub.aiAuditLog.algorithmic?.aiTool || 'Gemini 1.5 Pro',
+                    decision: (mockSub.aiAuditLog.algorithmic?.decision as any) || 'Rejected',
+                    decisionBg: 'bg-rose-50',
+                    decisionText: 'text-rose-700',
+                    prompt: mockSub.aiAuditLog.algorithmic?.prompt || '',
+                    aiResponseSummary: mockSub.aiAuditLog.algorithmic?.responseSummary || '',
+                    studentReflection: mockSub.aiAuditLog.algorithmic?.reflection || '',
+                  },
+                ]);
+              }
+
+              if (mockSub.grade) {
+                setInitialScores(mockSub.grade.rubrics || { r1: 3.5, r2: 3.25, r3: 1.75 });
+                setInitialFeedback(mockSub.grade.feedback || '');
+              }
+            }
+          } catch (err) {
+            console.warn('Mock submission load also failed, using defaults', err);
           }
         }
       } finally {
@@ -305,6 +397,7 @@ export default function LecturerGradingPage() {
       student={studentInfo}
       courseInfo={courseInfo}
       submissionFile={submissionFile}
+      file={currentFile}
       aiDeclarations={aiDeclarations}
       initialRubrics={initialScores}
       initialFeedback={initialFeedback}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   ArrowLeft,
   ChevronRight,
@@ -20,6 +20,8 @@ import {
   Check
 } from 'lucide-react';
 import './LecturerAcademicEvaluation.css';
+import SubmissionFileViewer from './SubmissionFileViewer';
+import { SubmissionFile } from '../../types/submission';
 
 /* ==========================================================================
    1. TYPESCRIPT INTERFACES
@@ -82,6 +84,7 @@ export interface LecturerAcademicEvaluationProps {
   student?: StudentInfo;
   courseInfo?: CourseClassInfo;
   submissionFile?: SubmissionCodeFile;
+  file?: SubmissionFile;
   aiDeclarations?: AiDeclarationPhase[];
   initialRubrics?: RubricScores;
   initialFeedback?: string;
@@ -235,6 +238,7 @@ export default function LecturerAcademicEvaluation({
     name: 'SE18D01_TranThiB_BackendArchitecture.ts',
     lines: DEFAULT_SUBMISSION_CODE_LINES,
   },
+  file,
   aiDeclarations = DEFAULT_AI_DECLARATIONS,
   initialRubrics = { r1: 0, r2: 0, r3: 0 },
   initialFeedback = '',
@@ -246,6 +250,19 @@ export default function LecturerAcademicEvaluation({
   onAiAnnotate,
   onRunAuditViva,
 }: LecturerAcademicEvaluationProps) {
+  // Resolve actual submission file (supports ZIP tree hierarchy, PDF, or text/code)
+  const actualFile: SubmissionFile = useMemo(() => {
+    if (file) return file;
+    const lines = submissionFile.lines || (submissionFile.content ? submissionFile.content.split('\n') : DEFAULT_SUBMISSION_CODE_LINES);
+    return {
+      name: submissionFile.name || 'SE18D01_TranThiB_BackendArchitecture.ts',
+      url: submissionFile.url || '',
+      size: typeof submissionFile.size === 'number' ? submissionFile.size : 4850000,
+      mimeType: submissionFile.name?.endsWith('.zip') ? 'application/zip' : 'text/typescript',
+      fileType: submissionFile.name?.endsWith('.zip') ? 'zip' : (submissionFile.name?.endsWith('.pdf') ? 'pdf' : 'code'),
+      textContent: lines.join('\n'),
+    };
+  }, [file, submissionFile]);
   // Tab Navigation State
   const [activeTab, setActiveTab] = useState<'ai' | 'grading'>('ai');
 
@@ -473,87 +490,14 @@ export default function LecturerAcademicEvaluation({
 
       {/* ==================== MAIN CONTENT AREA ==================== */}
       <div className="flex-1 flex overflow-hidden">
-        {/* CỘT TRÁI: CODE / FILE SUBMISSION */}
-        <div className="flex-1 flex flex-col bg-white border-r border-slate-200 overflow-hidden">
-          <div className="h-12 border-b border-slate-200 px-5 flex items-center justify-between bg-white shrink-0">
-            <div className="flex items-center gap-2 font-bold text-xs text-slate-800">
-              <Code size={14} className="text-indigo-500" />
-              <span>{submissionFile?.name || 'submission'}</span>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={handleAiAnnotateClick}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#6b21a8] text-white rounded-lg text-xs font-bold hover:bg-purple-800 transition shadow-xs cursor-pointer"
-              >
-                <Sparkles size={11} />
-                <span>AI Code Annotate</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  if (submissionFile?.url) {
-                    window.open(submissionFile.url, '_blank');
-                  } else {
-                    alert(`Downloading submission file: ${submissionFile.name}`);
-                  }
-                }}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 text-slate-700 rounded-lg text-xs font-semibold hover:bg-slate-50 transition cursor-pointer"
-              >
-                <Download size={11} className="text-slate-500" />
-                <span>Download</span>
-              </button>
-            </div>
-          </div>
-
-          {/* AI Annotation Info Floating Bar */}
-          {showAnnotateToast && (
-            <div className="bg-purple-50 border-b border-purple-200 px-5 py-2.5 flex items-center justify-between text-xs text-purple-900 transition animate-in fade-in">
-              <div className="flex items-center gap-2">
-                <Sparkles size={14} className="text-purple-600" />
-                <span>
-                  <strong>AI Code Annotate:</strong> Phát hiện 3 đoạn mã tương thích với lời khai (JWT Middleware, Redis Token Blacklist, và IStorageProvider).
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowAnnotateToast(false)}
-                className="text-purple-400 hover:text-purple-700"
-              >
-                <X size={14} />
-              </button>
-            </div>
-          )}
-
-          {/* Code Viewer Panel */}
-          <div className="flex-1 p-5 font-mono text-xs text-slate-600 bg-white overflow-y-auto custom-scroll leading-relaxed select-text">
-            {codeLines.length > 0 ? (
-              codeLines.map((line, idx) => {
-                const lineNum = idx + 1;
-                const isAnnotated = line.includes('AI Audit Note') || line.includes('RedisTokenBlacklistService');
-                return (
-                  <div
-                    key={lineNum}
-                    className={`flex gap-4 px-1 rounded transition ${
-                      isAnnotated ? 'bg-purple-50/70 border-l-2 border-purple-500 text-purple-950 font-semibold' : 'hover:bg-slate-50'
-                    }`}
-                  >
-                    <span className="text-slate-400 select-none w-8 text-right shrink-0">
-                      {lineNum}
-                    </span>
-                    <span className="text-slate-700 whitespace-pre">{line || ' '}</span>
-                  </div>
-                );
-              })
-            ) : (
-              <div className="flex gap-4">
-                <span className="text-slate-400 select-none">1</span>
-                <span className="text-slate-700">// Could not load file content.</span>
-              </div>
-            )}
-          </div>
-        </div>
+        {/* CỘT TRÁI: CODE / FILE SUBMISSION (PREVIEW TRỰC TIẾP HOẶC GITHUB-STYLE ZIP TREE) */}
+        <SubmissionFileViewer
+          file={actualFile}
+          onAiAnnotate={handleAiAnnotateClick}
+          showAiAnnotationBanner={showAnnotateToast}
+          onCloseAiAnnotationBanner={() => setShowAnnotateToast(false)}
+          className="border-r border-slate-200"
+        />
 
         {/* CỘT PHẢI: KHUNG ĐIỀU KHIỂN & CUỘN TÁCH BIỆT */}
         <aside className="w-[490px] flex flex-col bg-white shrink-0 border-l border-slate-200 overflow-hidden">
@@ -608,52 +552,79 @@ export default function LecturerAcademicEvaluation({
                 </span>
               </div>
 
-              {/* KHUNG BẢNG 5 PHASES: CUỘN NGANG & DỌC ĐỘC LẬP BÊN TRONG */}
-              <div className="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-xs shrink-0">
-                <div className="max-h-[360px] overflow-x-auto overflow-y-auto custom-scroll">
-                  <table className="w-full min-w-[700px] border-collapse text-left text-xs">
-                    <thead className="sticky top-0 bg-slate-50 border-b border-slate-200 text-[10px] font-bold text-slate-500 uppercase tracking-wider z-10">
-                      <tr>
-                        <th className="py-2.5 px-3 w-[150px]">Phase / Rubric</th>
-                        <th className="py-2.5 px-3 w-[130px]">Tool & Decision</th>
-                        <th className="py-2.5 px-3 w-[160px]">Prompt / Input Used</th>
-                        <th className="py-2.5 px-3 w-[160px]">AI Response Summary</th>
-                        <th className="py-2.5 px-3 w-[180px]">Student's Reflection</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 text-[11px] text-slate-600">
-                      {aiDeclarations.map((item) => (
-                        <tr key={item.phaseKey} className="hover:bg-slate-50/70 transition">
-                          <td className="p-3 align-top">
-                            <span
-                              className={`inline-block px-2 py-1 ${item.badgeBg} ${item.badgeText} font-bold rounded text-[10px] whitespace-nowrap`}
-                            >
-                              {item.phaseName}
-                            </span>
-                          </td>
-                          <td className="p-3 align-top space-y-1">
-                            <div className="font-bold text-slate-800">{item.aiTool}</div>
-                            <span
-                              className={`inline-block px-1.5 py-0.5 ${item.decisionBg} ${item.decisionText} rounded text-[9px] font-semibold`}
-                            >
-                              {item.decision}
-                            </span>
-                          </td>
-                          <td className="p-3 align-top leading-relaxed text-slate-600">
-                            {item.prompt}
-                          </td>
-                          <td className="p-3 align-top leading-relaxed text-slate-500">
-                            {item.aiResponseSummary}
-                          </td>
-                          <td className="p-3 align-top leading-relaxed text-slate-700 font-medium">
-                            {item.studentReflection}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+              {/* KHUNG BẢNG 5 PHASES: CUỘN NGANG & DỌC ĐỘC LẬP BÊN TRONG HOẶC EMPTY STATE */}
+              {!aiDeclarations || aiDeclarations.length === 0 ? (
+                <div className="border-2 border-dashed border-slate-200 rounded-2xl p-8 bg-slate-50/50 text-center flex flex-col items-center justify-center space-y-3">
+                  <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                    <ShieldCheck size={24} />
+                  </div>
+                  <div>
+                    <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wide">
+                      Sinh viên không khai báo sử dụng AI
+                    </h3>
+                    <p className="text-[10px] text-emerald-600 font-semibold mt-0.5">
+                      (No AI Declaration recorded - Pure Manual Submission)
+                    </p>
+                  </div>
+                  <p className="text-[11px] text-slate-500 max-w-sm leading-relaxed">
+                    Bài nộp này được sinh viên thực hiện hoàn toàn thủ công hoặc không sử dụng công cụ AI hỗ trợ. Bạn có thể kiểm tra mã nguồn và chuyển thẳng sang tab Academic Grading để chấm điểm.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('grading')}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition shadow-sm cursor-pointer mt-1"
+                  >
+                    <span>Chuyển sang Chấm điểm (Grading)</span>
+                    <ChevronRight size={13} />
+                  </button>
                 </div>
-              </div>
+              ) : (
+                <div className="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-xs shrink-0">
+                  <div className="max-h-[360px] overflow-x-auto overflow-y-auto custom-scroll">
+                    <table className="w-full min-w-[700px] border-collapse text-left text-xs">
+                      <thead className="sticky top-0 bg-slate-50 border-b border-slate-200 text-[10px] font-bold text-slate-500 uppercase tracking-wider z-10">
+                        <tr>
+                          <th className="py-2.5 px-3 w-[150px]">Phase / Rubric</th>
+                          <th className="py-2.5 px-3 w-[130px]">Tool & Decision</th>
+                          <th className="py-2.5 px-3 w-[160px]">Prompt / Input Used</th>
+                          <th className="py-2.5 px-3 w-[160px]">AI Response Summary</th>
+                          <th className="py-2.5 px-3 w-[180px]">Student's Reflection</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 text-[11px] text-slate-600">
+                        {aiDeclarations.map((item) => (
+                          <tr key={item.phaseKey} className="hover:bg-slate-50/70 transition">
+                            <td className="p-3 align-top">
+                              <span
+                                className={`inline-block px-2 py-1 ${item.badgeBg} ${item.badgeText} font-bold rounded text-[10px] whitespace-nowrap`}
+                              >
+                                {item.phaseName}
+                              </span>
+                            </td>
+                            <td className="p-3 align-top space-y-1">
+                              <div className="font-bold text-slate-800">{item.aiTool}</div>
+                              <span
+                                className={`inline-block px-1.5 py-0.5 ${item.decisionBg} ${item.decisionText} rounded text-[9px] font-semibold`}
+                              >
+                                {item.decision}
+                              </span>
+                            </td>
+                            <td className="p-3 align-top leading-relaxed text-slate-600">
+                              {item.prompt}
+                            </td>
+                            <td className="p-3 align-top leading-relaxed text-slate-500">
+                              {item.aiResponseSummary}
+                            </td>
+                            <td className="p-3 align-top leading-relaxed text-slate-700 font-medium">
+                              {item.studentReflection}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
 
               {/* Bottom Action Box: Thanh tra trung thực AI */}
               <div className="pt-2 space-y-3 shrink-0">
