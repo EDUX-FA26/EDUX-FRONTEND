@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lecturer Grading - ART-AI</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        .custom-scroll::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+
+        .custom-scroll::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 4px;
+        }
+
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+
+        input[type=range] {
+            accent-color: #6366f1;
+        }
+    </style>
+</head>
+
+<body class="bg-[#f8fafc] text-slate-700 min-h-screen flex flex-col">
+
+    <!-- ==================== TOP NAVIGATION BAR ==================== -->
+    <header class="bg-[#111c38] text-white px-5 py-3 flex items-center justify-between shrink-0 shadow-sm select-none">
+        <!-- Cột trái: Nút Back, Breadcrumb & Tên sinh viên -->
+        <div class="flex items-center gap-4">
+            <button class="text-slate-300 hover:text-white p-1 text-base transition">
+                <i class="fa-solid fa-arrow-left"></i>
+            </button>
+
+            <div>
+                <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider flex items-center gap-1.5">
+                    <span>GRADING</span>
+                    <i class="fa-solid fa-chevron-right text-[8px] text-slate-500"></i>
+                    <span>COURSE</span>
+                    <i class="fa-solid fa-chevron-right text-[8px] text-slate-500"></i>
+                    <span>CLASS (GRADE ITEM)</span>
+                </div>
+                <div class="flex items-center gap-2.5 mt-0.5">
+                    <h1 class="text-sm font-bold text-white tracking-wide">Tran Thi B (DE181802)</h1>
+                    <span
+                        class="inline-flex items-center gap-1.5 bg-[#063f35] text-[#2fe8a6] border border-[#0d594b] text-[11px] font-semibold px-2.5 py-0.5 rounded-full">
+                        <span class="w-1.5 h-1.5 rounded-full bg-[#2fe8a6]"></span>
+                        <span>low AI-transparency risk</span>
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cột phải: Các nút Action (Request Resubmit, Save Draft, Publish Grade) -->
+        <div class="flex items-center gap-2.5">
+            <button
+                class="flex items-center gap-1.5 px-3.5 py-1.5 bg-white text-rose-600 rounded-lg text-xs font-bold hover:bg-rose-50 transition border border-rose-100 shadow-sm">
+                <i class="fa-solid fa-rotate-left"></i>
+                <span>Request Resubmit</span>
+            </button>
+
+            <button
+                class="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#1b2b52] text-slate-200 rounded-lg text-xs font-semibold hover:bg-[#233766] transition border border-slate-700">
+                <i class="fa-regular fa-bookmark"></i>
+                <span>Save Draft</span>
+            </button>
+
+            <button
+                class="flex items-center gap-1.5 px-4 py-1.5 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-lg text-xs font-bold hover:opacity-95 shadow-md shadow-orange-500/20 transition">
+                <i class="fa-solid fa-paper-plane text-[11px]"></i>
+                <span>Publish Grade</span>
+            </button>
+        </div>
+    </header>
+
+
+    <!-- ==================== MAIN CONTENT AREA (2 CỘT) ==================== -->
+    <div class="flex-1 flex overflow-hidden">
+
+        <!-- ==================== CỘT TRÁI: CODE / FILE SUBMISSION ==================== -->
+        <div class="flex-1 flex flex-col bg-white border-r border-slate-200">
+            <!-- Header thanh công cụ code -->
+            <div class="h-12 border-b border-slate-200 px-5 flex items-center justify-between bg-white shrink-0">
+                <div class="flex items-center gap-2 font-bold text-xs text-slate-800">
+                    <i class="fa-solid fa-code text-indigo-500"></i>
+                    <span>submission</span>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <button
+                        class="flex items-center gap-1.5 px-3 py-1.5 bg-[#6b21a8] text-white rounded-lg text-xs font-bold hover:bg-purple-800 transition shadow-xs">
+                        <i class="fa-solid fa-wand-magic-sparkles text-[11px]"></i>
+                        <span>AI Code Annotate</span>
+                    </button>
+                    <button
+                        class="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 text-slate-700 rounded-lg text-xs font-semibold hover:bg-slate-50 transition">
+                        <i class="fa-solid fa-download text-[11px] text-slate-500"></i>
+                        <span>Download</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Vùng hiển thị nội dung file / Editor code -->
+            <div
+                class="flex-1 p-5 font-mono text-xs text-slate-600 bg-white overflow-y-auto leading-relaxed select-text">
+                <div class="flex gap-4">
+                    <span class="text-slate-400 select-none">1</span>
+                    <span class="text-slate-700">// Could not load file content.</span>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- ==================== CỘT PHẢI: KHUNG TƯƠNG TÁC (TABS ĐỔI GIAO DIỆN) ==================== -->
+        <aside class="w-[430px] flex flex-col bg-white shrink-0 border-l border-slate-100">
+
+            <!-- TAB NAVIGATION: AI DECLARATION vs ACADEMIC GRADING -->
+            <div class="h-12 border-b border-slate-200 flex items-center px-2 shrink-0 bg-white select-none">
+                <!-- Nút Tab 1 -->
+                <button id="tab-btn-ai" onclick="switchTab('ai')"
+                    class="flex-1 h-full flex items-center justify-center gap-1.5 text-xs font-bold border-b-2 border-orange-500 text-orange-600 transition">
+                    <i class="fa-regular fa-shield-check"></i>
+                    <span>AI DECLARATION & AUDIT</span>
+                </button>
+
+                <!-- Nút Tab 2 -->
+                <button id="tab-btn-grading" onclick="switchTab('grading')"
+                    class="flex-1 h-full flex items-center justify-center gap-1.5 text-xs font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition">
+                    <i class="fa-regular fa-bookmark"></i>
+                    <span>ACADEMIC GRADING</span>
+                </button>
+            </div>
+
+
+            <!-- NỘI DUNG CUỘN CỦA TAB BÊN PHẢI -->
+            <div class="flex-1 p-5 overflow-y-auto custom-scroll">
+
+                <!-- ==================== PANEL 1: AI DECLARATION & AUDIT ==================== -->
+                <div id="panel-ai" class="space-y-4">
+                    <!-- Card Assessment Match -->
+                    <div class="bg-[#f0fdf4] border border-emerald-200 rounded-2xl p-4 flex items-start gap-3">
+                        <div
+                            class="w-7 h-7 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5">
+                            <i class="fa-solid fa-shield-halved text-xs"></i>
+                        </div>
+                        <div>
+                            <h4 class="text-xs font-bold text-emerald-800 uppercase tracking-wide">
+                                NORMAL AI ASSESSMENT (88% AI MATCH)
+                            </h4>
+                            <p class="text-[11px] text-emerald-700 mt-0.5 leading-snug">
+                                Student declaration aligns well with system AI detection.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Section: Student AI Declaration (5 Phases) -->
+                    <div class="space-y-3 pt-1">
+                        <div class="flex items-center justify-between">
+                            <div
+                                class="flex items-center gap-2 text-xs font-bold text-slate-800 tracking-wide uppercase">
+                                <i class="fa-solid fa-layer-group text-orange-500"></i>
+                                <span>STUDENT AI DECLARATION (5 PHASES)</span>
+                            </div>
+                            <span class="text-[10px] bg-slate-100 text-slate-500 font-semibold px-2 py-0.5 rounded">
+                                Self-Reported
+                            </span>
+                        </div>
+
+                        <!-- Table 5 Phases -->
+                        <div class="border border-slate-200 rounded-2xl overflow-hidden text-xs">
+                            <div
+                                class="bg-slate-50/80 px-3 py-2 border-b border-slate-200 flex text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                                <div class="w-1/3">PHASE</div>
+                                <div class="w-5/12">PROMPT</div>
+                                <div class="w-1/4 text-right">AI OUTPUT</div>
+                            </div>
+
+                            <!-- Phase 1: AI Reflection -->
+                            <div class="p-3 border-b border-slate-100 flex items-center gap-2">
+                                <div class="w-1/3">
+                                    <span
+                                        class="inline-block px-2 py-1 bg-purple-50 text-purple-700 rounded-md font-bold text-[10px] tracking-wide">
+                                        AI REFLECTION
+                                    </span>
+                                </div>
+                                <div class="w-5/12">
+                                    <div
+                                        class="bg-slate-50 border border-slate-200/80 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-400 font-mono">
+                                        N/A
+                                    </div>
+                                </div>
+                                <div class="w-1/4 flex justify-end">
+                                    <button
+                                        class="flex items-center gap-1 px-2 py-1 bg-slate-50 border border-slate-200 rounded-md text-[11px] text-slate-600 font-medium hover:bg-slate-100 transition">
+                                        <span class="text-rose-500">🤖</span>
+                                        <span>Out</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Phase 2: Decomposition -->
+                            <div class="p-3 border-b border-slate-100 flex items-center gap-2">
+                                <div class="w-1/3">
+                                    <span
+                                        class="inline-block px-2 py-1 bg-blue-50 text-blue-700 rounded-md font-bold text-[10px] tracking-wide">
+                                        DECOMPOSITION
+                                    </span>
+                                </div>
+                                <div class="w-5/12">
+                                    <div
+                                        class="bg-slate-50 border border-slate-200/80 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-400 font-mono">
+                                        N/A
+                                    </div>
+                                </div>
+                                <div class="w-1/4 flex justify-end">
+                                    <button
+                                        class="flex items-center gap-1 px-2 py-1 bg-slate-50 border border-slate-200 rounded-md text-[11px] text-slate-600 font-medium hover:bg-slate-100 transition">
+                                        <span class="text-rose-500">🤖</span>
+                                        <span>Out</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Phase 3: Pattern Recognition -->
+                            <div class="p-3 flex items-center gap-2">
+                                <div class="w-1/3">
+                                    <span
+                                        class="inline-block px-2 py-1 bg-indigo-50 text-indigo-700 rounded-md font-bold text-[10px] tracking-wide leading-tight">
+                                        PATTERN RECOGNITION
+                                    </span>
+                                </div>
+                                <div class="w-5/12">
+                                    <div
+                                        class="bg-slate-50 border border-slate-200/80 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-400 font-mono">
+                                        N/A
+                                    </div>
+                                </div>
+                                <div class="w-1/4 flex justify-end">
+                                    <button
+                                        class="flex items-center gap-1 px-2 py-1 bg-slate-50 border border-slate-200 rounded-md text-[11px] text-slate-600 font-medium hover:bg-slate-100 transition">
+                                        <span class="text-rose-500">🤖</span>
+                                        <span>Out</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bottom Action Box: Thanh tra trung thực AI -->
+                    <div class="pt-4 border-t border-slate-100 space-y-3">
+                        <div>
+                            <div class="flex items-center gap-1.5 text-xs font-bold text-slate-800">
+                                <i class="fa-solid fa-sparkles text-indigo-600"></i>
+                                <span>THANH TRA TRUNG THỰC AI & VẤN ĐÁP VIVA</span>
+                            </div>
+                            <p class="text-[11px] text-slate-400 mt-0.5">
+                                Kiểm định tự động độ khớp giữa lời khai và mã nguồn thực tế
+                            </p>
+                        </div>
+
+                        <button
+                            class="w-full py-2.5 px-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-500/20 flex items-center justify-center gap-2 transition">
+                            <i class="fa-solid fa-bolt"></i>
+                            <span>Chạy Thanh Tra & Tạo Vấn Đáp</span>
+                        </button>
+                    </div>
+                </div>
+
+
+                <!-- ==================== PANEL 2: ACADEMIC GRADING ==================== -->
+                <div id="panel-grading" class="space-y-6 hidden">
+
+                    <!-- Điểm tổng kết (Final Score Card) -->
+                    <div class="text-center space-y-3">
+                        <div class="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                            ĐIỂM TỔNG KẾT (FINAL SCORE)
+                        </div>
+
+                        <div
+                            class="inline-flex items-baseline justify-center border-2 border-indigo-200 bg-indigo-50/30 rounded-2xl px-12 py-3">
+                            <span id="final-score" class="text-4xl font-extrabold text-slate-800">0.00</span>
+                            <span class="text-slate-400 font-semibold text-sm ml-1.5">/ 10</span>
+                        </div>
+
+                        <!-- Nút Khớp tiêu chí với AI -->
+                        <div>
+                            <button
+                                class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-xl text-xs font-bold border border-indigo-100 transition">
+                                <i class="fa-regular fa-clone"></i>
+                                <span>Khớp từng tiêu chí với AI: 8.50 / 10</span>
+                            </button>
+                        </div>
+
+                        <p class="text-[11px] text-slate-400 leading-snug max-w-xs mx-auto">
+                            Chỉ sao chép vào bản nháp; giảng viên vẫn có thể kéo từng tiêu chí trước khi công bố.
+                        </p>
+                    </div>
+
+                    <!-- Section: Điều chỉnh từng tiêu chí Rubric -->
+                    <div class="space-y-4 pt-2 border-t border-slate-100">
+                        <div class="text-xs font-bold text-slate-800 uppercase tracking-wide">
+                            ĐIỀU CHỈNH TỪNG TIÊU CHÍ RUBRIC
+                        </div>
+
+                        <!-- Rubric 1: Code Quality & Structure -->
+                        <div class="space-y-1.5 bg-slate-50/70 p-3 rounded-xl border border-slate-100">
+                            <div class="flex justify-between items-center text-xs">
+                                <span class="font-bold text-slate-700">Code Quality & Structure</span>
+                                <span class="font-bold text-indigo-600 font-mono"><span id="val-r1">0.00</span> /
+                                    4</span>
+                            </div>
+                            <input type="range" min="0" max="4" step="0.25" value="0" id="range-r1"
+                                oninput="updateRubric('r1', this.value, 4)"
+                                class="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                        </div>
+
+                        <!-- Rubric 2: Functionality & Correctness -->
+                        <div class="space-y-1.5 bg-slate-50/70 p-3 rounded-xl border border-slate-100">
+                            <div class="flex justify-between items-center text-xs">
+                                <span class="font-bold text-slate-700">Functionality & Correctness</span>
+                                <span class="font-bold text-indigo-600 font-mono"><span id="val-r2">0.00</span> /
+                                    4</span>
+                            </div>
+                            <input type="range" min="0" max="4" step="0.25" value="0" id="range-r2"
+                                oninput="updateRubric('r2', this.value, 4)"
+                                class="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                        </div>
+
+                        <!-- Rubric 3: Documentation & AI Declaration -->
+                        <div class="space-y-1.5 bg-slate-50/70 p-3 rounded-xl border border-slate-100">
+                            <div class="flex justify-between items-center text-xs">
+                                <span class="font-bold text-slate-700">Documentation & AI Declaration</span>
+                                <span class="font-bold text-indigo-600 font-mono"><span id="val-r3">0.00</span> /
+                                    2</span>
+                            </div>
+                            <input type="range" min="0" max="2" step="0.25" value="0" id="range-r3"
+                                oninput="updateRubric('r3', this.value, 2)"
+                                class="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                        </div>
+                    </div>
+
+                    <!-- Section: Nhận xét học thuật -->
+                    <div class="space-y-2 pt-2 border-t border-slate-100">
+                        <label class="block text-xs font-bold text-slate-800 uppercase tracking-wide">
+                            NHẬN XÉT HỌC THUẬT (ACADEMIC FEEDBACK)
+                        </label>
+                        <textarea rows="3" placeholder="Nhập nhận xét chi tiết cho sinh viên..."
+                            class="w-full text-xs p-3 border border-slate-200 rounded-xl outline-none focus:border-indigo-500 bg-white resize-y"></textarea>
+                    </div>
+
+                </div>
+
+            </div>
+        </aside>
+
+    </div>
+
+
+    <!-- ==================== LOGIC JAVASCRIPT ĐỔI TAB & TÍNH ĐIỂM ==================== -->
+    <script>
+        // 1. Chuyển đổi giữa 2 tab
+        function switchTab(tabKey) {
+            const btnAi = document.getElementById('tab-btn-ai');
+            const btnGrading = document.getElementById('tab-btn-grading');
+            const panelAi = document.getElementById('panel-ai');
+            const panelGrading = document.getElementById('panel-grading');
+
+            if (tabKey === 'ai') {
+                // Kích hoạt Tab AI
+                btnAi.className = "flex-1 h-full flex items-center justify-center gap-1.5 text-xs font-bold border-b-2 border-orange-500 text-orange-600 transition";
+                btnGrading.className = "flex-1 h-full flex items-center justify-center gap-1.5 text-xs font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition";
+                panelAi.classList.remove('hidden');
+                panelGrading.classList.add('hidden');
+            } else {
+                // Kích hoạt Tab Academic Grading
+                btnGrading.className = "flex-1 h-full flex items-center justify-center gap-1.5 text-xs font-bold border-b-2 border-indigo-600 text-indigo-600 transition";
+                btnAi.className = "flex-1 h-full flex items-center justify-center gap-1.5 text-xs font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition";
+                panelGrading.classList.remove('hidden');
+                panelAi.classList.add('hidden');
+            }
+        }
+
+        // 2. Cập nhật điểm Rubric khi kéo thanh Slider
+        let scores = { r1: 0, r2: 0, r3: 0 };
+
+        function updateRubric(key, val) {
+            const numVal = parseFloat(val);
+            scores[key] = numVal;
+            document.getElementById(`val-${key}`).innerText = numVal.toFixed(2);
+
+            // Tính tổng điểm
+            const total = scores.r1 + scores.r2 + scores.r3;
+            document.getElementById('final-score').innerText = total.toFixed(2);
+        }
+    </script>
+</body>
+
+</html>
