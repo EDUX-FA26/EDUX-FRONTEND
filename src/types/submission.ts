@@ -67,6 +67,21 @@ export interface SubmissionFile {
 }
 
 /**
+ * Điểm 5 tiêu chí Rubric ART-AI (Computational Thinking & AI Reflection)
+ * Thang điểm 2.0 cho mỗi tiêu chí (Tổng cộng: 10.0)
+ */
+export interface RubricScores {
+  decomposition: number; // Phân rã bài toán (max 2)
+  pattern: number;       // Nhận diện mẫu (max 2)
+  abstraction: number;   // Trừu tượng hóa (max 2)
+  algorithmic: number;   // Tư duy thuật toán (max 2)
+  reflection: number;    // Đánh giá & Phản chiếu AI (max 2)
+  r1?: number;
+  r2?: number;
+  r3?: number;
+}
+
+/**
  * Kết quả chấm điểm của Giảng viên
  */
 export interface SubmissionGrade {
@@ -74,11 +89,7 @@ export interface SubmissionGrade {
   feedback: string | null;
   gradedAt: string | null;
   gradedBy?: string;
-  rubrics?: {
-    r1: number; // Code Quality & Structure (0-4)
-    r2: number; // Functionality & Correctness (0-4)
-    r3: number; // Documentation & AI Declaration (0-2)
-  };
+  rubrics?: RubricScores;
   aiComplianceStatus?: AiComplianceStatus;
   isDraft?: boolean;
 }
@@ -103,6 +114,9 @@ export interface Submission {
   aiRiskLabel?: string;
   resubmitRequested?: boolean;
   resubmitReason?: string;
+  score?: number | null;
+  feedback?: string | null;
+  rubrics?: RubricScores | null;
 }
 
 /**
@@ -140,11 +154,7 @@ export interface SubmitAssignmentPayload {
 export interface GradeSubmissionPayload {
   score: number;
   feedback: string;
-  rubrics?: {
-    r1: number;
-    r2: number;
-    r3: number;
-  };
+  rubrics?: RubricScores;
   aiComplianceStatus?: AiComplianceStatus;
   isDraft?: boolean;
 }

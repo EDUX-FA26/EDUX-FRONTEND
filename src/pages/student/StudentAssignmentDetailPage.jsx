@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import AssignmentService from '../../services/assignment.service';
 import SubmissionService from '../../services/submission.service';
+import MockSubmissionService from '../../services/mockSubmissionService';
 import { formatDateDMY } from '../../helper/dateFormat';
 import StudentAssignmentFlow, {
   INITIAL_DECLARATIONS
@@ -20,25 +21,64 @@ export default function StudentAssignmentDetailPage() {
         const fetchDetail = async () => {
             try {
                 if (id && !id.startsWith('asm-')) {
-                    const data = await AssignmentService.getAssignmentDetail(id);
-                    setAssignment(data);
+                    try {
+                        const data = await AssignmentService.getAssignmentDetail(id);
+                        if (data) setAssignment(data);
+                    } catch (e) {}
 
-                    const subData = await SubmissionService.getMySubmissions({ assignment_id: id });
-                    if (subData && subData.data && subData.data.length > 0) {
-                        const sub = subData.data[0];
-                        setSubmission(sub);
-                        try {
-                            const detail = await SubmissionService.getSubmissionById(sub.id);
-                            if (detail.success) setDetailedSubmission(detail.data);
-                        } catch (err) {
-                            console.error("Get submission detail error:", err);
+                    try {
+                        const subData = await SubmissionService.getMySubmissions({ assignment_id: id });
+                        let sub = null;
+                        if (subData && subData.data && subData.data.length > 0) {
+                            sub = subData.data[0];
                         }
-                    } else {
-                        setSubmission(null);
+
+                        const mock = await MockSubmissionService.getMySubmission(id);
+                        const db = MockSubmissionService.getInitialDatabase ? MockSubmissionService.getInitialDatabase() : {};
+                        const localGraded = (sub?.id && db[sub.id]) || (sub?.student_code && db[sub.student_code]) || db['sub-de181802'] || mock;
+
+                        const rawMergedScore = localGraded?.grade?.score ?? localGraded?.score ?? sub?.score ?? null;
+                        const mergedScore = rawMergedScore != null ? Number(rawMergedScore) : null;
+                        const mergedFeedback = localGraded?.grade?.feedback ?? localGraded?.feedback ?? sub?.feedback ?? null;
+                        const mergedRubrics = localGraded?.grade?.rubrics ?? localGraded?.rubrics ?? sub?.rubrics ?? null;
+                        const isGradedStatus = mergedScore !== null || sub?.status === 'graded' || sub?.status === 'GRADED' || localGraded?.status === 'GRADED';
+
+                        if (sub) {
+                            sub = {
+                                ...sub,
+                                score: mergedScore,
+                                feedback: mergedFeedback,
+                                rubrics: mergedRubrics,
+                                grade: localGraded?.grade || (mergedScore != null ? { score: mergedScore, feedback: mergedFeedback, rubrics: mergedRubrics } : null),
+                                status: isGradedStatus ? 'GRADED' : sub.status,
+                            };
+                            setSubmission(sub);
+                            try {
+                                const detail = await SubmissionService.getSubmissionById(sub.id);
+                                if (detail.success) setDetailedSubmission(detail.data);
+                            } catch (err) {}
+                        } else if (localGraded) {
+                            setSubmission({
+                                ...localGraded,
+                                score: mergedScore,
+                                feedback: mergedFeedback,
+                                rubrics: mergedRubrics,
+                                grade: localGraded?.grade || (mergedScore != null ? { score: mergedScore, feedback: mergedFeedback, rubrics: mergedRubrics } : null),
+                                status: isGradedStatus ? 'GRADED' : (localGraded.status || 'SUBMITTED'),
+                            });
+                        }
+                    } catch (e) {
+                        const mock = await MockSubmissionService.getMySubmission(id);
+                        if (mock) setSubmission(mock);
                     }
+                } else {
+                    const mock = await MockSubmissionService.getMySubmission(id || 'asg-swd392-01');
+                    if (mock) setSubmission(mock);
                 }
             } catch (error) {
                 console.error("Failed to fetch assignment or submission:", error);
+                const mock = await MockSubmissionService.getMySubmission(id || 'asg-swd392-01');
+                if (mock) setSubmission(mock);
             } finally {
                 setLoading(false);
             }
@@ -65,6 +105,26 @@ export default function StudentAssignmentDetailPage() {
         titleMap[id] ||
         `Assignment ${id}`;
 
+    const isGraded =
+        submission?.status === 'graded' ||
+        submission?.status === 'GRADED' ||
+        submission?.status === 'Graded' ||
+        submission?.score != null ||
+        submission?.grade?.score != null;
+
+    const rawEffectiveScore = submission?.score ?? submission?.grade?.score ?? null;
+    const effectiveScore = rawEffectiveScore != null ? Number(rawEffectiveScore) : null;
+    const effectiveFeedback = submission?.feedback ?? submission?.grade?.feedback ?? '';
+    let effectiveRubrics = submission?.rubrics ?? submission?.grade?.rubrics ?? null;
+
+    if (!effectiveRubrics && MockSubmissionService.getInitialDatabase) {
+        const db = MockSubmissionService.getInitialDatabase();
+        const local = (submission?.id && db[submission.id]) || (submission?.student_code && db[submission.student_code]) || db['sub-de181802'];
+        if (local && (local.rubrics || local.grade?.rubrics)) {
+            effectiveRubrics = local.rubrics || local.grade?.rubrics;
+        }
+    }
+
     // Format Assignment for StudentAssignmentFlow
     const formattedAssignment = {
         id: id || 'asm-1',
@@ -81,7 +141,7 @@ export default function StudentAssignmentDetailPage() {
             { id: 'f1', name: 'Project_Specification_v2.pdf', size: '1.8 MB', url: '#' },
             { id: 'f2', name: 'C4_Model_Template.drawio', size: '640 KB', url: '#' }
         ],
-        score: submission?.score ?? null
+        score: effectiveScore
     };
 
     // Format Submission data from backend if present, else fallback
@@ -103,6 +163,13 @@ export default function StudentAssignmentDetailPage() {
                     url: files[0].url
                 };
             }
+        } else if (submission.file) {
+            submittedFile = {
+                name: submission.file.name || 'SE18D01_TranThiB_BackendArchitecture.zip',
+                size: submission.file.size || 4850000,
+                type: submission.file.mimeType || 'application/zip',
+                url: submission.file.url
+            };
         }
 
         if (!submittedFile) {
@@ -124,14 +191,17 @@ export default function StudentAssignmentDetailPage() {
         } catch (e) {}
 
         formattedSubmission = {
-            status: 'Submitted',
-            submittedAt: submission.submitted_at || submission.last_submitted_at || '2026-03-24 14:20:00',
-            lastEditedAt: submission.updated_at || '2026-03-24 14:20:00',
-            version: detailedSubmission?.versions?.length || 1,
+            status: isGraded ? 'Graded' : 'Submitted',
+            submittedAt: submission.submitted_at || submission.submittedAt || '2026-03-24 14:20:00',
+            lastEditedAt: submission.updated_at || submission.lastUpdatedAt || '2026-03-24 14:20:00',
+            version: detailedSubmission?.versions?.length || submission.version || 1,
             file: submittedFile,
-            feedback: submission.feedback || 'No feedback yet. Submitted successfully. Waiting for grading.',
-            transparencyScore: 94,
-            declarations: parsedDeclarations
+            feedback: effectiveFeedback || (isGraded ? 'Bài nộp đã được chấm điểm hoàn tất.' : 'No feedback yet. Submitted successfully. Waiting for grading.'),
+            transparencyScore: submission.transparencyScore || submission.aiAuditLog?.transparencyScore || 94,
+            declarations: parsedDeclarations,
+            score: effectiveScore,
+            grade: submission.grade || (effectiveScore != null ? { score: effectiveScore, feedback: effectiveFeedback, rubrics: effectiveRubrics } : null),
+            rubrics: effectiveRubrics,
         };
     }
 

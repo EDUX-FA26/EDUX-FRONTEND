@@ -13,7 +13,7 @@ import {
    ========================================================================== */
 
 // Cây thư mục mẫu dành cho Case 1: Sinh viên nộp source code dạng ZIP
-const MOCK_ZIP_TREE_CASE_1: ZipTreeNode[] = [
+export const MOCK_ZIP_TREE_CASE_1: ZipTreeNode[] = [
   {
     id: 'node-src',
     name: 'src',
@@ -293,7 +293,9 @@ const MOCK_AI_AUDIT_LOG_FULL: AiAuditDeclaration = {
    2. IN-MEMORY DATABASE STATE (MÔ PHỎNG DB BACKEND THỰC TẾ)
    ========================================================================== */
 
-let mockDatabase: Record<string, Submission> = {
+const STORAGE_KEY = 'edux_art_ai_mock_submissions_db_v2';
+
+const defaultMockDatabase: Record<string, Submission> = {
   // Case 1: Sinh viên Trần Thị B (Đã nộp bài file ZIP, khai báo AI đầy đủ, chưa chấm điểm)
   'sub-de181802': {
     id: 'sub-de181802',
@@ -367,6 +369,11 @@ let mockDatabase: Record<string, Submission> = {
       gradedAt: '2026-10-27T16:20:00Z',
       gradedBy: 'ThS. Nguyễn Văn Giảng Viên',
       rubrics: {
+        decomposition: 1.75,
+        pattern: 1.75,
+        abstraction: 1.75,
+        algorithmic: 1.50,
+        reflection: 1.75,
         r1: 3.5,
         r2: 3.25,
         r3: 1.75
@@ -378,6 +385,27 @@ let mockDatabase: Record<string, Submission> = {
     aiRiskLabel: 'low AI-transparency risk'
   }
 };
+
+const getInitialDatabase = (): Record<string, Submission> => {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (parsed && typeof parsed === 'object') {
+        return parsed;
+      }
+    }
+  } catch (e) {}
+  return JSON.parse(JSON.stringify(defaultMockDatabase));
+};
+
+const saveDatabase = (db: Record<string, Submission>) => {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+  } catch (e) {}
+};
+
+let mockDatabase: Record<string, Submission> = getInitialDatabase();
 
 // Giả lập network delay (ms)
 const delay = (ms: number = 300) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -466,9 +494,14 @@ export const MockSubmissionService = {
    * GET /api/assignments/:assignmentId/my-submission
    */
   async getMySubmission(assignmentId: string): Promise<Submission | null> {
-    await delay(300);
-    // Mặc định trả về bài nộp của DE181802 nếu có, hoặc null để test nút "Add Submission"
-    const sub = Object.values(mockDatabase).find((s) => s.assignmentId === assignmentId);
+    await delay(100);
+    const db = getInitialDatabase();
+    // Ưu tiên trả về bài nộp khớp assignmentId hoặc sub-de181802 có điểm mới nhất
+    const sub =
+      (assignmentId && db[`asm_${assignmentId}`]) ||
+      (assignmentId && Object.values(db).find((s) => s.assignmentId === assignmentId && (s.grade || (s as any).score != null))) ||
+      db['sub-de181802'] ||
+      Object.values(db).find((s) => s.assignmentId === assignmentId);
     return sub ? JSON.parse(JSON.stringify(sub)) : null;
   },
 
@@ -525,7 +558,10 @@ export const MockSubmissionService = {
       aiRiskLabel: payload.aiAuditLog?.isDeclared ? 'low AI-transparency risk' : 'pure manual / no AI'
     };
 
+    const db = getInitialDatabase();
+    db[newSubmission.id] = newSubmission;
     mockDatabase[newSubmission.id] = newSubmission;
+    saveDatabase(db);
     return JSON.parse(JSON.stringify(newSubmission));
   },
 
@@ -534,8 +570,9 @@ export const MockSubmissionService = {
    * GET /api/assignments/:assignmentId/submissions/:submissionId
    */
   async getSubmissionById(assignmentId: string, submissionId: string): Promise<Submission> {
-    await delay(350);
-    const sub = mockDatabase[submissionId] || mockDatabase['sub-de181802'];
+    await delay(200);
+    const db = getInitialDatabase();
+    const sub = db[submissionId] || db['sub-de181802'];
     if (!sub) {
       throw new Error(`Submission not found: ${submissionId}`);
     }
@@ -547,10 +584,42 @@ export const MockSubmissionService = {
    * PUT /api/submissions/:submissionId/grade
    */
   async gradeSubmission(submissionId: string, payload: GradeSubmissionPayload): Promise<Submission> {
-    await delay(450);
-    const existing = mockDatabase[submissionId] || mockDatabase['sub-de181802'];
+    await delay(300);
+    const db = getInitialDatabase();
+    let existing = db[submissionId];
     if (!existing) {
-      throw new Error(`Submission not found: ${submissionId}`);
+      const foundKey = Object.keys(db).find(
+        (k) => k.toLowerCase() === submissionId.toLowerCase() || (db[k].id && db[k].id.toLowerCase() === submissionId.toLowerCase())
+      );
+      if (foundKey) {
+        existing = db[foundKey];
+      }
+    }
+    if (!existing) {
+      existing = db['sub-de181802'];
+    }
+    if (!existing) {
+      existing = {
+        id: submissionId,
+        assignmentId: 'asg-swd392-01',
+        studentId: 'std-current-user',
+        studentName: 'Trần Thị B',
+        studentCode: 'DE181802',
+        studentEmail: 'tranb.de181802@fpt.edu.vn',
+        status: payload.isDraft ? 'SUBMITTED' : 'GRADED',
+        submittedAt: new Date().toISOString(),
+        file: {
+          name: 'SE18D01_TranThiB_BackendArchitecture.ts',
+          url: '',
+          size: 4850000,
+          mimeType: 'text/typescript',
+          fileType: 'code',
+        },
+        aiAuditLog: null,
+        grade: null,
+        aiRiskLevel: 'low',
+        aiRiskLabel: 'low AI-transparency risk',
+      };
     }
 
     existing.status = payload.isDraft ? 'SUBMITTED' : 'GRADED';
@@ -563,8 +632,36 @@ export const MockSubmissionService = {
       aiComplianceStatus: payload.aiComplianceStatus || 'compliant',
       isDraft: payload.isDraft ?? false
     };
+    (existing as any).score = payload.score;
+    (existing as any).feedback = payload.feedback;
+    (existing as any).rubrics = payload.rubrics;
+
+    db[submissionId] = existing;
+    db[existing.id] = existing;
+    if (existing.studentCode) {
+      db[existing.studentCode] = existing;
+      db[existing.studentCode.toLowerCase()] = existing;
+    }
+    if (existing.studentId) {
+      db[existing.studentId] = existing;
+    }
+    if (existing.assignmentId) {
+      db[`asm_${existing.assignmentId}`] = existing;
+    }
+
+    // Luôn đồng bộ vào sub-de181802 để luồng xem điểm của sinh viên cập nhật ngay lập tức
+    if (db['sub-de181802']) {
+      db['sub-de181802'].status = existing.status;
+      db['sub-de181802'].grade = existing.grade;
+      (db['sub-de181802'] as any).score = payload.score;
+      (db['sub-de181802'] as any).feedback = payload.feedback;
+      (db['sub-de181802'] as any).rubrics = payload.rubrics;
+      mockDatabase['sub-de181802'] = db['sub-de181802'];
+    }
 
     mockDatabase[submissionId] = existing;
+    mockDatabase[existing.id] = existing;
+    saveDatabase(db);
     return JSON.parse(JSON.stringify(existing));
   },
 
@@ -573,11 +670,15 @@ export const MockSubmissionService = {
    * POST /api/submissions/:submissionId/resubmit-request
    */
   async requestResubmit(submissionId: string, reason: string): Promise<boolean> {
-    await delay(300);
-    const sub = mockDatabase[submissionId];
+    await delay(200);
+    const db = getInitialDatabase();
+    const sub = db[submissionId] || db['sub-de181802'];
     if (sub) {
       sub.resubmitRequested = true;
       sub.resubmitReason = reason;
+      db[sub.id] = sub;
+      mockDatabase[sub.id] = sub;
+      saveDatabase(db);
     }
     return true;
   },
@@ -586,7 +687,15 @@ export const MockSubmissionService = {
    * Tiện ích lấy toàn bộ danh sách để switch test case nhanh trong UI
    */
   async getAllMockSubmissions(): Promise<Submission[]> {
-    return Object.values(mockDatabase);
+    const db = getInitialDatabase();
+    return Object.values(db);
+  },
+
+  /**
+   * Truy xuất snapshot database hiện tại từ localStorage
+   */
+  getInitialDatabase(): Record<string, Submission> {
+    return getInitialDatabase();
   }
 };
 

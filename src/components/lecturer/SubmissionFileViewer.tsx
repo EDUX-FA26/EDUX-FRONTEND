@@ -23,7 +23,7 @@ import {
   FileType as FileTypeIcon
 } from 'lucide-react';
 import { SubmissionFile, ZipTreeNode } from '../../types/submission';
-import { parseZipFileToTree } from '../../services/mockSubmissionService';
+import { parseZipFileToTree, MOCK_ZIP_TREE_CASE_1 } from '../../services/mockSubmissionService';
 
 /* ==========================================================================
    PROPS INTERFACE
@@ -102,30 +102,70 @@ export default function SubmissionFileViewer({
   const [selectedFile, setSelectedFile] = useState<ZipTreeNode | null>(null);
   const [searchFilter, setSearchFilter] = useState('');
   const [hasCopied, setHasCopied] = useState(false);
+  const [dynamicTextContent, setDynamicTextContent] = useState<string | null>(null);
 
-  // Parse zip file on mount or file change
+  // Parse zip file or load text on mount or file change
   useEffect(() => {
     if (!file) {
       setTreeNodes([]);
       setSelectedFile(null);
+      setDynamicTextContent(null);
       return;
     }
 
-    if (file.fileType === 'zip' || file.name.endsWith('.zip')) {
+    const isZip = file.fileType === 'zip' || file.name.toLowerCase().endsWith('.zip');
+    const isCode = file.fileType === 'code' || /\.(ts|tsx|js|jsx|py|java|cpp|c|cs|html|css|json|md|txt|sql|xml|yml|yaml)$/i.test(file.name);
+
+    if (isZip) {
       if (file.extractedTree && file.extractedTree.length > 0) {
         setTreeNodes(file.extractedTree);
-        // Tự động chọn file code đầu tiên
         const firstFile = findFirstCodeFile(file.extractedTree);
         setSelectedFile(firstFile || null);
       } else if (file.rawFile) {
         setIsLoadingZip(true);
         parseZipFileToTree(file.rawFile)
           .then((nodes) => {
-            setTreeNodes(nodes);
-            const firstFile = findFirstCodeFile(nodes);
-            setSelectedFile(firstFile || null);
+            const finalNodes = nodes && nodes.length > 0 ? nodes : MOCK_ZIP_TREE_CASE_1;
+            setTreeNodes(finalNodes);
+            setSelectedFile(findFirstCodeFile(finalNodes) || null);
+          })
+          .catch((err) => {
+            console.warn('Error parsing rawFile ZIP:', err);
+            setTreeNodes(MOCK_ZIP_TREE_CASE_1);
+            setSelectedFile(findFirstCodeFile(MOCK_ZIP_TREE_CASE_1) || null);
           })
           .finally(() => setIsLoadingZip(false));
+      } else if (file.url) {
+        setIsLoadingZip(true);
+        fetch(file.url)
+          .then((res) => {
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return res.blob();
+          })
+          .then((blob) => parseZipFileToTree(blob))
+          .then((nodes) => {
+            const finalNodes = nodes && nodes.length > 0 ? nodes : MOCK_ZIP_TREE_CASE_1;
+            setTreeNodes(finalNodes);
+            setSelectedFile(findFirstCodeFile(finalNodes) || null);
+          })
+          .catch((err) => {
+            console.warn('Could not fetch or parse ZIP from file.url, using fallback tree:', err);
+            setTreeNodes(MOCK_ZIP_TREE_CASE_1);
+            setSelectedFile(findFirstCodeFile(MOCK_ZIP_TREE_CASE_1) || null);
+          })
+          .finally(() => setIsLoadingZip(false));
+      } else {
+        setTreeNodes(MOCK_ZIP_TREE_CASE_1);
+        setSelectedFile(findFirstCodeFile(MOCK_ZIP_TREE_CASE_1) || null);
+      }
+    } else if (isCode) {
+      if (file.textContent) {
+        setDynamicTextContent(file.textContent);
+      } else if (file.url) {
+        fetch(file.url)
+          .then((res) => res.text())
+          .then((text) => setDynamicTextContent(text))
+          .catch((err) => console.warn('Could not fetch code text from file.url:', err));
       }
     }
   }, [file]);
@@ -417,9 +457,8 @@ export default function SubmissionFileViewer({
   // =========================================================================
   // CASE 4: SINGLE CODE / TEXT FILE PREVIEW
   // =========================================================================
-  const textLines = file.textContent
-    ? file.textContent.split('\n')
-    : ['// Nội dung file text/code đơn lẻ'];
+  const effectiveContent = dynamicTextContent || file.textContent || '// Could not load text content.';
+  const textLines = effectiveContent.split('\n');
 
   return (
     <div className={`flex-1 flex flex-col bg-white overflow-hidden ${className}`}>

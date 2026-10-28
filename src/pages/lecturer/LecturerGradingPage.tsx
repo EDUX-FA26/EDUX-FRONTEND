@@ -15,7 +15,7 @@ import LecturerAcademicEvaluation, {
 import SubmissionService from '../../services/submission.service';
 import AssignmentService from '../../services/assignment.service';
 import GradingService from '../../services/grading.service';
-import MockSubmissionService from '../../services/mockSubmissionService';
+import MockSubmissionService, { parseZipFileToTree, MOCK_ZIP_TREE_CASE_1 } from '../../services/mockSubmissionService';
 import { SubmissionFile } from '../../types/submission';
 
 export default function LecturerGradingPage() {
@@ -33,7 +33,16 @@ export default function LecturerGradingPage() {
   const [currentFile, setCurrentFile] = useState<SubmissionFile | undefined>(undefined);
   const [aiDeclarations, setAiDeclarations] = useState<AiDeclarationPhase[]>(DEFAULT_AI_DECLARATIONS);
   const [existingGradeId, setExistingGradeId] = useState<string | null>(null);
-  const [initialScores, setInitialScores] = useState<RubricScores>({ r1: 0, r2: 0, r3: 0 });
+  const [resolvedAssignmentId, setResolvedAssignmentId] = useState<string | null>(
+    assignmentId || (location.state as any)?.assignment_id || (location.state as any)?.assignmentId || null
+  );
+  const [initialScores, setInitialScores] = useState<RubricScores>({
+    decomposition: 0,
+    pattern: 0,
+    abstraction: 0,
+    algorithmic: 0,
+    reflection: 0,
+  });
   const [initialFeedback, setInitialFeedback] = useState<string>('');
 
   useEffect(() => {
@@ -43,6 +52,11 @@ export default function LecturerGradingPage() {
 
         // State passed from parent listing page if available
         const stateData = location.state as any;
+        if (assignmentId) {
+          setResolvedAssignmentId(assignmentId);
+        } else if (stateData?.assignment_id || stateData?.assignmentId) {
+          setResolvedAssignmentId(stateData.assignment_id || stateData.assignmentId);
+        }
 
         // 1. Load Assignment info
         if (assignmentId && !assignmentId.startsWith('asm-')) {
@@ -71,6 +85,9 @@ export default function LecturerGradingPage() {
 
             if (subData) {
               subDataLoaded = true;
+              if (subData.assignment_id || subData.assignmentId) {
+                setResolvedAssignmentId(subData.assignment_id || subData.assignmentId);
+              }
               // Student Info
               setStudentInfo({
                 name: subData.student_name || stateData?.student_name || 'Tran Thi B',
@@ -85,19 +102,35 @@ export default function LecturerGradingPage() {
                 const gradeObj = subData.grade || {};
                 setExistingGradeId(gradeObj.id || subData.grade_id || null);
                 const scoreNum = Number(subData.score || gradeObj.score || 0);
-                const r1Val = parseFloat((scoreNum * 0.4).toFixed(2));
-                const r2Val = parseFloat((scoreNum * 0.4).toFixed(2));
-                const r3Val = parseFloat((scoreNum - r1Val - r2Val).toFixed(2));
-                setInitialScores({
-                  r1: Math.min(4, Math.max(0, r1Val)),
-                  r2: Math.min(4, Math.max(0, r2Val)),
-                  r3: Math.min(2, Math.max(0, r3Val)),
-                });
+                const rubricsObj = subData.rubrics || gradeObj.rubrics;
+
+                if (rubricsObj && rubricsObj.decomposition !== undefined) {
+                  setInitialScores(rubricsObj);
+                } else if (rubricsObj && (rubricsObj.r1 !== undefined || rubricsObj.r2 !== undefined)) {
+                  const sum = (rubricsObj.r1 || 0) + (rubricsObj.r2 || 0) + (rubricsObj.r3 || 0);
+                  const part = Math.min(2, parseFloat((sum / 5).toFixed(2)));
+                  setInitialScores({
+                    decomposition: part,
+                    pattern: part,
+                    abstraction: part,
+                    algorithmic: part,
+                    reflection: Math.min(2, parseFloat((sum - part * 4).toFixed(2))),
+                  });
+                } else {
+                  const part = Math.min(2, Math.max(0, parseFloat((scoreNum / 5).toFixed(2))));
+                  setInitialScores({
+                    decomposition: part,
+                    pattern: part,
+                    abstraction: part,
+                    algorithmic: part,
+                    reflection: Math.min(2, Math.max(0, parseFloat((scoreNum - part * 4).toFixed(2)))),
+                  });
+                }
                 setInitialFeedback(subData.feedback || gradeObj.feedback || '');
               }
 
               // Submission Files
-              let files = [];
+              let files: any[] = [];
               if (subData.versions && subData.versions.length > 0) {
                 const latestVer = subData.versions[0];
                 try {
@@ -182,13 +215,81 @@ export default function LecturerGradingPage() {
                 }
               }
 
+              // Fallback to stateData files if versions was empty
+              if ((!files || files.length === 0) && stateData?.latest_files) {
+                try {
+                  files = typeof stateData.latest_files === 'string' ? JSON.parse(stateData.latest_files) : stateData.latest_files;
+                } catch (e) {}
+              }
+
               if (files && files.length > 0) {
                 const firstFile = files[0];
+                const fileName = firstFile.name || firstFile.filename || 'SE18D01_TranThiB_BackendArchitecture.ts';
+                const isZip = fileName.toLowerCase().endsWith('.zip');
+                const isPdf = fileName.toLowerCase().endsWith('.pdf');
+                const isCode = /\.(ts|tsx|js|jsx|py|java|cpp|c|cs|html|css|json|md|txt|sql|xml|yml|yaml)$/i.test(fileName);
+
+                let presignedUrl = firstFile.url || '';
+                let extractedTree = undefined;
+                let textContent = undefined;
+
+                // Lấy Presigned URL thật từ Backend S3 nếu file có ID
+                if (firstFile.id && submissionId && !submissionId.startsWith('mock-')) {
+                  try {
+                    const fileRes = await SubmissionService.getSubmissionFile(submissionId, firstFile.id);
+                    const fileData = fileRes?.data || fileRes;
+                    if (fileData?.url) {
+                      presignedUrl = fileData.url;
+                    }
+                  } catch (err) {
+                    console.warn('[ART-AI] Failed to get presigned URL from SubmissionService:', err);
+                  }
+                }
+
+                // Nếu có presigned URL, tải trực tiếp dữ liệu thật để giải nén hoặc hiển thị
+                if (presignedUrl) {
+                  if (isZip) {
+                    try {
+                      const zipRes = await fetch(presignedUrl);
+                      if (zipRes.ok) {
+                        const blob = await zipRes.blob();
+                        extractedTree = await parseZipFileToTree(blob);
+                      }
+                    } catch (err) {
+                      console.warn('[ART-AI] Could not parse zip from presigned URL, using fallback:', err);
+                      extractedTree = MOCK_ZIP_TREE_CASE_1;
+                    }
+                  } else if (isCode) {
+                    try {
+                      const textRes = await fetch(presignedUrl);
+                      if (textRes.ok) {
+                        textContent = await textRes.text();
+                      }
+                    } catch (err) {
+                      console.warn('[ART-AI] Could not fetch code text from presigned URL:', err);
+                    }
+                  }
+                } else if (isZip) {
+                  extractedTree = MOCK_ZIP_TREE_CASE_1;
+                }
+
+                const resolvedFile: SubmissionFile = {
+                  name: fileName,
+                  url: presignedUrl,
+                  size: firstFile.size || 0,
+                  mimeType: firstFile.type || (isZip ? 'application/zip' : isPdf ? 'application/pdf' : 'text/plain'),
+                  fileType: isZip ? 'zip' : isPdf ? 'pdf' : isCode ? 'code' : 'other',
+                  extractedTree: extractedTree && extractedTree.length > 0 ? extractedTree : (isZip ? MOCK_ZIP_TREE_CASE_1 : undefined),
+                  textContent: textContent || (isCode ? DEFAULT_SUBMISSION_CODE_LINES.join('\n') : undefined),
+                };
+
+                setCurrentFile(resolvedFile);
                 setSubmissionFile({
-                  name: firstFile.name || firstFile.filename || 'SE18D01_TranThiB_BackendArchitecture.ts',
+                  name: fileName,
                   size: firstFile.size,
-                  url: firstFile.url,
-                  lines: DEFAULT_SUBMISSION_CODE_LINES,
+                  url: presignedUrl,
+                  content: textContent,
+                  lines: textContent ? textContent.split('\n') : DEFAULT_SUBMISSION_CODE_LINES,
                 });
               }
             }
@@ -205,6 +306,9 @@ export default function LecturerGradingPage() {
               submissionId || 'sub-de181802'
             );
             if (mockSub) {
+              if (mockSub.assignmentId) {
+                setResolvedAssignmentId(mockSub.assignmentId);
+              }
               setStudentInfo({
                 name: mockSub.studentName,
                 code: mockSub.studentCode,
@@ -296,9 +400,35 @@ export default function LecturerGradingPage() {
                 ]);
               }
 
-              if (mockSub.grade) {
-                setInitialScores(mockSub.grade.rubrics || { r1: 3.5, r2: 3.25, r3: 1.75 });
-                setInitialFeedback(mockSub.grade.feedback || '');
+              const activeRubrics = mockSub.rubrics || mockSub.grade?.rubrics;
+              const activeScore = mockSub.score ?? mockSub.grade?.score;
+              const activeFeedback = mockSub.feedback || mockSub.grade?.feedback;
+
+              if (activeRubrics && activeRubrics.decomposition !== undefined) {
+                setInitialScores(activeRubrics);
+              } else if (activeRubrics && (activeRubrics.r1 !== undefined || activeRubrics.r2 !== undefined)) {
+                const sum = (activeRubrics.r1 || 0) + (activeRubrics.r2 || 0) + (activeRubrics.r3 || 0);
+                const part = Math.min(2, parseFloat((sum / 5).toFixed(2)));
+                setInitialScores({
+                  decomposition: part,
+                  pattern: part,
+                  abstraction: part,
+                  algorithmic: part,
+                  reflection: Math.min(2, parseFloat((sum - part * 4).toFixed(2))),
+                });
+              } else if (activeScore != null) {
+                const sc = Number(activeScore);
+                const part = Math.min(2, Math.max(0, parseFloat((sc / 5).toFixed(2))));
+                setInitialScores({
+                  decomposition: part,
+                  pattern: part,
+                  abstraction: part,
+                  algorithmic: part,
+                  reflection: Math.min(2, Math.max(0, parseFloat((sc - part * 4).toFixed(2)))),
+                });
+              }
+              if (activeFeedback) {
+                setInitialFeedback(activeFeedback);
               }
             }
           } catch (err) {
@@ -315,6 +445,7 @@ export default function LecturerGradingPage() {
 
   // Handle Save Draft
   const handleSaveDraft = async (payload: GradePayload) => {
+    const isMock = !submissionId || submissionId.startsWith('mock-') || submissionId.startsWith('sub-');
     const gradePayload = {
       score: payload.score,
       feedback: payload.feedback,
@@ -325,22 +456,53 @@ export default function LecturerGradingPage() {
       aiCompliance: payload.aiComplianceStatus,
     };
 
-    if (existingGradeId) {
-      await GradingService.updateGrade(existingGradeId, gradePayload);
-    } else if (submissionId && !submissionId.startsWith('mock-')) {
-      const res = await GradingService.createGrade({
-        ...gradePayload,
-        submissionId,
-        submission_id: submissionId,
-      });
-      if (res && res.data && res.data.id) {
-        setExistingGradeId(res.data.id);
+    try {
+      if (isMock) {
+        await MockSubmissionService.gradeSubmission(submissionId || 'sub-de181802', {
+          score: payload.score,
+          feedback: payload.feedback,
+          rubrics: payload.rubrics,
+          aiComplianceStatus: payload.aiComplianceStatus,
+          isDraft: true,
+        });
+      } else if (existingGradeId) {
+        await GradingService.updateGrade(existingGradeId, gradePayload);
+      } else if (submissionId) {
+        const res = await GradingService.createGrade({
+          ...gradePayload,
+          submissionId,
+          submission_id: submissionId,
+        });
+        if (res && res.data && res.data.id) {
+          setExistingGradeId(res.data.id);
+        }
+      }
+    } catch (err) {
+      console.warn('[ART-AI] Save draft error:', err);
+      if (submissionId) {
+        await MockSubmissionService.gradeSubmission(submissionId, {
+          score: payload.score,
+          feedback: payload.feedback,
+          rubrics: payload.rubrics,
+          aiComplianceStatus: payload.aiComplianceStatus,
+          isDraft: true,
+        }).catch(() => {});
       }
     }
   };
 
+  const [publishedScore, setPublishedScore] = useState<number | null>(null);
+
   // Handle Publish Grade
   const handlePublishGrade = async (payload: GradePayload) => {
+    setPublishedScore(payload.score);
+    const isMock = !submissionId || submissionId.startsWith('mock-') || submissionId.startsWith('sub-');
+    const targetAssignmentId =
+      assignmentId ||
+      resolvedAssignmentId ||
+      (location.state as any)?.assignment_id ||
+      (location.state as any)?.assignmentId;
+
     const gradePayload = {
       score: payload.score,
       feedback: payload.feedback,
@@ -351,33 +513,99 @@ export default function LecturerGradingPage() {
       aiCompliance: payload.aiComplianceStatus,
     };
 
-    if (existingGradeId) {
-      await GradingService.updateGrade(existingGradeId, gradePayload);
-    } else if (submissionId && !submissionId.startsWith('mock-')) {
-      await GradingService.createGrade({
-        ...gradePayload,
-        submissionId,
-        submission_id: submissionId,
+    // Luôn lưu vào MockSubmissionService & localStorage để đồng bộ ngay lập tức cho cả 2 luồng
+    try {
+      await MockSubmissionService.gradeSubmission(submissionId || 'sub-de181802', {
+        score: payload.score,
+        feedback: payload.feedback,
+        rubrics: payload.rubrics,
+        aiComplianceStatus: payload.aiComplianceStatus,
+        isDraft: false,
       });
+
+      const db = MockSubmissionService.getInitialDatabase();
+      const updatedSub = db[submissionId || 'sub-de181802'];
+      if (updatedSub) {
+        if (studentInfo.code) {
+          db[studentInfo.code] = updatedSub;
+          db[studentInfo.code.toLowerCase()] = updatedSub;
+        }
+        if (targetAssignmentId) {
+          db[`asm_${targetAssignmentId}`] = updatedSub;
+        }
+        db['sub-de181802'] = updatedSub;
+        try {
+          localStorage.setItem('edux_art_ai_mock_submissions_db_v2', JSON.stringify(db));
+          localStorage.setItem('edux_latest_grade', JSON.stringify({
+            score: payload.score,
+            feedback: payload.feedback,
+            rubrics: payload.rubrics,
+            submissionId: submissionId,
+            studentCode: studentInfo.code,
+            updatedAt: new Date().toISOString(),
+          }));
+        } catch (e) {}
+      }
+    } catch (e) {
+      console.warn('[ART-AI] Mock storage sync error:', e);
     }
 
-    // Return to assignment details after short delay
-    setTimeout(() => {
-      handleBack();
-    }, 1200);
+    try {
+      if (!isMock) {
+        if (existingGradeId) {
+          await GradingService.updateGrade(existingGradeId, gradePayload);
+        } else if (submissionId) {
+          const res = await GradingService.createGrade({
+            ...gradePayload,
+            submissionId,
+            submission_id: submissionId,
+          });
+          if (res && res.data && res.data.id) {
+            setExistingGradeId(res.data.id);
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('[ART-AI] Grade publish API failed, falling back to mock state:', err);
+    }
   };
 
   // Handle Request Resubmit
   const handleRequestResubmit = async (reason: string) => {
     console.log(`[ART-AI] Request Resubmit for submission ${submissionId}: ${reason}`);
-    // Simulate backend call or update status
-    await new Promise((resolve) => setTimeout(resolve, 600));
+    try {
+      if (submissionId) {
+        await MockSubmissionService.requestResubmit(submissionId, reason);
+      }
+    } catch (e) {
+      console.warn('[ART-AI] Request resubmit error:', e);
+    }
+    setTimeout(() => {
+      handleBack();
+    }, 800);
   };
 
-  // Handle Back
-  const handleBack = () => {
-    if (assignmentId) {
-      navigate(`/lecturer/assignments/${assignmentId}`);
+  // Handle Back: Quay về trang danh sách các bài nộp của sinh viên
+  const handleBack = (explicitScore?: number) => {
+    const finalScore = explicitScore ?? publishedScore;
+    const targetAssignmentId =
+      assignmentId ||
+      resolvedAssignmentId ||
+      (location.state as any)?.assignment_id ||
+      (location.state as any)?.assignmentId;
+
+    if (targetAssignmentId) {
+      navigate(`/lecturer/assignments/${targetAssignmentId}`, {
+        state: {
+          message: finalScore != null
+            ? `Đã công bố điểm ${Number(finalScore).toFixed(2)}/10 thành công!`
+            : 'Đã công bố điểm bài nộp thành công!',
+          type: 'success',
+          refresh: Date.now(),
+          updatedScore: finalScore,
+          gradedSubmissionId: submissionId,
+        },
+      });
     } else {
       navigate(-1);
     }
