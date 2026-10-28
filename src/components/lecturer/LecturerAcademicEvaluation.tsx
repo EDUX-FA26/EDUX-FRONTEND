@@ -1,4 +1,6 @@
 import React, { useState, useMemo } from 'react';
+import { useParams } from 'react-router-dom';
+import SubmissionService from '../../services/submission.service';
 import {
   ArrowLeft,
   ChevronRight,
@@ -65,14 +67,18 @@ export interface AiDeclarationPhase {
 }
 
 export interface RubricScores {
-  decomposition: number; // Phân rã bài toán (max 2)
-  pattern: number;       // Nhận diện mẫu thiết kế (max 2)
-  abstraction: number;   // Trừu tượng hóa & Kiến trúc (max 2)
-  algorithmic: number;   // Tư duy thuật toán (max 2)
-  reflection: number;    // Tự đánh giá & Phản chiếu AI (max 2)
-  r1?: number;           // Backward compatibility
+  decomposition?: number;    // Problem Decomposition (Tối đa: 2.0)
+  pattern?: number;          // Pattern Recognition (Tối đa: 2.0)
+  abstraction: number;       // Problem Abstraction (Tối đa: 2.0)
+  algorithmic?: number;      // Algorithmic Thinking (Tối đa: 2.0)
+  reflection: number;        // Reflection & Ownership (Tối đa: 2.0)
+  implementation?: number;
+  verification?: number;
+  ai_interaction?: number;
+  r1?: number;
   r2?: number;
   r3?: number;
+  [key: string]: any;
 }
 
 export const DEFAULT_RUBRIC_SCORES: RubricScores = {
@@ -82,6 +88,74 @@ export const DEFAULT_RUBRIC_SCORES: RubricScores = {
   algorithmic: 0,
   reflection: 0,
 };
+
+export const RUBRIC_CRITERIA_LIST = [
+  {
+    key: 'decomposition' as const,
+    name: 'Decomposition',
+    viName: 'Phân rã vấn đề',
+    max: 2,
+    color: 'bg-indigo-500',
+    borderColor: 'border-indigo-200',
+    textColor: 'text-indigo-700',
+    focusRing: 'focus:ring-indigo-400',
+    activeBg: 'bg-indigo-600',
+    pills: [0, 0.5, 1.0, 1.5, 2.0],
+    desc: 'Khả năng chia nhỏ bài toán phức tạp thành các module/service độc lập, rõ ràng.',
+  },
+  {
+    key: 'pattern' as const,
+    name: 'Pattern Recognition',
+    viName: 'Nhận diện quy luật',
+    max: 2,
+    color: 'bg-blue-500',
+    borderColor: 'border-blue-200',
+    textColor: 'text-blue-700',
+    focusRing: 'focus:ring-blue-400',
+    activeBg: 'bg-blue-600',
+    pills: [0, 0.5, 1.0, 1.5, 2.0],
+    desc: 'Nhận diện cấu trúc dữ liệu, design pattern, hoặc giải pháp tương tự.',
+  },
+  {
+    key: 'abstraction' as const,
+    name: 'Abstraction',
+    viName: 'Trừu tượng hóa',
+    max: 2,
+    color: 'bg-purple-500',
+    borderColor: 'border-purple-200',
+    textColor: 'text-purple-700',
+    focusRing: 'focus:ring-purple-400',
+    activeBg: 'bg-purple-600',
+    pills: [0, 0.5, 1.0, 1.5, 2.0],
+    desc: 'Ẩn giấu chi tiết phức tạp, xây dựng interface, abstraction layer sạch sẽ.',
+  },
+  {
+    key: 'algorithmic' as const,
+    name: 'Algorithmic Thinking',
+    viName: 'Tư duy thuật toán',
+    max: 2,
+    color: 'bg-emerald-500',
+    borderColor: 'border-emerald-200',
+    textColor: 'text-emerald-700',
+    focusRing: 'focus:ring-emerald-400',
+    activeBg: 'bg-emerald-600',
+    pills: [0, 0.5, 1.0, 1.5, 2.0],
+    desc: 'Thiết kế từng bước xử lý logic, tối ưu độ phức tạp thời gian/bộ nhớ.',
+  },
+  {
+    key: 'reflection' as const,
+    name: 'AI Reflection',
+    viName: 'Tự đánh giá & Làm chủ AI',
+    max: 2,
+    color: 'bg-amber-500',
+    borderColor: 'border-amber-200',
+    textColor: 'text-amber-700',
+    focusRing: 'focus:ring-amber-400',
+    activeBg: 'bg-amber-600',
+    pills: [0, 0.5, 1.0, 1.5, 2.0],
+    desc: 'Giải trình minh bạch việc sử dụng AI, xác minh output và tự kiểm chứng mã nguồn.',
+  },
+];
 
 export type AiComplianceStatus = 'compliant' | 'minor_discrepancy' | 'violation';
 
@@ -94,6 +168,7 @@ export interface GradePayload {
 }
 
 export interface LecturerAcademicEvaluationProps {
+  submissionId?: string;
   student?: StudentInfo;
   courseInfo?: CourseClassInfo;
   submissionFile?: SubmissionCodeFile;
@@ -245,6 +320,7 @@ export const DEFAULT_AI_DECLARATIONS: AiDeclarationPhase[] = [
    ========================================================================== */
 
 export default function LecturerAcademicEvaluation({
+  submissionId,
   student = DEFAULT_STUDENT,
   courseInfo = DEFAULT_COURSE_INFO,
   submissionFile = {
@@ -327,6 +403,9 @@ export default function LecturerAcademicEvaluation({
   const [showVivaModal, setShowVivaModal] = useState(false);
   const [showAnnotateToast, setShowAnnotateToast] = useState(false);
   const [toastMessage, setToastMessage] = useState<{ title: string; desc: string; type: 'success' | 'info' | 'error' } | null>(null);
+  const [isAuditingAi, setIsAuditingAi] = useState(false);
+  const [rubricReasonings, setRubricReasonings] = useState<Record<string, string>>({});
+  const [overallAiFeedback, setOverallAiFeedback] = useState<string>('');
 
   // Calculate Total Score (Thang 10: 5 tiêu chí x 2.0 điểm)
   const totalScore = parseFloat(
@@ -340,12 +419,12 @@ export default function LecturerAcademicEvaluation({
   );
 
   // Update Rubric Score
-  const handleUpdateRubric = (key: keyof RubricScores, val: string | number) => {
+  const handleUpdateRubric = (key: keyof RubricScores, val: string | number, maxScore: number = 2) => {
     isUserModifiedRef.current = true;
     const numVal = typeof val === 'number' ? val : parseFloat(val);
     setScores((prev) => ({
       ...prev,
-      [key]: isNaN(numVal) ? 0 : Math.min(2, Math.max(0, parseFloat(numVal.toFixed(2)))),
+      [key]: isNaN(numVal) ? 0 : Math.min(maxScore, Math.max(0, parseFloat(numVal.toFixed(2)))),
     }));
   };
 
@@ -363,6 +442,35 @@ export default function LecturerAcademicEvaluation({
       setFeedback('Code có kiến trúc tốt, phân tách service layer rõ ràng. Khai báo AI minh bạch và có tự phản chiếu xác đáng.');
     }
     showToastNotification('Đã áp dụng gợi ý AI', 'Đã điền điểm gợi ý 8.50/10 vào 5 tiêu chí rubric (2.0 điểm/tiêu chí).');
+  };
+
+  const handleAuditWithAi = async () => {
+    try {
+      setIsAuditingAi(true);
+      if (submissionId) {
+        const res = await SubmissionService.auditRubric(submissionId);
+        if (res && res.data) {
+          const aiData = res.data;
+          if (aiData.rubric_scores) {
+            setScores((prev) => ({ ...prev, ...aiData.rubric_scores }));
+          }
+          if (aiData.rubric_reasonings) {
+            setRubricReasonings(aiData.rubric_reasonings);
+          }
+          if (aiData.overall_feedback) {
+            setOverallAiFeedback(aiData.overall_feedback);
+          }
+          showToastNotification('Thẩm định thành công', 'AI đã hoàn thành phân tích 5 tiêu chí rubric.');
+          return;
+        }
+      }
+      applyAiSuggestion();
+    } catch (e: any) {
+      console.warn('AI Audit failed, falling back to heuristic:', e);
+      applyAiSuggestion();
+    } finally {
+      setIsAuditingAi(false);
+    }
   };
 
   const showToastNotification = (title: string, desc: string, type: 'success' | 'info' | 'error' = 'success') => {
@@ -743,284 +851,117 @@ export default function LecturerAcademicEvaluation({
                 <div>
                   <button
                     type="button"
-                    onClick={applyAiSuggestion}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-xl text-xs font-bold border border-indigo-100 transition cursor-pointer"
+                    disabled={isAuditingAi}
+                    onClick={handleAuditWithAi}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-500/20 transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                   >
-                    <Copy size={13} />
-                    <span>Khớp từng tiêu chí với AI: 8.50 / 10</span>
+                    {isAuditingAi ? (
+                      <>
+                        <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        <span>AI đang thẩm định 5 tiêu chí...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles size={14} className="text-amber-300" />
+                        <span>Khớp từng tiêu chí với AI</span>
+                      </>
+                    )}
                   </button>
                 </div>
 
                 <p className="text-[11px] text-slate-400 leading-snug max-w-xs mx-auto">
-                  Chỉ sao chép vào bản nháp; giảng viên vẫn có thể kéo từng tiêu chí trước khi công bố.
+                  Điểm AI sẽ tự động điền vào các thanh trượt bên dưới; giảng viên có thể kéo thanh trượt để ghi đè điểm theo ý muốn.
                 </p>
               </div>
 
-              {/* Điều chỉnh Rubric 5 Tiêu chí Computational Thinking & AI Reflection */}
+              {/* Điều chỉnh Rubric 5 Tiêu chí Chuẩn thang 10 */}
               <div className="space-y-3.5 pt-2 border-t border-slate-100 shrink-0">
                 <div className="flex items-center justify-between">
                   <div className="text-xs font-bold text-slate-800 uppercase tracking-wide">
-                    ĐIỀU CHỈNH 5 TIÊU CHÍ RUBRIC (2.00 ĐIỂM / TIÊU CHÍ)
+                    ĐIỀU CHỈNH TỪNG TIÊU CHÍ RUBRIC (5 TIÊU CHÍ)
                   </div>
                   <span className="text-[10px] text-indigo-600 font-semibold bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-100">
                     Thang 10.0
                   </span>
                 </div>
 
-                {/* Rubric 1: Decomposition */}
-                <div className="space-y-2 bg-slate-50/70 p-3 rounded-xl border border-slate-100 transition hover:bg-slate-50">
-                  <div className="flex justify-between items-center text-xs">
-                    <div className="flex items-center gap-1.5 min-w-0">
-                      <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0"></span>
-                      <span className="font-bold text-slate-700 truncate">1. Decomposition (Phân rã)</span>
-                    </div>
-                    <div className="flex items-center gap-1 shrink-0 font-mono text-xs">
-                      <input
-                        type="number"
-                        min="0"
-                        max="2"
-                        step="0.05"
-                        value={scores.decomposition ?? 0}
-                        onChange={(e) => handleUpdateRubric('decomposition', e.target.value)}
-                        className="w-16 px-1.5 py-0.5 text-right font-bold text-xs bg-white border border-blue-300 rounded-md text-blue-700 outline-none focus:ring-1 focus:ring-blue-500"
-                      />
-                      <span className="text-slate-400 font-semibold text-[11px]">/ 2.00</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    {[0, 1.0, 1.5, 1.75, 2.0].map((pillVal) => (
-                      <button
-                        key={pillVal}
-                        type="button"
-                        onClick={() => handleUpdateRubric('decomposition', pillVal)}
-                        className={`px-2 py-0.5 text-[10px] rounded font-semibold transition cursor-pointer ${
-                          Math.abs((scores.decomposition ?? 0) - pillVal) < 0.01
-                            ? 'bg-blue-600 text-white font-bold'
-                            : 'bg-white border border-slate-200 text-slate-600 hover:bg-blue-50'
-                        }`}
-                      >
-                        {pillVal.toFixed(pillVal % 1 === 0 ? 0 : 2)}
-                      </button>
-                    ))}
-                  </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max="2"
-                    step="0.05"
-                    value={scores.decomposition ?? 0}
-                    id="range-decomposition"
-                    onChange={(e) => handleUpdateRubric('decomposition', e.target.value)}
-                    className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer"
-                  />
-                  <div className="text-[10px] text-slate-400 leading-tight">
-                    Phân chia bài toán lớn thành các module, microservices và hàm độc lập.
-                  </div>
-                </div>
+                {RUBRIC_CRITERIA_LIST.map((crit) => {
+                  const currentVal = scores[crit.key] ?? 0;
+                  const reasoning = rubricReasonings[crit.key];
+                  return (
+                    <div
+                      key={crit.key}
+                      className="space-y-2 bg-slate-50/70 p-3.5 rounded-xl border border-slate-100 transition hover:bg-slate-50 hover:border-slate-200"
+                    >
+                      <div className="flex justify-between items-center text-xs">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <span className={`w-2.5 h-2.5 rounded-full ${crit.color} shrink-0`} />
+                          <div className="truncate">
+                            <span className="font-bold text-slate-800">{crit.name}</span>
+                            <span className="text-[10px] text-slate-400 ml-1.5 hidden sm:inline">({crit.viName})</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0 font-mono text-xs">
+                          <input
+                            type="number"
+                            min="0"
+                            max={crit.max}
+                            step="0.05"
+                            value={currentVal}
+                            onChange={(e) => handleUpdateRubric(crit.key, e.target.value, crit.max)}
+                            className={`w-16 px-1.5 py-0.5 text-right font-bold text-xs bg-white border ${crit.borderColor} rounded-md ${crit.textColor} outline-none focus:ring-1 ${crit.focusRing}`}
+                          />
+                          <span className="text-slate-400 font-semibold text-[11px]">/ {crit.max.toFixed(2)}</span>
+                        </div>
+                      </div>
 
-                {/* Rubric 2: Pattern Recognition */}
-                <div className="space-y-2 bg-slate-50/70 p-3 rounded-xl border border-slate-100 transition hover:bg-slate-50">
-                  <div className="flex justify-between items-center text-xs">
-                    <div className="flex items-center gap-1.5 min-w-0">
-                      <span className="w-2 h-2 rounded-full bg-indigo-500 shrink-0"></span>
-                      <span className="font-bold text-slate-700 truncate">2. Pattern Recognition (Nhận diện mẫu)</span>
-                    </div>
-                    <div className="flex items-center gap-1 shrink-0 font-mono text-xs">
-                      <input
-                        type="number"
-                        min="0"
-                        max="2"
-                        step="0.05"
-                        value={scores.pattern ?? 0}
-                        onChange={(e) => handleUpdateRubric('pattern', e.target.value)}
-                        className="w-16 px-1.5 py-0.5 text-right font-bold text-xs bg-white border border-indigo-300 rounded-md text-indigo-700 outline-none focus:ring-1 focus:ring-indigo-500"
-                      />
-                      <span className="text-slate-400 font-semibold text-[11px]">/ 2.00</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    {[0, 1.0, 1.5, 1.75, 2.0].map((pillVal) => (
-                      <button
-                        key={pillVal}
-                        type="button"
-                        onClick={() => handleUpdateRubric('pattern', pillVal)}
-                        className={`px-2 py-0.5 text-[10px] rounded font-semibold transition cursor-pointer ${
-                          Math.abs((scores.pattern ?? 0) - pillVal) < 0.01
-                            ? 'bg-indigo-600 text-white font-bold'
-                            : 'bg-white border border-slate-200 text-slate-600 hover:bg-indigo-50'
-                        }`}
-                      >
-                        {pillVal.toFixed(pillVal % 1 === 0 ? 0 : 2)}
-                      </button>
-                    ))}
-                  </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max="2"
-                    step="0.05"
-                    value={scores.pattern ?? 0}
-                    id="range-pattern"
-                    onChange={(e) => handleUpdateRubric('pattern', e.target.value)}
-                    className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer"
-                  />
-                  <div className="text-[10px] text-slate-400 leading-tight">
-                    Áp dụng đúng Design Patterns (Repository, Middleware, Factory...) và tái sử dụng mã.
-                  </div>
-                </div>
+                      {/* Quick preset pills */}
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {crit.pills.map((pillVal) => (
+                          <button
+                            key={pillVal}
+                            type="button"
+                            onClick={() => handleUpdateRubric(crit.key, pillVal, crit.max)}
+                            className={`px-2 py-0.5 text-[10px] rounded font-semibold transition cursor-pointer ${
+                              Math.abs(currentVal - pillVal) < 0.01
+                                ? `${crit.activeBg} text-white font-bold shadow-xs`
+                                : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'
+                            }`}
+                          >
+                            {pillVal.toFixed(pillVal % 1 === 0 ? 0 : (pillVal * 10) % 1 === 0 ? 1 : 2)}
+                          </button>
+                        ))}
+                      </div>
 
-                {/* Rubric 3: Abstraction */}
-                <div className="space-y-2 bg-slate-50/70 p-3 rounded-xl border border-slate-100 transition hover:bg-slate-50">
-                  <div className="flex justify-between items-center text-xs">
-                    <div className="flex items-center gap-1.5 min-w-0">
-                      <span className="w-2 h-2 rounded-full bg-cyan-500 shrink-0"></span>
-                      <span className="font-bold text-slate-700 truncate">3. Abstraction (Trừu tượng hóa)</span>
-                    </div>
-                    <div className="flex items-center gap-1 shrink-0 font-mono text-xs">
+                      {/* Range slider */}
                       <input
-                        type="number"
+                        type="range"
                         min="0"
-                        max="2"
+                        max={crit.max}
                         step="0.05"
-                        value={scores.abstraction ?? 0}
-                        onChange={(e) => handleUpdateRubric('abstraction', e.target.value)}
-                        className="w-16 px-1.5 py-0.5 text-right font-bold text-xs bg-white border border-cyan-300 rounded-md text-cyan-700 outline-none focus:ring-1 focus:ring-cyan-500"
+                        value={currentVal}
+                        id={`range-${crit.key}`}
+                        onChange={(e) => handleUpdateRubric(crit.key, e.target.value, crit.max)}
+                        className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
                       />
-                      <span className="text-slate-400 font-semibold text-[11px]">/ 2.00</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    {[0, 1.0, 1.5, 1.75, 2.0].map((pillVal) => (
-                      <button
-                        key={pillVal}
-                        type="button"
-                        onClick={() => handleUpdateRubric('abstraction', pillVal)}
-                        className={`px-2 py-0.5 text-[10px] rounded font-semibold transition cursor-pointer ${
-                          Math.abs((scores.abstraction ?? 0) - pillVal) < 0.01
-                            ? 'bg-cyan-600 text-white font-bold'
-                            : 'bg-white border border-slate-200 text-slate-600 hover:bg-cyan-50'
-                        }`}
-                      >
-                        {pillVal.toFixed(pillVal % 1 === 0 ? 0 : 2)}
-                      </button>
-                    ))}
-                  </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max="2"
-                    step="0.05"
-                    value={scores.abstraction ?? 0}
-                    id="range-abstraction"
-                    onChange={(e) => handleUpdateRubric('abstraction', e.target.value)}
-                    className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer"
-                  />
-                  <div className="text-[10px] text-slate-400 leading-tight">
-                    Thiết kế Interfaces/Providers, che giấu chi tiết cài đặt và cô lập hệ thống.
-                  </div>
-                </div>
 
-                {/* Rubric 4: Algorithmic Thinking */}
-                <div className="space-y-2 bg-slate-50/70 p-3 rounded-xl border border-slate-100 transition hover:bg-slate-50">
-                  <div className="flex justify-between items-center text-xs">
-                    <div className="flex items-center gap-1.5 min-w-0">
-                      <span className="w-2 h-2 rounded-full bg-teal-500 shrink-0"></span>
-                      <span className="font-bold text-slate-700 truncate">4. Algorithmic Thinking (Thuật toán)</span>
-                    </div>
-                    <div className="flex items-center gap-1 shrink-0 font-mono text-xs">
-                      <input
-                        type="number"
-                        min="0"
-                        max="2"
-                        step="0.05"
-                        value={scores.algorithmic ?? 0}
-                        onChange={(e) => handleUpdateRubric('algorithmic', e.target.value)}
-                        className="w-16 px-1.5 py-0.5 text-right font-bold text-xs bg-white border border-teal-300 rounded-md text-teal-700 outline-none focus:ring-1 focus:ring-teal-500"
-                      />
-                      <span className="text-slate-400 font-semibold text-[11px]">/ 2.00</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    {[0, 1.0, 1.5, 1.75, 2.0].map((pillVal) => (
-                      <button
-                        key={pillVal}
-                        type="button"
-                        onClick={() => handleUpdateRubric('algorithmic', pillVal)}
-                        className={`px-2 py-0.5 text-[10px] rounded font-semibold transition cursor-pointer ${
-                          Math.abs((scores.algorithmic ?? 0) - pillVal) < 0.01
-                            ? 'bg-teal-600 text-white font-bold'
-                            : 'bg-white border border-slate-200 text-slate-600 hover:bg-teal-50'
-                        }`}
-                      >
-                        {pillVal.toFixed(pillVal % 1 === 0 ? 0 : 2)}
-                      </button>
-                    ))}
-                  </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max="2"
-                    step="0.05"
-                    value={scores.algorithmic ?? 0}
-                    id="range-algorithmic"
-                    onChange={(e) => handleUpdateRubric('algorithmic', e.target.value)}
-                    className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer"
-                  />
-                  <div className="text-[10px] text-slate-400 leading-tight">
-                    Lựa chọn giải thuật tối ưu, truy vấn hiệu quả và xử lý ngoại lệ chặt chẽ.
-                  </div>
-                </div>
+                      <div className="text-[10px] text-slate-400 leading-tight">
+                        {crit.desc}
+                      </div>
 
-                {/* Rubric 5: AI Reflection */}
-                <div className="space-y-2 bg-slate-50/70 p-3 rounded-xl border border-slate-100 transition hover:bg-slate-50">
-                  <div className="flex justify-between items-center text-xs">
-                    <div className="flex items-center gap-1.5 min-w-0">
-                      <span className="w-2 h-2 rounded-full bg-purple-500 shrink-0"></span>
-                      <span className="font-bold text-slate-700 truncate">5. AI Reflection (Đánh giá & Liêm chính AI)</span>
+                      {/* AI Reasoning box */}
+                      {reasoning && (
+                        <div className="mt-2 p-2.5 bg-indigo-50/80 border border-indigo-200/80 rounded-lg text-[11px] text-indigo-900 leading-snug flex items-start gap-1.5">
+                          <Sparkles size={13} className="text-indigo-600 shrink-0 mt-0.5" />
+                          <div className="min-w-0">
+                            <span className="font-semibold text-indigo-800">Lý do chấm (AI): </span>
+                            <span className="text-slate-700">{reasoning}</span>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                    <div className="flex items-center gap-1 shrink-0 font-mono text-xs">
-                      <input
-                        type="number"
-                        min="0"
-                        max="2"
-                        step="0.05"
-                        value={scores.reflection ?? 0}
-                        onChange={(e) => handleUpdateRubric('reflection', e.target.value)}
-                        className="w-16 px-1.5 py-0.5 text-right font-bold text-xs bg-white border border-purple-300 rounded-md text-purple-700 outline-none focus:ring-1 focus:ring-purple-500"
-                      />
-                      <span className="text-slate-400 font-semibold text-[11px]">/ 2.00</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    {[0, 1.0, 1.5, 1.75, 2.0].map((pillVal) => (
-                      <button
-                        key={pillVal}
-                        type="button"
-                        onClick={() => handleUpdateRubric('reflection', pillVal)}
-                        className={`px-2 py-0.5 text-[10px] rounded font-semibold transition cursor-pointer ${
-                          Math.abs((scores.reflection ?? 0) - pillVal) < 0.01
-                            ? 'bg-purple-600 text-white font-bold'
-                            : 'bg-white border border-slate-200 text-slate-600 hover:bg-purple-50'
-                        }`}
-                      >
-                        {pillVal.toFixed(pillVal % 1 === 0 ? 0 : 2)}
-                      </button>
-                    ))}
-                  </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max="2"
-                    step="0.05"
-                    value={scores.reflection ?? 0}
-                    id="range-reflection"
-                    onChange={(e) => handleUpdateRubric('reflection', e.target.value)}
-                    className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer"
-                  />
-                  <div className="text-[10px] text-slate-400 leading-tight">
-                    Minh bạch khai báo AI, có tư duy phản biện và tự phản chiếu bài làm thực tế.
-                  </div>
-                </div>
+                  );
+                })}
               </div>
 
               {/* Đánh giá liêm chính học thuật / sử dụng AI hợp lệ */}
@@ -1080,6 +1021,28 @@ export default function LecturerAcademicEvaluation({
               </div>
 
               {/* Nhận xét học thuật */}
+              {overallAiFeedback && (
+                <div className="p-3 bg-indigo-50/70 border border-indigo-200 rounded-xl text-xs text-indigo-900 shrink-0">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="font-bold flex items-center gap-1.5 text-indigo-800">
+                      <Sparkles size={13} className="text-indigo-600" />
+                      Nhận xét tổng quan từ AI:
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        isUserModifiedRef.current = true;
+                        setFeedback(overallAiFeedback);
+                      }}
+                      className="text-[10px] text-indigo-600 hover:underline font-semibold cursor-pointer"
+                    >
+                      Dùng nhận xét này
+                    </button>
+                  </div>
+                  <p className="text-[11px] text-slate-600 leading-relaxed">{overallAiFeedback}</p>
+                </div>
+              )}
+              
               <div className="space-y-2 pt-2 border-t border-slate-100 pb-2 shrink-0">
                 <label className="block text-xs font-bold text-slate-800 uppercase tracking-wide">
                   NHẬN XÉT HỌC THUẬT (ACADEMIC FEEDBACK)

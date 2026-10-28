@@ -523,29 +523,19 @@ export default function LecturerGradingPage() {
         isDraft: false,
       });
 
-      const db = MockSubmissionService.getInitialDatabase();
-      const updatedSub = db[submissionId || 'sub-de181802'];
-      if (updatedSub) {
-        if (studentInfo.code) {
-          db[studentInfo.code] = updatedSub;
-          db[studentInfo.code.toLowerCase()] = updatedSub;
-        }
-        if (targetAssignmentId) {
-          db[`asm_${targetAssignmentId}`] = updatedSub;
-        }
-        db['sub-de181802'] = updatedSub;
-        try {
-          localStorage.setItem('edux_art_ai_mock_submissions_db_v2', JSON.stringify(db));
-          localStorage.setItem('edux_latest_grade', JSON.stringify({
+      try {
+        localStorage.setItem(
+          'edux_latest_grade',
+          JSON.stringify({
             score: payload.score,
             feedback: payload.feedback,
             rubrics: payload.rubrics,
-            submissionId: submissionId,
+            submissionId: submissionId || 'sub-de181802',
             studentCode: studentInfo.code,
             updatedAt: new Date().toISOString(),
-          }));
-        } catch (e) {}
-      }
+          })
+        );
+      } catch (e) {}
     } catch (e) {
       console.warn('[ART-AI] Mock storage sync error:', e);
     }

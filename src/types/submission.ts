@@ -71,14 +71,18 @@ export interface SubmissionFile {
  * Thang điểm 2.0 cho mỗi tiêu chí (Tổng cộng: 10.0)
  */
 export interface RubricScores {
-  decomposition: number; // Phân rã bài toán (max 2)
-  pattern: number;       // Nhận diện mẫu (max 2)
-  abstraction: number;   // Trừu tượng hóa (max 2)
-  algorithmic: number;   // Tư duy thuật toán (max 2)
-  reflection: number;    // Đánh giá & Phản chiếu AI (max 2)
+  decomposition?: number;    // Decomposition (Tối đa: 2.0)
+  pattern?: number;          // Pattern Recognition (Tối đa: 2.0)
+  abstraction: number;       // Problem Abstraction (Tối đa: 2.0)
+  algorithmic?: number;      // Algorithmic Thinking (Tối đa: 2.0)
+  reflection: number;        // Reflection & Ownership (Tối đa: 2.0)
+  implementation?: number;    // Implementation & Code Quality (Tối đa: 3.0)
+  verification?: number;      // Functionality & Verification (Tối đa: 2.5)
+  ai_interaction?: number;    // AI Interaction Quality (Tối đa: 1.5)
   r1?: number;
   r2?: number;
   r3?: number;
+  [key: string]: any;
 }
 
 /**
@@ -107,6 +111,7 @@ export interface Submission {
   status: SubmissionStatus;
   submittedAt: string | null;
   lastUpdatedAt?: string | null;
+  version?: number;
   file: SubmissionFile | null;
   aiAuditLog: AiAuditDeclaration | null;
   grade: SubmissionGrade | null;

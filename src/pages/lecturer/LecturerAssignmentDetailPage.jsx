@@ -97,7 +97,8 @@ export default function LecturerAssignmentDetailPage() {
                     const submission = submissionMap.get(studentId);
 
                     if (submission) {
-                        const localGraded = db[submission.id] || (submission.student_code && db[submission.student_code]) || (member.studentCode && db[member.studentCode]) || db['sub-de181802'];
+                        const isThisStudent = (submission.student_code && submission.student_code === 'DE181802') || (member.studentCode && member.studentCode === 'DE181802') || submission.student_id === 'std-01';
+                        const localGraded = db[submission.id] || (submission.student_code && db[submission.student_code]) || (member.studentCode && db[member.studentCode]) || (isThisStudent ? db['sub-de181802'] : null);
                         const rawScore = localGraded?.grade?.score ?? localGraded?.score ?? submission.score ?? null;
                         const effectiveScore = rawScore != null ? Number(rawScore) : null;
                         const effectiveFeedback = localGraded?.grade?.feedback ?? localGraded?.feedback ?? submission.feedback ?? null;
@@ -136,7 +137,8 @@ export default function LecturerAssignmentDetailPage() {
                 const unmatchedSubmissions = submissionsData.filter(
                     submission => !classMemberIds.has(submission.student_id)
                 ).map(sub => {
-                    const localGraded = db[sub.id] || (sub.student_code && db[sub.student_code]) || db['sub-de181802'];
+                    const isThisStudent = (sub.student_code && sub.student_code === 'DE181802') || sub.student_id === 'std-01';
+                    const localGraded = db[sub.id] || (sub.student_code && db[sub.student_code]) || (isThisStudent ? db['sub-de181802'] : null);
                     const rawScore = localGraded?.grade?.score ?? localGraded?.score ?? sub.score ?? null;
                     const effectiveScore = rawScore != null ? Number(rawScore) : null;
                     const effectiveFeedback = localGraded?.grade?.feedback ?? localGraded?.feedback ?? sub.feedback ?? null;
@@ -151,6 +153,34 @@ export default function LecturerAssignmentDetailPage() {
                         status: isGradedStatus ? 'graded' : (sub.status || 'submitted'),
                     };
                 });
+
+                const deduplicateList = (list) => {
+                    const studentMap = new Map();
+                    for (const item of list) {
+                        if (!item) continue;
+                        const key = item.student_code || item.student_id || item.id;
+                        if (!key) continue;
+
+                        if (!studentMap.has(key)) {
+                            studentMap.set(key, item);
+                        } else {
+                            const existing = studentMap.get(key);
+                            const itemHasFiles = item.latest_files && item.latest_files.length > 0;
+                            const existingHasFiles = existing.latest_files && existing.latest_files.length > 0;
+                            const itemIsGraded = item.score !== null && item.score !== undefined;
+                            const existingIsGraded = existing.score !== null && existing.score !== undefined;
+                            const itemTime = item.submitted_at ? new Date(item.submitted_at).getTime() : 0;
+                            const existingTime = existing.submitted_at ? new Date(existing.submitted_at).getTime() : 0;
+
+                            if ((!existingIsGraded && itemIsGraded) || 
+                                (!existingHasFiles && itemHasFiles) || 
+                                (itemTime > existingTime)) {
+                                studentMap.set(key, item);
+                            }
+                        }
+                    }
+                    return Array.from(studentMap.values());
+                };
 
                 if (combined.length === 0 && unmatchedSubmissions.length === 0) {
                     const mockList = await MockSubmissionService.getAllMockSubmissions();
@@ -169,12 +199,12 @@ export default function LecturerAssignmentDetailPage() {
                         latest_files: m.file ? [m.file] : [],
                         latest_note: m.aiAuditLog?.isDeclared ? 'AI Audit Log: 5 Rubrics Declared' : 'Manual Submission'
                     }));
-                    setSubmissions(mappedMocks);
+                    setSubmissions(deduplicateList(mappedMocks));
                 } else {
-                    setSubmissions([
+                    setSubmissions(deduplicateList([
                         ...combined,
                         ...unmatchedSubmissions
-                    ]);
+                    ]));
                 }
             } else {
                 // Mock assignment fallback
@@ -194,7 +224,26 @@ export default function LecturerAssignmentDetailPage() {
                     latest_files: m.file ? [m.file] : [],
                     latest_note: m.aiAuditLog?.isDeclared ? 'AI Audit Log: 5 Rubrics Declared' : 'Manual Submission'
                 }));
-                setSubmissions(mappedMocks);
+                const deduplicateList = (list) => {
+                    const studentMap = new Map();
+                    for (const item of list) {
+                        if (!item) continue;
+                        const key = item.student_code || item.student_id || item.id;
+                        if (!key) continue;
+                        if (!studentMap.has(key)) {
+                            studentMap.set(key, item);
+                        } else {
+                            const existing = studentMap.get(key);
+                            const itemIsGraded = item.score !== null && item.score !== undefined;
+                            const existingIsGraded = existing.score !== null && existing.score !== undefined;
+                            if (!existingIsGraded && itemIsGraded) {
+                                studentMap.set(key, item);
+                            }
+                        }
+                    }
+                    return Array.from(studentMap.values());
+                };
+                setSubmissions(deduplicateList(mappedMocks));
             }
         } catch (error) {
             console.error("Failed to fetch assignment details:", error);
@@ -215,7 +264,14 @@ export default function LecturerAssignmentDetailPage() {
                     latest_files: m.file ? [m.file] : [],
                     latest_note: m.aiAuditLog?.isDeclared ? 'AI Audit Log: 5 Rubrics Declared' : 'Manual Submission'
                 }));
-                setSubmissions(mappedMocks);
+                const studentMap = new Map();
+                for (const item of mappedMocks) {
+                    const key = item.student_code || item.student_id || item.id;
+                    if (key && !studentMap.has(key)) {
+                        studentMap.set(key, item);
+                    }
+                }
+                setSubmissions(Array.from(studentMap.values()));
             } catch (e) {}
         } finally {
             setLoading(false);
