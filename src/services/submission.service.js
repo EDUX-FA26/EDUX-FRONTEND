@@ -32,6 +32,11 @@ const SubmissionService = {
         return response.data;
     },
 
+    async auditRubric(submissionId, payload = {}) {
+        const response = await api.post(`/submissions/${submissionId}/ai-rubric`, payload);
+        return response.data;
+    },
+
     async getMySubmissions(query = {}) {
         const params = new URLSearchParams(query).toString();
         const url = params ? `/submissions/my-submissions?${params}` : '/submissions/my-submissions';

@@ -71,19 +71,49 @@ export interface SubmissionFile {
  * Thang điểm 2.0 cho mỗi tiêu chí (Tổng cộng: 10.0)
  */
 export interface RubricScores {
-  decomposition: number; // Phân rã bài toán (max 2)
-  pattern: number;       // Nhận diện mẫu (max 2)
-  abstraction: number;   // Trừu tượng hóa (max 2)
-  algorithmic: number;   // Tư duy thuật toán (max 2)
-  reflection: number;    // Đánh giá & Phản chiếu AI (max 2)
+  abstraction: number;       // Problem Abstraction & Decomposition (Tối đa: 2.0)
+  implementation: number;    // Implementation & Code Quality (Tối đa: 3.0)
+  verification: number;      // Functionality & Verification (Tối đa: 2.5)
+  ai_interaction: number;    // AI Interaction Quality & Audit Alignment (Tối đa: 1.5)
+  reflection: number;        // Reflection & Oral Defense Ownership (Tối đa: 1.0)
+  decomposition?: number;    // Tương thích ngược
+  pattern?: number;
+  algorithmic?: number;
   r1?: number;
   r2?: number;
   r3?: number;
+  [key: string]: any;
 }
 
 /**
  * Kết quả chấm điểm của Giảng viên
  */
+
+/**
+ * Kết quả thẩm định thanh tra tính liêm chính AI
+ */
+export interface AuditIntegrity {
+  match_percentage: number; // Độ khớp lời khai (0 - 100)
+  ai_transparency_index: 'A+' | 'A' | 'B' | 'C' | 'F' | string;
+  reflection_depth: 'High' | 'Medium' | 'Low' | 'Suspicious' | string;
+  penalty_applied: boolean;
+  penalty_reason?: string;
+}
+
+/**
+ * Câu hỏi vấn đáp Viva bám sát mã nguồn thực tế
+ */
+export interface VivaQuestion {
+  id: number;
+  rubric_criterion?: string;
+  target_file: string;
+  target_code_snippet?: string;
+  target_function_or_snippet?: string;
+  question: string;
+  expected_answer_key?: string;
+  expected_answer_criteria?: string;
+}
+
 export interface SubmissionGrade {
   score: number | null;
   feedback: string | null;
@@ -107,6 +137,7 @@ export interface Submission {
   status: SubmissionStatus;
   submittedAt: string | null;
   lastUpdatedAt?: string | null;
+  version?: number;
   file: SubmissionFile | null;
   aiAuditLog: AiAuditDeclaration | null;
   grade: SubmissionGrade | null;
