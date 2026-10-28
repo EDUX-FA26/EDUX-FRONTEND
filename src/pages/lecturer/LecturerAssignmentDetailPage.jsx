@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import { ChevronRight, FileText, ChevronDown, Briefcase, UploadCloud, X as XIcon, File as FileIcon, CheckCircle, AlertCircle } from 'lucide-react';
 import AssignmentService from '../../services/assignment.service';
@@ -10,6 +10,7 @@ import { formatDateDMY } from '../../helper/dateFormat';
 
 export default function LecturerAssignmentDetailPage() {
     const { id } = useParams();
+    const navigate = useNavigate();
     const [assignment, setAssignment] = useState(null);
     const [submissions, setSubmissions] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -415,7 +416,9 @@ export default function LecturerAssignmentDetailPage() {
                                                             color: isGraded ? 'var(--color-ink)' : undefined
                                                         }}
                                                         disabled={sub.status === 'Missing'}
-                                                        onClick={() => handleOpenGradeModal(sub)}
+                                                        onClick={() => {
+                                                            navigate(`/lecturer/assignments/${id}/submissions/${sub.id}/grade`, { state: sub });
+                                                        }}
                                                     >
                                                         {isGraded ? 'Sửa điểm' : 'Grade'}
                                                     </button>
