@@ -316,6 +316,10 @@ const en = {
     resultCount: 'Showing {total} results you have access to',
     noDescription: 'No description available',
     paginationInfo: 'Page {page}/{totalPages} · {total} results',
+    pageListLabel: 'Page list',
+    pageLabel: 'Page',
+    jumpLabel: 'Go to page',
+    jumpBtn: 'Go',
     prevBtn: 'Previous',
     nextBtn: 'Next',
     searchError: 'Unable to perform search. Please try again.'

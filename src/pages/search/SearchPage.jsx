@@ -15,6 +15,21 @@ const TYPES = [
 const TYPE_META = Object.fromEntries(TYPES.filter((item) => item.value).map((item) => [item.value, item]));
 const errorMessage = (error, fallback) => error.response?.data?.message || fallback;
 
+const paginationItems = (currentPage, totalPages) => {
+  if (totalPages <= 7) return Array.from({ length: totalPages }, (_, index) => index + 1);
+
+  const items = [1];
+  const start = Math.max(2, currentPage - 1);
+  const end = Math.min(totalPages - 1, currentPage + 1);
+
+  if (start > 2) items.push('start-ellipsis');
+  for (let value = start; value <= end; value += 1) items.push(value);
+  if (end < totalPages - 1) items.push('end-ellipsis');
+  items.push(totalPages);
+
+  return items;
+};
+
 export default function SearchPage() {
   const { t } = useLanguage();
   const S = t?.search || {};
@@ -24,6 +39,7 @@ export default function SearchPage() {
   const query = urlQuery;
   const [type, setType] = useState('');
   const [page, setPage] = useState(1);
+  const [pageInput, setPageInput] = useState('1');
   const [results, setResults] = useState([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -55,6 +71,21 @@ export default function SearchPage() {
   }, [urlQuery]);
 
   const totalPages = Math.max(1, Math.ceil(total / limit));
+  const visiblePages = paginationItems(page, totalPages);
+
+  useEffect(() => {
+    setPageInput(String(page));
+  }, [page]);
+
+  const handlePageJump = (event) => {
+    event.preventDefault();
+    const requestedPage = Number.parseInt(pageInput, 10);
+    if (Number.isNaN(requestedPage)) {
+      setPageInput(String(page));
+      return;
+    }
+    setPage(Math.min(totalPages, Math.max(1, requestedPage)));
+  };
 
   return (
     <div className="module-page search-page">
@@ -158,9 +189,40 @@ export default function SearchPage() {
               <button className="btn btn-secondary" type="button" disabled={page === 1} onClick={() => setPage((value) => value - 1)}>
                 {S.prevBtn || 'Trước'}
               </button>
+              <div className="module-pagination__pages" aria-label={S.pageListLabel || 'Danh sách trang'}>
+                {visiblePages.map((item) => (
+                  typeof item === 'number' ? (
+                    <button
+                      className={`module-pagination__page${item === page ? ' module-pagination__page--active' : ''}`}
+                      type="button"
+                      key={item}
+                      aria-label={`${S.pageLabel || 'Trang'} ${item}`}
+                      aria-current={item === page ? 'page' : undefined}
+                      onClick={() => setPage(item)}
+                    >
+                      {item}
+                    </button>
+                  ) : (
+                    <span className="module-pagination__ellipsis" key={item} aria-hidden="true">…</span>
+                  )
+                ))}
+              </div>
               <button className="btn btn-secondary" type="button" disabled={page >= totalPages} onClick={() => setPage((value) => value + 1)}>
                 {S.nextBtn || 'Sau'}
               </button>
+              <form className="module-pagination__jump" onSubmit={handlePageJump}>
+                <label htmlFor="search-page-jump">{S.jumpLabel || 'Đến trang'}</label>
+                <input
+                  id="search-page-jump"
+                  type="number"
+                  min="1"
+                  max={totalPages}
+                  inputMode="numeric"
+                  value={pageInput}
+                  onChange={(event) => setPageInput(event.target.value)}
+                />
+                <button type="submit">{S.jumpBtn || 'Đi'}</button>
+              </form>
             </div>
           </div>
         </>

@@ -316,6 +316,10 @@ const vi = {
     resultCount: 'Hiển thị {total} kết quả bạn có quyền truy cập',
     noDescription: 'Không có mô tả',
     paginationInfo: 'Trang {page}/{totalPages} · {total} kết quả',
+    pageListLabel: 'Danh sách trang',
+    pageLabel: 'Trang',
+    jumpLabel: 'Đến trang',
+    jumpBtn: 'Đi',
     prevBtn: 'Trước',
     nextBtn: 'Sau',
     searchError: 'Không thể thực hiện tìm kiếm. Vui lòng thử lại.'

@@ -316,7 +316,101 @@
 
 .module-pagination__buttons {
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 8px;
+}
+
+.module-pagination__pages {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.module-pagination__page {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-surface);
+  color: var(--color-ink-muted);
+  font: 700 .8rem/1 var(--font-sans);
+  cursor: pointer;
+  transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease;
+}
+
+.module-pagination__page:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary-dark);
+}
+
+.module-pagination__page--active,
+.module-pagination__page--active:hover {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.module-pagination__ellipsis {
+  display: grid;
+  width: 26px;
+  height: 38px;
+  place-items: center;
+  color: var(--color-ink-muted);
+  font-weight: 700;
+}
+
+.module-pagination__jump {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 4px;
+  padding-left: 12px;
+  border-left: 1px solid var(--color-border);
+}
+
+.module-pagination__jump label {
+  white-space: nowrap;
+  color: var(--color-ink-soft);
+  font-size: .76rem;
+  font-weight: 700;
+}
+
+.module-pagination__jump input {
+  width: 58px;
+  height: 38px;
+  padding: 0 7px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  outline: none;
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font: 700 .8rem/1 var(--font-sans);
+  text-align: center;
+}
+
+.module-pagination__jump input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 16%, transparent);
+}
+
+.module-pagination__jump button {
+  height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--color-primary);
+  border-radius: 10px;
+  background: var(--color-primary-card);
+  color: var(--color-primary-dark);
+  font: 800 .76rem/1 var(--font-sans);
+  cursor: pointer;
+}
+
+.module-pagination__jump button:hover {
+  background: var(--color-primary);
+  color: #fff;
 }
 
 .module-modal {
@@ -608,6 +702,25 @@
 
   .module-pagination__buttons .btn {
     flex: 1;
+  }
+
+  .module-pagination__buttons {
+    justify-content: center;
+  }
+
+  .module-pagination__pages {
+    order: -1;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .module-pagination__jump {
+    width: 100%;
+    justify-content: center;
+    margin: 4px 0 0;
+    padding: 12px 0 0;
+    border-top: 1px solid var(--color-border);
+    border-left: 0;
   }
 }
 
