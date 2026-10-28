@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { searchContent } from '../../services/search.service';
 import { useLanguage } from '../../contexts/LanguageContext';
 import '../module-pages.css';
@@ -17,9 +18,11 @@ const errorMessage = (error, fallback) => error.response?.data?.message || fallb
 export default function SearchPage() {
   const { t } = useLanguage();
   const S = t?.search || {};
+  const [searchParams] = useSearchParams();
+  const urlQuery = searchParams.get('q')?.trim() || '';
 
-  const [draftQuery, setDraftQuery] = useState('');
-  const [query, setQuery] = useState('');
+  const [draftQuery, setDraftQuery] = useState(urlQuery);
+  const [query, setQuery] = useState(urlQuery);
   const [type, setType] = useState('');
   const [page, setPage] = useState(1);
   const [results, setResults] = useState([]);
@@ -47,6 +50,12 @@ export default function SearchPage() {
   }, [query, type, page, limit]);
 
   useEffect(() => { runSearch(); }, [runSearch]);
+
+  useEffect(() => {
+    setDraftQuery(urlQuery);
+    setQuery(urlQuery);
+    setPage(1);
+  }, [urlQuery]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {

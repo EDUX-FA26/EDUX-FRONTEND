@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { ROLES, SEMESTER_LABEL } from '../config/constants';
 import SettingsToggle from '../components/common/SettingsToggle';
-import { FiChevronDown, FiGrid, FiLogOut, FiMenu, FiX } from 'react-icons/fi';
+import { FiChevronDown, FiGrid, FiLogOut, FiMenu, FiSearch } from 'react-icons/fi';
 import { Flame, LibraryBig, BookMarked, Sparkles } from 'lucide-react';
 
 // Nav config theo role
@@ -15,13 +15,11 @@ const NAV_BY_ROLE = {
     { id: 'classes', icon: LibraryBig, path: '/student/classes', key: 'classes', label: 'Lớp học' },
     { id: 'streak', icon: Flame, path: '/student/streak', key: 'streak' },
     { id: 'flashcards', icon: BookMarked, path: '/student/flashcards', key: 'flashcards' },
-    { id: 'search', icon: 'search', path: '/student/search', key: 'search' },
   ],
   [ROLES.LECTURER]: [
     { id: 'dashboard', icon: FiGrid, path: '/lecturer/dashboard', key: 'overview' },
     { id: 'flashcards', icon: BookMarked, path: '/lecturer/flashcards', key: 'flashcards' },
     { id: 'classes', icon: LibraryBig, path: '/lecturer/classes', key: 'classes', label: 'Lớp học' },
-    { id: 'search', icon: 'search', path: '/lecturer/search', key: 'search' },
   ],
   [ROLES.ADMIN]: [
     { id: 'dashboard', icon: 'dashboard', path: '/admin/dashboard', key: 'overview', label: 'Tổng quan' },
@@ -31,7 +29,6 @@ const NAV_BY_ROLE = {
     { id: 'notifications', icon: 'campaign', path: '/admin/notifications', key: 'notifications', label: 'Tạo thông báo' },
     { id: 'semesters', icon: 'calendar_month', path: '/admin/semesters', key: 'semesters', label: 'Học kỳ' },
     { id: 'subjects', icon: 'menu_book', path: '/admin/subjects', key: 'subjects', label: 'Môn học' },
-    { id: 'search', icon: 'search', path: '/admin/search', key: 'search', label: 'Tìm kiếm' },
     { id: 'logs', icon: 'history', path: '/admin/logs', key: 'logs', label: 'System Logs' },
   ],
 };
@@ -44,6 +41,7 @@ export default function DashboardLayout() {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [headerSearch, setHeaderSearch] = useState('');
 
   const navItems = NAV_BY_ROLE[user?.role] || [];
   const activeId = navItems.find((n) => location.pathname.startsWith(n.path))?.id;
@@ -59,6 +57,13 @@ export default function DashboardLayout() {
     : (user?.email?.[0] || 'U').toUpperCase();
 
   const roleLabel = t.role?.[user?.role] || user?.role || '';
+  const searchPath = user?.role ? `/${user.role}/search` : '/';
+
+  const handleHeaderSearch = (event) => {
+    event.preventDefault();
+    const query = headerSearch.trim();
+    navigate(query ? `${searchPath}?q=${encodeURIComponent(query)}` : searchPath);
+  };
 
   return (
     <div className={`dashboard-layout${sidebarCollapsed ? ' dashboard-layout--collapsed' : ''}`}>
@@ -178,6 +183,25 @@ export default function DashboardLayout() {
                     {t.layout?.semester || SEMESTER_LABEL}
                   </div>
                 </div>
+
+                <form className="dashboard-header-search" role="search" onSubmit={handleHeaderSearch}>
+                  <FiSearch className="dashboard-header-search__icon" aria-hidden="true" />
+                  <label className="sr-only" htmlFor="dashboard-global-search">
+                    {t.nav?.search || 'Tìm kiếm'}
+                  </label>
+                  <input
+                    id="dashboard-global-search"
+                    className="dashboard-header-search__input"
+                    type="search"
+                    value={headerSearch}
+                    onChange={(event) => setHeaderSearch(event.target.value)}
+                    placeholder={t.search?.inputPlaceholder || 'Tìm lớp học, bài tập, tài liệu...'}
+                    maxLength={100}
+                  />
+                  <button className="dashboard-header-search__submit" type="submit" aria-label={t.nav?.search || 'Tìm kiếm'}>
+                    <FiSearch aria-hidden="true" />
+                  </button>
+                </form>
 
                 {/* Settings toggles + User menu */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
