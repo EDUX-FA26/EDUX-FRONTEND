@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { searchContent } from '../../services/search.service';
+import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import '../module-pages.css';
 
@@ -14,6 +15,24 @@ const TYPES = [
 
 const TYPE_META = Object.fromEntries(TYPES.filter((item) => item.value).map((item) => [item.value, item]));
 const errorMessage = (error, fallback) => error.response?.data?.message || fallback;
+
+const resultPath = (result, role) => {
+  if (!result?.id || !role) return null;
+
+  if (role === 'admin') {
+    return ['class', 'assignment', 'material'].includes(result.type) ? '/admin/classes' : null;
+  }
+
+  if (result.type === 'class') return `/${role}/classes/${result.id}`;
+  if (result.type === 'assignment') return `/${role}/assignments/${result.id}`;
+  if (result.type === 'material' && result.class_id) return `/${role}/classes/${result.class_id}/materials`;
+  if (result.type === 'flashcard' && role === 'student') return `/student/flashcards/${result.id}/study`;
+  if (result.type === 'flashcard' && role === 'lecturer' && result.subject_id) {
+    return `/lecturer/flashcards/subject/${result.subject_id}`;
+  }
+
+  return null;
+};
 
 const paginationItems = (currentPage, totalPages) => {
   if (totalPages <= 7) return Array.from({ length: totalPages }, (_, index) => index + 1);
@@ -31,6 +50,7 @@ const paginationItems = (currentPage, totalPages) => {
 };
 
 export default function SearchPage() {
+  const { user } = useAuth();
   const { t } = useLanguage();
   const S = t?.search || {};
   const [searchParams] = useSearchParams();
@@ -162,10 +182,16 @@ export default function SearchPage() {
             {results.map((result) => {
               const meta = TYPE_META[result.type] || { labelKey: result.type, icon: 'search' };
               const metaLabel = S.types?.[meta.labelKey] || result.type;
+              const destination = resultPath(result, user?.role);
+              const ResultCard = destination ? Link : 'article';
               return (
-                <article className="search-result card" key={`${result.type}-${result.id}`}>
+                <ResultCard
+                  className={`search-result card${destination ? ' search-result--clickable' : ''}`}
+                  key={`${result.type}-${result.id}`}
+                  {...(destination ? { to: destination, 'aria-label': `${metaLabel}: ${result.title}` } : {})}
+                >
                   <div className="search-result__icon"><span className="material-symbols-outlined" aria-hidden="true">{meta.icon}</span></div>
-                  <div style={{ minWidth: 0 }}>
+                  <div className="search-result__content">
                     <h2>{result.title}</h2>
                     <p>{result.description || (S.noDescription || 'Không có mô tả')}</p>
                     <div className="search-result__meta">
@@ -174,7 +200,10 @@ export default function SearchPage() {
                       {result.created_at && <span className="module-secondary-text">{new Date(result.created_at).toLocaleDateString('vi-VN')}</span>}
                     </div>
                   </div>
-                </article>
+                  {destination && (
+                    <span className="material-symbols-outlined search-result__arrow" aria-hidden="true">arrow_forward</span>
+                  )}
+                </ResultCard>
               );
             })}
           </section>
