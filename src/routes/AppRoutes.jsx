@@ -39,6 +39,7 @@ import StudentClassDetailPage from '../pages/student/StudentClassDetailPage';
 import LecturerClassDetailPage from '../pages/lecturer/LecturerClassDetailPage';
 import StudentAssignmentDetailPage from '../pages/student/StudentAssignmentDetailPage';
 import LecturerAssignmentDetailPage from '../pages/lecturer/LecturerAssignmentDetailPage';
+import LecturerGradingPage from '../pages/lecturer/LecturerGradingPage';
 
 function RootRedirect() {
   const { isAuthenticated, user } = useAuth();
@@ -101,8 +102,35 @@ export default function AppRoutes() {
         <Route path="classes/:classId" element={<LecturerClassDetailPage />} />
         <Route path="classes/:classId/materials" element={<ClassMaterialsPage />} />
         <Route path="assignments/:id" element={<LecturerAssignmentDetailPage />} />
+        <Route path="assignments/:assignmentId/submissions/:submissionId/grade" element={<LecturerGradingPage />} />
         <Route index element={<Navigate to="dashboard" replace />} />
       </Route>
+
+      {/* Full-screen Lecturer Grading Studio */}
+      <Route
+        path="/lecturer/assignments/:assignmentId/submissions/:submissionId/grade"
+        element={
+          <ProtectedRoute allowedRoles={[ROLES.LECTURER]}>
+            <LecturerGradingPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/lecturer/grading/:submissionId"
+        element={
+          <ProtectedRoute allowedRoles={[ROLES.LECTURER]}>
+            <LecturerGradingPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/lecturer/grading"
+        element={
+          <ProtectedRoute allowedRoles={[ROLES.LECTURER]}>
+            <LecturerGradingPage />
+          </ProtectedRoute>
+        }
+      />
 
       {/* Admin */}
       <Route

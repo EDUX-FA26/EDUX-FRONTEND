@@ -119,6 +119,9 @@ export interface SubmissionData {
   feedback?: string;
   transparencyScore?: number; // 0 - 100%
   declarations: Record<RubricKey, AiDeclarationRubric>;
+  score?: number | null;
+  grade?: any;
+  rubrics?: any;
 }
 
 /* ==========================================================================
@@ -499,13 +502,13 @@ export const AssignmentOverview: React.FC<AssignmentOverviewProps> = ({
         <div className="text-xs font-bold flex items-center justify-between pt-1 border-t border-slate-100">
           <span className="text-slate-500 font-medium">Evaluation Score</span>
           <span
-            className={`font-semibold px-2 py-0.5 rounded ${
+            className={`font-semibold px-2 py-0.5 rounded font-mono ${
               score != null
-                ? 'bg-emerald-50 text-emerald-700'
+                ? 'bg-emerald-50 text-emerald-700 font-bold'
                 : 'bg-slate-100 text-slate-600'
             }`}
           >
-            {score != null ? `${score} / 10` : 'SCORE: N/A'}
+            {score != null ? `${Number(score).toFixed(2)} / 10` : 'SCORE: N/A'}
           </span>
         </div>
 
@@ -723,7 +726,46 @@ export const SubmissionStatusView: React.FC<SubmissionStatusViewProps> = ({
   submission,
   onAddOrEditClick,
 }) => {
-  const isSubmitted = submission.status === 'Submitted';
+  const isGraded = submission.status === 'Graded' || submission.score != null || submission.grade?.score != null;
+  const isSubmitted = submission.status === 'Submitted' || isGraded;
+  const finalScore = submission.score ?? submission.grade?.score;
+
+  // Chuẩn hóa điểm 5 Rubric để luôn hiển thị chính xác thang 2.0 / rubric (tổng 10.0)
+  const rubricDetails = React.useMemo(() => {
+    const r = submission.rubrics || submission.grade?.rubrics;
+    if (r && r.decomposition !== undefined) {
+      return {
+        decomposition: Number(r.decomposition || 0),
+        pattern: Number(r.pattern || 0),
+        abstraction: Number(r.abstraction || 0),
+        algorithmic: Number(r.algorithmic || 0),
+        reflection: Number(r.reflection || 0),
+      };
+    }
+    if (r && (r.r1 !== undefined || r.r2 !== undefined || r.r3 !== undefined)) {
+      const sum = (r.r1 || 0) + (r.r2 || 0) + (r.r3 || 0);
+      const part = Math.min(2, parseFloat((sum / 5).toFixed(2)));
+      return {
+        decomposition: part,
+        pattern: part,
+        abstraction: part,
+        algorithmic: part,
+        reflection: Math.min(2, parseFloat((sum - part * 4).toFixed(2))),
+      };
+    }
+    if (finalScore != null) {
+      const num = Number(finalScore);
+      const part = Math.min(2, Math.max(0, parseFloat((num / 5).toFixed(2))));
+      return {
+        decomposition: part,
+        pattern: part,
+        abstraction: part,
+        algorithmic: part,
+        reflection: Math.min(2, Math.max(0, parseFloat((num - part * 4).toFixed(2)))),
+      };
+    }
+    return null;
+  }, [submission.rubrics, submission.grade?.rubrics, finalScore]);
 
   return (
     <div className="space-y-6">
@@ -737,6 +779,11 @@ export const SubmissionStatusView: React.FC<SubmissionStatusViewProps> = ({
             {isSubmitted && submission.version && (
               <span className="text-[10px] font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md border border-slate-200">
                 v{submission.version}.0
+              </span>
+            )}
+            {isGraded && (
+              <span className="text-[10px] font-bold bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-md border border-indigo-200">
+                Score: {Number(finalScore).toFixed(2)} / 10
               </span>
             )}
           </div>
@@ -757,7 +804,7 @@ export const SubmissionStatusView: React.FC<SubmissionStatusViewProps> = ({
           {isSubmitted ? (
             <>
               <Edit3 size={15} />
-              <span>EDIT SUBMISSION</span>
+              <span>{isGraded ? 'EDIT SUBMISSION (GRADED)' : 'EDIT SUBMISSION'}</span>
             </>
           ) : (
             <>
@@ -776,7 +823,12 @@ export const SubmissionStatusView: React.FC<SubmissionStatusViewProps> = ({
             <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">
               SUBMISSION STATUS
             </div>
-            {isSubmitted ? (
+            {isGraded ? (
+              <span className="inline-flex items-center gap-1.5 bg-indigo-50 text-indigo-700 border border-indigo-200 text-xs font-bold px-3 py-1 rounded-full">
+                <CheckCircle2 size={13} className="text-indigo-600" />
+                <span>Graded (Đã chấm điểm)</span>
+              </span>
+            ) : isSubmitted ? (
               <span className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold px-3 py-1 rounded-full">
                 <CheckCircle2 size={13} className="text-emerald-600" />
                 <span>Submitted</span>
@@ -807,6 +859,130 @@ export const SubmissionStatusView: React.FC<SubmissionStatusViewProps> = ({
             </div>
           </div>
         </div>
+
+        {/* BẢNG ĐIỂM CHUYÊN SÂU 5 RUBRICS KHI ĐÃ ĐƯỢC CHẤM ĐIỂM */}
+        {isGraded && (
+          <div className="pt-2 border-t border-slate-100">
+            <div className="bg-gradient-to-br from-indigo-50/70 via-white to-purple-50/50 border border-indigo-100 rounded-2xl p-5 space-y-4 shadow-xs">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-indigo-100/80">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-indigo-600 animate-pulse"></span>
+                    <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide">
+                      Academic Evaluation & 5 Rubrics Score
+                    </h3>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Kết quả đánh giá học thuật & phân tích tư duy tính toán (Computational Thinking)
+                  </p>
+                </div>
+                
+                <div className="inline-flex items-baseline gap-1.5 bg-white border-2 border-indigo-200 px-4 py-2 rounded-xl shadow-xs self-start sm:self-auto">
+                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Final Grade:</span>
+                  <span className="text-2xl font-black text-indigo-600">
+                    {Number(finalScore).toFixed(2)}
+                  </span>
+                  <span className="text-xs font-bold text-slate-400">/ 10.00</span>
+                </div>
+              </div>
+
+              {/* 5 Rubrics Breakdown Grid */}
+              {rubricDetails && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 pt-1">
+                  {/* Rubric 1 */}
+                  <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded">
+                        Rubric 1
+                      </span>
+                      <span className="text-xs font-extrabold text-blue-600 font-mono">
+                        {rubricDetails.decomposition.toFixed(2)} / 2.0
+                      </span>
+                    </div>
+                    <div className="text-[11px] font-bold text-slate-800 truncate" title="Decomposition (Phân rã bài toán)">
+                      Decomposition
+                    </div>
+                    <div className="text-[10px] text-slate-500 leading-tight">
+                      Phân chia module & dịch vụ độc lập
+                    </div>
+                  </div>
+
+                  {/* Rubric 2 */}
+                  <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded">
+                        Rubric 2
+                      </span>
+                      <span className="text-xs font-extrabold text-indigo-600 font-mono">
+                        {rubricDetails.pattern.toFixed(2)} / 2.0
+                      </span>
+                    </div>
+                    <div className="text-[11px] font-bold text-slate-800 truncate" title="Pattern Recognition (Nhận diện mẫu)">
+                      Pattern Recognition
+                    </div>
+                    <div className="text-[10px] text-slate-500 leading-tight">
+                      Áp dụng chuẩn Design Patterns
+                    </div>
+                  </div>
+
+                  {/* Rubric 3 */}
+                  <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold text-cyan-700 bg-cyan-50 px-1.5 py-0.5 rounded">
+                        Rubric 3
+                      </span>
+                      <span className="text-xs font-extrabold text-cyan-600 font-mono">
+                        {rubricDetails.abstraction.toFixed(2)} / 2.0
+                      </span>
+                    </div>
+                    <div className="text-[11px] font-bold text-slate-800 truncate" title="Abstraction (Trừu tượng hóa)">
+                      Abstraction
+                    </div>
+                    <div className="text-[10px] text-slate-500 leading-tight">
+                      Thiết kế Provider & Interface
+                    </div>
+                  </div>
+
+                  {/* Rubric 4 */}
+                  <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded">
+                        Rubric 4
+                      </span>
+                      <span className="text-xs font-extrabold text-teal-600 font-mono">
+                        {rubricDetails.algorithmic.toFixed(2)} / 2.0
+                      </span>
+                    </div>
+                    <div className="text-[11px] font-bold text-slate-800 truncate" title="Algorithmic Thinking (Tư duy thuật toán)">
+                      Algorithmic Thinking
+                    </div>
+                    <div className="text-[10px] text-slate-500 leading-tight">
+                      Tối ưu giải thuật & xử lý lỗi
+                    </div>
+                  </div>
+
+                  {/* Rubric 5 */}
+                  <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded">
+                        Rubric 5
+                      </span>
+                      <span className="text-xs font-extrabold text-purple-600 font-mono">
+                        {rubricDetails.reflection.toFixed(2)} / 2.0
+                      </span>
+                    </div>
+                    <div className="text-[11px] font-bold text-slate-800 truncate" title="AI Reflection (Đánh giá liêm chính AI)">
+                      AI Reflection
+                    </div>
+                    <div className="text-[10px] text-slate-500 leading-tight">
+                      Tự phản chiếu & liêm chính AI
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Hàng 2: LINK/FILE ASSIGNMENT */}
         <div className="pt-2 border-t border-slate-100">
@@ -1512,11 +1688,28 @@ export default function StudentAssignmentFlow({
   const [formStep, setFormStep] = useState<FormStep>(1);
 
   // Core Data States
-  const [assignment] = useState<Assignment>(initialAssignment);
+  const [assignment, setAssignment] = useState<Assignment>(initialAssignment);
   const [submission, setSubmission] = useState<SubmissionData>(initialSubmission);
 
+  // Sync state with incoming props
+  React.useEffect(() => {
+    if (initialAssignment) {
+      setAssignment(initialAssignment);
+    }
+  }, [initialAssignment]);
+
+  React.useEffect(() => {
+    if (initialSubmission) {
+      setSubmission(initialSubmission);
+      setDraftFile(initialSubmission.file);
+      if (initialSubmission.declarations) {
+        setDraftDeclarations(initialSubmission.declarations);
+      }
+    }
+  }, [initialSubmission]);
+
   // Edit Mode Flag: true nếu bài đã nộp trước đó
-  const isEditMode = submission.status === 'Submitted';
+  const isEditMode = submission.status === 'Submitted' || submission.status === 'Graded';
 
   // File Management State trong Edit Mode: 'keep' (giữ file cũ) hoặc 'replace' (tải file mới)
   const [fileMode, setFileMode] = useState<'keep' | 'replace'>(
@@ -1727,12 +1920,17 @@ export default function StudentAssignmentFlow({
               <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
                 {assignment.title}
               </h1>
-              {submission.status === 'Submitted' && (
+              {submission.status === 'Graded' ? (
+                <span className="bg-indigo-50 text-indigo-700 text-xs font-bold px-2.5 py-0.5 rounded-full border border-indigo-200 flex items-center gap-1">
+                  <CheckCircle2 size={12} />
+                  <span>Graded</span>
+                </span>
+              ) : submission.status === 'Submitted' ? (
                 <span className="bg-emerald-50 text-emerald-700 text-xs font-bold px-2.5 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
                   <Check size={12} />
                   <span>Submitted</span>
                 </span>
-              )}
+              ) : null}
             </div>
             <p className="text-xs text-slate-500 mt-0.5">
               Course: <span className="font-semibold">{assignment.courseCode}</span> • Due Date: {assignment.dueDate}
@@ -1741,7 +1939,9 @@ export default function StudentAssignmentFlow({
 
           <span
             className={`text-xs font-bold px-3 py-1.5 rounded-full border self-start sm:self-auto ${
-              submission.status === 'Submitted'
+              submission.status === 'Graded'
+                ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                : submission.status === 'Submitted'
                 ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                 : 'bg-slate-100 text-slate-600 border-slate-200'
             }`}
@@ -1757,7 +1957,7 @@ export default function StudentAssignmentFlow({
             <AssignmentOverview
               assignment={assignment}
               activeAssignmentTitle={assignment.title}
-              score={submission.status === 'Submitted' ? assignment.score : null}
+              score={submission.score != null ? submission.score : (submission.status === 'Submitted' || submission.status === 'Graded' ? assignment.score : null)}
             />
           </div>
 
