@@ -37,10 +37,13 @@ export default function LecturerGradingPage() {
     assignmentId || (location.state as any)?.assignment_id || (location.state as any)?.assignmentId || null
   );
   const [initialScores, setInitialScores] = useState<RubricScores>({
-    decomposition: 0,
-    pattern: 0,
     abstraction: 0,
-    algorithmic: 0,
+    implementation: 0,
+    verification: 0,
+    ai_interaction: 0,
+    // pattern: 0,
+    // abstraction: 0,
+    // algorithmic: 0,
     reflection: 0,
   });
   const [initialFeedback, setInitialFeedback] = useState<string>('');

@@ -105,10 +105,13 @@ export interface AuditIntegrity {
  */
 export interface VivaQuestion {
   id: number;
+  rubric_criterion?: string;
   target_file: string;
   target_code_snippet?: string;
+  target_function_or_snippet?: string;
   question: string;
   expected_answer_key?: string;
+  expected_answer_criteria?: string;
 }
 
 export interface SubmissionGrade {

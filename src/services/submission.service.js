@@ -32,8 +32,8 @@ const SubmissionService = {
         return response.data;
     },
 
-    async auditRubric(submissionId) {
-        const response = await api.post(`/submissions/${submissionId}/ai-rubric`);
+    async auditRubric(submissionId, payload = {}) {
+        const response = await api.post(`/submissions/${submissionId}/ai-rubric`, payload);
         return response.data;
     },
 

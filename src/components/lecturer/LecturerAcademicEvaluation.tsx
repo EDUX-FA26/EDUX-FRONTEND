@@ -446,20 +446,20 @@ export default function LecturerAcademicEvaluation({
     }));
   };
 
-  // Khớp từng tiêu chí với AI: 8.50 / 10 (1.75 + 1.75 + 1.75 + 1.50 + 1.75 = 8.50)
+  // Khớp từng tiêu chí với AI: 8.50 / 10 (1.75 + 2.55 + 2.15 + 1.25 + 0.80 = 8.50)
   const applyAiSuggestion = () => {
     isUserModifiedRef.current = true;
     setScores({
-      decomposition: 1.75,
-      pattern: 1.75,
       abstraction: 1.75,
-      algorithmic: 1.50,
-      reflection: 1.75,
+      implementation: 2.55,
+      verification: 2.15,
+      ai_interaction: 1.25,
+      reflection: 0.80,
     });
     if (!feedback) {
       setFeedback('Code có kiến trúc tốt, phân tách service layer rõ ràng. Khai báo AI minh bạch và có tự phản chiếu xác đáng.');
     }
-    showToastNotification('Đã áp dụng gợi ý AI', 'Đã điền điểm gợi ý 8.50/10 vào 5 tiêu chí rubric (2.0 điểm/tiêu chí).');
+    showToastNotification('Đã áp dụng gợi ý AI', 'Đã điền điểm gợi ý 8.50/10 vào 5 tiêu chí rubric chuẩn SE/IT.');
   };
 
   const handleAuditWithAi = async () => {
@@ -479,23 +479,7 @@ export default function LecturerAcademicEvaluation({
           riskLevel: student.aiRiskLevel || 'low',
           summary: 'Khai báo chi tiết cả tool được chấp thuận và tool bị từ chối.'
         },
-        oralExamLogs: [
-          {
-            question: 'Trong báo cáo, em từ chối gợi ý của Gemini về client-side sorting và tự viết MongoDB Aggregation pipeline. Em hãy giải thích ưu điểm về memory overhead và database indexing của quyết định này?',
-            studentResponse: 'Việc xử lý phân trang và sắp xếp tại database server tận dụng triệt để B-Tree index trên các trường query, đồng thời giảm memory overhead trên Node.js heap memory, tránh sập tiến trình khi tập dữ liệu lớn.',
-            evaluation: 'Sinh viên nắm rất vững bản chất thuật toán và memory overhead, bảo vệ thành công quyết định kỹ thuật.'
-          },
-          {
-            question: 'Em đã thay đổi cách lưu Refresh Token từ localStorage sang HttpOnly Secure Cookie so với gợi ý ban đầu của ChatGPT. Vì sao sự thay đổi này lại ngăn chặn triệt để lỗ hổng XSS token hijacking?',
-            studentResponse: 'HttpOnly ngăn không cho script chạy ở client truy cập qua document.cookie, do đó kẻ tấn công không thể đọc cắp Refresh Token qua tấn công XSS.',
-            evaluation: 'Phân tích kiến trúc bảo mật sắc bén, hiểu rõ rủi ro bảo mật client-side.'
-          },
-          {
-            question: 'Giao diện IStorageProvider em định nghĩa cho phép cắm SeaweedFS hoặc AWS S3. Nếu hệ thống đổi sang Google Cloud Storage, em cần chỉnh sửa những class nào mà không làm ảnh hưởng controller?',
-            studentResponse: 'Chỉ cần viết thêm class GcsStorageProvider implements IStorageProvider và đăng ký lại trong DI container (Dependency Injection), toàn bộ controller và application service không cần sửa đổi dù chỉ 1 dòng.',
-            evaluation: 'Hiểu sâu sắc nguyên lý Dependency Inversion và thiết kế Interface trừu tượng hóa chuẩn mực.'
-          }
-        ],
+        oralExamLogs: [],
         aiDeclarations,
         codeSnippet: actualFile.textContent || (codeLines.join('\n'))
       };
@@ -528,7 +512,17 @@ export default function LecturerAcademicEvaluation({
       setScores(newScores);
       setRubricReasonings(newReasons);
 
-      const verdict = aiData.ai_verdict || aiData.overall_feedback || '';
+      if (Array.isArray(aiData.viva_questions) && aiData.viva_questions.length > 0) {
+        setVivaQuestions(aiData.viva_questions);
+      }
+      if (aiData.audit_integrity) {
+        setAuditIntegrity(aiData.audit_integrity);
+      }
+      if (aiData.overall_verdict || aiData.ai_verdict) {
+        setOverallAiFeedback(aiData.overall_verdict || aiData.ai_verdict);
+      }
+
+      const verdict = aiData.overall_verdict || aiData.ai_verdict || aiData.overall_feedback || '';
       if (verdict) {
         setAiVerdict(verdict);
         if (!feedback) {
@@ -652,7 +646,7 @@ export default function LecturerAcademicEvaluation({
     <div className="bg-[#f8fafc] text-slate-700 h-screen flex flex-col overflow-hidden font-sans select-none">
       {/* Toast Notification Floating */}
       {toastMessage && (
-        <div className="fixed top-5 right-5 z-50 flex items-center gap-3 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-2xl border border-slate-700 animate-in fade-in slide-in-from-top-4 duration-200">
+        <div className="fixed top-6 right-6 z-[1050] flex items-center gap-3 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-2xl border border-slate-700 animate-in fade-in slide-in-from-top-4 duration-200">
           {toastMessage.type === 'success' && <CheckCircle size={18} className="text-emerald-400 shrink-0" />}
           {toastMessage.type === 'error' && <AlertTriangle size={18} className="text-rose-400 shrink-0" />}
           {toastMessage.type === 'info' && <Sparkles size={18} className="text-indigo-400 shrink-0" />}
@@ -904,6 +898,9 @@ export default function LecturerAcademicEvaluation({
                   type="button"
                   onClick={() => {
                     setShowVivaModal(true);
+                    if (vivaQuestions.length === 0 && !isAuditingAi) {
+                      handleAuditWithAi();
+                    }
                     if (onRunAuditViva) onRunAuditViva();
                   }}
                   className="w-full py-2.5 px-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-500/20 flex items-center justify-center gap-2 transition cursor-pointer"
@@ -1198,7 +1195,7 @@ export default function LecturerAcademicEvaluation({
 
       {/* ==================== MODAL 1: REQUEST RESUBMIT ==================== */}
       {showResubmitModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[999] bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-6 space-y-4 animate-in fade-in zoom-in-95">
             <div className="flex items-center justify-between pb-2 border-b border-slate-100">
               <div className="flex items-center gap-2 text-sm font-bold text-slate-900">
@@ -1250,163 +1247,260 @@ export default function LecturerAcademicEvaluation({
 
       {/* ==================== MODAL 2: VIVA & AUDIT INSPECTOR ==================== */}
       {showVivaModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-2xl w-full p-6 space-y-5 animate-in fade-in zoom-in-95 max-h-[90vh] overflow-y-auto custom-scroll">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
-                  <Zap size={18} />
+        <div className="fixed inset-0 z-[999] bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5 md:p-6 overflow-hidden animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/90 shadow-2xl max-w-3xl w-full flex flex-col max-h-[86vh] overflow-hidden animate-in zoom-in-95 duration-200 my-auto">
+            
+            {/* 1. FIXED MODAL HEADER - Luôn hiển thị ở trên cùng, không bị che khuất bởi navbar */}
+            <div className="px-5 sm:px-6 py-4 border-b border-slate-100 bg-white flex items-center justify-between shrink-0 shadow-xs">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-600 to-purple-600 text-white flex items-center justify-center shadow-md shadow-indigo-500/25 shrink-0">
+                  <Zap size={20} className="fill-white/20" />
                 </div>
-                <div>
-                  <h3 className="text-sm font-bold text-slate-900">
+                <div className="min-w-0">
+                  <h3 className="text-sm sm:text-base font-bold text-slate-900 truncate">
                     Báo Cáo Thanh Tra Trung Thực AI & Bộ Câu Hỏi Vấn Đáp Viva
                   </h3>
-                  <p className="text-[11px] text-slate-500">
-                    Đối chiếu AST Code + Git Commit History + Lời khai 5 Rubrics
+                  <p className="text-[11px] text-slate-500 flex items-center gap-1.5 mt-0.5 truncate">
+                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 shrink-0"></span>
+                    <span>Đối chiếu AST Code + Git Commit History + Lời khai 5 Rubrics</span>
                   </p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setShowVivaModal(false)}
-                className="text-slate-400 hover:text-slate-700 cursor-pointer"
+                className="text-slate-400 hover:text-slate-700 hover:bg-slate-100 p-2 rounded-xl transition cursor-pointer shrink-0 ml-2"
+                title="Đóng (Esc)"
               >
                 <X size={18} />
               </button>
             </div>
 
-            {/* Cảnh báo Penalty trong Modal nếu có */}
-            {auditIntegrity?.penalty_applied && (
-              <div className="p-3.5 bg-rose-50 border border-rose-300 rounded-2xl text-xs text-rose-950 flex items-start gap-2.5 shadow-xs animate-in fade-in">
-                <AlertTriangle size={18} className="text-rose-600 shrink-0 mt-0.5" />
-                <div className="min-w-0 flex-1">
-                  <div className="font-bold text-rose-900 text-xs uppercase tracking-wide">
-                    CẢNH BÁO VI PHẠM KHẢO THÍ (AI PENALTY APPLIED)
-                  </div>
-                  <p className="text-rose-800 text-xs mt-1 leading-relaxed font-medium">
-                    {auditIntegrity.penalty_reason}
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Chỉ số đối chiếu khớp thực tế */}
-            <div className="grid grid-cols-3 gap-3">
-              <div className={`p-3.5 rounded-2xl border text-center ${auditIntegrity?.penalty_applied ? 'bg-rose-50/70 border-rose-200' : 'bg-emerald-50/70 border-emerald-200'}`}>
-                <div className={`text-[10px] font-bold uppercase ${auditIntegrity?.penalty_applied ? 'text-rose-700' : 'text-emerald-700'}`}>
-                  Độ Khớp Lời Khai
-                </div>
-                <div className={`text-2xl font-extrabold mt-0.5 ${auditIntegrity?.penalty_applied ? 'text-rose-700' : 'text-emerald-700'}`}>
-                  {auditIntegrity ? `${auditIntegrity.match_percentage.toFixed(0)}%` : '96.4%'}
-                </div>
-                <div className={`text-[10px] mt-0.5 ${auditIntegrity?.penalty_applied ? 'text-rose-600' : 'text-emerald-600'}`}>
-                  {auditIntegrity ? (auditIntegrity.penalty_applied ? 'Phát hiện sai lệch với code' : 'Mã nguồn khớp các phase') : 'Đang đối soát'}
-                </div>
-              </div>
-
-              <div className={`p-3.5 rounded-2xl border text-center ${auditIntegrity?.penalty_applied ? 'bg-amber-50/70 border-amber-200' : 'bg-indigo-50/70 border-indigo-200'}`}>
-                <div className={`text-[10px] font-bold uppercase ${auditIntegrity?.penalty_applied ? 'text-amber-700' : 'text-indigo-700'}`}>
-                  AI Transparency Index
-                </div>
-                <div className={`text-2xl font-extrabold mt-0.5 ${auditIntegrity?.penalty_applied ? 'text-amber-700' : 'text-indigo-700'}`}>
-                  {auditIntegrity ? auditIntegrity.ai_transparency_index : 'A+'}
-                </div>
-                <div className={`text-[10px] mt-0.5 ${auditIntegrity?.penalty_applied ? 'text-amber-600' : 'text-indigo-600'}`}>
-                  {auditIntegrity ? (auditIntegrity.penalty_applied ? 'Khai báo đối phó/sơ sài' : 'Khai báo chi tiết các tool') : 'Kiểm toán tự động'}
-                </div>
-              </div>
-
-              <div className={`p-3.5 rounded-2xl border text-center ${auditIntegrity?.penalty_applied ? 'bg-rose-50/70 border-rose-200' : 'bg-purple-50/70 border-purple-200'}`}>
-                <div className={`text-[10px] font-bold uppercase ${auditIntegrity?.penalty_applied ? 'text-rose-700' : 'text-purple-700'}`}>
-                  Self-Reflection Depth
-                </div>
-                <div className={`text-2xl font-extrabold mt-0.5 ${auditIntegrity?.penalty_applied ? 'text-rose-700' : 'text-purple-700'}`}>
-                  {auditIntegrity ? auditIntegrity.reflection_depth : 'High'}
-                </div>
-                <div className={`text-[10px] mt-0.5 ${auditIntegrity?.penalty_applied ? 'text-rose-600' : 'text-purple-600'}`}>
-                  {auditIntegrity ? (auditIntegrity.penalty_applied ? 'Phản tư giả mạo/lặp lại' : 'Có tư duy phản biện') : 'Kiểm tra độ sâu'}
-                </div>
-              </div>
-            </div>
-
-            {/* Bộ câu hỏi vấn đáp Viva bám sát 100% mã nguồn thực tế */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="text-xs font-bold text-slate-800 uppercase tracking-wide flex items-center gap-1.5">
-                  <HelpCircle size={14} className="text-indigo-600" />
-                  <span>Bộ Câu Hỏi Vấn Đáp (Viva Questions) Bám Sát Code Thực Tế</span>
-                </div>
-                {isAuditingAi && (
-                  <span className="text-[11px] text-indigo-600 flex items-center gap-1 font-semibold">
-                    <span className="w-2.5 h-2.5 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
-                    Đang sinh câu hỏi từ AST...
-                  </span>
-                )}
-              </div>
-
-              {vivaQuestions && vivaQuestions.length > 0 ? (
-                <div className="space-y-3 text-xs">
-                  {vivaQuestions.map((q, idx) => (
-                    <div key={q.id || idx} className="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="font-bold text-xs text-indigo-700">
-                          Câu {idx + 1} {q.target_file ? `(${q.target_file.split('/').pop()})` : ''}:
-                        </span>
-                        {q.target_file && (
-                          <span className="text-[10px] font-mono text-slate-500 bg-slate-200 px-2 py-0.5 rounded">
-                            {q.target_file}
-                          </span>
-                        )}
-                      </div>
-                      {q.target_code_snippet && (
-                        <pre className="text-[10px] bg-slate-900 text-slate-200 p-2.5 rounded-xl font-mono overflow-x-auto max-h-24 leading-snug">
-                          <code>{q.target_code_snippet}</code>
-                        </pre>
-                      )}
-                      <p className="text-xs text-slate-700 leading-relaxed font-medium">
-                        "{q.question}"
-                      </p>
-                      {q.expected_answer_key && (
-                        <div className="text-[11px] text-slate-600 bg-amber-50/70 border border-amber-200/80 p-2 rounded-xl">
-                          <span className="font-bold text-amber-800">Tiêu chí đánh giá sinh viên hiểu bài: </span>
-                          <span>{q.expected_answer_key}</span>
-                        </div>
-                      )}
+            {/* 2. SCROLLABLE MODAL BODY - Cuộn độc lập bên trong, không ảnh hưởng header/footer */}
+            <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-5 custom-scroll">
+              
+              {/* Cảnh báo Penalty trong Modal nếu có */}
+              {auditIntegrity?.penalty_applied && (
+                <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl text-xs text-rose-950 flex items-start gap-3 shadow-xs animate-in fade-in">
+                  <AlertTriangle size={18} className="text-rose-600 shrink-0 mt-0.5" />
+                  <div className="min-w-0 flex-1">
+                    <div className="font-bold text-rose-900 text-xs uppercase tracking-wide flex items-center gap-1.5">
+                      <span>CẢNH BÁO VI PHẠM KHẢO THÍ (AI PENALTY APPLIED)</span>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="p-6 bg-slate-50 border border-dashed border-slate-300 rounded-2xl text-center space-y-3">
-                  <p className="text-xs text-slate-500">
-                    {isAuditingAi
-                      ? 'AI đang phân tích AST mã nguồn và tạo 3 câu hỏi vấn đáp xoáy vào bản chất code...'
-                      : 'Chưa có bộ câu hỏi vấn đáp dựa trên mã nguồn thực tế.'}
-                  </p>
-                  {!isAuditingAi && (
-                    <button
-                      type="button"
-                      onClick={handleAuditWithAi}
-                      className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition shadow-sm cursor-pointer"
-                    >
-                      Phân Tích Code & Tạo Câu Hỏi Viva
-                    </button>
-                  )}
+                    <p className="text-rose-800 text-xs mt-1 leading-relaxed font-medium">
+                      {auditIntegrity.penalty_reason}
+                    </p>
+                  </div>
                 </div>
               )}
+
+              {/* Chỉ số đối chiếu khớp thực tế (Responsive Grid 3 cột) */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {/* Thẻ 1: Độ khớp */}
+                <div className={`p-4 rounded-2xl border text-center transition ${
+                  auditIntegrity?.penalty_applied 
+                    ? 'bg-rose-50/70 border-rose-200' 
+                    : 'bg-emerald-50/70 border-emerald-200'
+                }`}>
+                  <div className={`text-[10px] font-bold uppercase tracking-wider ${
+                    auditIntegrity?.penalty_applied ? 'text-rose-700' : 'text-emerald-700'
+                  }`}>
+                    Độ Khớp Lời Khai
+                  </div>
+                  <div className={`text-2xl sm:text-3xl font-extrabold mt-1 ${
+                    auditIntegrity?.penalty_applied ? 'text-rose-700' : 'text-emerald-700'
+                  }`}>
+                    {auditIntegrity ? `${auditIntegrity.match_percentage.toFixed(0)}%` : '96.4%'}
+                  </div>
+                  <div className={`text-[10px] mt-1 font-medium ${
+                    auditIntegrity?.penalty_applied ? 'text-rose-600' : 'text-emerald-600'
+                  }`}>
+                    {auditIntegrity 
+                      ? (auditIntegrity.penalty_applied ? 'Phát hiện sai lệch với code' : 'Mã nguồn khớp các phase') 
+                      : 'Đang đối soát'}
+                  </div>
+                </div>
+
+                {/* Thẻ 2: Transparency Index */}
+                <div className={`p-4 rounded-2xl border text-center transition ${
+                  auditIntegrity?.penalty_applied 
+                    ? 'bg-amber-50/70 border-amber-200' 
+                    : 'bg-indigo-50/70 border-indigo-200'
+                }`}>
+                  <div className={`text-[10px] font-bold uppercase tracking-wider ${
+                    auditIntegrity?.penalty_applied ? 'text-amber-700' : 'text-indigo-700'
+                  }`}>
+                    AI Transparency Index
+                  </div>
+                  <div className={`text-2xl sm:text-3xl font-extrabold mt-1 ${
+                    auditIntegrity?.penalty_applied ? 'text-amber-700' : 'text-indigo-700'
+                  }`}>
+                    {auditIntegrity ? auditIntegrity.ai_transparency_index : 'A+'}
+                  </div>
+                  <div className={`text-[10px] mt-1 font-medium ${
+                    auditIntegrity?.penalty_applied ? 'text-amber-600' : 'text-indigo-600'
+                  }`}>
+                    {auditIntegrity 
+                      ? (auditIntegrity.penalty_applied ? 'Khai báo đối phó/sơ sài' : 'Khai báo chi tiết các tool') 
+                      : 'Kiểm toán tự động'}
+                  </div>
+                </div>
+
+                {/* Thẻ 3: Self-Reflection Depth */}
+                <div className={`p-4 rounded-2xl border text-center transition ${
+                  auditIntegrity?.penalty_applied 
+                    ? 'bg-rose-50/70 border-rose-200' 
+                    : 'bg-purple-50/70 border-purple-200'
+                }`}>
+                  <div className={`text-[10px] font-bold uppercase tracking-wider ${
+                    auditIntegrity?.penalty_applied ? 'text-rose-700' : 'text-purple-700'
+                  }`}>
+                    Self-Reflection Depth
+                  </div>
+                  <div className={`text-2xl sm:text-3xl font-extrabold mt-1 ${
+                    auditIntegrity?.penalty_applied ? 'text-rose-700' : 'text-purple-700'
+                  }`}>
+                    {auditIntegrity ? auditIntegrity.reflection_depth : 'High'}
+                  </div>
+                  <div className={`text-[10px] mt-1 font-medium ${
+                    auditIntegrity?.penalty_applied ? 'text-rose-600' : 'text-purple-600'
+                  }`}>
+                    {auditIntegrity 
+                      ? (auditIntegrity.penalty_applied ? 'Phản tư giả mạo/lặp lại' : 'Có tư duy phản biện') 
+                      : 'Kiểm tra độ sâu'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Bộ câu hỏi vấn đáp Viva bám sát 100% mã nguồn thực tế */}
+              <div className="space-y-3 pt-2">
+                <div className="flex items-center justify-between">
+                  <div className="text-xs font-bold text-slate-800 uppercase tracking-wide flex items-center gap-1.5">
+                    <HelpCircle size={15} className="text-indigo-600" />
+                    <span>Bộ Câu Hỏi Vấn Đáp (Viva Questions) Bám Sát Code Thực Tế</span>
+                  </div>
+                  {isAuditingAi && (
+                    <span className="text-[11px] text-indigo-600 flex items-center gap-1.5 font-semibold bg-indigo-50 px-2.5 py-1 rounded-full border border-indigo-100">
+                      <span className="w-2.5 h-2.5 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+                      Đang sinh câu hỏi từ AST...
+                    </span>
+                  )}
+                </div>
+
+                {vivaQuestions && vivaQuestions.length > 0 ? (
+                  <div className="space-y-3.5 text-xs">
+                    {vivaQuestions.map((q, idx) => {
+                      const criterionLabel = 
+                        q.rubric_criterion === 'abstraction' ? 'Kiến trúc & Phân rã (Abstraction)' :
+                        q.rubric_criterion === 'implementation' ? 'Logic & Bắt ngoại lệ (Implementation)' :
+                        q.rubric_criterion === 'reflection' ? 'Phản tư & Đánh đổi AI (Reflection)' :
+                        (q.rubric_criterion || 'Kỹ thuật SE/IT');
+
+                      const criterionColor =
+                        q.rubric_criterion === 'abstraction' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                        q.rubric_criterion === 'implementation' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                        'bg-purple-50 text-purple-700 border-purple-200';
+
+                      const codeSnippet = q.target_code_snippet || q.target_function_or_snippet;
+                      const answerCriteria = q.expected_answer_criteria || q.expected_answer_key;
+
+                      return (
+                        <div key={q.id || idx} className="p-4 sm:p-5 bg-slate-50/80 border border-slate-200/90 rounded-2xl space-y-3.5 shadow-xs hover:border-slate-300 transition">
+                          
+                          {/* Tiêu đề câu hỏi, Tiêu chí nhắm tới & File */}
+                          <div className="flex flex-wrap items-center justify-between gap-2 pb-1 border-b border-slate-200/60">
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-xs text-indigo-700 bg-indigo-50 border border-indigo-200 px-2.5 py-0.5 rounded-lg shadow-2xs">
+                                Câu {idx + 1}
+                              </span>
+                              <span className={`text-[10px] font-semibold px-2.5 py-0.5 rounded-md border ${criterionColor}`}>
+                                {criterionLabel}
+                              </span>
+                            </div>
+                            {q.target_file && (
+                              <span className="text-[11px] font-mono text-slate-600 bg-white border border-slate-200 px-2.5 py-1 rounded-lg flex items-center gap-1.5 shadow-2xs">
+                                <span className="text-slate-400">📁</span>
+                                <span className="font-semibold text-slate-700">{q.target_file}</span>
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Đoạn code/hàm cụ thể trong file */}
+                          {codeSnippet && (
+                            <div className="space-y-1">
+                              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                                <Code size={11} className="text-slate-400" />
+                                <span>Vị trí / Đoạn code đối chất:</span>
+                              </div>
+                              <pre className="text-[11px] bg-[#0f172a] text-slate-200 p-3.5 rounded-xl font-mono overflow-x-auto max-h-36 leading-relaxed border border-slate-800 custom-scroll">
+                                <code>{codeSnippet}</code>
+                              </pre>
+                            </div>
+                          )}
+
+                          {/* Nội dung câu hỏi vấn đáp */}
+                          <div className="p-3.5 bg-white border border-slate-200/90 rounded-xl space-y-1.5 shadow-2xs">
+                            <div className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 flex items-center gap-1.5">
+                              <HelpCircle size={13} />
+                              <span>Nội dung câu hỏi vấn đáp cho giảng viên:</span>
+                            </div>
+                            <p className="text-xs sm:text-[13px] text-slate-800 leading-relaxed font-semibold">
+                              {q.question}
+                            </p>
+                          </div>
+
+                          {/* Gợi ý câu trả lời kỳ vọng */}
+                          {answerCriteria && (
+                            <div className="p-3.5 bg-amber-50/70 border border-amber-200/80 rounded-xl space-y-1.5">
+                              <div className="text-[10px] font-bold uppercase tracking-wider text-amber-800 flex items-center gap-1.5">
+                                <CheckCircle size={13} className="text-amber-600" />
+                                <span>Gợi ý câu trả lời kỳ vọng (Expected Answer Criteria):</span>
+                              </div>
+                              <p className="text-xs text-slate-700 leading-relaxed font-normal">
+                                {answerCriteria}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="p-8 bg-slate-50 border border-dashed border-slate-300 rounded-2xl text-center space-y-3">
+                    <p className="text-xs text-slate-500">
+                      {isAuditingAi
+                        ? 'AI đang phân tích AST mã nguồn và tạo 3 câu hỏi vấn đáp xoáy vào bản chất code...'
+                        : 'Chưa có bộ câu hỏi vấn đáp dựa trên mã nguồn thực tế.'}
+                    </p>
+                    {!isAuditingAi && (
+                      <button
+                        type="button"
+                        onClick={handleAuditWithAi}
+                        className="px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl text-xs font-bold transition shadow-md shadow-indigo-500/20 cursor-pointer"
+                      >
+                        Phân Tích Code & Tạo Câu Hỏi Viva
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
 
-            <div className="flex items-center justify-between pt-3 border-t border-slate-100">
-              <span className="text-[11px] text-slate-400">
-                Thanh tra tự động hoàn tất lúc {new Date().toLocaleTimeString('vi-VN')}
+            {/* 3. FIXED MODAL FOOTER - Luôn hiển thị ở đáy modal */}
+            <div className="px-5 sm:px-6 py-3.5 bg-slate-50 border-t border-slate-100 flex items-center justify-between shrink-0">
+              <span className="text-[11px] text-slate-400 flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                <span>Thanh tra hoàn tất lúc {new Date().toLocaleTimeString('vi-VN')}</span>
               </span>
               <button
                 type="button"
                 onClick={() => setShowVivaModal(false)}
-                className="px-5 py-2 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition cursor-pointer"
+                className="px-5 py-2 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition cursor-pointer shadow-xs"
               >
                 Đóng báo cáo
               </button>
             </div>
+
           </div>
         </div>
       )}
