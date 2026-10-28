@@ -59,9 +59,14 @@ const LearningService = {
 
   /** Tạo hoặc lấy lại kế hoạch học 7 ngày cho môn học */
   async generateStudyPlan(subjectId) {
-    const response = await api.post('/learning/study-plan/generate', null, {
-      params: { subjectId },
-    });
+    const response = await api.post(
+      '/learning/study-plan/generate',
+      {},
+      {
+        params: { subjectId },
+      }
+    );
+
     return response.data;
   },
 
