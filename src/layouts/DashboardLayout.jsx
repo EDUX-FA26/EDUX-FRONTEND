@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -58,6 +58,12 @@ export default function DashboardLayout() {
 
   const roleLabel = t.role?.[user?.role] || user?.role || '';
   const searchPath = user?.role ? `/${user.role}/search` : '/';
+
+  useEffect(() => {
+    if (location.pathname === searchPath) {
+      setHeaderSearch(new URLSearchParams(location.search).get('q') || '');
+    }
+  }, [location.pathname, location.search, searchPath]);
 
   const handleHeaderSearch = (event) => {
     event.preventDefault();

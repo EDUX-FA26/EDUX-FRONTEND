@@ -296,6 +296,9 @@ const en = {
     subtitle: 'Find classes, assignments, materials, and flashcards that your account is authorized to access.',
     inputLabel: 'Content to search',
     inputPlaceholder: 'Enter to filter classes, assignments, materials, or flashcards',
+    resultsEyebrow: 'GLOBAL SEARCH',
+    resultAllHeader: 'Explore content',
+    filterLabel: 'Filter by',
     typesAriaLabel: 'Content type',
     types: {
       all: 'All',

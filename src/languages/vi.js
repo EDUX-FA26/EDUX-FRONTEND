@@ -296,6 +296,9 @@ const vi = {
     subtitle: 'Tìm lớp học, bài tập, tài liệu và bộ flashcard mà tài khoản của bạn được phép truy cập.',
     inputLabel: 'Nội dung cần tìm',
     inputPlaceholder: 'Nhập để lọc lớp, bài tập, tài liệu hoặc flashcard',
+    resultsEyebrow: 'TÌM KIẾM TOÀN HỆ THỐNG',
+    resultAllHeader: 'Khám phá nội dung',
+    filterLabel: 'Lọc theo',
     typesAriaLabel: 'Loại nội dung',
     types: {
       all: 'Tất cả',

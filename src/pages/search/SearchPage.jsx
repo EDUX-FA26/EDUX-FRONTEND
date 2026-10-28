@@ -21,8 +21,7 @@ export default function SearchPage() {
   const [searchParams] = useSearchParams();
   const urlQuery = searchParams.get('q')?.trim() || '';
 
-  const [draftQuery, setDraftQuery] = useState(urlQuery);
-  const [query, setQuery] = useState(urlQuery);
+  const query = urlQuery;
   const [type, setType] = useState('');
   const [page, setPage] = useState(1);
   const [results, setResults] = useState([]);
@@ -52,44 +51,39 @@ export default function SearchPage() {
   useEffect(() => { runSearch(); }, [runSearch]);
 
   useEffect(() => {
-    setDraftQuery(urlQuery);
-    setQuery(urlQuery);
     setPage(1);
   }, [urlQuery]);
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setPage(1);
-      setQuery(draftQuery.trim());
-    }, 300);
-    return () => window.clearTimeout(timer);
-  }, [draftQuery]);
 
   const totalPages = Math.max(1, Math.ceil(total / limit));
 
   return (
-    <div className="module-page">
-      <section className="search-hero card">
-        <p className="module-page__eyebrow">{S.eyebrow || 'Module 3 · Global Search'}</p>
-        <h1 className="module-page__title">{S.title || 'Tìm kiếm trong EDUX'}</h1>
-        <p className="module-page__subtitle">{S.subtitle || 'Tìm lớp học, bài tập, tài liệu và bộ flashcard mà tài khoản của bạn được phép truy cập.'}</p>
-
-        <div className="search-form">
-          <div className="module-search">
-            <span className="material-symbols-outlined" aria-hidden="true">search</span>
-            <label className="sr-only" htmlFor="global-search">{S.inputLabel || 'Nội dung cần tìm'}</label>
-            <input 
-              id="global-search" 
-              className="module-input" 
-              value={draftQuery} 
-              onChange={(event) => setDraftQuery(event.target.value)} 
-              placeholder={S.inputPlaceholder || 'Nhập để lọc lớp, bài tập, tài liệu hoặc flashcard'} 
-              maxLength={100} 
-              autoFocus 
-            />
+    <div className="module-page search-page">
+      <header className="search-page__header">
+        <div className="search-page__heading">
+          <div className="search-page__heading-icon" aria-hidden="true">
+            <span className="material-symbols-outlined">search</span>
+          </div>
+          <div>
+            <p className="search-page__eyebrow">{S.resultsEyebrow || 'TÌM KIẾM TOÀN HỆ THỐNG'}</p>
+            <h1 className="module-page__title">
+              {query
+                ? (S.resultQueryHeader ? S.resultQueryHeader.replace('{query}', query) : `Kết quả cho “${query}”`)
+                : (S.resultAllHeader || 'Khám phá nội dung')}
+            </h1>
+            <p className="module-page__subtitle">
+              {loading
+                ? (S.loadingTitle || 'Đang tải nội dung...')
+                : (S.resultCount ? S.resultCount.replace('{total}', total) : `Hiển thị ${total} kết quả bạn có quyền truy cập`)}
+            </p>
           </div>
         </div>
+      </header>
 
+      <section className="search-toolbar card" aria-label={S.typesAriaLabel || 'Loại nội dung'}>
+        <div className="search-toolbar__label">
+          <span className="material-symbols-outlined" aria-hidden="true">filter_list</span>
+          <span>{S.filterLabel || 'Lọc theo'}</span>
+        </div>
         <div className="search-types" role="group" aria-label={S.typesAriaLabel || 'Loại nội dung'}>
           {TYPES.map((item) => {
             const labelText = S.types?.[item.labelKey] || (item.value === '' ? 'Tất cả' : item.value);
@@ -133,21 +127,6 @@ export default function SearchPage() {
         </section>
       ) : (
         <>
-          <div className="module-page__header">
-            <div>
-              <h2 style={{ margin: 0, color: 'var(--color-ink)', fontSize: '1.1rem' }}>
-                {query 
-                  ? (S.resultQueryHeader ? S.resultQueryHeader.replace('{query}', query) : `Kết quả cho “${query}”`) 
-                  : type 
-                    ? (S.resultTypeHeader ? S.resultTypeHeader.replace('{type}', TYPE_META[type]?.labelKey ? S.types?.[TYPE_META[type].labelKey] : type) : `Tất cả nội dung`) 
-                    : (S.resultAllHeader || 'Tất cả nội dung')}
-              </h2>
-              <p className="module-page__subtitle">
-                {S.resultCount ? S.resultCount.replace('{total}', total) : `Hiển thị ${total} kết quả bạn có quyền truy cập`}
-              </p>
-            </div>
-          </div>
-          
           <section className="search-results" aria-label={S.resultsAriaLabel || 'Kết quả tìm kiếm'}>
             {results.map((result) => {
               const meta = TYPE_META[result.type] || { labelKey: result.type, icon: 'search' };
