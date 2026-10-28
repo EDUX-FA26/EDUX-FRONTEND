@@ -104,26 +104,36 @@ export default function LecturerGradingPage() {
                 const scoreNum = Number(subData.score || gradeObj.score || 0);
                 const rubricsObj = subData.rubrics || gradeObj.rubrics;
 
-                if (rubricsObj && rubricsObj.decomposition !== undefined) {
+                if (rubricsObj && rubricsObj.abstraction !== undefined && rubricsObj.implementation !== undefined) {
                   setInitialScores(rubricsObj);
+                } else if (rubricsObj && (rubricsObj.decomposition !== undefined || rubricsObj.pattern !== undefined)) {
+                  const totalOld = (rubricsObj.decomposition || 0) + (rubricsObj.pattern || 0) + (rubricsObj.abstraction || 0) + (rubricsObj.algorithmic || 0) + (rubricsObj.reflection || 0);
+                  const ratio = totalOld > 0 ? totalOld / 10 : 0;
+                  setInitialScores({
+                    abstraction: parseFloat((2.0 * ratio).toFixed(2)),
+                    implementation: parseFloat((3.0 * ratio).toFixed(2)),
+                    verification: parseFloat((2.5 * ratio).toFixed(2)),
+                    ai_interaction: parseFloat((1.5 * ratio).toFixed(2)),
+                    reflection: parseFloat((1.0 * ratio).toFixed(2)),
+                  });
                 } else if (rubricsObj && (rubricsObj.r1 !== undefined || rubricsObj.r2 !== undefined)) {
                   const sum = (rubricsObj.r1 || 0) + (rubricsObj.r2 || 0) + (rubricsObj.r3 || 0);
-                  const part = Math.min(2, parseFloat((sum / 5).toFixed(2)));
+                  const ratio = sum > 0 ? sum / 10 : 0;
                   setInitialScores({
-                    decomposition: part,
-                    pattern: part,
-                    abstraction: part,
-                    algorithmic: part,
-                    reflection: Math.min(2, parseFloat((sum - part * 4).toFixed(2))),
+                    abstraction: parseFloat((2.0 * ratio).toFixed(2)),
+                    implementation: parseFloat((3.0 * ratio).toFixed(2)),
+                    verification: parseFloat((2.5 * ratio).toFixed(2)),
+                    ai_interaction: parseFloat((1.5 * ratio).toFixed(2)),
+                    reflection: parseFloat((1.0 * ratio).toFixed(2)),
                   });
                 } else {
-                  const part = Math.min(2, Math.max(0, parseFloat((scoreNum / 5).toFixed(2))));
+                  const ratio = scoreNum > 0 ? scoreNum / 10 : 0;
                   setInitialScores({
-                    decomposition: part,
-                    pattern: part,
-                    abstraction: part,
-                    algorithmic: part,
-                    reflection: Math.min(2, Math.max(0, parseFloat((scoreNum - part * 4).toFixed(2)))),
+                    abstraction: parseFloat((2.0 * ratio).toFixed(2)),
+                    implementation: parseFloat((3.0 * ratio).toFixed(2)),
+                    verification: parseFloat((2.5 * ratio).toFixed(2)),
+                    ai_interaction: parseFloat((1.5 * ratio).toFixed(2)),
+                    reflection: parseFloat((1.0 * ratio).toFixed(2)),
                   });
                 }
                 setInitialFeedback(subData.feedback || gradeObj.feedback || '');
@@ -404,27 +414,37 @@ export default function LecturerGradingPage() {
               const activeScore = mockSub.score ?? mockSub.grade?.score;
               const activeFeedback = mockSub.feedback || mockSub.grade?.feedback;
 
-              if (activeRubrics && activeRubrics.decomposition !== undefined) {
+              if (activeRubrics && activeRubrics.abstraction !== undefined && activeRubrics.implementation !== undefined) {
                 setInitialScores(activeRubrics);
+              } else if (activeRubrics && (activeRubrics.decomposition !== undefined || activeRubrics.pattern !== undefined)) {
+                const totalOld = (activeRubrics.decomposition || 0) + (activeRubrics.pattern || 0) + (activeRubrics.abstraction || 0) + (activeRubrics.algorithmic || 0) + (activeRubrics.reflection || 0);
+                const ratio = totalOld > 0 ? totalOld / 10 : 0;
+                setInitialScores({
+                  abstraction: parseFloat((2.0 * ratio).toFixed(2)),
+                  implementation: parseFloat((3.0 * ratio).toFixed(2)),
+                  verification: parseFloat((2.5 * ratio).toFixed(2)),
+                  ai_interaction: parseFloat((1.5 * ratio).toFixed(2)),
+                  reflection: parseFloat((1.0 * ratio).toFixed(2)),
+                });
               } else if (activeRubrics && (activeRubrics.r1 !== undefined || activeRubrics.r2 !== undefined)) {
                 const sum = (activeRubrics.r1 || 0) + (activeRubrics.r2 || 0) + (activeRubrics.r3 || 0);
-                const part = Math.min(2, parseFloat((sum / 5).toFixed(2)));
+                const ratio = sum > 0 ? sum / 10 : 0;
                 setInitialScores({
-                  decomposition: part,
-                  pattern: part,
-                  abstraction: part,
-                  algorithmic: part,
-                  reflection: Math.min(2, parseFloat((sum - part * 4).toFixed(2))),
+                  abstraction: parseFloat((2.0 * ratio).toFixed(2)),
+                  implementation: parseFloat((3.0 * ratio).toFixed(2)),
+                  verification: parseFloat((2.5 * ratio).toFixed(2)),
+                  ai_interaction: parseFloat((1.5 * ratio).toFixed(2)),
+                  reflection: parseFloat((1.0 * ratio).toFixed(2)),
                 });
               } else if (activeScore != null) {
                 const sc = Number(activeScore);
-                const part = Math.min(2, Math.max(0, parseFloat((sc / 5).toFixed(2))));
+                const ratio = sc > 0 ? sc / 10 : 0;
                 setInitialScores({
-                  decomposition: part,
-                  pattern: part,
-                  abstraction: part,
-                  algorithmic: part,
-                  reflection: Math.min(2, Math.max(0, parseFloat((sc - part * 4).toFixed(2)))),
+                  abstraction: parseFloat((2.0 * ratio).toFixed(2)),
+                  implementation: parseFloat((3.0 * ratio).toFixed(2)),
+                  verification: parseFloat((2.5 * ratio).toFixed(2)),
+                  ai_interaction: parseFloat((1.5 * ratio).toFixed(2)),
+                  reflection: parseFloat((1.0 * ratio).toFixed(2)),
                 });
               }
               if (activeFeedback) {
