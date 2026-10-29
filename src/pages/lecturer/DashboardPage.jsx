@@ -1,11 +1,19 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { getDashboard, getDashboardNotifications } from '../../services/dashboard.service';
 
-function StatCard({ label, value, icon, iconBg, iconColor, sub }) {
+function StatCard({ label, value, icon, iconBg, iconColor, sub, onClick, className = '' }) {
   return (
-    <div className="stat-card animate-fade-in">
+    <div
+      className={`stat-card animate-fade-in ${className}`}
+      onClick={onClick}
+      style={{
+        cursor: onClick ? 'pointer' : 'default',
+        transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+      }}
+    >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
         <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-ink-muted)' }}>{label}</span>
         <div className="stat-card__icon" style={{ background: iconBg, color: iconColor }}>
@@ -18,9 +26,22 @@ function StatCard({ label, value, icon, iconBg, iconColor, sub }) {
   );
 }
 
-function SubmissionRow({ submission, t }) {
+function SubmissionRow({ submission, t, onClick }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 0', borderBottom: '1px solid var(--color-border)' }}>
+    <div
+      onClick={onClick}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '14px 8px',
+        borderBottom: '1px solid var(--color-border)',
+        cursor: onClick ? 'pointer' : 'default',
+        borderRadius: '8px',
+        transition: 'background-color 0.15s ease',
+      }}
+      className={onClick ? 'hover:bg-black/5' : ''}
+    >
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
         <div style={{ width: '36px', height: '36px', flexShrink: 0, borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--color-primary-card)' }}>
           <span className="material-symbols-outlined" style={{ fontSize: '18px', color: 'var(--color-primary)' }}>description</span>
@@ -57,6 +78,7 @@ function NotifRow({ notif, t }) {
 }
 
 export default function LecturerDashboardPage() {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { t } = useLanguage();
   const [data, setData] = useState(null);
@@ -118,10 +140,46 @@ export default function LecturerDashboardPage() {
           <div style={{ gridColumn: '1/-1', padding: '20px', borderRadius: '14px', background: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.3)', color: '#ef4444', textAlign: 'center' }}>{error}</div>
         ) : (
           <>
-            <StatCard label={S?.classesTeaching} value={stats?.totalClasses} icon="class" iconBg="#e6f7f5" iconColor="var(--color-accent-teal)" sub={S?.currentSemester} />
-            <StatCard label={S?.totalStudents} value={stats?.totalStudents} icon="groups" iconBg="#fff1e7" iconColor="var(--color-primary)" sub={S?.inClasses} />
-            <StatCard label={S?.pendingSubmissions} value={stats?.pendingSubmissions} icon="grading" iconBg="rgba(220,38,38,0.1)" iconColor="#dc2626" sub={stats?.pendingSubmissions > 0 ? S?.needGrade : S?.allGraded} />
-            <StatCard label={S?.totalAssignments} value={stats?.totalAssignments} icon="assignment" iconBg="#d5e0f8" iconColor="#1e40af" sub={S?.allClasses} />
+            <StatCard
+              label={S?.classesTeaching}
+              value={stats?.totalClasses}
+              icon="class"
+              iconBg="#e6f7f5"
+              iconColor="var(--color-accent-teal)"
+              sub={S?.currentSemester}
+              onClick={() => navigate('/lecturer/classes')}
+              className="cursor-pointer hover:shadow-md transition-all hover:scale-[1.01]"
+            />
+            <StatCard
+              label={S?.totalStudents}
+              value={stats?.totalStudents}
+              icon="groups"
+              iconBg="#fff1e7"
+              iconColor="var(--color-primary)"
+              sub={S?.inClasses}
+              onClick={() => navigate('/lecturer/classes')}
+              className="cursor-pointer hover:shadow-md transition-all hover:scale-[1.01]"
+            />
+            <StatCard
+              label={S?.pendingSubmissions}
+              value={stats?.pendingSubmissions}
+              icon="grading"
+              iconBg="rgba(220,38,38,0.1)"
+              iconColor="#dc2626"
+              sub={stats?.pendingSubmissions > 0 ? S?.needGrade : S?.allGraded}
+              onClick={() => navigate('/lecturer/classes')}
+              className="cursor-pointer hover:shadow-md transition-all hover:scale-[1.01]"
+            />
+            <StatCard
+              label={S?.totalAssignments}
+              value={stats?.totalAssignments}
+              icon="assignment"
+              iconBg="#d5e0f8"
+              iconColor="#1e40af"
+              sub={S?.allClasses}
+              onClick={() => navigate('/lecturer/classes')}
+              className="cursor-pointer hover:shadow-md transition-all hover:scale-[1.01]"
+            />
           </>
         )}
       </div>
@@ -153,7 +211,18 @@ export default function LecturerDashboardPage() {
               <span className="material-symbols-outlined" style={{ fontSize: '40px', display: 'block', marginBottom: '8px', opacity: 0.4 }}>inbox</span>
               <p style={{ fontSize: '0.875rem' }}>{t.submissions?.empty}</p>
             </div>
-          ) : submissions.map((s) => <SubmissionRow key={s.id} submission={s} t={t} />)}
+          ) : submissions.map((s) => (
+            <SubmissionRow
+              key={s.id}
+              submission={s}
+              t={t}
+              onClick={() => {
+                if (s.assignment_id) {
+                  navigate(`/lecturer/assignments/${s.assignment_id}`);
+                }
+              }}
+            />
+          ))}
         </div>
 
         <div className="card" style={{ padding: '20px' }}>
