@@ -144,6 +144,30 @@
   margin-bottom: 6px !important;
 }
 
+.saf-input {
+  width: 100% !important;
+  height: 36px !important;
+  border: 1.5px solid #cbd5e1 !important;
+  border-radius: 10px !important;
+  padding: 0 12px !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  color: #1e293b !important;
+  background-color: #ffffff !important;
+  outline: none !important;
+  transition: border-color 0.2s, box-shadow 0.2s !important;
+}
+
+.saf-input:focus {
+  border-color: #6366f1 !important;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1) !important;
+}
+
+.saf-input::placeholder {
+  color: #94a3b8 !important;
+  font-weight: 400 !important;
+}
+
 .saf-select {
   width: 100% !important;
   height: 42px !important;
@@ -285,4 +309,35 @@
 .saf-btn-nav:disabled {
   opacity: 0.35 !important;
   cursor: not-allowed !important;
+}
+
+/* Horizontal Tab Scrolling Support (External Mouse & Drag) */
+.edux-tab-scroll {
+  scrollbar-width: thin !important;
+  scrollbar-color: #cbd5e1 #f8fafc !important;
+  cursor: grab;
+  user-select: none;
+}
+
+.edux-tab-scroll:active,
+.edux-tab-scroll.is-dragging {
+  cursor: grabbing !important;
+}
+
+.edux-tab-scroll::-webkit-scrollbar {
+  height: 5px !important;
+}
+
+.edux-tab-scroll::-webkit-scrollbar-track {
+  background: #f1f5f9 !important;
+  border-radius: 4px !important;
+}
+
+.edux-tab-scroll::-webkit-scrollbar-thumb {
+  background: #cbd5e1 !important;
+  border-radius: 4px !important;
+}
+
+.edux-tab-scroll::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8 !important;
 }

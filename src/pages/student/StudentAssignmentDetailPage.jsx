@@ -7,6 +7,7 @@ import { formatDateDMY } from '../../helper/dateFormat';
 import StudentAssignmentFlow, {
   INITIAL_DECLARATIONS
 } from '../../components/student/StudentAssignmentFlow';
+import { normalizeAuditData } from '../../helper/aiAuditHelper';
 
 export default function StudentAssignmentDetailPage() {
     const { id } = useParams();
@@ -180,13 +181,17 @@ export default function StudentAssignmentDetailPage() {
             };
         }
 
-        // Parse declarations if saved in note, or populate with defaults
+        // Parse declarations & scopes using normalizeAuditData
         let parsedDeclarations = INITIAL_DECLARATIONS;
+        let parsedScopes = null;
         try {
-            const noteData = detailedSubmission?.versions?.[0]?.note;
-            if (noteData && noteData.startsWith('{')) {
-                const json = JSON.parse(noteData);
-                if (json.declarations) parsedDeclarations = json.declarations;
+            const noteData = detailedSubmission?.versions?.[0]?.note || submission?.note;
+            if (noteData) {
+                const normalized = normalizeAuditData(noteData);
+                if (normalized.scopes && normalized.scopes.length > 0) {
+                    parsedScopes = normalized.scopes;
+                    parsedDeclarations = normalized.scopes[0].declarations || parsedDeclarations;
+                }
             }
         } catch (e) {}
 
@@ -199,6 +204,7 @@ export default function StudentAssignmentDetailPage() {
             feedback: effectiveFeedback || (isGraded ? 'Bài nộp đã được chấm điểm hoàn tất.' : 'No feedback yet. Submitted successfully. Waiting for grading.'),
             transparencyScore: submission.transparencyScore || submission.aiAuditLog?.transparencyScore || 94,
             declarations: parsedDeclarations,
+            scopes: parsedScopes || submission.scopes,
             score: effectiveScore,
             grade: submission.grade || (effectiveScore != null ? { score: effectiveScore, feedback: effectiveFeedback, rubrics: effectiveRubrics } : null),
             rubrics: effectiveRubrics,
@@ -206,10 +212,19 @@ export default function StudentAssignmentDetailPage() {
     }
 
     // Handle API Submit & Update
-    const handleApiSubmit = async ({ assignmentId, file, declarations, isEdit }) => {
+    const handleApiSubmit = async ({ assignmentId, file, declarations, scopes, isEdit }) => {
         const rawFile = file instanceof File ? file : null;
         const notePayload = JSON.stringify({
-            declarations,
+            version: "2.0",
+            scopes: scopes || [
+              {
+                id: "default",
+                scope_title: "Khai báo tổng quan",
+                scope_description: "",
+                declarations,
+              }
+            ],
+            declarations: declarations || scopes?.[0]?.declarations, // for backward compat
             isEdit,
             submittedAt: new Date().toISOString()
         });
