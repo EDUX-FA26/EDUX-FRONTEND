@@ -49,6 +49,7 @@ export default function LecturerGradingPage() {
   });
   const [currentFile, setCurrentFile] = useState<SubmissionFile | undefined>(undefined);
   const [aiDeclarations, setAiDeclarations] = useState<AiDeclarationPhase[]>(DEFAULT_AI_DECLARATIONS);
+  const [auditRawData, setAuditRawData] = useState<any>(null);
   const [existingGradeId, setExistingGradeId] = useState<string | null>(null);
   const [resolvedAssignmentId, setResolvedAssignmentId] = useState<string | null>(
     assignmentId || stateData?.assignment_id || stateData?.assignmentId || null
@@ -182,6 +183,7 @@ export default function LecturerGradingPage() {
                 } catch (e) {}
 
                 if (latestVer.note) {
+                  setAuditRawData(latestVer.note);
                   try {
                     const normalized = normalizeAuditData(latestVer.note);
                     if (normalized && normalized.scopes && normalized.scopes.length > 0) {
@@ -257,6 +259,8 @@ export default function LecturerGradingPage() {
                     }
                   } catch (e) {}
                 }
+              } else if (subData.note) {
+                setAuditRawData(subData.note);
               }
 
               // Fallback to stateData files if versions was empty
@@ -372,6 +376,9 @@ export default function LecturerGradingPage() {
               }
 
               // Xử lý Empty State nếu không khai báo AI
+              if (mockSub.aiAuditLog || (mockSub as any).note) {
+                setAuditRawData((mockSub as any).note || mockSub.aiAuditLog);
+              }
               if (!mockSub.aiAuditLog || !mockSub.aiAuditLog.isDeclared) {
                 setAiDeclarations([]);
               } else {
@@ -672,6 +679,7 @@ export default function LecturerGradingPage() {
         submissionFile={submissionFile}
         file={currentFile}
         aiDeclarations={aiDeclarations}
+        auditData={auditRawData}
         initialRubrics={initialScores}
         initialFeedback={initialFeedback}
         onBack={handleBack}

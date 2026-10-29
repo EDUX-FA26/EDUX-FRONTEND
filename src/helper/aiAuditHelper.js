@@ -406,11 +406,12 @@ export function normalizeAuditData(rawData) {
     };
   }
 
-  // 2. Trường hợp rawData là dạng cũ (Single-Scope với object declarations phẳng)
+  // 2. Trường hợp rawData là dạng cũ (Single-Scope với object declarations phẳng) hoặc Array of phases
   let rawDeclarations = parsed.declarations || parsed.aiAuditLog || null;
 
-  // Nếu object chính là map declarations (chứa các key decomposition, pattern...)
-  if (!rawDeclarations && (parsed.decomposition || parsed.pattern || parsed.abstraction || parsed.algorithmic || parsed.reflection)) {
+  if (Array.isArray(parsed)) {
+    rawDeclarations = parsed;
+  } else if (!rawDeclarations && (parsed.decomposition || parsed.pattern || parsed.abstraction || parsed.algorithmic || parsed.reflection)) {
     rawDeclarations = parsed;
   }
 

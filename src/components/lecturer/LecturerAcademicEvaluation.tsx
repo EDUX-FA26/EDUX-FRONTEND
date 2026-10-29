@@ -24,6 +24,7 @@ import {
 import './LecturerAcademicEvaluation.css';
 import SubmissionFileViewer from './SubmissionFileViewer';
 import { SubmissionFile, AuditIntegrity, VivaQuestion } from '../../types/submission';
+import { normalizeAuditData } from '../../helper/aiAuditHelper';
 
 /* ==========================================================================
    1. TYPESCRIPT INTERFACES
@@ -178,6 +179,7 @@ export interface LecturerAcademicEvaluationProps {
   submissionFile?: SubmissionCodeFile;
   file?: SubmissionFile;
   aiDeclarations?: AiDeclarationPhase[];
+  auditData?: any;
   initialRubrics?: RubricScores;
   initialFeedback?: string;
   initialAiCompliance?: AiComplianceStatus;
@@ -334,6 +336,7 @@ export default function LecturerAcademicEvaluation({
   },
   file,
   aiDeclarations = DEFAULT_AI_DECLARATIONS,
+  auditData,
   initialRubrics = DEFAULT_RUBRIC_SCORES,
   initialFeedback = '',
   initialAiCompliance = 'compliant',
@@ -388,6 +391,162 @@ export default function LecturerAcademicEvaluation({
 
   // Tab Navigation State
   const [activeTab, setActiveTab] = useState<'ai' | 'grading'>('ai');
+
+  // ==========================================================================
+  // MULTI-SCOPE / MULTI-PHASE STATE & NORMALIZATION
+  // ==========================================================================
+  const [selectedScopeIndex, setSelectedScopeIndex] = useState<number>(0);
+
+  const normalizedAudit = useMemo(() => {
+    if (auditData) {
+      return normalizeAuditData(auditData);
+    }
+    if (aiDeclarations && aiDeclarations.length > 0) {
+      return normalizeAuditData(aiDeclarations);
+    }
+    return normalizeAuditData(null);
+  }, [auditData, aiDeclarations]);
+
+  const scopes = useMemo(() => {
+    return normalizedAudit?.scopes || [];
+  }, [normalizedAudit]);
+
+  const safeScopeIndex = selectedScopeIndex < scopes.length ? selectedScopeIndex : 0;
+  const currentScope: any = scopes[safeScopeIndex] || scopes[0] || null;
+
+  // Helper tính số lượng tiêu chí đã điền đủ (3/3 trường text: Prompt, Response, Reflection) trong scope
+  const getScopeCompletedCount = (scope: any) => {
+    if (!scope || !scope.declarations) return 0;
+    const decs = scope.declarations;
+    const criteriaKeys = [
+      'decomposition',
+      'pattern',
+      'abstraction',
+      'algorithmic',
+      'reflection',
+    ];
+    return criteriaKeys.filter((key) => {
+      const d = decs[key] || decs[`${key}_recognition`] || decs[`${key}_thinking`];
+      if (!d) return false;
+      const p = (d.prompt || d.prompt_used || '').trim();
+      const r = (d.response || d.responseSummary || d.aiResponseSummary || '').trim();
+      const ref = (d.reflection || d.studentReflection || '').trim();
+      return p.length > 0 && r.length > 0 && ref.length > 0;
+    }).length;
+  };
+
+  // Kiểm tra xem sinh viên có khai báo AI nào không (nếu tất cả các scope đều trống text và aiDeclarations rỗng)
+  const hasAnyDeclaration = useMemo(() => {
+    if (aiDeclarations && aiDeclarations.length > 0) {
+      const anyFilledInProp = aiDeclarations.some((d) => (d.prompt || '').trim().length > 0 || (d.studentReflection || '').trim().length > 0);
+      if (anyFilledInProp) return true;
+    }
+    if (!scopes || scopes.length === 0) return false;
+    return scopes.some((scope: any) => {
+      const decs = scope.declarations || {};
+      return Object.values(decs).some((d: any) => {
+        if (!d || typeof d !== 'object') return false;
+        const p = (d.prompt || d.prompt_used || '').trim();
+        const r = (d.response || d.responseSummary || d.aiResponseSummary || '').trim();
+        const ref = (d.reflection || d.studentReflection || '').trim();
+        return p.length > 0 || r.length > 0 || ref.length > 0;
+      });
+    });
+  }, [scopes, aiDeclarations]);
+
+  const currentScopeDeclarations: AiDeclarationPhase[] = useMemo(() => {
+    if (!currentScope || !currentScope.declarations) {
+      return aiDeclarations || [];
+    }
+    const decs = currentScope.declarations;
+
+    const getCriteriaData = (key: string, altKey?: string) => {
+      return decs[key] || (altKey ? decs[altKey] : null) || {};
+    };
+
+    const decomp = getCriteriaData('decomposition');
+    const pattern = getCriteriaData('pattern', 'pattern_recognition');
+    const abstraction = getCriteriaData('abstraction');
+    const algo = getCriteriaData('algorithmic', 'algorithmic_thinking');
+    const reflection = getCriteriaData('reflection');
+
+    const rubricItems = [
+      {
+        phaseKey: 'decomposition' as const,
+        phaseName: 'DECOMPOSITION',
+        badgeBg: 'bg-blue-50',
+        badgeText: 'text-blue-700',
+        data: decomp,
+      },
+      {
+        phaseKey: 'pattern' as const,
+        phaseName: 'PATTERN RECOGNITION',
+        badgeBg: 'bg-indigo-50',
+        badgeText: 'text-indigo-700',
+        data: pattern,
+      },
+      {
+        phaseKey: 'abstraction' as const,
+        phaseName: 'ABSTRACTION',
+        badgeBg: 'bg-cyan-50',
+        badgeText: 'text-cyan-700',
+        data: abstraction,
+      },
+      {
+        phaseKey: 'algorithmic' as const,
+        phaseName: 'ALGORITHMIC THINKING',
+        badgeBg: 'bg-teal-50',
+        badgeText: 'text-teal-700',
+        data: algo,
+      },
+      {
+        phaseKey: 'reflection' as const,
+        phaseName: 'AI REFLECTION',
+        badgeBg: 'bg-purple-50',
+        badgeText: 'text-purple-700',
+        data: reflection,
+      },
+    ];
+
+    return rubricItems.map((item) => {
+      const d = item.data;
+      const tool = d.tool || d.aiTool || 'Chưa khai báo';
+      const decision = (d.decision as any) || 'Not Declared';
+      const prompt = d.prompt || '';
+      const responseSummary = d.response || d.responseSummary || d.aiResponseSummary || '';
+      const studentReflection = d.reflection || d.studentReflection || '';
+
+      let decisionBg = 'bg-slate-100';
+      let decisionText = 'text-slate-600';
+      if (decision === 'Fully Accepted') {
+        decisionBg = 'bg-emerald-50';
+        decisionText = 'text-emerald-700';
+      } else if (decision === 'Partially Modified') {
+        decisionBg = 'bg-blue-50';
+        decisionText = 'text-blue-700';
+      } else if (decision === 'Heavily Adapted') {
+        decisionBg = 'bg-amber-50';
+        decisionText = 'text-amber-700';
+      } else if (decision === 'Rejected') {
+        decisionBg = 'bg-rose-50';
+        decisionText = 'text-rose-700';
+      }
+
+      return {
+        phaseKey: item.phaseKey,
+        phaseName: item.phaseName,
+        badgeBg: item.badgeBg,
+        badgeText: item.badgeText,
+        aiTool: tool,
+        decision,
+        decisionBg,
+        decisionText,
+        prompt,
+        aiResponseSummary: responseSummary,
+        studentReflection,
+      };
+    });
+  }, [currentScope, aiDeclarations]);
 
   // Chuẩn hóa Rubric 5 tiêu chí (hỗ trợ chuyển đổi từ r1, r2, r3 cũ nếu có)
   const normalizedInitialRubrics: RubricScores = useMemo(() => {
@@ -509,7 +668,8 @@ export default function LecturerAcademicEvaluation({
           summary: 'Khai báo chi tiết cả tool được chấp thuận và tool bị từ chối.'
         },
         oralExamLogs: [],
-        aiDeclarations,
+        aiDeclarations: currentScopeDeclarations,
+        aiAuditData: auditData || normalizedAudit,
         codeSnippet: actualFile.textContent || (codeLines.join('\n'))
       };
 
@@ -859,15 +1019,66 @@ export default function LecturerAcademicEvaluation({
               <div className="flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-2 text-xs font-bold text-slate-800 tracking-wide uppercase">
                   <Layers size={14} className="text-orange-500" />
-                  <span>STUDENT AI DECLARATION (5 PHASES)</span>
+                  <span>STUDENT AI DECLARATION ({scopes.length > 1 ? `${scopes.length} PHẠM VI / SCOPES` : '5 PHASES'})</span>
                 </div>
                 <span className="text-[10px] bg-slate-100 text-slate-500 font-semibold px-2 py-0.5 rounded border border-slate-200">
                   Self-Reported
                 </span>
               </div>
 
+              {/* Thanh điều hướng Scope / Phase Selector (Đặt ngay dưới tiêu đề tab) */}
+              {scopes.length > 0 && (
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 custom-scroll no-scrollbar shrink-0">
+                  {scopes.map((scope: any, idx: number) => {
+                    const isSelected = safeScopeIndex === idx;
+                    const rawTitle = scope.scope_title || scope.title || `Scope ${idx + 1}`;
+                    const displayTitle = rawTitle.toLowerCase().startsWith('scope') || rawTitle.toLowerCase().startsWith('phạm vi')
+                      ? rawTitle
+                      : `Scope ${idx + 1}: ${rawTitle}`;
+                    const count = getScopeCompletedCount(scope);
+
+                    return (
+                      <button
+                        key={scope.id || idx}
+                        type="button"
+                        onClick={() => setSelectedScopeIndex(idx)}
+                        className={`px-3 py-1.5 rounded-lg text-xs transition cursor-pointer shrink-0 flex items-center gap-1.5 ${
+                          isSelected
+                            ? 'bg-blue-600 text-white font-medium shadow-sm'
+                            : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                        }`}
+                      >
+                        <span>{displayTitle}</span>
+                        <span
+                          className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
+                            isSelected ? 'bg-blue-700/60 text-white' : 'bg-gray-200 text-gray-600'
+                          }`}
+                        >
+                          ({count}/5)
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Hiển thị thông tin Scope hiện tại */}
+              {currentScope && (
+                <div className="shrink-0">
+                  <div className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                    <span className="text-blue-600 font-extrabold">#{safeScopeIndex + 1}</span>
+                    <span>{currentScope.scope_title || currentScope.title || `Scope ${safeScopeIndex + 1}`}</span>
+                  </div>
+                  {(currentScope.scope_description || currentScope.description) && (
+                    <div className="bg-gray-50 border border-gray-100 p-2.5 rounded-lg text-xs text-gray-600 my-2 leading-relaxed">
+                      {currentScope.scope_description || currentScope.description}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* KHUNG BẢNG 5 PHASES: CUỘN NGANG & DỌC ĐỘC LẬP BÊN TRONG HOẶC EMPTY STATE */}
-              {!aiDeclarations || aiDeclarations.length === 0 ? (
+              {!hasAnyDeclaration ? (
                 <div className="border-2 border-dashed border-slate-200 rounded-2xl p-8 bg-slate-50/50 text-center flex flex-col items-center justify-center space-y-3">
                   <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center">
                     <ShieldCheck size={24} />
@@ -906,7 +1117,7 @@ export default function LecturerAcademicEvaluation({
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 text-[11px] text-slate-600">
-                        {aiDeclarations.map((item) => (
+                        {currentScopeDeclarations.map((item) => (
                           <tr key={item.phaseKey} className="hover:bg-slate-50/70 transition">
                             <td className="p-3 align-top">
                               <span
@@ -924,13 +1135,25 @@ export default function LecturerAcademicEvaluation({
                               </span>
                             </td>
                             <td className="p-3 align-top leading-relaxed text-slate-600">
-                              {item.prompt}
+                              {item.prompt ? (
+                                item.prompt
+                              ) : (
+                                <span className="italic text-slate-400">Không có câu lệnh</span>
+                              )}
                             </td>
                             <td className="p-3 align-top leading-relaxed text-slate-500">
-                              {item.aiResponseSummary}
+                              {item.aiResponseSummary ? (
+                                item.aiResponseSummary
+                              ) : (
+                                <span className="italic text-slate-400">Không có tóm tắt</span>
+                              )}
                             </td>
                             <td className="p-3 align-top leading-relaxed text-slate-700 font-medium">
-                              {item.studentReflection}
+                              {item.studentReflection ? (
+                                item.studentReflection
+                              ) : (
+                                <span className="italic text-slate-400">Không có phản tư</span>
+                              )}
                             </td>
                           </tr>
                         ))}
