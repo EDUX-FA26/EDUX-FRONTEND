@@ -8,6 +8,7 @@ import ClassService from '../../services/class.service';
 import GradingService from '../../services/grading.service';
 import MockSubmissionService from '../../services/mockSubmissionService';
 import { formatDateDMY } from '../../helper/dateFormat';
+import AIAuditQuickViewHover from '../../components/lecturer/AIAuditQuickViewHover';
 
 export default function LecturerAssignmentDetailPage() {
     const { id } = useParams();
@@ -115,6 +116,8 @@ export default function LecturerAssignmentDetailPage() {
                             feedback: effectiveFeedback,
                             rubrics: effectiveRubrics,
                             status: isGradedStatus ? 'graded' : (submission.status || 'submitted'),
+                            aiAuditLog: localGraded?.aiAuditLog || submission.aiAuditLog || null,
+                            declarations: localGraded?.aiAuditLog || submission.declarations || null,
                         };
                     }
 
@@ -151,6 +154,8 @@ export default function LecturerAssignmentDetailPage() {
                         feedback: effectiveFeedback,
                         rubrics: effectiveRubrics,
                         status: isGradedStatus ? 'graded' : (sub.status || 'submitted'),
+                        aiAuditLog: localGraded?.aiAuditLog || sub.aiAuditLog || null,
+                        declarations: localGraded?.aiAuditLog || sub.declarations || null,
                     };
                 });
 
@@ -197,7 +202,9 @@ export default function LecturerAssignmentDetailPage() {
                         grade: m.grade,
                         rubrics: m.grade?.rubrics ?? m.rubrics ?? null,
                         latest_files: m.file ? [m.file] : [],
-                        latest_note: m.aiAuditLog?.isDeclared ? 'AI Audit Log: 5 Rubrics Declared' : 'Manual Submission'
+                        latest_note: m.aiAuditLog?.isDeclared ? 'AI Audit Log: 5 Rubrics Declared' : 'Manual Submission',
+                        aiAuditLog: m.aiAuditLog,
+                        declarations: m.aiAuditLog
                     }));
                     setSubmissions(deduplicateList(mappedMocks));
                 } else {
@@ -222,7 +229,9 @@ export default function LecturerAssignmentDetailPage() {
                     grade: m.grade,
                     rubrics: m.grade?.rubrics,
                     latest_files: m.file ? [m.file] : [],
-                    latest_note: m.aiAuditLog?.isDeclared ? 'AI Audit Log: 5 Rubrics Declared' : 'Manual Submission'
+                    latest_note: m.aiAuditLog?.isDeclared ? 'AI Audit Log: 5 Rubrics Declared' : 'Manual Submission',
+                    aiAuditLog: m.aiAuditLog,
+                    declarations: m.aiAuditLog
                 }));
                 const deduplicateList = (list) => {
                     const studentMap = new Map();
@@ -262,7 +271,9 @@ export default function LecturerAssignmentDetailPage() {
                     grade: m.grade,
                     rubrics: m.grade?.rubrics,
                     latest_files: m.file ? [m.file] : [],
-                    latest_note: m.aiAuditLog?.isDeclared ? 'AI Audit Log: 5 Rubrics Declared' : 'Manual Submission'
+                    latest_note: m.aiAuditLog?.isDeclared ? 'AI Audit Log: 5 Rubrics Declared' : 'Manual Submission',
+                    aiAuditLog: m.aiAuditLog,
+                    declarations: m.aiAuditLog
                 }));
                 const studentMap = new Map();
                 for (const item of mappedMocks) {
@@ -481,6 +492,7 @@ export default function LecturerAssignmentDetailPage() {
                                         <th style={{ padding: '8px' }}>Status</th>
                                         <th style={{ padding: '8px' }}>Submitted At</th>
                                         <th style={{ padding: '8px' }}>File/Link</th>
+                                        <th style={{ padding: '8px', textAlign: 'center' }}>AI Audit</th>
                                         <th style={{ padding: '8px' }}>Score</th>
                                         <th style={{ padding: '8px' }}>Action</th>
                                     </tr>
@@ -534,12 +546,22 @@ export default function LecturerAssignmentDetailPage() {
                                                         )) : (
                                                             <span style={{ fontSize: '11px', color: 'var(--color-ink-muted)' }}>-</span>
                                                         )}
-                                                        {sub.latest_note && (
+                                                        {/* Ẩn dòng JSON thô Note: {"declarations":...; chỉ hiển thị nếu là text note thuần tuý */}
+                                                        {sub.latest_note && !sub.latest_note.includes('"declarations"') && !sub.latest_note.trim().startsWith('{') && (
                                                             <div style={{ fontSize: '10px', color: 'var(--color-ink-soft)', fontStyle: 'italic', marginTop: '4px', maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                                                 Note: {sub.latest_note}
                                                             </div>
                                                         )}
                                                     </div>
+                                                </td>
+
+                                                {/* CỘT AI AUDIT: NÚT ICON CON MẮT & HOVER QUICK VIEW */}
+                                                <td style={{ padding: '8px', textAlign: 'center' }}>
+                                                    <AIAuditQuickViewHover
+                                                        declarationData={sub.declarations || sub.aiAuditLog || sub.note || sub.latest_note}
+                                                        studentName={sub.student_name}
+                                                        studentCode={sub.student_code}
+                                                    />
                                                 </td>
 
                                                 {/* CỘT HIỂN THỊ ĐIỂM SỐ */}
@@ -594,7 +616,7 @@ export default function LecturerAssignmentDetailPage() {
                                         )
                                     }) : (
                                         <tr>
-                                            <td colSpan="6" style={{ padding: '16px', textAlign: 'center', color: 'var(--color-ink-muted)' }}>No submissions yet.</td>
+                                            <td colSpan="7" style={{ padding: '16px', textAlign: 'center', color: 'var(--color-ink-muted)' }}>No submissions yet.</td>
                                         </tr>
                                     )}
                                 </tbody>
