@@ -26,7 +26,23 @@ export default function LecturerGradingPage() {
 
   const [loading, setLoading] = useState<boolean>(true);
   const [studentInfo, setStudentInfo] = useState<StudentInfo>(DEFAULT_STUDENT);
-  const [courseInfo, setCourseInfo] = useState<CourseClassInfo>(DEFAULT_COURSE_INFO);
+  const stateData = location.state as any;
+  const initialCourseName =
+    stateData?.courseTitle ||
+    stateData?.courseName ||
+    stateData?.subjectName ||
+    DEFAULT_COURSE_INFO.courseTitle;
+
+  const [courseInfo, setCourseInfo] = useState<CourseClassInfo>({
+    courseCode: stateData?.subjectCode || stateData?.classCode || stateData?.className || DEFAULT_COURSE_INFO.courseCode,
+    courseTitle: initialCourseName,
+    courseName: initialCourseName,
+    subjectName: stateData?.subjectName || stateData?.courseName || initialCourseName,
+    className: stateData?.className || stateData?.classCode || DEFAULT_COURSE_INFO.className,
+    assignmentTitle: stateData?.assignmentTitle || DEFAULT_COURSE_INFO.assignmentTitle,
+    classId: stateData?.class_id || stateData?.classId,
+    assignmentId: assignmentId || stateData?.assignmentId,
+  });
   const [submissionFile, setSubmissionFile] = useState<SubmissionCodeFile>({
     name: 'SE18D01_TranThiB_BackendArchitecture.ts',
     lines: DEFAULT_SUBMISSION_CODE_LINES,
@@ -35,7 +51,7 @@ export default function LecturerGradingPage() {
   const [aiDeclarations, setAiDeclarations] = useState<AiDeclarationPhase[]>(DEFAULT_AI_DECLARATIONS);
   const [existingGradeId, setExistingGradeId] = useState<string | null>(null);
   const [resolvedAssignmentId, setResolvedAssignmentId] = useState<string | null>(
-    assignmentId || (location.state as any)?.assignment_id || (location.state as any)?.assignmentId || null
+    assignmentId || stateData?.assignment_id || stateData?.assignmentId || null
   );
   const [initialScores, setInitialScores] = useState<RubricScores>({
     abstraction: 0,
@@ -55,7 +71,6 @@ export default function LecturerGradingPage() {
         setLoading(true);
 
         // State passed from parent listing page if available
-        const stateData = location.state as any;
         if (assignmentId) {
           setResolvedAssignmentId(assignmentId);
         } else if (stateData?.assignment_id || stateData?.assignmentId) {
@@ -68,11 +83,26 @@ export default function LecturerGradingPage() {
             const assignRes = await AssignmentService.getAssignmentDetail(assignmentId);
             const assign = assignRes?.data || assignRes;
             if (assign) {
+              const resolvedCourseName =
+                assign.subject_name ||
+                assign.course_name ||
+                assign.subject?.name ||
+                assign.class?.subject?.name ||
+                assign.class_name ||
+                stateData?.courseTitle ||
+                stateData?.courseName ||
+                stateData?.subjectName ||
+                'Software Architecture and Design';
+
               setCourseInfo({
-                courseCode: assign.class_code || assign.course_code || 'SWD392',
-                courseTitle: assign.class_name || assign.course_name || 'Software Architecture and Design',
-                className: assign.class_name || assign.class_code || 'SE18D01',
-                assignmentTitle: assign.title || 'Backend Architecture C4 Model',
+                courseCode: assign.subject_code || assign.class_code || assign.course_code || stateData?.subjectCode || stateData?.classCode || 'SE1801',
+                courseTitle: resolvedCourseName,
+                courseName: resolvedCourseName,
+                subjectName: assign.subject_name || assign.subject?.name || stateData?.subjectName || resolvedCourseName,
+                className: assign.class_name || assign.class_code || stateData?.className || stateData?.classCode || 'SE1801',
+                assignmentTitle: assign.title || stateData?.assignmentTitle || 'Backend Architecture C4 Model',
+                classId: assign.class_id || assign.classId || stateData?.class_id || stateData?.classId,
+                assignmentId: assignmentId || assign.id,
               });
             }
           } catch (e) {
@@ -627,7 +657,7 @@ export default function LecturerGradingPage() {
 
   if (loading) {
     return (
-      <div className="bg-[#f8fafc] text-slate-700 h-screen flex flex-col items-center justify-center space-y-4">
+      <div className="bg-[#f8fafc] text-slate-700 w-full h-full flex flex-col items-center justify-center space-y-4">
         <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
         <p className="text-xs font-semibold text-slate-500">Đang tải hồ sơ chấm điểm ART-AI...</p>
       </div>
@@ -635,18 +665,20 @@ export default function LecturerGradingPage() {
   }
 
   return (
-    <LecturerAcademicEvaluation
-      student={studentInfo}
-      courseInfo={courseInfo}
-      submissionFile={submissionFile}
-      file={currentFile}
-      aiDeclarations={aiDeclarations}
-      initialRubrics={initialScores}
-      initialFeedback={initialFeedback}
-      onBack={handleBack}
-      onSaveDraft={handleSaveDraft}
-      onPublishGrade={handlePublishGrade}
-      onRequestResubmit={handleRequestResubmit}
-    />
+    <div className="flex-1 flex flex-col h-full w-full overflow-hidden m-0 p-0">
+      <LecturerAcademicEvaluation
+        student={studentInfo}
+        courseInfo={courseInfo}
+        submissionFile={submissionFile}
+        file={currentFile}
+        aiDeclarations={aiDeclarations}
+        initialRubrics={initialScores}
+        initialFeedback={initialFeedback}
+        onBack={handleBack}
+        onSaveDraft={handleSaveDraft}
+        onPublishGrade={handlePublishGrade}
+        onRequestResubmit={handleRequestResubmit}
+      />
+    </div>
   );
 }

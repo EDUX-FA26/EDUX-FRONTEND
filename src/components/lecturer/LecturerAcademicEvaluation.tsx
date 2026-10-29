@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import SubmissionService from '../../services/submission.service';
 import {
   ArrowLeft,
@@ -40,8 +40,12 @@ export interface StudentInfo {
 export interface CourseClassInfo {
   courseCode: string;
   courseTitle?: string;
+  courseName?: string;
+  subjectName?: string;
   className: string;
   assignmentTitle: string;
+  classId?: string;
+  assignmentId?: string;
 }
 
 export interface SubmissionCodeFile {
@@ -354,7 +358,32 @@ export default function LecturerAcademicEvaluation({
     };
   }, [file, submissionFile]);
   const routeParams = useParams();
+  const navigate = useNavigate();
   const activeSubmissionId = submissionId || routeParams.submissionId;
+  const targetAssignmentId = courseInfo.assignmentId || routeParams.assignmentId;
+  const targetClassId = courseInfo.classId;
+
+  const handleBackClick = () => {
+    if (onBack) {
+      onBack();
+    } else if (targetAssignmentId) {
+      navigate(`/lecturer/assignments/${targetAssignmentId}`);
+    } else {
+      navigate(-1);
+    }
+  };
+
+  const displayCourseName =
+    courseInfo.courseTitle ||
+    courseInfo.courseName ||
+    courseInfo.subjectName ||
+    courseInfo.className ||
+    courseInfo.courseCode ||
+    'Software Architecture and Design';
+
+  const displayAssignmentTitle =
+    courseInfo.assignmentTitle || 'Assignment';
+
   const [aiVerdict, setAiVerdict] = useState<string>('');
 
   // Tab Navigation State
@@ -643,7 +672,7 @@ export default function LecturerAcademicEvaluation({
   const codeLines = submissionFile.lines || (submissionFile.content ? submissionFile.content.split('\n') : []);
 
   return (
-    <div className="bg-[#f8fafc] text-slate-700 h-screen flex flex-col overflow-hidden font-sans select-none">
+    <div className="flex-1 flex flex-col h-full w-full overflow-hidden bg-[#f8fafc] text-slate-700 font-sans select-none m-0 p-0">
       {/* Toast Notification Floating */}
       {toastMessage && (
         <div className="fixed top-6 right-6 z-[1050] flex items-center gap-3 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-2xl border border-slate-700 animate-in fade-in slide-in-from-top-4 duration-200">
@@ -664,59 +693,86 @@ export default function LecturerAcademicEvaluation({
         </div>
       )}
 
-      {/* ==================== TOP NAVIGATION BAR ==================== */}
-      <header className="bg-[#111c38] text-white px-5 py-3 flex items-center justify-between shrink-0 shadow-sm select-none">
-        <div className="flex items-center gap-4">
+      {/* ==================== TOP NAVIGATION BAR (H-12 FLUSH FIT) ==================== */}
+      <header className="h-12 w-full bg-[#0f172a] text-white px-4 flex items-center justify-between border-b border-gray-800 shrink-0 select-none">
+        <div className="flex items-center gap-3 min-w-0">
           <button
             type="button"
-            onClick={onBack || (() => window.history.back())}
-            title="Quay lại danh sách bài nộp"
-            className="text-slate-300 hover:text-white p-1 text-base transition cursor-pointer"
+            onClick={handleBackClick}
+            title="Quay lại danh sách bài nộp của bài tập này"
+            className="text-slate-300 hover:text-white p-1 rounded hover:bg-slate-800 transition cursor-pointer shrink-0"
           >
             <ArrowLeft size={16} />
           </button>
 
-          <div>
-            <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider flex items-center gap-1.5">
-              <span>GRADING</span>
-              <ChevronRight size={10} className="text-slate-500" />
-              <span>{courseInfo.courseCode}</span>
-              <ChevronRight size={10} className="text-slate-500" />
-              <span>
-                {courseInfo.className} ({courseInfo.assignmentTitle})
+          {/* Breadcrumbs */}
+          <nav aria-label="Breadcrumb" className="text-xs font-medium tracking-wide flex items-center gap-2 min-w-0">
+            <button
+              type="button"
+              onClick={() => navigate('/lecturer/dashboard')}
+              className="cursor-pointer hover:text-blue-400 transition-colors uppercase font-semibold bg-transparent border-0 p-0 text-slate-300 shrink-0"
+              title="Về Dashboard giảng viên"
+            >
+              GRADING
+            </button>
+            <ChevronRight size={12} className="text-slate-500 shrink-0" />
+            <button
+              type="button"
+              onClick={() => {
+                if (targetClassId) {
+                  navigate(`/lecturer/classes/${targetClassId}`);
+                } else {
+                  navigate('/lecturer/classes');
+                }
+              }}
+              className="cursor-pointer hover:text-blue-400 transition-colors max-w-[220px] truncate text-left bg-transparent border-0 p-0 text-slate-200"
+              title={displayCourseName}
+            >
+              {displayCourseName}
+            </button>
+            <ChevronRight size={12} className="text-slate-500 shrink-0" />
+            <button
+              type="button"
+              onClick={handleBackClick}
+              className="cursor-pointer hover:text-blue-400 transition-colors max-w-[240px] truncate text-left bg-transparent border-0 p-0 text-slate-300"
+              title={displayAssignmentTitle}
+            >
+              {displayAssignmentTitle}
+            </button>
+          </nav>
+
+          {/* Divider & Student Info */}
+          <span className="text-slate-700 hidden sm:inline mx-1">|</span>
+          <div className="hidden md:flex items-center gap-2 shrink-0">
+            <span className="text-xs font-semibold text-white truncate max-w-[180px]">
+              {student.name} ({student.code})
+            </span>
+            {student.aiRiskLevel === 'low' && (
+              <span className="inline-flex items-center gap-1.5 bg-[#063f35] text-[#2fe8a6] border border-[#0d594b] text-[10px] font-semibold px-2 py-0.5 rounded-full">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#2fe8a6]"></span>
+                <span>{student.aiRiskLabel || 'low AI-transparency risk'}</span>
               </span>
-            </div>
-            <div className="flex items-center gap-2.5 mt-0.5">
-              <h1 className="text-sm font-bold text-white tracking-wide">
-                {student.name} ({student.code})
-              </h1>
-              {student.aiRiskLevel === 'low' && (
-                <span className="inline-flex items-center gap-1.5 bg-[#063f35] text-[#2fe8a6] border border-[#0d594b] text-[11px] font-semibold px-2.5 py-0.5 rounded-full">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#2fe8a6]"></span>
-                  <span>{student.aiRiskLabel || 'low AI-transparency risk'}</span>
-                </span>
-              )}
-              {student.aiRiskLevel === 'medium' && (
-                <span className="inline-flex items-center gap-1.5 bg-[#3f2f06] text-[#e8b52f] border border-[#59440d] text-[11px] font-semibold px-2.5 py-0.5 rounded-full">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#e8b52f]"></span>
-                  <span>{student.aiRiskLabel || 'medium AI-transparency risk'}</span>
-                </span>
-              )}
-              {student.aiRiskLevel === 'high' && (
-                <span className="inline-flex items-center gap-1.5 bg-[#3f0606] text-[#e82f2f] border border-[#590d0d] text-[11px] font-semibold px-2.5 py-0.5 rounded-full">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#e82f2f]"></span>
-                  <span>{student.aiRiskLabel || 'high AI-transparency risk'}</span>
-                </span>
-              )}
-            </div>
+            )}
+            {student.aiRiskLevel === 'medium' && (
+              <span className="inline-flex items-center gap-1.5 bg-[#3f2f06] text-[#e8b52f] border border-[#59440d] text-[10px] font-semibold px-2 py-0.5 rounded-full">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#e8b52f]"></span>
+                <span>{student.aiRiskLabel || 'medium AI-transparency risk'}</span>
+              </span>
+            )}
+            {student.aiRiskLevel === 'high' && (
+              <span className="inline-flex items-center gap-1.5 bg-[#3f0606] text-[#e82f2f] border border-[#590d0d] text-[10px] font-semibold px-2 py-0.5 rounded-full">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#e82f2f]"></span>
+                <span>{student.aiRiskLabel || 'high AI-transparency risk'}</span>
+              </span>
+            )}
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2.5 shrink-0">
           <button
             type="button"
             onClick={() => setShowResubmitModal(true)}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-white text-rose-600 rounded-lg text-xs font-bold hover:bg-rose-50 transition border border-rose-100 shadow-sm cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1 bg-white text-rose-600 rounded-lg text-xs font-bold hover:bg-rose-50 transition border border-rose-100 shadow-sm cursor-pointer"
           >
             <RotateCcw size={13} />
             <span>Request Resubmit</span>
@@ -726,7 +782,7 @@ export default function LecturerAcademicEvaluation({
             type="button"
             disabled={isSaving}
             onClick={handleSaveDraft}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#1b2b52] text-slate-200 rounded-lg text-xs font-semibold hover:bg-[#233766] transition border border-slate-700 cursor-pointer disabled:opacity-50"
+            className="flex items-center gap-1.5 px-3 py-1 bg-[#1b2b52] text-slate-200 rounded-lg text-xs font-semibold hover:bg-[#233766] transition border border-slate-700 cursor-pointer disabled:opacity-50"
           >
             <Bookmark size={13} />
             <span>{isSaving ? 'Saving...' : 'Save Draft'}</span>
@@ -736,7 +792,7 @@ export default function LecturerAcademicEvaluation({
             type="button"
             disabled={isPublishing}
             onClick={handlePublishGrade}
-            className="flex items-center gap-1.5 px-4 py-1.5 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-lg text-xs font-bold hover:opacity-95 shadow-md shadow-orange-500/20 transition cursor-pointer disabled:opacity-50"
+            className="flex items-center gap-1.5 px-3.5 py-1 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-lg text-xs font-bold hover:opacity-95 shadow-md shadow-orange-500/20 transition cursor-pointer disabled:opacity-50"
           >
             <Send size={11} />
             <span>{isPublishing ? 'Đang công bố...' : `Công bố điểm (${totalScore.toFixed(2)} / 10)`}</span>
@@ -744,21 +800,23 @@ export default function LecturerAcademicEvaluation({
         </div>
       </header>
 
-      {/* ==================== MAIN CONTENT AREA ==================== */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* CỘT TRÁI: CODE / FILE SUBMISSION (PREVIEW TRỰC TIẾP HOẶC GITHUB-STYLE ZIP TREE) */}
-        <SubmissionFileViewer
-          file={actualFile}
-          onAiAnnotate={handleAiAnnotateClick}
-          showAiAnnotationBanner={showAnnotateToast}
-          onCloseAiAnnotationBanner={() => setShowAnnotateToast(false)}
-          className="border-r border-slate-200"
-        />
+      {/* ==================== MAIN CONTENT AREA (WORKSPACE BODY) ==================== */}
+      <div className="flex-1 flex w-full overflow-hidden">
+        {/* CỘT TRÁI: CODE VIEWER / ANNOTATE (FLEX-1) */}
+        <div className="flex-1 flex flex-col overflow-hidden bg-white border-r border-gray-200 min-w-0">
+          <SubmissionFileViewer
+            file={actualFile}
+            onAiAnnotate={handleAiAnnotateClick}
+            showAiAnnotationBanner={showAnnotateToast}
+            onCloseAiAnnotationBanner={() => setShowAnnotateToast(false)}
+            className="w-full h-full flex flex-col overflow-hidden"
+          />
+        </div>
 
-        {/* CỘT PHẢI: KHUNG ĐIỀU KHIỂN & CUỘN TÁCH BIỆT */}
-        <aside className="w-[490px] flex flex-col bg-white shrink-0 border-l border-slate-200 overflow-hidden">
+        {/* CỘT PHẢI: TAB AI DECLARATION & AUDIT / ACADEMIC GRADING (420px - 460px) */}
+        <aside className="w-[420px] lg:w-[460px] flex flex-col overflow-hidden bg-white shrink-0">
           {/* TAB NAVIGATION CỐ ĐỊNH */}
-          <div className="h-12 border-b border-slate-200 flex items-center px-2 shrink-0 bg-white select-none">
+          <div className="h-11 border-b border-gray-200 flex items-center px-2 shrink-0 bg-white select-none">
             <button
               id="tab-btn-ai"
               type="button"
@@ -789,11 +847,11 @@ export default function LecturerAcademicEvaluation({
           </div>
 
           {/* VÙNG NỘI DUNG CUỘN RIÊNG BIỆT CHO MỖI TAB */}
-          <div className="flex-1 overflow-hidden relative">
+          <div className="flex-1 overflow-hidden relative flex flex-col">
             {/* ==================== TAB 1: AI DECLARATION & AUDIT ==================== */}
             <div
               id="panel-ai"
-              className={`h-full flex flex-col p-5 overflow-y-auto custom-scroll space-y-4 ${
+              className={`flex-1 flex flex-col p-4 overflow-y-auto custom-scroll space-y-4 ${
                 activeTab === 'ai' ? '' : 'hidden'
               }`}
             >
@@ -914,7 +972,7 @@ export default function LecturerAcademicEvaluation({
             {/* ==================== TAB 2: ACADEMIC GRADING ==================== */}
             <div
               id="panel-grading"
-              className={`h-full flex flex-col p-5 overflow-y-auto custom-scroll space-y-6 ${
+              className={`flex-1 flex flex-col p-4 overflow-y-auto custom-scroll space-y-6 ${
                 activeTab === 'grading' ? '' : 'hidden'
               }`}
             >

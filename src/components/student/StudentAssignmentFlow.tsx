@@ -667,6 +667,21 @@ export const AssignmentOverview: React.FC<AssignmentOverviewProps> = ({
    5. SUB-COMPONENT: AI AUDIT LOG CARD (SUMMARY VIEW)
    ========================================================================== */
 
+/**
+ * Helper kiểm tra tiêu chí Rubric đã điền đầy đủ cả 3 mục text:
+ * 1. prompt
+ * 2. response / responseSummary
+ * 3. reflection / studentReflection
+ * Tuyệt đối không tính khi chỉ chọn dropdown mà chưa có text.
+ */
+export function isRubricDeclaredComplete(item?: any): boolean {
+  if (!item || typeof item !== 'object') return false;
+  const prompt = (item.prompt || item.prompt_used || item.promptUsed || item.promptContent || '').trim();
+  const response = (item.responseSummary || item.response || item.aiResponseSummary || item.ai_response_summary || item.aiResponse || '').trim();
+  const reflection = (item.reflection || item.studentReflection || item.student_reflection || item.selfReflection || '').trim();
+  return prompt.length > 0 && response.length > 0 && reflection.length > 0;
+}
+
 interface AiAuditLogCardProps {
   declarations: Record<RubricKey, AiDeclarationRubric>;
   scopes?: AiScope[];
@@ -738,10 +753,10 @@ export const AiAuditLogCard: React.FC<AiAuditLogCardProps> = ({
     ? (scopes![Math.min(activeScopeIdx, scopes!.length - 1)]?.declarations || declarations)
     : declarations;
   const totalCompleted = hasScopes
-    ? scopes!.reduce((acc, s) => acc + rubricKeys.filter(k => s.declarations[k]?.isCompleted).length, 0)
-    : rubricKeys.filter(k => declarations[k]?.isCompleted).length;
+    ? scopes!.reduce((acc, s) => acc + rubricKeys.filter(k => isRubricDeclaredComplete(s.declarations[k])).length, 0)
+    : rubricKeys.filter(k => isRubricDeclaredComplete(declarations[k])).length;
   const totalRubrics = hasScopes ? scopes!.length * 5 : 5;
-  const completedCount = rubricKeys.filter(k => activeDeclarations[k]?.isCompleted).length;
+  const completedCount = rubricKeys.filter(k => isRubricDeclaredComplete(activeDeclarations[k])).length;
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-5 space-y-4">
@@ -810,7 +825,7 @@ export const AiAuditLogCard: React.FC<AiAuditLogCardProps> = ({
             }`}
           >
             {scopes!.map((scope, idx) => {
-              const sc = rubricKeys.filter(k => scope.declarations[k]?.isCompleted).length;
+              const sc = rubricKeys.filter(k => isRubricDeclaredComplete(scope.declarations[k])).length;
               const isAct = idx === Math.min(activeScopeIdx, scopes!.length - 1);
               return (
                 <button
@@ -1722,9 +1737,8 @@ export const AiRubricForm: React.FC<AiRubricFormProps> = ({
         [field]: value as any,
         isModified: true,
       };
-      const hasContent =
-        (updatedItem.prompt || '').trim().length > 0 &&
-        (updatedItem.reflection || '').trim().length > 0;
+      // Chỉ tính hoàn thành khi ĐÃ ĐIỀN ĐỦ cả 3 mục text: Prompt, Response, Reflection
+      const hasContent = isRubricDeclaredComplete(updatedItem);
       updatedItem.isCompleted = hasContent;
       return { ...s, declarations: { ...s.declarations, [key]: updatedItem } };
     });
@@ -1736,7 +1750,7 @@ export const AiRubricForm: React.FC<AiRubricFormProps> = ({
   const ActiveIcon = activeMeta.icon;
 
   const currentIdx = rubricKeys.indexOf(activeKey);
-  const completedCount = rubricKeys.filter((k) => declarations[k]?.isCompleted).length;
+  const completedCount = rubricKeys.filter((k) => isRubricDeclaredComplete(declarations[k])).length;
   const modifiedCount = rubricKeys.filter((k) => declarations[k]?.isModified).length;
 
   const handleNextRubric = () => {
@@ -1752,7 +1766,7 @@ export const AiRubricForm: React.FC<AiRubricFormProps> = ({
   };
 
   const totalCompleted = scopes.reduce(
-    (acc, s) => acc + rubricKeys.filter(k => s.declarations[k]?.isCompleted).length, 0
+    (acc, s) => acc + rubricKeys.filter(k => isRubricDeclaredComplete(s.declarations[k])).length, 0
   );
   const totalRubrics = scopes.length * 5;
 
@@ -1804,7 +1818,7 @@ export const AiRubricForm: React.FC<AiRubricFormProps> = ({
             }`}
           >
             {scopes.map((scope, idx) => {
-              const scopeCompleted = rubricKeys.filter(k => scope.declarations[k]?.isCompleted).length;
+              const scopeCompleted = rubricKeys.filter(k => isRubricDeclaredComplete(scope.declarations[k])).length;
               const isActive = idx === safeIdx;
               return (
                 <button
@@ -1925,8 +1939,14 @@ export const AiRubricForm: React.FC<AiRubricFormProps> = ({
             const meta = RUBRIC_METADATA[key];
             const item = declarations[key];
             const isActive = activeKey === key;
-            const isDone = item?.isCompleted;
+            const isDone = isRubricDeclaredComplete(item);
             const isEdited = item?.isModified;
+            const hasAnyText = Boolean(
+              (item?.prompt || '').trim() ||
+              (item?.responseSummary || '').trim() ||
+              (item?.reflection || '').trim()
+            );
+            const isPartially = hasAnyText && !isDone;
 
             return (
               <div
@@ -1942,6 +1962,8 @@ export const AiRubricForm: React.FC<AiRubricFormProps> = ({
                       ? 'bg-emerald-500 text-white'
                       : isActive
                       ? 'bg-blue-600 text-white'
+                      : isPartially
+                      ? 'bg-amber-100 text-amber-700 border border-amber-300'
                       : 'bg-slate-100 text-slate-500'
                   }`}
                 >
@@ -1962,11 +1984,13 @@ export const AiRubricForm: React.FC<AiRubricFormProps> = ({
                         isEdited
                           ? 'text-amber-600 font-bold'
                           : isDone
-                          ? 'text-emerald-600'
+                          ? 'text-emerald-600 font-bold'
+                          : isPartially
+                          ? 'text-amber-500 font-medium'
                           : 'text-slate-400'
                       }`}
                     >
-                      {isEdited ? 'EDITED' : isDone ? 'DECLARED' : 'NOT DECLARED'}
+                      {isEdited ? 'EDITED' : isDone ? 'DECLARED' : isPartially ? 'INCOMPLETE' : 'NOT DECLARED'}
                     </span>
                     <span className="text-[9px] text-slate-400 font-mono">
                       {item.aiTool}
@@ -2290,9 +2314,7 @@ export default function StudentAssignmentFlow({
         [field]: value as any,
         isModified: true,
       };
-      const hasContent =
-        (updatedItem.prompt || '').trim().length > 0 &&
-        (updatedItem.reflection || '').trim().length > 0;
+      const hasContent = isRubricDeclaredComplete(updatedItem);
       updatedItem.isCompleted = hasContent;
       return { ...prev, [key]: updatedItem };
     });
@@ -2345,7 +2367,7 @@ export default function StudentAssignmentFlow({
         'reflection',
       ];
       const completedCount = rubricKeys.filter(
-        (k) => draftDeclarations[k].isCompleted
+        (k) => isRubricDeclaredComplete(draftDeclarations[k])
       ).length;
       const calculatedScore = Math.min(
         100,

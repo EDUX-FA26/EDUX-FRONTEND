@@ -780,7 +780,7 @@ a:hover {
 .dashboard-header__inner {
   display: flex;
   min-width: 0;
-  min-height: 68px;
+  min-height: 64px;
   align-items: center;
   gap: 12px;
   padding: 0 22px;
@@ -806,7 +806,7 @@ a:hover {
 
 .dashboard-header__row {
   max-width: none !important;
-  height: 68px !important;
+  height: 64px !important;
   padding: 0 !important;
 }
 
@@ -961,11 +961,14 @@ a:hover {
 
 /* Keep the toolbar above the navigation and page content. */
 .dashboard-layout {
-  --dashboard-header-height: 72px;
+  --dashboard-header-height: 64px;
   display: grid;
   grid-template-columns: var(--dashboard-sidebar-width) minmax(0, 1fr);
   grid-template-rows: var(--dashboard-header-height) minmax(0, 1fr) auto;
   align-items: stretch;
+  gap: 0;
+  row-gap: 0;
+  column-gap: 0;
 }
 
 .dashboard-layout--collapsed {
@@ -1147,8 +1150,10 @@ a:hover {
   top: var(--dashboard-header-height);
   grid-column: 1;
   grid-row: 2;
-  align-self: start;
+  align-self: stretch;
   height: calc(100dvh - var(--dashboard-header-height));
+  margin-top: 0;
+  border-top: 0;
 }
 
 .dashboard-sidebar--collapsed,
@@ -1462,3 +1467,78 @@ a:hover {
   overflow-y: hidden;
   padding: 4px 0;
 }
+
+/* ==========================================================================
+   FLUID FULL-HEIGHT WORKSPACE FOR LECTURER GRADING STUDIO
+   Ensures flush alignment with top Navbar and left Sidebar
+   ========================================================================== */
+.dashboard-layout--grade {
+  height: 100vh !important;
+  max-height: 100vh !important;
+  overflow: hidden !important;
+  grid-template-rows: 64px 1fr !important;
+  gap: 0 !important;
+  row-gap: 0 !important;
+  column-gap: 0 !important;
+}
+
+.dashboard-layout--grade .dashboard-header {
+  height: 64px !important;
+  min-height: 64px !important;
+  max-height: 64px !important;
+  border-bottom: 1px solid var(--color-border) !important;
+  box-sizing: border-box !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.dashboard-layout--grade .dashboard-header__inner {
+  height: 64px !important;
+  min-height: 64px !important;
+  max-height: 64px !important;
+  box-sizing: border-box !important;
+}
+
+.dashboard-layout--grade .dashboard-header__row {
+  height: 64px !important;
+  box-sizing: border-box !important;
+}
+
+.dashboard-layout--grade .dashboard-sidebar {
+  grid-column: 1 !important;
+  grid-row: 2 !important;
+  align-self: stretch !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  margin: 0 !important;
+  margin-top: 0 !important;
+  top: 0 !important;
+  padding-top: 8px !important;
+  border-top: none !important;
+  overflow-y: auto !important;
+}
+
+.dashboard-layout--grade .dashboard-sidebar .dashboard-sidebar__section-label {
+  margin-top: 4px !important;
+  margin-bottom: 6px !important;
+}
+
+.dashboard-layout--grade .dashboard-layout__main {
+  height: 100% !important;
+  overflow: hidden !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.dashboard-layout--grade .dashboard-layout__main > main {
+  padding: 0 !important;
+  margin: 0 !important;
+  max-width: none !important;
+  width: 100% !important;
+  height: 100% !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  border-top: 0 !important;
+}
+

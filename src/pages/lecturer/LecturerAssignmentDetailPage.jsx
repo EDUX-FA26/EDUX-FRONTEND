@@ -50,6 +50,22 @@ export default function LecturerAssignmentDetailPage() {
             if (id && !id.startsWith('asm-')) {
                 const assignDataRaw = await AssignmentService.getAssignmentDetail(id);
                 const assignData = assignDataRaw.data || assignDataRaw;
+
+                // Enrich with class/subject details if not already present
+                if (assignData && assignData.class_id && (!assignData.subject_name || !assignData.class_code)) {
+                    try {
+                        const classRes = await ClassService.getClassById(assignData.class_id);
+                        const classObj = classRes?.data || classRes;
+                        if (classObj) {
+                            assignData.subject_name = assignData.subject_name || classObj.subject_name;
+                            assignData.subject_code = assignData.subject_code || classObj.subject_code;
+                            assignData.class_code = assignData.class_code || classObj.class_code;
+                            assignData.class = classObj;
+                        }
+                    } catch (e) {
+                        console.warn("Could not fetch extra class details:", e);
+                    }
+                }
                 setAssignment(assignData);
 
                 let classMembers = [];
@@ -215,6 +231,16 @@ export default function LecturerAssignmentDetailPage() {
                 }
             } else {
                 // Mock assignment fallback
+                setAssignment({
+                    id,
+                    title: titleMap[id] || `Assignment ${id}`,
+                    class_id: 'mock-1',
+                    class_code: 'SE1801',
+                    class_name: 'SE1801',
+                    subject_name: 'Server-Side development with NodeJS',
+                    course_name: 'Server-Side development with NodeJS',
+                    max_score: 10,
+                });
                 const mockList = await MockSubmissionService.getAllMockSubmissions();
                 const mappedMocks = mockList.map(m => ({
                     id: m.id,
@@ -417,15 +443,62 @@ export default function LecturerAssignmentDetailPage() {
             )}
 
             {/* Breadcrumbs */}
-            <nav style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', fontWeight: '500' }}>
-                <Link to="/lecturer/classes" style={{ color: 'var(--color-primary)', textDecoration: 'none' }}>Home</Link>
-                <span style={{ color: 'var(--color-ink-muted)' }}>/</span>
-                <Link to="/lecturer/classes/mock-1" style={{ color: 'var(--color-primary)', textDecoration: 'none', maxWidth: '300px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    Server-Side development with NodeJS...
-                </Link>
-                <span style={{ color: 'var(--color-ink-muted)' }}>/</span>
-                <span style={{ color: 'var(--color-ink-soft)' }}>{title}</span>
-            </nav>
+            {(() => {
+                const targetClassId = assignment?.class_id || assignment?.classId;
+                const targetClassLink = targetClassId ? `/lecturer/classes/${targetClassId}` : '/lecturer/classes';
+                const courseName =
+                    assignment?.subject_name ||
+                    assignment?.course_name ||
+                    assignment?.class?.subject?.name ||
+                    assignment?.class?.course?.name ||
+                    assignment?.class_code ||
+                    assignment?.class_name ||
+                    'Lớp học';
+
+                return (
+                    <nav aria-label="Breadcrumb" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', fontWeight: '500' }}>
+                        <Link
+                            to="/lecturer/classes"
+                            style={{ color: 'var(--color-primary)', textDecoration: 'none', transition: 'color 0.15s' }}
+                            onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-primary-dark)'}
+                            onMouseLeave={(e) => e.currentTarget.style.color = 'var(--color-primary)'}
+                        >
+                            Home
+                        </Link>
+                        <span style={{ color: 'var(--color-ink-muted)' }}>/</span>
+                        <Link
+                            to={targetClassLink}
+                            title={courseName}
+                            style={{
+                                color: 'var(--color-primary)',
+                                textDecoration: 'none',
+                                maxWidth: '320px',
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                transition: 'color 0.15s'
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-primary-dark)'}
+                            onMouseLeave={(e) => e.currentTarget.style.color = 'var(--color-primary)'}
+                        >
+                            {courseName}
+                        </Link>
+                        <span style={{ color: 'var(--color-ink-muted)' }}>/</span>
+                        <span
+                            title={title}
+                            style={{
+                                color: 'var(--color-ink-soft)',
+                                maxWidth: '360px',
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis'
+                            }}
+                        >
+                            {title}
+                        </span>
+                    </nav>
+                );
+            })()}
 
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
                 <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--color-ink)', margin: 0, letterSpacing: '-0.5px' }}>{title}</h1>
@@ -470,7 +543,7 @@ export default function LecturerAssignmentDetailPage() {
                                 ADDITIONAL FILES
                             </div>
                             <div style={{ fontSize: '12px', color: 'var(--color-ink-soft)' }}>
-                                <span style={{ fontWeight: 'bold', color: 'var(--color-ink)' }}>DUE DATE:</span> 2026-03-25 12:50:00
+                                <span style={{ fontWeight: 'bold', color: 'var(--color-ink)' }}>DUE DATE:</span> {assignment?.deadline ? formatDateDMY(assignment.deadline) : '2026-03-25 12:50:00'}
                             </div>
                             <div style={{ fontSize: '12px', fontWeight: 'bold' }}>
                                 <span style={{ color: 'var(--color-ink-soft)', fontWeight: 'normal' }}>(GMT+07)</span>
@@ -606,7 +679,21 @@ export default function LecturerAssignmentDetailPage() {
                                                         }}
                                                         disabled={sub.status === 'Missing'}
                                                         onClick={() => {
-                                                            navigate(`/lecturer/assignments/${id}/submissions/${sub.id}/grade`, { state: sub });
+                                                            navigate(`/lecturer/assignments/${id}/submissions/${sub.id}/grade`, {
+                                                                state: {
+                                                                    ...sub,
+                                                                    class_id: assignment?.class_id,
+                                                                    classId: assignment?.class_id,
+                                                                    className: assignment?.class_name || assignment?.class_code,
+                                                                    classCode: assignment?.class_code,
+                                                                    courseName: assignment?.subject_name || assignment?.course_name || assignment?.class_name,
+                                                                    courseTitle: assignment?.subject_name || assignment?.course_name || assignment?.class_name,
+                                                                    subjectName: assignment?.subject_name,
+                                                                    subjectCode: assignment?.subject_code,
+                                                                    assignmentTitle: assignment?.title,
+                                                                    assignmentId: id,
+                                                                }
+                                                            });
                                                         }}
                                                     >
                                                         {isGraded ? 'Sửa điểm' : 'Grade'}

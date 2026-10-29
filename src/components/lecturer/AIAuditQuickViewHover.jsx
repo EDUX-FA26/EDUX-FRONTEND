@@ -67,18 +67,49 @@ const COMPUTATIONAL_THINKING_RUBRICS = [
  * - Uses normalizeAuditData helper for 100% backward compatibility
  */
 export function parseDeclarationData(declarationData) {
-  if (!declarationData) return null;
+  const fallbackRubrics = COMPUTATIONAL_THINKING_RUBRICS.map((r) => ({
+    ...r,
+    aiTool: 'Chưa khai báo',
+    decision: 'Not Declared',
+    prompt: '',
+    responseSummary: '',
+    reflection: '',
+    isCompleted: false,
+    isPartiallyFilled: false,
+    hasPrompt: false,
+    hasResponse: false,
+    hasReflection: false,
+  }));
+
+  const fallbackData = {
+    isDeclared: false,
+    completedCount: 0,
+    totalCount: 5,
+    scopes: [
+      {
+        scopeId: 'scope-1',
+        id: 'scope-1',
+        scope_title: 'Khai báo 1',
+        title: 'Khai báo 1',
+        scope_description: '',
+        description: '',
+        rubrics: fallbackRubrics,
+        completedCount: 0,
+      },
+    ],
+    rubrics: fallbackRubrics,
+  };
+
+  if (!declarationData) return fallbackData;
 
   const normalized = normalizeAuditData(declarationData);
   if (!normalized || !Array.isArray(normalized.scopes) || normalized.scopes.length === 0) {
-    return null;
+    return fallbackData;
   }
 
   const parsedScopes = normalized.scopes.map((scope, idx) => {
     const rubrics = parseSingleScopeDeclarations(scope.declarations);
-    const completedCount = rubrics.filter(
-      (r) => r.isCompleted && r.decision !== 'Not Declared'
-    ).length;
+    const completedCount = rubrics.filter((r) => r.isCompleted).length;
     const title = scope.scope_title || scope.title || `Khai báo ${idx + 1}`;
     const desc = scope.scope_description || scope.description || '';
 
@@ -110,7 +141,18 @@ export function parseDeclarationData(declarationData) {
  * Internal helper: parse declarations from a single scope raw object
  */
 function parseSingleScopeDeclarations(raw) {
-  if (!raw || typeof raw !== 'object') return COMPUTATIONAL_THINKING_RUBRICS.map(r => ({ ...r, aiTool: 'Not Declared', decision: 'Not Declared', prompt: '', responseSummary: '', reflection: '', isCompleted: false }));
+  if (!raw || typeof raw !== 'object') {
+    return COMPUTATIONAL_THINKING_RUBRICS.map(r => ({
+      ...r,
+      aiTool: 'Not Declared',
+      decision: 'Not Declared',
+      prompt: '',
+      responseSummary: '',
+      reflection: '',
+      isCompleted: false,
+      isPartiallyFilled: false,
+    }));
+  }
 
   let decs = raw.declarations || raw.aiAuditLog || raw;
 
@@ -119,13 +161,17 @@ function parseSingleScopeDeclarations(raw) {
     const map = {};
     decs.forEach((item) => {
       const key = (item.phaseKey || item.rubricKey || item.key || item.name || '').toLowerCase();
+      const prompt = (item.prompt || item.prompt_used || item.promptUsed || '').trim();
+      const responseSummary = (item.aiResponseSummary || item.ai_response_summary || item.responseSummary || item.aiResponse || item.response || '').trim();
+      const reflection = (item.studentReflection || item.student_reflection || item.selfReflection || item.reflection || '').trim();
+      const isCompleted = prompt.length > 0 && responseSummary.length > 0 && reflection.length > 0;
       map[key] = {
         aiTool: item.aiTool || item.ai_tool || item.tool,
         decision: item.decision || item.decisionStatus || item.decision_status,
-        prompt: item.prompt || item.prompt_used || item.promptUsed,
-        responseSummary: item.aiResponseSummary || item.ai_response_summary || item.responseSummary || item.aiResponse || item.response,
-        reflection: item.studentReflection || item.student_reflection || item.selfReflection || item.reflection,
-        isCompleted: true,
+        prompt,
+        responseSummary,
+        reflection,
+        isCompleted,
       };
     });
     decs = map;
@@ -145,24 +191,57 @@ function parseSingleScopeDeclarations(raw) {
         found.aiTool || found.ai_tool || found.tool || found.ai_tool_used || found.toolUsed || found.tool_used || '';
       const decision =
         found.decision || found.decisionStatus || found.decision_status || found.yourDecision || found.your_decision || '';
-      const prompt =
-        found.prompt || found.prompt_used || found.promptUsed || found.promptContent || found.prompt_content || found.inputUsed || found.input_used || '';
-      const responseSummary =
-        found.responseSummary || found.response_summary || found.aiResponseSummary || found.ai_response_summary || found.aiRespond || found.ai_respond || found.aiResponse || found.ai_response || found.response || found.output || '';
-      const reflection =
-        found.reflection || found.selfReflection || found.self_reflection || found.studentReflection || found.student_reflection || found.evaluation || found.self_evaluation || '';
-      const isCompleted = Boolean(aiTool || decision || prompt || responseSummary || reflection);
+      const prompt = (
+        found.prompt || found.prompt_used || found.promptUsed || found.promptContent || found.prompt_content || found.inputUsed || found.input_used || ''
+      ).trim();
+      const responseSummary = (
+        found.responseSummary || found.response_summary || found.aiResponseSummary || found.ai_response_summary || found.aiRespond || found.ai_respond || found.aiResponse || found.ai_response || found.response || found.output || ''
+      ).trim();
+      const reflection = (
+        found.reflection || found.selfReflection || found.self_reflection || found.studentReflection || found.student_reflection || found.evaluation || found.self_evaluation || ''
+      ).trim();
+
+      const hasPrompt = prompt.length > 0;
+      const hasResponse = responseSummary.length > 0;
+      const hasReflection = reflection.length > 0;
+
+      // CHỈ TÍNH LÀ HOÀN THÀNH KHI ĐÃ ĐIỀN ĐỦ CẢ 3 MỤC TEXT (Prompt, Response, Reflection)
+      // Không lấy việc chọn droplist đơn thuần làm tiêu chí đủ
+      const isCompleted = hasPrompt && hasResponse && hasReflection;
+      const isPartiallyFilled = (hasPrompt || hasResponse || hasReflection) && !isCompleted;
+
+      // Nếu không có bất kỳ nội dung text nào thì hiển thị Chưa khai báo
+      const finalDecision = isCompleted || isPartiallyFilled
+        ? (decision || 'Partially Modified')
+        : 'Not Declared';
+
       return {
         ...r,
-        aiTool: aiTool || 'Not Declared',
-        decision: decision || 'Not Declared',
+        aiTool: (hasPrompt || hasResponse || hasReflection) ? (aiTool || 'ChatGPT') : (aiTool && aiTool !== 'ChatGPT' ? aiTool : 'Chưa khai báo'),
+        decision: finalDecision,
         prompt,
         responseSummary,
         reflection,
         isCompleted,
+        isPartiallyFilled,
+        hasPrompt,
+        hasResponse,
+        hasReflection,
       };
     }
-    return { ...r, aiTool: 'Not Declared', decision: 'Not Declared', prompt: '', responseSummary: '', reflection: '', isCompleted: false };
+    return {
+      ...r,
+      aiTool: 'Chưa khai báo',
+      decision: 'Not Declared',
+      prompt: '',
+      responseSummary: '',
+      reflection: '',
+      isCompleted: false,
+      isPartiallyFilled: false,
+      hasPrompt: false,
+      hasResponse: false,
+      hasReflection: false,
+    };
   });
 }
 
@@ -531,7 +610,7 @@ export default function AIAuditQuickViewHover({
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   {/* Status Badge */}
-                  {isDeclared ? (
+                  {parsedData.completedCount === parsedData.totalCount ? (
                     <span
                       style={{
                         display: 'inline-flex',
@@ -547,7 +626,29 @@ export default function AIAuditQuickViewHover({
                       }}
                     >
                       <CheckCircle2 size={13} />
-                      {parsedData.completedCount}/5 Rubrics Declared
+                      {hasScopes && parsedData.scopes.length > 1
+                        ? `Hoàn tất ${parsedData.completedCount}/${parsedData.totalCount} Rubrics`
+                        : `Hoàn tất ${parsedData.completedCount}/5 Rubrics`}
+                    </span>
+                  ) : parsedData.completedCount > 0 ? (
+                    <span
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '5px',
+                        padding: '4px 12px',
+                        borderRadius: '9999px',
+                        backgroundColor: '#fffbeb',
+                        color: '#b45309',
+                        border: '1px solid #fde68a',
+                        fontSize: '11px',
+                        fontWeight: '700',
+                      }}
+                    >
+                      <AlertCircle size={13} />
+                      {hasScopes && parsedData.scopes.length > 1
+                        ? `Đang khai báo: ${parsedData.completedCount}/${parsedData.totalCount} Rubrics đầy đủ`
+                        : `Đang khai báo: ${parsedData.completedCount}/5 Rubrics đầy đủ`}
                     </span>
                   ) : (
                     <span
@@ -565,7 +666,9 @@ export default function AIAuditQuickViewHover({
                       }}
                     >
                       <AlertCircle size={13} />
-                      Chưa khai báo AI
+                      {hasScopes && parsedData.scopes.length > 1
+                        ? `Chưa hoàn thành khai báo (0/${parsedData.totalCount})`
+                        : `Chưa hoàn thành khai báo (0/5)`}
                     </span>
                   )}
 
@@ -773,7 +876,7 @@ export default function AIAuditQuickViewHover({
                     )}
                   </div>
                   <div style={{ fontSize: '11px', color: '#64748b', fontWeight: '600', flexShrink: 0 }}>
-                    Tiêu chí hoàn thành: <strong style={{ color: '#047857' }}>{safeScope.completedCount}/5</strong>
+                    Tiêu chí hoàn thành: <strong style={{ color: safeScope.completedCount === 5 ? '#047857' : safeScope.completedCount > 0 ? '#b45309' : '#64748b' }}>{safeScope.completedCount}/5</strong>
                   </div>
                 </div>
               )}
@@ -892,7 +995,7 @@ export default function AIAuditQuickViewHover({
                                 </div>
                               </div>
 
-                              {/* Badges Container: AI Tool & Decision */}
+                              {/* Badges Container: AI Tool & Decision & Completion */}
                               <div
                                 style={{
                                   display: 'flex',
@@ -951,6 +1054,65 @@ export default function AIAuditQuickViewHover({
                                   >
                                     {decStyle.label}
                                   </span>
+                                </div>
+
+                                {/* Completion Indicator */}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                  <span style={{ fontSize: '9.5px', color: '#94a3b8', fontWeight: '600' }}>
+                                    Text:
+                                  </span>
+                                  {r.isCompleted ? (
+                                    <span
+                                      style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '3px',
+                                        padding: '2px 7px',
+                                        borderRadius: '6px',
+                                        fontSize: '10px',
+                                        fontWeight: '700',
+                                        backgroundColor: '#ecfdf5',
+                                        color: '#047857',
+                                        border: '1px solid #a7f3d0',
+                                      }}
+                                    >
+                                      <CheckCircle2 size={10} /> Đủ 3 mục text
+                                    </span>
+                                  ) : r.isPartiallyFilled ? (
+                                    <span
+                                      style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '3px',
+                                        padding: '2px 7px',
+                                        borderRadius: '6px',
+                                        fontSize: '10px',
+                                        fontWeight: '700',
+                                        backgroundColor: '#fffbeb',
+                                        color: '#b45309',
+                                        border: '1px solid #fde68a',
+                                      }}
+                                      title="Cần điền đầy đủ cả 3 mục: Prompt, AI Response và Student Reflection"
+                                    >
+                                      <AlertCircle size={10} /> Thiếu mục text
+                                    </span>
+                                  ) : (
+                                    <span
+                                      style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        padding: '2px 7px',
+                                        borderRadius: '6px',
+                                        fontSize: '10px',
+                                        fontWeight: '600',
+                                        backgroundColor: '#f8fafc',
+                                        color: '#94a3b8',
+                                        border: '1px solid #e2e8f0',
+                                      }}
+                                    >
+                                      Chưa điền text
+                                    </span>
+                                  )}
                                 </div>
                               </div>
                             </div>

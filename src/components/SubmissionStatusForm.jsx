@@ -36,6 +36,19 @@ const rubricKeys = [
   "reflection",
 ];
 
+/**
+ * Kiểm tra hoàn thành tiêu chí Rubric:
+ * Phải điền đầy đủ cả 3 mục text (Prompt, Response, Reflection).
+ * Tuyệt đối không tính khi chỉ chọn dropdown mà chưa có text.
+ */
+const isRubricDeclaredComplete = (item) => {
+  if (!item || typeof item !== "object") return false;
+  const prompt = (item.prompt || "").trim();
+  const response = (item.response || item.responseSummary || "").trim();
+  const reflection = (item.reflection || item.studentReflection || "").trim();
+  return prompt.length > 0 && response.length > 0 && reflection.length > 0;
+};
+
 export default function SubmissionStatusForm({ 
   initialData = null,
   onCancel, 
@@ -211,10 +224,7 @@ export default function SubmissionStatusForm({
   const totalCompleted = scopes.reduce((acc, scope) => {
     return (
       acc +
-      rubricKeys.filter((k) => {
-        const item = scope.declarations[k];
-        return Boolean(item?.prompt?.trim() || item?.reflection?.trim());
-      }).length
+      rubricKeys.filter((k) => isRubricDeclaredComplete(scope.declarations[k])).length
     );
   }, 0);
 
@@ -450,7 +460,7 @@ export default function SubmissionStatusForm({
                   const isActive = idx === safeScopeIdx;
                   const completedInScope = rubricKeys.filter((k) => {
                     const item = scope.declarations[k];
-                    return Boolean(item?.prompt?.trim() || item?.reflection?.trim());
+                    return isRubricDeclaredComplete(item);
                   }).length;
 
                   return (
@@ -590,9 +600,13 @@ export default function SubmissionStatusForm({
               {rubricKeys.map((key, idx) => {
                 const isActive = activeRubric === key;
                 const rubricItem = currentDeclarations[key] || {};
-                const isFilled = Boolean(
-                  rubricItem.prompt?.trim() || rubricItem.reflection?.trim()
+                const isFilled = isRubricDeclaredComplete(rubricItem);
+                const hasAnyText = Boolean(
+                  (rubricItem.prompt || '').trim() ||
+                  (rubricItem.response || rubricItem.responseSummary || '').trim() ||
+                  (rubricItem.reflection || rubricItem.studentReflection || '').trim()
                 );
+                const isPartially = hasAnyText && !isFilled;
 
                 return (
                   <div
@@ -608,6 +622,8 @@ export default function SubmissionStatusForm({
                       className={`w-6 h-6 rounded-full font-bold text-xs flex items-center justify-center shrink-0 ${
                         isFilled
                           ? "bg-emerald-500 text-white"
+                          : isPartially
+                          ? "bg-amber-500 text-white"
                           : isActive
                           ? "bg-blue-600 text-white"
                           : "bg-slate-100 text-slate-500"
@@ -626,10 +642,14 @@ export default function SubmissionStatusForm({
                       <div className="flex items-center justify-between mt-1">
                         <span
                           className={`text-[10px] uppercase font-semibold ${
-                            isFilled ? "text-emerald-600 font-bold" : "text-slate-400"
+                            isFilled
+                              ? "text-emerald-600 font-bold"
+                              : isPartially
+                              ? "text-amber-600 font-bold"
+                              : "text-slate-400"
                           }`}
                         >
-                          {isFilled ? "DECLARED" : "NOT DECLARED"}
+                          {isFilled ? "DECLARED" : isPartially ? "INCOMPLETE" : "NOT DECLARED"}
                         </span>
                         <span className="text-[9.5px] text-slate-400 font-mono">
                           {rubricItem.tool || "ChatGPT"}

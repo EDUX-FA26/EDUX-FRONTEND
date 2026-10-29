@@ -38,6 +38,7 @@ export default function DashboardLayout() {
   const { t, lang } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
+  const isGradePage = location.pathname.includes('/grade');
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
@@ -72,7 +73,7 @@ export default function DashboardLayout() {
   };
 
   return (
-    <div className={`dashboard-layout${sidebarCollapsed ? ' dashboard-layout--collapsed' : ''}`}>
+    <div className={`dashboard-layout${sidebarCollapsed ? ' dashboard-layout--collapsed' : ''}${isGradePage ? ' dashboard-layout--grade' : ''}`}>
       {mobileSidebarOpen && (
         <button
           className="dashboard-sidebar-backdrop"
@@ -317,17 +318,35 @@ export default function DashboardLayout() {
         </header>
 
         {/* ─── MAIN CONTENT ─── */}
-        <main style={{
-          flex: 1,
-          maxWidth: '1440px', width: '100%',
-          margin: '0 auto',
-          padding: '24px 24px 80px',
-        }}>
+        <main
+          style={
+            isGradePage
+              ? {
+                  flex: 1,
+                  width: '100%',
+                  maxWidth: 'none',
+                  margin: 0,
+                  padding: 0,
+                  overflow: 'hidden',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  height: 'calc(100vh - 64px)',
+                  minHeight: 'calc(100vh - 64px)',
+                }
+              : {
+                  flex: 1,
+                  maxWidth: '1440px',
+                  width: '100%',
+                  margin: '0 auto',
+                  padding: '24px 24px 80px',
+                }
+          }
+        >
           <Outlet />
         </main>
 
-        {/* ─── FOOTER ─── (ẩn ở trang flashcard) */}
-        {!location.pathname.startsWith('/student/flashcards') && !location.pathname.startsWith('/lecturer/flashcards') && (
+        {/* ─── FOOTER ─── (ẩn ở trang flashcard và trang grading) */}
+        {!isGradePage && !location.pathname.startsWith('/student/flashcards') && !location.pathname.startsWith('/lecturer/flashcards') && (
           <footer style={{
             background: 'var(--color-surface)',
             borderTop: '1px solid var(--color-border)',
