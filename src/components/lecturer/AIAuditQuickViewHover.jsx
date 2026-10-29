@@ -10,8 +10,11 @@ import {
   Sparkles,
   X,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
+import { normalizeAuditData } from '../../helper/aiAuditHelper';
 
 /**
  * 5 Computational Thinking Standard Rubrics Metadata
@@ -61,30 +64,53 @@ const COMPUTATIONAL_THINKING_RUBRICS = [
 
 /**
  * Robust safe data parser supporting both camelCase and snake_case schemas:
- * - prompt / prompt_used / promptUsed / promptContent / input_used
- * - responseSummary / response_summary / aiResponse / ai_response / aiRespond
- * - reflection / self_reflection / selfReflection / studentReflection
- * - aiTool / ai_tool / tool / toolUsed
- * - decision / decisionStatus / decision_status
+ * - Uses normalizeAuditData helper for 100% backward compatibility
  */
 export function parseDeclarationData(declarationData) {
   if (!declarationData) return null;
 
-  let raw = declarationData;
-
-  if (typeof raw === 'string') {
-    let trimmed = raw.trim();
-    if (trimmed.toLowerCase().startsWith('note:')) {
-      trimmed = trimmed.substring(5).trim();
-    }
-    try {
-      raw = JSON.parse(trimmed);
-    } catch {
-      return null;
-    }
+  const normalized = normalizeAuditData(declarationData);
+  if (!normalized || !Array.isArray(normalized.scopes) || normalized.scopes.length === 0) {
+    return null;
   }
 
-  if (!raw || typeof raw !== 'object') return null;
+  const parsedScopes = normalized.scopes.map((scope, idx) => {
+    const rubrics = parseSingleScopeDeclarations(scope.declarations);
+    const completedCount = rubrics.filter(
+      (r) => r.isCompleted && r.decision !== 'Not Declared'
+    ).length;
+    const title = scope.scope_title || scope.title || `Khai báo ${idx + 1}`;
+    const desc = scope.scope_description || scope.description || '';
+
+    return {
+      scopeId: scope.id || scope.scopeId || `scope-${idx + 1}`,
+      id: scope.id || scope.scopeId || `scope-${idx + 1}`,
+      scope_title: title,
+      title: title,
+      scope_description: desc,
+      description: desc,
+      rubrics,
+      completedCount,
+    };
+  });
+
+  const totalCompleted = parsedScopes.reduce((a, s) => a + s.completedCount, 0);
+  const isDeclared = totalCompleted > 0;
+
+  return {
+    isDeclared,
+    completedCount: totalCompleted,
+    totalCount: parsedScopes.length * 5,
+    scopes: parsedScopes,
+    rubrics: parsedScopes[0]?.rubrics || [],
+  };
+}
+
+/**
+ * Internal helper: parse declarations from a single scope raw object
+ */
+function parseSingleScopeDeclarations(raw) {
+  if (!raw || typeof raw !== 'object') return COMPUTATIONAL_THINKING_RUBRICS.map(r => ({ ...r, aiTool: 'Not Declared', decision: 'Not Declared', prompt: '', responseSummary: '', reflection: '', isCompleted: false }));
 
   let decs = raw.declarations || raw.aiAuditLog || raw;
 
@@ -105,7 +131,7 @@ export function parseDeclarationData(declarationData) {
     decs = map;
   }
 
-  const rubrics = COMPUTATIONAL_THINKING_RUBRICS.map((r) => {
+  return COMPUTATIONAL_THINKING_RUBRICS.map((r) => {
     const found =
       decs[r.key] ||
       decs[r.name] ||
@@ -116,57 +142,16 @@ export function parseDeclarationData(declarationData) {
 
     if (found && typeof found === 'object') {
       const aiTool =
-        found.aiTool ||
-        found.ai_tool ||
-        found.tool ||
-        found.ai_tool_used ||
-        found.toolUsed ||
-        found.tool_used ||
-        '';
-
+        found.aiTool || found.ai_tool || found.tool || found.ai_tool_used || found.toolUsed || found.tool_used || '';
       const decision =
-        found.decision ||
-        found.decisionStatus ||
-        found.decision_status ||
-        found.yourDecision ||
-        found.your_decision ||
-        '';
-
+        found.decision || found.decisionStatus || found.decision_status || found.yourDecision || found.your_decision || '';
       const prompt =
-        found.prompt ||
-        found.prompt_used ||
-        found.promptUsed ||
-        found.promptContent ||
-        found.prompt_content ||
-        found.inputUsed ||
-        found.input_used ||
-        '';
-
+        found.prompt || found.prompt_used || found.promptUsed || found.promptContent || found.prompt_content || found.inputUsed || found.input_used || '';
       const responseSummary =
-        found.responseSummary ||
-        found.response_summary ||
-        found.aiResponseSummary ||
-        found.ai_response_summary ||
-        found.aiRespond ||
-        found.ai_respond ||
-        found.aiResponse ||
-        found.ai_response ||
-        found.response ||
-        found.output ||
-        '';
-
+        found.responseSummary || found.response_summary || found.aiResponseSummary || found.ai_response_summary || found.aiRespond || found.ai_respond || found.aiResponse || found.ai_response || found.response || found.output || '';
       const reflection =
-        found.reflection ||
-        found.selfReflection ||
-        found.self_reflection ||
-        found.studentReflection ||
-        found.student_reflection ||
-        found.evaluation ||
-        found.self_evaluation ||
-        '';
-
+        found.reflection || found.selfReflection || found.self_reflection || found.studentReflection || found.student_reflection || found.evaluation || found.self_evaluation || '';
       const isCompleted = Boolean(aiTool || decision || prompt || responseSummary || reflection);
-
       return {
         ...r,
         aiTool: aiTool || 'Not Declared',
@@ -177,30 +162,8 @@ export function parseDeclarationData(declarationData) {
         isCompleted,
       };
     }
-
-    return {
-      ...r,
-      aiTool: 'Not Declared',
-      decision: 'Not Declared',
-      prompt: '',
-      responseSummary: '',
-      reflection: '',
-      isCompleted: false,
-    };
+    return { ...r, aiTool: 'Not Declared', decision: 'Not Declared', prompt: '', responseSummary: '', reflection: '', isCompleted: false };
   });
-
-  const completedCount = rubrics.filter(
-    (r) => r.isCompleted && r.decision !== 'Not Declared'
-  ).length;
-
-  const isDeclared = completedCount > 0 || raw.isDeclared === true;
-
-  return {
-    isDeclared,
-    completedCount,
-    totalCount: COMPUTATIONAL_THINKING_RUBRICS.length,
-    rubrics,
-  };
 }
 
 /**
@@ -329,10 +292,60 @@ export default function AIAuditQuickViewHover({
   className = '',
 }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [activeScopeIdx, setActiveScopeIdx] = useState(0);
   const closeTimeoutRef = useRef(null);
+
+  const tabsContainerRef = useRef(null);
+  const [isDraggingTabs, setIsDraggingTabs] = useState(false);
+  const dragStartXRef = useRef(0);
+  const scrollStartLeftRef = useRef(0);
+  const hasMovedRef = useRef(false);
 
   const parsedData = parseDeclarationData(declarationData);
   const isDeclared = parsedData?.isDeclared && parsedData?.completedCount > 0;
+
+  // Derived: current scope's rubrics for display
+  const hasScopes = Array.isArray(parsedData?.scopes) && parsedData.scopes.length > 0;
+
+  // Wheel listener: chuyển con lăn chuột dọc (deltaY) thành cuộn ngang cho chuột cắm dây/chuột rời
+  useEffect(() => {
+    if (!isOpen) return;
+    const el = tabsContainerRef.current;
+    if (!el) return;
+    const onWheel = (e) => {
+      if (el.scrollWidth > el.clientWidth && e.deltaY !== 0 && e.deltaX === 0) {
+        e.preventDefault();
+        el.scrollLeft += e.deltaY;
+      }
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, [isOpen, hasScopes]);
+
+  const handleTabsMouseDown = (e) => {
+    if (e.button !== 0 || !tabsContainerRef.current) return;
+    setIsDraggingTabs(true);
+    hasMovedRef.current = false;
+    dragStartXRef.current = e.pageX;
+    scrollStartLeftRef.current = tabsContainerRef.current.scrollLeft;
+  };
+
+  const handleTabsMouseMove = (e) => {
+    if (!isDraggingTabs || !tabsContainerRef.current) return;
+    const diff = e.pageX - dragStartXRef.current;
+    if (Math.abs(diff) > 4) {
+      hasMovedRef.current = true;
+    }
+    tabsContainerRef.current.scrollLeft = scrollStartLeftRef.current - diff;
+  };
+
+  const handleTabsMouseUp = () => {
+    setIsDraggingTabs(false);
+  };
+  const safeScope = hasScopes
+    ? parsedData.scopes[Math.min(activeScopeIdx, parsedData.scopes.length - 1)]
+    : null;
+  const displayRubrics = safeScope?.rubrics ?? parsedData?.rubrics ?? [];
 
   const handleMouseEnter = () => {
     if (closeTimeoutRef.current) {
@@ -587,6 +600,184 @@ export default function AIAuditQuickViewHover({
                 </div>
               </div>
 
+              {/* SCOPE TABS (multi-scope mode) */}
+              {hasScopes && parsedData.scopes.length > 1 && (
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '8px 20px 0 20px',
+                    borderBottom: '1px solid #f1f5f9',
+                    backgroundColor: '#fafbfc',
+                    flexShrink: 0,
+                    gap: '6px',
+                  }}
+                >
+                  <button
+                    type="button"
+                    onClick={() => tabsContainerRef.current?.scrollBy({ left: -160, behavior: 'smooth' })}
+                    style={{
+                      border: '1px solid #e2e8f0',
+                      background: '#ffffff',
+                      borderRadius: '6px',
+                      padding: '4px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      color: '#64748b',
+                      flexShrink: 0,
+                    }}
+                    title="Cuộn sang trái"
+                  >
+                    <ChevronLeft size={14} />
+                  </button>
+
+                  <div
+                    ref={tabsContainerRef}
+                    onMouseDown={handleTabsMouseDown}
+                    onMouseMove={handleTabsMouseMove}
+                    onMouseUp={handleTabsMouseUp}
+                    onMouseLeave={handleTabsMouseUp}
+                    className="edux-tab-scroll"
+                    style={{
+                      display: 'flex',
+                      gap: '6px',
+                      overflowX: 'auto',
+                      flexWrap: 'nowrap',
+                      flex: 1,
+                      paddingBottom: '2px',
+                      scrollbarWidth: 'thin',
+                      scrollbarColor: '#cbd5e1 #f8fafc',
+                      cursor: isDraggingTabs ? 'grabbing' : 'grab',
+                      userSelect: 'none',
+                    }}
+                  >
+                    {parsedData.scopes.map((scope, idx) => {
+                      const isActive = idx === Math.min(activeScopeIdx, parsedData.scopes.length - 1);
+                      return (
+                        <button
+                          key={scope.scopeId}
+                          type="button"
+                          onClick={() => {
+                            if (hasMovedRef.current) return;
+                            setActiveScopeIdx(idx);
+                          }}
+                          style={{
+                            padding: '6px 14px',
+                            borderRadius: '8px 8px 0 0',
+                            fontSize: '11.5px',
+                            fontWeight: '700',
+                            cursor: 'pointer',
+                            border: '1px solid',
+                            borderBottom: 'none',
+                            transition: 'all 0.12s',
+                            whiteSpace: 'nowrap',
+                            backgroundColor: isActive ? '#ffffff' : 'transparent',
+                            borderColor: isActive ? '#e2e8f0' : 'transparent',
+                            color: isActive ? '#1e293b' : '#64748b',
+                            boxShadow: isActive ? '0 -2px 0 0 #4f46e5 inset' : 'none',
+                          }}
+                        >
+                          {scope.title}
+                          <span style={{
+                            marginLeft: '6px',
+                            fontSize: '9.5px',
+                            padding: '1px 5px',
+                            borderRadius: '4px',
+                            backgroundColor: isActive ? '#eef2ff' : '#f1f5f9',
+                            color: isActive ? '#4f46e5' : '#94a3b8',
+                            fontWeight: '700',
+                          }}>
+                            {scope.completedCount}/5
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => tabsContainerRef.current?.scrollBy({ left: 160, behavior: 'smooth' })}
+                    style={{
+                      border: '1px solid #e2e8f0',
+                      background: '#ffffff',
+                      borderRadius: '6px',
+                      padding: '4px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      color: '#64748b',
+                      flexShrink: 0,
+                    }}
+                    title="Cuộn sang phải"
+                  >
+                    <ChevronRight size={14} />
+                  </button>
+                </div>
+              )}
+
+              {/* SCOPE DETAIL BANNER (TITLE & DESCRIPTION) */}
+              {safeScope && (
+                <div
+                  style={{
+                    padding: '10px 24px',
+                    backgroundColor: '#f8fafc',
+                    borderBottom: '1px solid #e2e8f0',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    flexShrink: 0,
+                    gap: '12px',
+                  }}
+                >
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span
+                        style={{
+                          fontSize: '10px',
+                          fontWeight: '800',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.5px',
+                          padding: '2px 8px',
+                          borderRadius: '6px',
+                          backgroundColor: '#e0e7ff',
+                          color: '#3730a3',
+                        }}
+                      >
+                        {hasScopes && parsedData.scopes.length > 1
+                          ? `Khai báo ${Math.min(activeScopeIdx, parsedData.scopes.length - 1) + 1} / ${parsedData.scopes.length}`
+                          : 'Khai báo'}
+                      </span>
+                      <h3
+                        style={{
+                          margin: 0,
+                          fontSize: '13px',
+                          fontWeight: '800',
+                          color: '#0f172a',
+                        }}
+                      >
+                        {safeScope.scope_title || safeScope.title || 'Khai báo tổng quan'}
+                      </h3>
+                    </div>
+                    {(safeScope.scope_description || safeScope.description) && (
+                      <p
+                        style={{
+                          margin: '4px 0 0 0',
+                          fontSize: '11.5px',
+                          color: '#475569',
+                          lineHeight: '1.4',
+                        }}
+                      >
+                        {safeScope.scope_description || safeScope.description}
+                      </p>
+                    )}
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#64748b', fontWeight: '600', flexShrink: 0 }}>
+                    Tiêu chí hoàn thành: <strong style={{ color: '#047857' }}>{safeScope.completedCount}/5</strong>
+                  </div>
+                </div>
+              )}
+
               {/* 2. BODY TABLE AREA (INDEPENDENT SCROLL) */}
               <div
                 className="overflow-y-auto flex-1 p-6 edux-ai-scroll"
@@ -639,7 +830,7 @@ export default function AIAuditQuickViewHover({
                     </tr>
                   </thead>
                   <tbody>
-                    {parsedData?.rubrics?.map((r, idx) => {
+                    {displayRubrics.map((r, idx) => {
                       const IconComp = r.icon || Puzzle;
                       const toolStyle = getToolBadgeStyle(r.aiTool);
                       const decStyle = getDecisionBadgeStyle(r.decision);

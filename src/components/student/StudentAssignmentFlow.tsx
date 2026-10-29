@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Brain,
   Puzzle,
@@ -15,6 +15,8 @@ import {
   ArrowRight,
   ChevronDown,
   ChevronUp,
+  ChevronLeft,
+  ChevronRight,
   Download,
   Trash2,
   Edit3,
@@ -68,6 +70,17 @@ export type RubricFormField =
   | 'responseSummary'
   | 'reflection';
 
+// ─── Multi-Scope types ───────────────────────────────────────────────────────
+export interface AiScope {
+  id?: string;
+  scopeId: string;
+  scope_title?: string;
+  title: string;         // e.g. "Backend API"
+  scope_description?: string;
+  description: string;   // short note for this scope
+  declarations: Record<RubricKey, AiDeclarationRubric>;
+}
+
 export interface Assignment {
   id: string;
   title: string;
@@ -119,6 +132,8 @@ export interface SubmissionData {
   feedback?: string;
   transparencyScore?: number; // 0 - 100%
   declarations: Record<RubricKey, AiDeclarationRubric>;
+  /** Multi-scope: array of named scopes, each with its own 5-rubric declarations */
+  scopes?: AiScope[];
   score?: number | null;
   grade?: any;
   rubrics?: any;
@@ -354,6 +369,103 @@ export const SAMPLE_SUBMITTED_STATE: SubmissionData = {
       isCompleted: true,
     },
   },
+  // Multi-scope demo data
+  scopes: [
+    {
+      scopeId: 'scope-backend',
+      title: 'Backend API',
+      description: 'NestJS REST API + PostgreSQL + Redis Cache',
+      declarations: {
+        decomposition: {
+          rubricKey: 'decomposition', title: 'Decomposition', description: '',
+          aiTool: 'ChatGPT', decision: 'Partially Modified',
+          prompt: 'Help me break down the e-commerce checkout flow into microservices...',
+          responseSummary: 'The AI suggested 4 decoupled modules: Order, Cart, Payment, and Shipping.',
+          reflection: 'I adopted the 4 modules but merged Cart into Order to avoid network latency.',
+          isCompleted: true,
+        },
+        pattern: {
+          rubricKey: 'pattern', title: 'Pattern Recognition', description: '',
+          aiTool: 'Claude', decision: 'Heavily Adapted',
+          prompt: 'What architectural design patterns best fit asynchronous order processing?',
+          responseSummary: 'Recommended Saga pattern with RabbitMQ or Outbox Pattern with PostgreSQL.',
+          reflection: 'Selected Saga Pattern because our team is experienced with event choreography.',
+          isCompleted: true,
+        },
+        abstraction: {
+          rubricKey: 'abstraction', title: 'Abstraction', description: '',
+          aiTool: 'ChatGPT', decision: 'Fully Accepted',
+          prompt: 'Create a high-level C4 container diagram omitting low-level audit fields...',
+          responseSummary: 'AI provided a clean C4 Container diagram highlighting public APIs.',
+          reflection: 'Validated boundary context and confirmed service isolation.',
+          isCompleted: true,
+        },
+        algorithmic: {
+          rubricKey: 'algorithmic', title: 'Algorithmic Thinking', description: '',
+          aiTool: 'GitHub Copilot', decision: 'Partially Modified',
+          prompt: 'Outline the step-by-step reconciliation algorithm for failed transactions...',
+          responseSummary: '5-step exponential backoff retry followed by dead-letter queue routing.',
+          reflection: 'Tuned maximum retries from 5 to 3 to comply with gateway SLA.',
+          isCompleted: true,
+        },
+        reflection: {
+          rubricKey: 'reflection', title: 'Reflection', description: '',
+          aiTool: 'Gemini', decision: 'Partially Modified',
+          prompt: 'What are the security pitfalls of relying solely on JWT?',
+          responseSummary: 'Highlighted token revocation challenges and secret key leakage risks.',
+          reflection: 'Introduced Redis blacklist for revoked tokens rather than accepting stateless JWT defaults.',
+          isCompleted: true,
+        },
+      },
+    },
+    {
+      scopeId: 'scope-frontend',
+      title: 'Frontend React',
+      description: 'Next.js 14 + TailwindCSS + Zustand State',
+      declarations: {
+        decomposition: {
+          rubricKey: 'decomposition', title: 'Decomposition', description: '',
+          aiTool: 'ChatGPT', decision: 'Partially Modified',
+          prompt: 'How should I split the product listing page into reusable React components?',
+          responseSummary: 'AI suggested atomic design: Atoms (Button, Badge), Molecules (ProductCard), Organisms (ProductGrid).',
+          reflection: 'Adopted atomic structure; merged Molecules and Organisms for simpler team workflow.',
+          isCompleted: true,
+        },
+        pattern: {
+          rubricKey: 'pattern', title: 'Pattern Recognition', description: '',
+          aiTool: 'Gemini', decision: 'Heavily Adapted',
+          prompt: 'What React state management patterns best fit a large e-commerce frontend?',
+          responseSummary: 'Recommended Zustand for lightweight global state and React Query for server state.',
+          reflection: 'Used Zustand for cart & auth, React Query for product data fetching.',
+          isCompleted: true,
+        },
+        abstraction: {
+          rubricKey: 'abstraction', title: 'Abstraction', description: '',
+          aiTool: 'Claude', decision: 'Fully Accepted',
+          prompt: 'Design a generic useApiQuery hook that abstracts React Query boilerplate.',
+          responseSummary: 'AI generated a typed generic hook supporting pagination, caching, and error boundaries.',
+          reflection: 'Adopted hook design fully; reduced 40% of data-fetching boilerplate across 12 pages.',
+          isCompleted: true,
+        },
+        algorithmic: {
+          rubricKey: 'algorithmic', title: 'Algorithmic Thinking', description: '',
+          aiTool: 'ChatGPT', decision: 'Partially Modified',
+          prompt: 'Implement an optimistic UI update algorithm for the cart add-to-cart action.',
+          responseSummary: 'AI described rollback pattern: optimistic update → API call → revert on error.',
+          reflection: 'Implemented rollback with toast notifications; added retry mechanism for network failures.',
+          isCompleted: true,
+        },
+        reflection: {
+          rubricKey: 'reflection', title: 'Reflection', description: '',
+          aiTool: 'GitHub Copilot', decision: 'Partially Modified',
+          prompt: 'What accessibility pitfalls should I address in the checkout form?',
+          responseSummary: 'Highlighted missing aria-labels, keyboard nav gaps, and insufficient color contrast.',
+          reflection: 'Fixed 6 WCAG issues flagged by AI; manual audit revealed 2 additional focus traps.',
+          isCompleted: true,
+        },
+      },
+    },
+  ],
 };
 
 /* ==========================================================================
@@ -557,6 +669,7 @@ export const AssignmentOverview: React.FC<AssignmentOverviewProps> = ({
 
 interface AiAuditLogCardProps {
   declarations: Record<RubricKey, AiDeclarationRubric>;
+  scopes?: AiScope[];
   transparencyScore?: number;
   lastEditedAt?: string | null;
   version?: number;
@@ -564,11 +677,13 @@ interface AiAuditLogCardProps {
 
 export const AiAuditLogCard: React.FC<AiAuditLogCardProps> = ({
   declarations,
+  scopes,
   transparencyScore = 95,
   lastEditedAt,
   version = 1,
 }) => {
   const [expandedKey, setExpandedKey] = useState<RubricKey | null>(null);
+  const [activeScopeIdx, setActiveScopeIdx] = useState(0);
   const rubricKeys: RubricKey[] = [
     'decomposition',
     'pattern',
@@ -577,9 +692,56 @@ export const AiAuditLogCard: React.FC<AiAuditLogCardProps> = ({
     'reflection',
   ];
 
-  const completedCount = rubricKeys.filter(
-    (k) => declarations[k]?.isCompleted
-  ).length;
+  const tabsContainerRef = useRef<HTMLDivElement | null>(null);
+  const [isDraggingTabs, setIsDraggingTabs] = useState(false);
+  const dragStartXRef = useRef(0);
+  const scrollStartLeftRef = useRef(0);
+  const hasMovedRef = useRef(false);
+
+  // Wheel listener: chuyển con lăn chuột dọc (deltaY) thành cuộn ngang cho chuột cắm dây/chuột rời
+  useEffect(() => {
+    const el = tabsContainerRef.current;
+    if (!el) return;
+    const onWheel = (e: WheelEvent) => {
+      if (el.scrollWidth > el.clientWidth && e.deltaY !== 0 && e.deltaX === 0) {
+        e.preventDefault();
+        el.scrollLeft += e.deltaY;
+      }
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, []);
+
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.button !== 0 || !tabsContainerRef.current) return;
+    setIsDraggingTabs(true);
+    hasMovedRef.current = false;
+    dragStartXRef.current = e.pageX;
+    scrollStartLeftRef.current = tabsContainerRef.current.scrollLeft;
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isDraggingTabs || !tabsContainerRef.current) return;
+    const diff = e.pageX - dragStartXRef.current;
+    if (Math.abs(diff) > 4) {
+      hasMovedRef.current = true;
+    }
+    tabsContainerRef.current.scrollLeft = scrollStartLeftRef.current - diff;
+  };
+
+  const handleMouseUp = () => {
+    setIsDraggingTabs(false);
+  };
+
+  const hasScopes = Array.isArray(scopes) && scopes.length > 0;
+  const activeDeclarations = hasScopes
+    ? (scopes![Math.min(activeScopeIdx, scopes!.length - 1)]?.declarations || declarations)
+    : declarations;
+  const totalCompleted = hasScopes
+    ? scopes!.reduce((acc, s) => acc + rubricKeys.filter(k => s.declarations[k]?.isCompleted).length, 0)
+    : rubricKeys.filter(k => declarations[k]?.isCompleted).length;
+  const totalRubrics = hasScopes ? scopes!.length * 5 : 5;
+  const completedCount = rubricKeys.filter(k => activeDeclarations[k]?.isCompleted).length;
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-5 space-y-4">
@@ -619,20 +781,78 @@ export const AiAuditLogCard: React.FC<AiAuditLogCardProps> = ({
               Transparency Score
             </span>
             <span className="text-xs font-extrabold text-slate-800">
-              {transparencyScore}% ({completedCount}/5 Rubrics)
+              {transparencyScore}% ({totalCompleted}/{totalRubrics} Rubrics)
             </span>
           </div>
         </div>
       </div>
 
+      {/* SCOPE TABS (multi-scope mode) */}
+      {hasScopes && scopes!.length > 1 && (
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => tabsContainerRef.current?.scrollBy({ left: -140, behavior: 'smooth' })}
+            className="p-1 rounded-lg border border-slate-200 bg-white text-slate-500 hover:text-slate-800 hover:border-slate-300 transition cursor-pointer shrink-0"
+            title="Cuộn sang trái"
+          >
+            <ChevronLeft size={13} />
+          </button>
+
+          <div
+            ref={tabsContainerRef}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
+            className={`flex gap-1.5 overflow-x-auto pb-1.5 edux-tab-scroll flex-1 max-w-full ${
+              isDraggingTabs ? 'is-dragging' : ''
+            }`}
+          >
+            {scopes!.map((scope, idx) => {
+              const sc = rubricKeys.filter(k => scope.declarations[k]?.isCompleted).length;
+              const isAct = idx === Math.min(activeScopeIdx, scopes!.length - 1);
+              return (
+                <button
+                  key={scope.scopeId || idx}
+                  type="button"
+                  onClick={() => {
+                    if (hasMovedRef.current) return;
+                    setActiveScopeIdx(idx);
+                    setExpandedKey(null);
+                  }}
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-[11px] font-semibold border cursor-pointer whitespace-nowrap transition select-none ${
+                    isAct ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-300'
+                  }`}
+                >
+                  <span>{scope.scope_title || scope.title || `Khai báo ${idx + 1}`}</span>
+                  <span className={`text-[9px] font-bold px-1.5 rounded ${
+                    isAct ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-400'
+                  }`}>{sc}/5</span>
+                </button>
+              );
+            })}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => tabsContainerRef.current?.scrollBy({ left: 140, behavior: 'smooth' })}
+            className="p-1 rounded-lg border border-slate-200 bg-white text-slate-500 hover:text-slate-800 hover:border-slate-300 transition cursor-pointer shrink-0"
+            title="Cuộn sang phải"
+          >
+            <ChevronRight size={13} />
+          </button>
+        </div>
+      )}
+
       {/* Rubric Breakdown List */}
       <div className="space-y-2.5">
         {rubricKeys.map((key, idx) => {
-          const item = declarations[key];
+          const item = activeDeclarations[key];
           const meta = RUBRIC_METADATA[key];
           const Icon = meta.icon;
           const isExpanded = expandedKey === key;
-          const badge = getDecisionBadgeStyle(item.decision);
+          const badge = getDecisionBadgeStyle((item?.decision || 'Partially Modified') as AiDecision);
 
           return (
             <div
@@ -1041,6 +1261,7 @@ export const SubmissionStatusView: React.FC<SubmissionStatusViewProps> = ({
           {isSubmitted ? (
             <AiAuditLogCard
               declarations={submission.declarations}
+              scopes={submission.scopes}
               transparencyScore={submission.transparencyScore || 95}
               lastEditedAt={submission.lastEditedAt}
               version={submission.version || 1}
@@ -1341,17 +1562,33 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
 };
 
 /* ==========================================================================
-   8. SUB-COMPONENT: STEP 2 - AI RUBRIC FORM (HỖ TRỢ EDIT MODE CỤ THỂ)
+   8. SUB-COMPONENT: STEP 2 - AI RUBRIC FORM (MULTI-SCOPE)
    ========================================================================== */
 
+function makeDefaultDeclarations(): Record<RubricKey, AiDeclarationRubric> {
+  const keys: RubricKey[] = ['decomposition', 'pattern', 'abstraction', 'algorithmic', 'reflection'];
+  const result = {} as Record<RubricKey, AiDeclarationRubric>;
+  keys.forEach(k => { result[k] = { ...INITIAL_DECLARATIONS[k], isModified: false }; });
+  return result;
+}
+
+function makeDefaultScope(idx: number): AiScope {
+  const id = `scope-${Date.now()}-${idx + 1}`;
+  return {
+    id,
+    scopeId: id,
+    scope_title: `Khai báo ${idx + 1}`,
+    title: `Khai báo ${idx + 1}`,
+    scope_description: '',
+    description: '',
+    declarations: makeDefaultDeclarations(),
+  };
+}
+
 interface AiRubricFormProps {
-  declarations: Record<RubricKey, AiDeclarationRubric>;
+  scopes: AiScope[];
   isEditMode: boolean;
-  onDeclarationChange: (
-    key: RubricKey,
-    field: RubricFormField,
-    value: string
-  ) => void;
+  onScopesChange: (scopes: AiScope[]) => void;
   onPreviousStep: () => void;
   onCancel: () => void;
   onSubmit: () => void;
@@ -1359,14 +1596,15 @@ interface AiRubricFormProps {
 }
 
 export const AiRubricForm: React.FC<AiRubricFormProps> = ({
-  declarations,
+  scopes,
   isEditMode,
-  onDeclarationChange,
+  onScopesChange,
   onPreviousStep,
   onCancel,
   onSubmit,
   isSubmittingPayload,
 }) => {
+  const [activeScopeIdx, setActiveScopeIdx] = useState(0);
   const [activeKey, setActiveKey] = useState<RubricKey>('decomposition');
   const rubricKeys: RubricKey[] = [
     'decomposition',
@@ -1376,13 +1614,130 @@ export const AiRubricForm: React.FC<AiRubricFormProps> = ({
     'reflection',
   ];
 
+  const tabsContainerRef = useRef<HTMLDivElement | null>(null);
+  const [isDraggingTabs, setIsDraggingTabs] = useState(false);
+  const dragStartXRef = useRef(0);
+  const scrollStartLeftRef = useRef(0);
+  const hasMovedRef = useRef(false);
+
+  // ── Scope helpers ──────────────────────────────────────────────────────────
+  const safeIdx = Math.min(activeScopeIdx, scopes.length - 1);
+  const currentScope = scopes[safeIdx];
+  const declarations = currentScope?.declarations || makeDefaultDeclarations();
+
+  // Wheel listener: chuyển con lăn chuột dọc (deltaY) thành cuộn ngang cho chuột cắm dây/chuột rời
+  useEffect(() => {
+    const el = tabsContainerRef.current;
+    if (!el) return;
+    const onWheel = (e: WheelEvent) => {
+      if (el.scrollWidth > el.clientWidth && e.deltaY !== 0 && e.deltaX === 0) {
+        e.preventDefault();
+        el.scrollLeft += e.deltaY;
+      }
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, []);
+
+  // Cuộn tab đang chọn vào tầm nhìn
+  useEffect(() => {
+    if (!tabsContainerRef.current) return;
+    const activeTab = tabsContainerRef.current.children[safeIdx] as HTMLElement;
+    if (activeTab && typeof activeTab.scrollIntoView === 'function') {
+      activeTab.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' });
+    }
+  }, [safeIdx]);
+
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.button !== 0 || !tabsContainerRef.current) return;
+    setIsDraggingTabs(true);
+    hasMovedRef.current = false;
+    dragStartXRef.current = e.pageX;
+    scrollStartLeftRef.current = tabsContainerRef.current.scrollLeft;
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isDraggingTabs || !tabsContainerRef.current) return;
+    const diff = e.pageX - dragStartXRef.current;
+    if (Math.abs(diff) > 4) {
+      hasMovedRef.current = true;
+    }
+    tabsContainerRef.current.scrollLeft = scrollStartLeftRef.current - diff;
+  };
+
+  const handleMouseUp = () => {
+    setIsDraggingTabs(false);
+  };
+
+  const handleScopeTitleChange = (idx: number, val: string) => {
+    const next = scopes.map((s, i) => i === idx ? { ...s, title: val, scope_title: val } : s);
+    onScopesChange(next);
+  };
+
+  const handleScopeDescChange = (idx: number, val: string) => {
+    const next = scopes.map((s, i) => i === idx ? { ...s, description: val, scope_description: val } : s);
+    onScopesChange(next);
+  };
+
+  const handleAddScope = () => {
+    const newScope = makeDefaultScope(scopes.length);
+    onScopesChange([...scopes, newScope]);
+    setActiveScopeIdx(scopes.length);
+    setActiveKey('decomposition');
+  };
+
+  const handleRemoveScope = (idx: number) => {
+    if (scopes.length <= 1) return;
+    const confirmDelete = window.confirm(`Bạn có chắc chắn muốn xóa khai báo "${scopes[idx]?.title || `Khai báo ${idx + 1}`}" không?`);
+    if (!confirmDelete) return;
+    const next = scopes.filter((_, i) => i !== idx);
+    onScopesChange(next);
+    setActiveScopeIdx(Math.max(0, idx - 1));
+  };
+
+  const handlePrevScope = () => {
+    if (safeIdx > 0) {
+      setActiveScopeIdx(safeIdx - 1);
+      setActiveKey('decomposition');
+    }
+  };
+
+  const handleNextScope = () => {
+    if (safeIdx < scopes.length - 1) {
+      setActiveScopeIdx(safeIdx + 1);
+      setActiveKey('decomposition');
+    }
+  };
+
+  const handleDeclarationChange = (
+    key: RubricKey,
+    field: RubricFormField,
+    value: string
+  ) => {
+    const next = scopes.map((s, i) => {
+      if (i !== safeIdx) return s;
+      const current = s.declarations[key] || INITIAL_DECLARATIONS[key];
+      const updatedItem: AiDeclarationRubric = {
+        ...current,
+        [field]: value as any,
+        isModified: true,
+      };
+      const hasContent =
+        (updatedItem.prompt || '').trim().length > 0 &&
+        (updatedItem.reflection || '').trim().length > 0;
+      updatedItem.isCompleted = hasContent;
+      return { ...s, declarations: { ...s.declarations, [key]: updatedItem } };
+    });
+    onScopesChange(next);
+  };
+
   const activeMeta = RUBRIC_METADATA[activeKey];
   const activeItem = declarations[activeKey];
   const ActiveIcon = activeMeta.icon;
 
   const currentIdx = rubricKeys.indexOf(activeKey);
-  const completedCount = rubricKeys.filter((k) => declarations[k].isCompleted).length;
-  const modifiedCount = rubricKeys.filter((k) => declarations[k].isModified).length;
+  const completedCount = rubricKeys.filter((k) => declarations[k]?.isCompleted).length;
+  const modifiedCount = rubricKeys.filter((k) => declarations[k]?.isModified).length;
 
   const handleNextRubric = () => {
     if (currentIdx < rubricKeys.length - 1) {
@@ -1396,34 +1751,172 @@ export const AiRubricForm: React.FC<AiRubricFormProps> = ({
     }
   };
 
-  return (
-    <div className="space-y-6">
-      {/* Thông báo trong Edit Mode */}
-      {isEditMode && (
-        <div className="bg-blue-50/70 border border-blue-200/80 rounded-2xl p-4 flex items-start gap-3">
-          <Brain size={18} className="text-blue-600 mt-0.5 shrink-0" />
-          <div className="text-xs leading-relaxed text-blue-900">
-            <span className="font-bold">Edit AI Declarations:</span> Dữ liệu khai báo từ bài nộp trước đã được điền sẵn.
-            Bạn có thể cập nhật Prompt, tóm tắt phản hồi AI hoặc điều chỉnh lại phần Đánh giá/Tự phản chiếu của mình.
-            {modifiedCount > 0 && (
-              <span className="block mt-1 font-semibold text-amber-700">
-                • Bạn đã chỉnh sửa {modifiedCount} / 5 tiêu chí trong phiên này.
-              </span>
-            )}
-          </div>
-        </div>
-      )}
+  const totalCompleted = scopes.reduce(
+    (acc, s) => acc + rubricKeys.filter(k => s.declarations[k]?.isCompleted).length, 0
+  );
+  const totalRubrics = scopes.length * 5;
 
+  return (
+    <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between pb-2 border-b border-slate-100">
         <div className="flex items-center gap-2 text-xs font-bold text-blue-600 tracking-wide uppercase">
           <Brain size={16} />
-          <span>{isEditMode ? 'STEP 2: EDIT AI DECLARATIONS' : 'STEP 2: AI DECLARATION (REQUIRED)'}</span>
+          <span>{isEditMode ? 'STEP 2: EDIT AI DECLARATIONS (MULTI-SCOPE)' : 'STEP 2: MULTI-SCOPE AI AUDIT (REQUIRED)'}</span>
         </div>
         <span className="text-[11px] text-slate-500 border border-slate-200 rounded-full px-3 py-1 font-medium bg-slate-50">
-          Completed: {completedCount} / 5 Rubrics
+          {totalCompleted} / {totalRubrics} Rubrics hoàn thành ({scopes.length} Khai báo)
         </span>
       </div>
+
+      {/* Edit Mode notice */}
+      {isEditMode && modifiedCount > 0 && (
+        <div className="bg-amber-50/70 border border-amber-200/80 rounded-xl p-3 flex items-center gap-2 text-xs text-amber-900">
+          <Brain size={14} className="text-amber-600 shrink-0" />
+          <span>Bạn đã chỉnh sửa <strong>{modifiedCount}</strong> tiêu chí trong phiên này.</span>
+        </div>
+      )}
+
+      {/* ── SCOPE TABS & CONTROLS ─────────────────────────────────────────── */}
+      <div className="bg-slate-50/80 p-3.5 rounded-2xl border border-slate-200/80 space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          {/* Nút mũi tên cuộn sang trái */}
+          <button
+            type="button"
+            onClick={() => {
+              tabsContainerRef.current?.scrollBy({ left: -160, behavior: 'smooth' });
+            }}
+            className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-500 hover:text-slate-800 hover:border-slate-300 transition cursor-pointer shrink-0"
+            title="Cuộn sang trái"
+          >
+            <ChevronLeft size={14} />
+          </button>
+
+          {/* Tabs */}
+          <div
+            ref={tabsContainerRef}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
+            className={`flex items-center gap-1.5 overflow-x-auto pb-1.5 edux-tab-scroll flex-1 max-w-full ${
+              isDraggingTabs ? 'is-dragging' : ''
+            }`}
+          >
+            {scopes.map((scope, idx) => {
+              const scopeCompleted = rubricKeys.filter(k => scope.declarations[k]?.isCompleted).length;
+              const isActive = idx === safeIdx;
+              return (
+                <button
+                  key={scope.scopeId || scope.id || idx}
+                  type="button"
+                  onClick={() => {
+                    if (hasMovedRef.current) return;
+                    setActiveScopeIdx(idx);
+                    setActiveKey('decomposition');
+                  }}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer whitespace-nowrap shrink-0 border select-none ${
+                    isActive
+                      ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
+                      : 'bg-white text-slate-700 border-slate-200 hover:border-indigo-300 hover:text-indigo-600'
+                  }`}
+                >
+                  <span>{scope.scope_title || scope.title || `Khai báo ${idx + 1}`}</span>
+                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                    isActive ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'
+                  }`}>{scopeCompleted}/5</span>
+                </button>
+              );
+            })}
+            <button
+              type="button"
+              onClick={handleAddScope}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold text-indigo-600 bg-indigo-50/80 hover:bg-indigo-100 border border-dashed border-indigo-300 transition cursor-pointer whitespace-nowrap shrink-0 select-none"
+            >
+              <Plus size={13} />
+              <span>+ Thêm khai báo</span>
+            </button>
+          </div>
+
+          {/* Nút mũi tên cuộn sang phải */}
+          <button
+            type="button"
+            onClick={() => {
+              tabsContainerRef.current?.scrollBy({ left: 160, behavior: 'smooth' });
+            }}
+            className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-500 hover:text-slate-800 hover:border-slate-300 transition cursor-pointer shrink-0"
+            title="Cuộn sang phải"
+          >
+            <ChevronRight size={14} />
+          </button>
+
+          {/* Quick Nav & Delete */}
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              type="button"
+              disabled={safeIdx === 0}
+              onClick={handlePrevScope}
+              title="Khai báo trước"
+              className="px-2.5 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-white disabled:opacity-35 disabled:cursor-not-allowed text-xs font-semibold flex items-center gap-1 cursor-pointer"
+            >
+              <ArrowLeft size={12} />
+              <span>Khai báo trước</span>
+            </button>
+
+            <button
+              type="button"
+              disabled={safeIdx === scopes.length - 1}
+              onClick={handleNextScope}
+              title="Khai báo tiếp theo"
+              className="px-2.5 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-white disabled:opacity-35 disabled:cursor-not-allowed text-xs font-semibold flex items-center gap-1 cursor-pointer"
+            >
+              <span>Khai báo tiếp theo</span>
+              <ArrowRight size={12} />
+            </button>
+
+            {scopes.length > 1 && (
+              <button
+                type="button"
+                onClick={() => handleRemoveScope(safeIdx)}
+                title="Xóa khai báo này"
+                className="p-1.5 rounded-lg border border-rose-200 text-rose-600 hover:bg-rose-50 transition cursor-pointer flex items-center gap-1 text-xs font-semibold"
+              >
+                <Trash2 size={13} />
+                <span className="hidden sm:inline">Xóa khai báo</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Scope title & description editor */}
+        <div className="pt-2 border-t border-slate-200/70 grid grid-cols-1 md:grid-cols-12 gap-3">
+          <div className="md:col-span-4">
+            <label className="saf-input-label">
+              Tiêu đề phân rã / Khai báo <span className="text-rose-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={currentScope?.scope_title || currentScope?.title || ''}
+              onChange={(e) => handleScopeTitleChange(safeIdx, e.target.value)}
+              placeholder="ví dụ: Backend Architecture, Frontend UI..."
+              className="saf-input text-xs font-semibold"
+            />
+          </div>
+          <div className="md:col-span-8">
+            <label className="saf-input-label">
+              Mô tả phạm vi / kỹ thuật của module này
+            </label>
+            <textarea
+              rows={2}
+              value={currentScope?.scope_description || currentScope?.description || ''}
+              onChange={(e) => handleScopeDescChange(safeIdx, e.target.value)}
+              placeholder="Mô tả tóm tắt phạm vi kỹ thuật, công nghệ áp dụng cho khai báo này..."
+              className="saf-textarea text-xs"
+            />
+          </div>
+        </div>
+      </div>
+
 
       <div className="grid grid-cols-12 gap-5 items-start">
         {/* Danh sách 5 Rubrics bên trái */}
@@ -1432,8 +1925,8 @@ export const AiRubricForm: React.FC<AiRubricFormProps> = ({
             const meta = RUBRIC_METADATA[key];
             const item = declarations[key];
             const isActive = activeKey === key;
-            const isDone = item.isCompleted;
-            const isEdited = item.isModified;
+            const isDone = item?.isCompleted;
+            const isEdited = item?.isModified;
 
             return (
               <div
@@ -1496,7 +1989,7 @@ export const AiRubricForm: React.FC<AiRubricFormProps> = ({
                 <h4 className="text-xs font-bold text-slate-800">
                   {activeMeta.title}
                 </h4>
-                {activeItem.isModified && (
+                {activeItem?.isModified && (
                   <span className="bg-amber-100 text-amber-800 text-[9px] font-bold px-1.5 py-0.5 rounded">
                     Modified
                   </span>
@@ -1514,9 +2007,9 @@ export const AiRubricForm: React.FC<AiRubricFormProps> = ({
                 AI Tool Used <span className="text-rose-500">*</span>
               </label>
               <select
-                value={activeItem.aiTool}
+                value={activeItem?.aiTool || 'ChatGPT'}
                 onChange={(e) =>
-                  onDeclarationChange(activeKey, 'aiTool', e.target.value)
+                  handleDeclarationChange(activeKey, 'aiTool', e.target.value)
                 }
                 className="saf-select"
               >
@@ -1533,9 +2026,9 @@ export const AiRubricForm: React.FC<AiRubricFormProps> = ({
                 Your Decision <span className="text-rose-500">*</span>
               </label>
               <select
-                value={activeItem.decision}
+                value={activeItem?.decision || 'Partially Modified'}
                 onChange={(e) =>
-                  onDeclarationChange(activeKey, 'decision', e.target.value)
+                  handleDeclarationChange(activeKey, 'decision', e.target.value)
                 }
                 className="saf-select"
               >
@@ -1554,9 +2047,9 @@ export const AiRubricForm: React.FC<AiRubricFormProps> = ({
             </label>
             <textarea
               rows={2}
-              value={activeItem.prompt}
+              value={activeItem?.prompt || ''}
               onChange={(e) =>
-                onDeclarationChange(activeKey, 'prompt', e.target.value)
+                handleDeclarationChange(activeKey, 'prompt', e.target.value)
               }
               placeholder={activeMeta.placeholderPrompt}
               className="saf-textarea"
@@ -1569,9 +2062,9 @@ export const AiRubricForm: React.FC<AiRubricFormProps> = ({
             </label>
             <textarea
               rows={2}
-              value={activeItem.responseSummary}
+              value={activeItem?.responseSummary || ''}
               onChange={(e) =>
-                onDeclarationChange(activeKey, 'responseSummary', e.target.value)
+                handleDeclarationChange(activeKey, 'responseSummary', e.target.value)
               }
               placeholder={activeMeta.placeholderResponse}
               className="saf-textarea"
@@ -1585,9 +2078,9 @@ export const AiRubricForm: React.FC<AiRubricFormProps> = ({
             </label>
             <textarea
               rows={3}
-              value={activeItem.reflection}
+              value={activeItem?.reflection || ''}
               onChange={(e) =>
-                onDeclarationChange(activeKey, 'reflection', e.target.value)
+                handleDeclarationChange(activeKey, 'reflection', e.target.value)
               }
               placeholder={activeMeta.placeholderReflection}
               className="saf-textarea"
@@ -1673,6 +2166,7 @@ interface StudentAssignmentFlowProps {
     assignmentId: string;
     file: File | SubmissionFile;
     declarations: Record<RubricKey, AiDeclarationRubric>;
+    scopes?: AiScope[];
     isEdit: boolean;
   }) => Promise<boolean>;
 }
@@ -1723,6 +2217,22 @@ export default function StudentAssignmentFlow({
     Record<RubricKey, AiDeclarationRubric>
   >(submission.declarations);
 
+  // Multi-Scope draft
+  const getInitialScopes = (sub: SubmissionData): AiScope[] => {
+    if (sub.scopes && sub.scopes.length > 0) return sub.scopes;
+    // Migrate legacy single-scope to multi-scope
+    return [{
+      scopeId: 'scope-default',
+      title: 'Khai báo chung',
+      scope_title: 'Khai báo chung',
+      description: '',
+      scope_description: '',
+      declarations: sub.declarations || makeDefaultDeclarations(),
+    }];
+  };
+
+  const [draftScopes, setDraftScopes] = useState<AiScope[]>(getInitialScopes(submission));
+
   // Loading & Toast States
   const [isSubmittingPayload, setIsSubmittingPayload] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -1740,7 +2250,7 @@ export default function StudentAssignmentFlow({
     setDraftRawFile(null);
     setFileMode(isEditMode && submission.file ? 'keep' : 'replace');
     
-    // Deep clone declarations to prevent mutating viewMode state directly
+    // Deep clone declarations
     const clonedDeclarations = {} as Record<RubricKey, AiDeclarationRubric>;
     const keys: RubricKey[] = ['decomposition', 'pattern', 'abstraction', 'algorithmic', 'reflection'];
     keys.forEach(k => {
@@ -1750,6 +2260,14 @@ export default function StudentAssignmentFlow({
       };
     });
     setDraftDeclarations(clonedDeclarations);
+
+    // Clone scopes
+    setDraftScopes(getInitialScopes(submission).map(s => ({
+      ...s,
+      declarations: Object.fromEntries(
+        keys.map(k => [k, { ...(s.declarations[k] || INITIAL_DECLARATIONS[k]), isModified: false }])
+      ) as Record<RubricKey, AiDeclarationRubric>,
+    })));
 
     setFormStep(1);
     setViewMode('FORM');
@@ -1770,19 +2288,13 @@ export default function StudentAssignmentFlow({
       const updatedItem: AiDeclarationRubric = {
         ...current,
         [field]: value as any,
-        isModified: true, // Mark that this field was modified in edit session
+        isModified: true,
       };
-
       const hasContent =
         (updatedItem.prompt || '').trim().length > 0 &&
         (updatedItem.reflection || '').trim().length > 0;
-
       updatedItem.isCompleted = hasContent;
-
-      return {
-        ...prev,
-        [key]: updatedItem,
-      };
+      return { ...prev, [key]: updatedItem };
     });
   };
 
@@ -1816,6 +2328,7 @@ export default function StudentAssignmentFlow({
           assignmentId: assignment.id,
           file: draftRawFile || effectiveFile,
           declarations: draftDeclarations,
+          scopes: draftScopes,
           isEdit: isEditMode,
         });
       } else {
@@ -1856,6 +2369,7 @@ export default function StudentAssignmentFlow({
         feedback: submission.feedback || 'No feedback yet. Submitted successfully. Waiting for grading.',
         transparencyScore: calculatedScore,
         declarations: draftDeclarations,
+        scopes: draftScopes,
       };
 
       setSubmission(newSubmissionData);
@@ -2068,9 +2582,9 @@ export default function StudentAssignmentFlow({
                   />
                 ) : (
                   <AiRubricForm
-                    declarations={draftDeclarations}
+                    scopes={draftScopes}
                     isEditMode={isEditMode}
-                    onDeclarationChange={handleDeclarationChange}
+                    onScopesChange={setDraftScopes}
                     onPreviousStep={() => setFormStep(1)}
                     onCancel={handleCancelForm}
                     onSubmit={handleSubmitAssignment}

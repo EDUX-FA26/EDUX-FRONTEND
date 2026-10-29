@@ -17,6 +17,7 @@ import AssignmentService from '../../services/assignment.service';
 import GradingService from '../../services/grading.service';
 import MockSubmissionService, { parseZipFileToTree, MOCK_ZIP_TREE_CASE_1 } from '../../services/mockSubmissionService';
 import { SubmissionFile } from '../../types/submission';
+import { normalizeAuditData } from '../../helper/aiAuditHelper';
 
 export default function LecturerGradingPage() {
   const { assignmentId, submissionId } = useParams();
@@ -152,9 +153,9 @@ export default function LecturerGradingPage() {
 
                 if (latestVer.note) {
                   try {
-                    const parsedNote = typeof latestVer.note === 'string' ? JSON.parse(latestVer.note) : latestVer.note;
-                    if (parsedNote && parsedNote.declarations) {
-                      const decs = parsedNote.declarations;
+                    const normalized = normalizeAuditData(latestVer.note);
+                    if (normalized && normalized.scopes && normalized.scopes.length > 0) {
+                      const decs = normalized.scopes[0].declarations;
                       const mappedPhases: AiDeclarationPhase[] = [
                         {
                           phaseKey: 'reflection',
