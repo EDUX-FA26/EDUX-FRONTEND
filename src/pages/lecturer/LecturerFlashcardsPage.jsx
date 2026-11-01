@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useLanguage } from '../../contexts/LanguageContext';
 import FlashcardService from '../../services/flashcard.service';
 import ClassService from '../../services/class.service';
+import TopicService from '../../services/topic.service';
 import MathText from '../../components/common/MathText';
 import LatexToolbar from '../../components/common/LatexToolbar';
 import {
@@ -219,7 +220,7 @@ function DeckFormModal({ deck, onClose, onSaved, classInfo }) {
 
 // ─── Card Form Modal ──────────────────────────────────────────────────────────
 
-function CardFormModal({ deckId, card, onClose, onSaved }) {
+function CardFormModal({ deckId, subjectId, card, onClose, onSaved }) {
   const isEdit = !!card;
 
   // Khởi tạo options từ card (khi edit) hoặc 2 ô trống (khi tạo mới)
@@ -240,12 +241,25 @@ function CardFormModal({ deckId, card, onClose, onSaved }) {
   };
 
   const [question, setQuestion] = useState(card?.question || '');
+  const [topicName, setTopicName] = useState(card?.topic_name || '');
+  const [existingTopics, setExistingTopics] = useState([]);
   const [options, setOptions] = useState(initOptions);
   const [correctIdx, setCorrectIdx] = useState(initCorrectIdx);
   const [explanation, setExplanation] = useState(card?.explanation || '');
   const [difficulty, setDifficulty] = useState(card?.difficulty || 'medium');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (subjectId) {
+      TopicService.getTopics(subjectId)
+        .then((res) => {
+          const list = Array.isArray(res.data) ? res.data : (res.data?.topics || []);
+          setExistingTopics(list);
+        })
+        .catch(() => {});
+    }
+  }, [subjectId]);
 
   const handleOptionChange = (idx, val) => {
     setOptions((prev) => prev.map((o, i) => (i === idx ? val : o)));
@@ -283,6 +297,7 @@ function CardFormModal({ deckId, card, onClose, onSaved }) {
       answer: options[correctIdx].trim(),
       explanation: explanation.trim(),
       difficulty,
+      topicName: topicName.trim() || null,
     };
 
     setSaving(true); setError(null);
@@ -329,6 +344,47 @@ function CardFormModal({ deckId, card, onClose, onSaved }) {
               </div>
             </div>
           )}
+        </Field>
+
+        {/* Chủ đề (Topic) */}
+        <Field label="Chủ đề (Topic) — Phục vụ AI Học tập cá nhân hóa">
+          <input
+            type="text"
+            list="topics-datalist"
+            style={{ ...inputStyle, padding: '7px 10px' }}
+            value={topicName}
+            onChange={(e) => setTopicName(e.target.value)}
+            placeholder="Nhập tên chủ đề (ví dụ: Đạo hàm hàm số) hoặc chọn gợi ý bên dưới..."
+          />
+          <datalist id="topics-datalist">
+            {existingTopics.map((t) => (
+              <option key={t.id} value={t.name} />
+            ))}
+          </datalist>
+          {existingTopics.length > 0 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '6px' }}>
+              <span style={{ fontSize: '0.6875rem', color: 'var(--color-ink-muted)', alignSelf: 'center' }}>Gợi ý nhanh:</span>
+              {existingTopics.slice(0, 6).map((t) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => setTopicName(t.name)}
+                  style={{
+                    fontSize: '0.6875rem', padding: '2px 8px', borderRadius: '6px',
+                    border: '1px solid var(--color-border)',
+                    background: topicName === t.name ? 'var(--color-primary-card)' : 'var(--color-surface)',
+                    color: topicName === t.name ? 'var(--color-primary)' : 'var(--color-ink)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {t.name}
+                </button>
+              ))}
+            </div>
+          )}
+          <p style={{ fontSize: '0.6875rem', color: 'var(--color-ink-muted)', margin: '4px 0 0' }}>
+            💡 Gõ tên chủ đề mới (hệ thống sẽ tự động tạo) hoặc chọn từ danh sách có sẵn.
+          </p>
         </Field>
 
         {/* Các lựa chọn */}
@@ -730,12 +786,25 @@ function ClassAccessModal({ deck, onClose, onSaved }) {
 
 // ─── Excel Import Modal ───────────────────────────────────────────────────────
 
-function ExcelImportModal({ deckId, onClose, onSaved }) {
+function ExcelImportModal({ deckId, subjectId, onClose, onSaved }) {
   const [file, setFile] = useState(null);
+  const [topicName, setTopicName] = useState('');
+  const [existingTopics, setExistingTopics] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [downloadingTemplate, setDownloadingTemplate] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (subjectId) {
+      TopicService.getTopics(subjectId)
+        .then((res) => {
+          const list = Array.isArray(res.data) ? res.data : (res.data?.topics || []);
+          setExistingTopics(list);
+        })
+        .catch(() => {});
+    }
+  }, [subjectId]);
 
   const handleDownloadTemplate = async () => {
     setDownloadingTemplate(true);
@@ -766,7 +835,7 @@ function ExcelImportModal({ deckId, onClose, onSaved }) {
     setResult(null);
 
     try {
-      const res = await FlashcardService.importCardsFromExcel(deckId, file);
+      const res = await FlashcardService.importCardsFromExcel(deckId, file, topicName.trim());
       setResult(res);
       if (res.imported_count > 0) {
         onSaved();
@@ -792,7 +861,7 @@ function ExcelImportModal({ deckId, onClose, onSaved }) {
               Tải file mẫu Excel
             </p>
             <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--color-ink-muted)' }}>
-              Điền câu hỏi và các lựa chọn đáp án theo đúng định dạng mẫu.
+              Điền câu hỏi, đáp án và <strong>Chủ đề (Topic)</strong> theo đúng định dạng mẫu để AI tự xếp lịch ôn tập.
             </p>
           </div>
           <button
@@ -814,6 +883,44 @@ function ExcelImportModal({ deckId, onClose, onSaved }) {
 
         {/* Form upload file */}
         <form onSubmit={handleUpload}>
+          {/* Chủ đề mặc định */}
+          <Field label="Chủ đề mặc định (Tùy chọn)">
+            <input
+              type="text"
+              list="topics-import-datalist"
+              style={{ ...inputStyle, padding: '7px 10px' }}
+              value={topicName}
+              onChange={(e) => setTopicName(e.target.value)}
+              placeholder="Nhập tên chủ đề (ví dụ: Đạo hàm) hoặc chọn gợi ý bên dưới..."
+            />
+            <datalist id="topics-import-datalist">
+              {existingTopics.map((t) => (
+                <option key={t.id} value={t.name} />
+              ))}
+            </datalist>
+            {existingTopics.length > 0 && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '6px' }}>
+                <span style={{ fontSize: '0.6875rem', color: 'var(--color-ink-muted)', alignSelf: 'center' }}>Gợi ý nhanh:</span>
+                {existingTopics.slice(0, 6).map((t) => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => setTopicName(t.name)}
+                    style={{
+                      fontSize: '0.6875rem', padding: '2px 8px', borderRadius: '6px',
+                      border: '1px solid var(--color-border)',
+                      background: topicName === t.name ? 'var(--color-primary-card)' : 'var(--color-surface)',
+                      color: topicName === t.name ? 'var(--color-primary)' : 'var(--color-ink)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {t.name}
+                  </button>
+                ))}
+              </div>
+            )}
+          </Field>
+
           <Field label="Chọn file Excel từ máy tính (.xlsx, .xls, .csv)" required>
             <input
               type="file"
@@ -958,6 +1065,7 @@ function DeckRow({ deck, onEdit, onDelete, onRefresh }) {
       {cardModal !== null && (
         <CardFormModal
           deckId={deck.id}
+          subjectId={deck.subject_id}
           card={cardModal === 'create' ? null : cardModal}
           onClose={() => setCardModal(null)}
           onSaved={() => { setCardModal(null); loadDeckDetails(); }}
@@ -966,6 +1074,7 @@ function DeckRow({ deck, onEdit, onDelete, onRefresh }) {
       {excelModal && (
         <ExcelImportModal
           deckId={deck.id}
+          subjectId={deck.subject_id}
           onClose={() => setExcelModal(false)}
           onSaved={() => {
             loadDeckDetails();
@@ -1133,6 +1242,16 @@ function DeckRow({ deck, onEdit, onDelete, onRefresh }) {
                       <span style={{ fontSize: '0.6875rem', fontWeight: 700, padding: '2px 8px', borderRadius: '9999px', background: dm.bg, color: dm.color, flexShrink: 0, marginTop: '2px' }}>
                         {dm.label}
                       </span>
+                      {/* Topic badge */}
+                      {card.topic_name && (
+                        <span style={{
+                          fontSize: '0.6875rem', fontWeight: 600, padding: '2px 8px', borderRadius: '6px',
+                          background: 'rgba(59, 130, 246, 0.1)', color: '#2563eb', border: '1px solid rgba(59, 130, 246, 0.25)',
+                          flexShrink: 0, marginTop: '2px', display: 'inline-flex', alignItems: 'center', gap: '4px'
+                        }}>
+                          🏷️ {card.topic_name}
+                        </span>
+                      )}
                       {/* Edit / Delete */}
                       <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
                         <IconBtn onClick={() => setCardModal(card)} title="Sửa thẻ"><Pencil style={{ width: '12px', height: '12px' }} /></IconBtn>

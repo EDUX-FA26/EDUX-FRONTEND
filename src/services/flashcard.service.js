@@ -96,9 +96,12 @@ const FlashcardService = {
   },
 
   /** POST /api/flashcards/decks/:deckId/cards/import-excel — Import cards từ file Excel */
-  async importCardsFromExcel(deckId, file) {
+  async importCardsFromExcel(deckId, file, topicName = '') {
     const formData = new FormData();
     formData.append('file', file);
+    if (topicName) {
+      formData.append('topicName', topicName);
+    }
     const response = await api.post(`/flashcards/decks/${deckId}/cards/import-excel`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });

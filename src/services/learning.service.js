@@ -58,12 +58,15 @@ const LearningService = {
   },
 
   /** Tạo hoặc lấy lại kế hoạch học 7 ngày cho môn học */
-  async generateStudyPlan(subjectId) {
+  async generateStudyPlan(subjectId, { force = false } = {}) {
     const response = await api.post(
       '/learning/study-plan/generate',
       {},
       {
-        params: { subjectId },
+        params: {
+          subjectId,
+          ...(force ? { force: 'true' } : {}),
+        },
       }
     );
 
