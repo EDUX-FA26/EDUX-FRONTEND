@@ -103,17 +103,29 @@ export default function StreakDetailPage() {
         <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '24px', width: '100%', boxSizing: 'border-box' }}>
 
             {/* Header Banner */}
-            <div className="card" style={{ padding: '32px 36px', background: 'linear-gradient(135deg, #1e293b 0%, #2c3b52 100%)', color: 'white', borderRadius: '20px', width: '100%', boxSizing: 'border-box' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+            <div className="card" style={{
+                padding: '32px 36px',
+                background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 60%, #334155 100%)',
+                color: '#ffffff',
+                borderRadius: '20px',
+                width: '100%',
+                boxSizing: 'border-box',
+                border: '1px solid rgba(255,255,255,0.08)',
+                boxShadow: '0 8px 24px -4px rgba(15, 23, 42, 0.25)',
+                position: 'relative',
+                overflow: 'hidden'
+            }}>
+                <div style={{ position: 'absolute', top: 0, right: 0, width: '260px', height: '260px', background: 'radial-gradient(circle, rgba(249,115,22,0.2) 0%, rgba(249,115,22,0) 70%)', borderRadius: '50%', transform: 'translate(40px, -40px)', pointerEvents: 'none' }} />
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px', position: 'relative', zIndex: 1 }}>
                     <div>
-                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 12px', borderRadius: '9999px', background: 'rgba(255,255,255,0.1)', fontSize: '0.75rem', color: '#ffdbcc', fontWeight: 600, marginBottom: '10px' }}>
-                            <Flame style={{ width: '16px', height: '16px', color: 'var(--color-primary)' }} />
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '5px 14px', borderRadius: '9999px', background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)', fontSize: '0.75rem', color: '#ffedd5', fontWeight: 600, marginBottom: '12px' }}>
+                            <Flame style={{ width: '16px', height: '16px', color: '#f97316' }} />
                             {S.badge || 'Hệ thống Quản lý Chuỗi Học tập (Streak)'}
                         </div>
-                        <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: 0, letterSpacing: '-0.02em' }}>
+                        <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: 0, letterSpacing: '-0.02em', color: '#ffffff' }}>
                             {S.title || 'Trung tâm Theo dõi Động lực Học tập'}
                         </h1>
-                        <p style={{ marginTop: '6px', color: '#94a3b8', fontSize: '0.9375rem', margin: 0, maxWidth: '850px' }}>
+                        <p style={{ marginTop: '8px', color: 'rgba(255, 255, 255, 0.9)', fontSize: '0.9375rem', lineHeight: '1.5', margin: '8px 0 0 0', maxWidth: '850px' }}>
                             {S.desc || 'Duy trì học flashcard mỗi ngày theo múi giờ Việt Nam để thắp sáng ngọn lửa streak, theo dõi bản đồ nhiệt hoạt động và cứu chuỗi kịp thời.'}
                         </p>
                     </div>

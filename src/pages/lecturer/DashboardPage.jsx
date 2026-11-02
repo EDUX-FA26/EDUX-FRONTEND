@@ -121,10 +121,10 @@ export default function LecturerDashboardPage() {
             <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--color-accent-teal)', display: 'inline-block' }} />
             {t.dashboard?.lecturerBadge}
           </div>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: 0, letterSpacing: '-0.02em' }}>
+          <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: 0, letterSpacing: '-0.02em', color: '#ffffff' }}>
             {t.dashboard?.welcomeStudent} {user?.full_name || user?.email}!
           </h1>
-          <p style={{ marginTop: '6px', color: '#94a3b8', fontSize: '0.875rem' }}>{t.dashboard?.lecturerDesc}</p>
+          <p style={{ marginTop: '8px', color: 'rgba(255, 255, 255, 0.9)', fontSize: '0.9375rem', lineHeight: '1.5', margin: '8px 0 0 0' }}>{t.dashboard?.lecturerDesc}</p>
         </div>
       </div>
 

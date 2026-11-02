@@ -178,9 +178,11 @@ export default function StudentFlashcardSelectPage() {
 
       {/* ── Hero Banner ── */}
       <div style={{
-        borderRadius: '20px', padding: '28px 32px', color: 'white',
+        borderRadius: '20px', padding: '28px 32px', color: '#ffffff',
         position: 'relative', overflow: 'hidden',
-        background: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%)',
+        background: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 60%, #2e1065 100%)',
+        border: '1px solid rgba(255,255,255,0.08)',
+        boxShadow: '0 8px 24px -4px rgba(15, 23, 42, 0.25)',
       }}>
         <div style={{
           position: 'absolute', top: 0, right: 0,
@@ -191,17 +193,18 @@ export default function StudentFlashcardSelectPage() {
         <div style={{ position: 'relative', zIndex: 1 }}>
           <div style={{
             display: 'inline-flex', alignItems: 'center', gap: '8px',
-            padding: '4px 14px', borderRadius: '9999px',
-            background: 'rgba(255,255,255,0.1)',
-            fontSize: '0.75rem', color: '#c7d2fe', fontWeight: 600, marginBottom: '12px',
+            padding: '5px 14px', borderRadius: '9999px',
+            background: 'rgba(255,255,255,0.12)',
+            border: '1px solid rgba(255,255,255,0.2)',
+            fontSize: '0.75rem', color: '#e0e7ff', fontWeight: 600, marginBottom: '12px',
           }}>
             <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#818cf8', display: 'inline-block' }} />
             Hệ thống Flashcard · Sinh viên
           </div>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: 0, letterSpacing: '-0.02em' }}>
+          <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: 0, letterSpacing: '-0.02em', color: '#ffffff' }}>
             Chọn môn học
           </h1>
-          <p style={{ marginTop: '8px', color: '#94a3b8', fontSize: '0.875rem', maxWidth: '520px' }}>
+          <p style={{ marginTop: '8px', color: 'rgba(255, 255, 255, 0.9)', fontSize: '0.9375rem', lineHeight: '1.5', maxWidth: '560px', margin: '8px 0 0 0' }}>
             Chọn môn học bạn muốn ôn luyện flashcard để bắt đầu học tập và theo dõi tiến độ.
           </p>
         </div>
