@@ -6,6 +6,7 @@ import { ROLES, SEMESTER_LABEL } from '../config/constants';
 import SettingsToggle from '../components/common/SettingsToggle';
 import { FiChevronDown, FiGrid, FiLogOut, FiMenu, FiSearch } from 'react-icons/fi';
 import { Flame, LibraryBig, BookMarked, Sparkles } from 'lucide-react';
+import AIChatBox from '../components/student/AIChatBox';
 
 // Nav config theo role
 const NAV_BY_ROLE = {
@@ -373,6 +374,7 @@ export default function DashboardLayout() {
         )}
 
         {/* Click outside overlay */}
+        {user?.role === ROLES.STUDENT && <AIChatBox />}
         {showUserMenu && (
           <div style={{ position: 'fixed', inset: 0, zIndex: 39 }} onClick={() => setShowUserMenu(false)} />
         )}
