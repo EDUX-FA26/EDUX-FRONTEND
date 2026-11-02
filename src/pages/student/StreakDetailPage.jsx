@@ -354,6 +354,12 @@ export default function StreakDetailPage() {
                                         <span style={{ fontSize: '0.8125rem', color: 'var(--color-ink-muted)' }}>
                                             {activity.deck_title ? `Bộ thẻ: ${activity.deck_title}` : formatActivityType(activity.activity_type, S)}
                                         </span>
+                                        {activity.flashcard_score !== null && activity.flashcard_score !== undefined && (
+                                            <span style={{ fontSize: '0.75rem', color: Number(activity.flashcard_score) < 50 ? '#b91c1c' : '#0f766e', fontWeight: 700 }}>
+                                                Điểm FlashCard: {Number(activity.flashcard_score).toFixed(1)}%
+                                                {activity.flashcard_total_questions ? ` (${activity.flashcard_total_questions} câu)` : ''}
+                                            </span>
+                                        )}
                                     </div>
 
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
