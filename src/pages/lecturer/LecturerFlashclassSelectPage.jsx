@@ -196,10 +196,10 @@ export default function LecturerFlashclassSelectPage() {
             <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#f97316', display: 'inline-block' }} />
             Quản lý Flashcard · Giảng viên
           </div>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: 0, letterSpacing: '-0.02em' }}>
+          <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: 0, letterSpacing: '-0.02em', color: '#ffffff' }}>
             Chọn môn học
           </h1>
-          <p style={{ marginTop: '8px', color: '#94a3b8', fontSize: '0.875rem', maxWidth: '500px' }}>
+          <p style={{ marginTop: '8px', color: 'rgba(255, 255, 255, 0.9)', fontSize: '0.9375rem', lineHeight: '1.5', maxWidth: '500px', margin: '8px 0 0 0' }}>
             Chọn môn học để tạo và quản lý bộ flashcard cho sinh viên.
           </p>
         </div>

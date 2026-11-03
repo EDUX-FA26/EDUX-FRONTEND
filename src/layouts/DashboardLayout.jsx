@@ -1,30 +1,84 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { ROLES, SEMESTER_LABEL } from '../config/constants';
 import SettingsToggle from '../components/common/SettingsToggle';
-import { FiChevronDown, FiGrid, FiLogOut, FiMenu, FiX } from 'react-icons/fi';
-import { Flame, LibraryBig, BookMarked, Sparkles, Headphones, CheckSquare } from 'lucide-react';
+import {
+  FiChevronDown,
+  FiGrid,
+  FiLogOut,
+  FiMenu,
+  FiSearch,
+} from 'react-icons/fi';
+import {
+  Flame,
+  LibraryBig,
+  BookMarked,
+  Sparkles,
+  Headphones,
+  CheckSquare,
+} from 'lucide-react';
+import AIChatBox from '../components/student/AIChatBox';
 
 // Nav config theo role
 const NAV_BY_ROLE = {
   [ROLES.STUDENT]: [
     { id: 'dashboard', icon: FiGrid, path: '/student/dashboard', key: 'overview' },
-    { id: 'focus-room', icon: Headphones, path: '/student/focus', key: 'focusRoom', label: 'Phòng học tập trung' },
-    { id: 'smart-todo', icon: CheckSquare, path: '/student/todos', key: 'smartTodo', label: 'Smart Todo' },
-    { id: 'study-plan', icon: Sparkles, path: '/student/study-plan', key: 'studyPlan', label: 'Học tập cá nhân' },
-    { id: 'classes', icon: LibraryBig, path: '/student/classes', key: 'classes', label: 'Lớp học' },
+    {
+      id: 'focus-room',
+      icon: Headphones,
+      path: '/student/focus',
+      key: 'focusRoom',
+      label: 'Phòng học tập trung',
+    },
+    {
+      id: 'smart-todo',
+      icon: CheckSquare,
+      path: '/student/todos',
+      key: 'smartTodo',
+      label: 'Smart Todo',
+    },
+    {
+      id: 'study-plan',
+      icon: Sparkles,
+      path: '/student/study-plan',
+      key: 'studyPlan',
+      label: 'Học tập cá nhân',
+    },
+    {
+      id: 'classes',
+      icon: LibraryBig,
+      path: '/student/classes',
+      key: 'classes',
+      label: 'Lớp học',
+    },
     { id: 'streak', icon: Flame, path: '/student/streak', key: 'streak' },
-    { id: 'flashcards', icon: BookMarked, path: '/student/flashcards', key: 'flashcards' },
-    { id: 'search', icon: 'search', path: '/student/search', key: 'search' },
+    {
+      id: 'flashcards',
+      icon: BookMarked,
+      path: '/student/flashcards',
+      key: 'flashcards',
+    },
   ],
+
   [ROLES.LECTURER]: [
     { id: 'dashboard', icon: FiGrid, path: '/lecturer/dashboard', key: 'overview' },
-    { id: 'flashcards', icon: BookMarked, path: '/lecturer/flashcards', key: 'flashcards' },
-    { id: 'classes', icon: LibraryBig, path: '/lecturer/classes', key: 'classes', label: 'Lớp học' },
-    { id: 'search', icon: 'search', path: '/lecturer/search', key: 'search' },
+    {
+      id: 'flashcards',
+      icon: BookMarked,
+      path: '/lecturer/flashcards',
+      key: 'flashcards',
+    },
+    {
+      id: 'classes',
+      icon: LibraryBig,
+      path: '/lecturer/classes',
+      key: 'classes',
+      label: 'Lớp học',
+    },
   ],
+
   [ROLES.ADMIN]: [
     { id: 'dashboard', icon: 'dashboard', path: '/admin/dashboard', key: 'overview', label: 'Tổng quan' },
     { id: 'users', icon: 'group', path: '/admin/users', key: 'users', label: 'Người dùng' },
@@ -33,7 +87,6 @@ const NAV_BY_ROLE = {
     { id: 'notifications', icon: 'campaign', path: '/admin/notifications', key: 'notifications', label: 'Tạo thông báo' },
     { id: 'semesters', icon: 'calendar_month', path: '/admin/semesters', key: 'semesters', label: 'Học kỳ' },
     { id: 'subjects', icon: 'menu_book', path: '/admin/subjects', key: 'subjects', label: 'Môn học' },
-    { id: 'search', icon: 'search', path: '/admin/search', key: 'search', label: 'Tìm kiếm' },
     { id: 'logs', icon: 'history', path: '/admin/logs', key: 'logs', label: 'System Logs' },
   ],
 };
@@ -43,16 +96,22 @@ export default function DashboardLayout() {
   const { t, lang } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
+
+  const isGradePage = location.pathname.includes('/grade');
+  const isFocusRoom = location.pathname.startsWith('/student/focus');
+
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [headerSearch, setHeaderSearch] = useState('');
 
   const navItems = NAV_BY_ROLE[user?.role] || [];
-  const activeId = navItems.find((n) => location.pathname.startsWith(n.path))?.id;
-  const isFocusRoom = location.pathname.startsWith('/student/focus');
+  const activeId = navItems.find((item) =>
+    location.pathname.startsWith(item.path)
+  )?.id;
 
-  // Tự động thu gọn sidebar khi vào phòng học tập trung để không gian phòng học rộng rãi và chạy ra chính giữa
-  React.useEffect(() => {
+  // Tự động thu gọn sidebar khi vào phòng học tập trung
+  useEffect(() => {
     if (isFocusRoom) {
       setSidebarCollapsed(true);
     }
@@ -68,10 +127,34 @@ export default function DashboardLayout() {
     ? user.full_name.split(' ').slice(-1)[0][0].toUpperCase()
     : (user?.email?.[0] || 'U').toUpperCase();
 
-  const roleLabel = t.role?.[user?.role] || user?.role || '';
+  const roleLabel = t?.role?.[user?.role] || user?.role || '';
+  const searchPath = user?.role ? `/${user.role}/search` : '/';
+
+  useEffect(() => {
+    if (location.pathname === searchPath) {
+      setHeaderSearch(new URLSearchParams(location.search).get('q') || '');
+    }
+  }, [location.pathname, location.search, searchPath]);
+
+  const handleHeaderSearch = (event) => {
+    event.preventDefault();
+
+    const query = headerSearch.trim();
+
+    navigate(
+      query
+        ? `${searchPath}?q=${encodeURIComponent(query)}`
+        : searchPath
+    );
+  };
 
   return (
-    <div className={`dashboard-layout${sidebarCollapsed ? ' dashboard-layout--collapsed' : ''}`}>
+    <div
+      className={`dashboard-layout${
+        sidebarCollapsed ? ' dashboard-layout--collapsed' : ''
+      }${isGradePage ? ' dashboard-layout--grade' : ''}`}
+    >
+      {/* Mobile sidebar backdrop */}
       {mobileSidebarOpen && (
         <button
           className="dashboard-sidebar-backdrop"
@@ -81,19 +164,26 @@ export default function DashboardLayout() {
         />
       )}
 
+      {/* Sidebar */}
       <nav
         id="dashboard-sidebar"
-        className={`dashboard-sidebar${sidebarCollapsed ? ' dashboard-sidebar--collapsed' : ''}${mobileSidebarOpen ? ' dashboard-sidebar--mobile-open' : ''}`}
-        aria-label={t.layout?.navigation || 'Main navigation'}
+        className={`dashboard-sidebar${
+          sidebarCollapsed ? ' dashboard-sidebar--collapsed' : ''
+        }${
+          mobileSidebarOpen ? ' dashboard-sidebar--mobile-open' : ''
+        }`}
+        aria-label={t?.layout?.navigation || 'Main navigation'}
       >
         <div className="dashboard-sidebar__section-label">
           {lang === 'vi' ? 'KHÔNG GIAN HỌC TẬP' : 'LEARNING SPACE'}
         </div>
+
         <div className="dashboard-sidebar__items">
           {navItems.map((item) => {
             const isActive = activeId === item.id;
-            const label = t.nav?.[item.key] || item.label || item.key;
+            const label = t?.nav?.[item.key] || item.label || item.key;
             const Icon = item.icon;
+
             return (
               <button
                 key={item.id}
@@ -102,29 +192,43 @@ export default function DashboardLayout() {
                   navigate(item.path);
                   setMobileSidebarOpen(false);
                 }}
-                className={`dashboard-sidebar__item${isActive ? ' dashboard-sidebar__item--active' : ''}`}
+                className={`dashboard-sidebar__item${
+                  isActive ? ' dashboard-sidebar__item--active' : ''
+                }`}
                 title={sidebarCollapsed ? label : undefined}
                 aria-label={label}
                 aria-current={isActive ? 'page' : undefined}
               >
                 {typeof item.icon === 'string' ? (
-                  <span className="material-symbols-outlined" aria-hidden="true">
+                  <span
+                    className="material-symbols-outlined"
+                    aria-hidden="true"
+                  >
                     {item.icon}
                   </span>
                 ) : (
-                  <item.icon aria-hidden="true" />
+                  <Icon aria-hidden="true" />
                 )}
-                <span className="dashboard-sidebar__item-label">{label}</span>
+
+                <span className="dashboard-sidebar__item-label">
+                  {label}
+                </span>
               </button>
             );
           })}
         </div>
-        <div className="dashboard-sidebar__footer">FPT UNIVERSITY</div>
+
+        <div className="dashboard-sidebar__footer">
+          FPT UNIVERSITY
+        </div>
       </nav>
 
+      {/* Main layout */}
       <div className="dashboard-layout__main">
+        {/* Header */}
         <header className="dashboard-header">
           <div className="dashboard-header__inner">
+            {/* Menu toggle */}
             <button
               className="dashboard-header__menu"
               type="button"
@@ -135,156 +239,376 @@ export default function DashboardLayout() {
                   setSidebarCollapsed((collapsed) => !collapsed);
                 }
               }}
-              aria-label={mobileSidebarOpen ? 'Close navigation' : sidebarCollapsed ? 'Expand navigation' : 'Collapse navigation'}
+              aria-label={
+                mobileSidebarOpen
+                  ? 'Close navigation'
+                  : sidebarCollapsed
+                    ? 'Expand navigation'
+                    : 'Collapse navigation'
+              }
               aria-controls="dashboard-sidebar"
-              aria-expanded={window.matchMedia('(max-width: 760px)').matches ? mobileSidebarOpen : !sidebarCollapsed}
-              title={window.matchMedia('(max-width: 760px)').matches ? 'Open navigation' : sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              aria-expanded={
+                window.matchMedia('(max-width: 760px)').matches
+                  ? mobileSidebarOpen
+                  : !sidebarCollapsed
+              }
+              title={
+                window.matchMedia('(max-width: 760px)').matches
+                  ? 'Open navigation'
+                  : sidebarCollapsed
+                    ? 'Expand sidebar'
+                    : 'Collapse sidebar'
+              }
             >
               <FiMenu aria-hidden="true" />
             </button>
-            {/* ─── HEADER ─── */}
-            <div className="dashboard-header__content">
-              <div className="dashboard-header__row" style={{
-                maxWidth: '1440px', margin: '0 auto',
-                padding: '0 24px',
-                height: '64px',
-                display: 'flex', alignItems: 'center',
-                justifyContent: 'space-between', gap: '12px',
-              }}>
 
-                {/* Zone 1: Logo + Semester */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
+            <div className="dashboard-header__content">
+              <div
+                className="dashboard-header__row"
+                style={{
+                  maxWidth: '1440px',
+                  margin: '0 auto',
+                  padding: '0 24px',
+                  height: '64px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '12px',
+                }}
+              >
+                {/* Logo + Semester */}
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    flexShrink: 0,
+                  }}
+                >
                   <button
-                    onClick={() => navigate(NAV_BY_ROLE[user?.role]?.[0]?.path || '/')}
+                    onClick={() =>
+                      navigate(NAV_BY_ROLE[user?.role]?.[0]?.path || '/')
+                    }
                     aria-label="EDUX home"
                     className="dashboard-header__brand"
                     style={{
-                      background: 'none', border: 'none', cursor: 'pointer',
-                      display: 'flex', alignItems: 'center', gap: '10px', padding: 0,
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      padding: 0,
                     }}
                   >
-                    <div style={{
-                      background: 'var(--color-primary)',
-                      color: 'white', fontWeight: 800,
-                      fontSize: '1.125rem', fontFamily: 'var(--font-mono)',
-                      padding: '4px 14px', borderRadius: '8px', letterSpacing: '2px',
-                    }}>
+                    <div
+                      style={{
+                        background: 'var(--color-primary)',
+                        color: 'white',
+                        fontWeight: 800,
+                        fontSize: '1.125rem',
+                        fontFamily: 'var(--font-mono)',
+                        padding: '4px 14px',
+                        borderRadius: '8px',
+                        letterSpacing: '2px',
+                      }}
+                    >
                       EDUX
                     </div>
                   </button>
 
                   {/* Semester badge */}
-                  <div style={{
-                    display: 'flex', alignItems: 'center', gap: '6px',
-                    padding: '4px 12px', borderRadius: '9999px',
-                    background: '#f6ece6', border: '1px solid rgba(224,192,178,0.4)',
-                    color: 'var(--color-primary-dark)', fontSize: '0.6875rem', fontWeight: 700,
-                  }}>
-                    <span style={{
-                      width: '6px', height: '6px', borderRadius: '50%',
-                      background: 'var(--color-primary)', display: 'inline-block',
-                      animation: 'pulse-ring 1.5s ease-in-out infinite',
-                    }} />
-                    {t.layout?.semester || SEMESTER_LABEL}
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      padding: '4px 12px',
+                      borderRadius: '9999px',
+                      background: '#f6ece6',
+                      border: '1px solid rgba(224,192,178,0.4)',
+                      color: 'var(--color-primary-dark)',
+                      fontSize: '0.6875rem',
+                      fontWeight: 700,
+                    }}
+                  >
+                    <span
+                      style={{
+                        width: '6px',
+                        height: '6px',
+                        borderRadius: '50%',
+                        background: 'var(--color-primary)',
+                        display: 'inline-block',
+                        animation: 'pulse-ring 1.5s ease-in-out infinite',
+                      }}
+                    />
+                    {t?.layout?.semester || SEMESTER_LABEL}
                   </div>
                 </div>
 
-                {/* Settings toggles + User menu */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-                  {/* Settings (theme + language) */}
+                {/* Global search */}
+                <form
+                  className="dashboard-header-search"
+                  role="search"
+                  onSubmit={handleHeaderSearch}
+                >
+                  <FiSearch
+                    className="dashboard-header-search__icon"
+                    aria-hidden="true"
+                  />
+
+                  <label
+                    className="sr-only"
+                    htmlFor="dashboard-global-search"
+                  >
+                    {t?.nav?.search || 'Tìm kiếm'}
+                  </label>
+
+                  <input
+                    id="dashboard-global-search"
+                    className="dashboard-header-search__input"
+                    type="search"
+                    value={headerSearch}
+                    onChange={(event) =>
+                      setHeaderSearch(event.target.value)
+                    }
+                    placeholder={
+                      t?.search?.inputPlaceholder ||
+                      'Tìm lớp học, bài tập, tài liệu...'
+                    }
+                    maxLength={100}
+                  />
+
+                  <button
+                    className="dashboard-header-search__submit"
+                    type="submit"
+                    aria-label={t?.nav?.search || 'Tìm kiếm'}
+                  >
+                    <FiSearch aria-hidden="true" />
+                  </button>
+                </form>
+
+                {/* Settings + User menu */}
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    flexShrink: 0,
+                  }}
+                >
                   <SettingsToggle />
 
                   {/* Divider */}
-                  <div style={{ width: '1px', height: '28px', background: 'var(--color-border)', margin: '0 4px' }} />
+                  <div
+                    style={{
+                      width: '1px',
+                      height: '28px',
+                      background: 'var(--color-border)',
+                      margin: '0 4px',
+                    }}
+                  />
 
                   {/* User menu */}
                   <div style={{ position: 'relative' }}>
                     <button
                       id="user-menu-button"
-                      onClick={() => setShowUserMenu(!showUserMenu)}
+                      type="button"
+                      onClick={() =>
+                        setShowUserMenu((prev) => !prev)
+                      }
                       aria-expanded={showUserMenu}
                       aria-haspopup="menu"
                       aria-controls="dashboard-user-menu"
                       style={{
-                        display: 'flex', alignItems: 'center', gap: '8px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
                         padding: '6px 10px 6px 6px',
                         background: 'var(--color-primary-card)',
                         border: '1px solid var(--color-border)',
-                        borderRadius: '12px', cursor: 'pointer',
+                        borderRadius: '12px',
+                        cursor: 'pointer',
                         transition: 'background 0.15s',
                       }}
                     >
                       {/* Avatar */}
-                      <div style={{
-                        width: '30px', height: '30px', borderRadius: '8px',
-                        background: 'var(--color-primary)',
-                        color: 'white', fontWeight: 700, fontSize: '0.875rem',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                      }}>
+                      <div
+                        style={{
+                          width: '30px',
+                          height: '30px',
+                          borderRadius: '8px',
+                          background: 'var(--color-primary)',
+                          color: 'white',
+                          fontWeight: 700,
+                          fontSize: '0.875rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0,
+                        }}
+                      >
                         {initials}
                       </div>
-                      <div style={{ textAlign: 'left', minWidth: 0, maxWidth: '120px' }}>
-                        <p style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--color-ink)', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+
+                      <div
+                        style={{
+                          textAlign: 'left',
+                          minWidth: 0,
+                          maxWidth: '120px',
+                        }}
+                      >
+                        <p
+                          style={{
+                            fontSize: '0.8125rem',
+                            fontWeight: 700,
+                            color: 'var(--color-ink)',
+                            margin: 0,
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                          }}
+                        >
                           {user?.full_name || user?.email || 'User'}
                         </p>
-                        <p style={{ fontSize: '0.6875rem', color: 'var(--color-ink-soft)', margin: 0, fontFamily: 'var(--font-mono)' }}>
+
+                        <p
+                          style={{
+                            fontSize: '0.6875rem',
+                            color: 'var(--color-ink-soft)',
+                            margin: 0,
+                            fontFamily: 'var(--font-mono)',
+                          }}
+                        >
                           {roleLabel}
                         </p>
                       </div>
-                      <FiChevronDown aria-hidden="true" className="dashboard-user-chevron" />
+
+                      <FiChevronDown
+                        aria-hidden="true"
+                        className="dashboard-user-chevron"
+                      />
                     </button>
 
                     {/* Dropdown */}
                     {showUserMenu && (
-                      <div id="dashboard-user-menu" role="menu" className="animate-fade-in" style={{
-                        position: 'absolute', right: 0, top: 'calc(100% + 8px)',
-                        width: '240px', background: 'var(--color-surface)',
-                        borderRadius: '14px', boxShadow: 'var(--shadow-lg)',
-                        border: '1px solid var(--color-border)', zIndex: 100, overflow: 'hidden',
-                      }}>
+                      <div
+                        id="dashboard-user-menu"
+                        role="menu"
+                        className="animate-fade-in"
+                        style={{
+                          position: 'absolute',
+                          right: 0,
+                          top: 'calc(100% + 8px)',
+                          width: '240px',
+                          background: 'var(--color-surface)',
+                          borderRadius: '14px',
+                          boxShadow: 'var(--shadow-lg)',
+                          border: '1px solid var(--color-border)',
+                          zIndex: 100,
+                          overflow: 'hidden',
+                        }}
+                      >
                         {/* User info */}
-                        <div style={{
-                          padding: '12px 16px', borderBottom: '1px solid var(--color-border)',
-                          background: 'var(--color-primary-bg)',
-                        }}>
-                          <p style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--color-ink)', margin: 0 }}>
+                        <div
+                          style={{
+                            padding: '12px 16px',
+                            borderBottom: '1px solid var(--color-border)',
+                            background: 'var(--color-primary-bg)',
+                          }}
+                        >
+                          <p
+                            style={{
+                              fontSize: '0.8125rem',
+                              fontWeight: 700,
+                              color: 'var(--color-ink)',
+                              margin: 0,
+                            }}
+                          >
                             {user?.full_name || user?.email}
                           </p>
-                          <p style={{ fontSize: '0.6875rem', color: 'var(--color-primary-dark)', margin: '2px 0 0', fontFamily: 'var(--font-mono)' }}>
+
+                          <p
+                            style={{
+                              fontSize: '0.6875rem',
+                              color: 'var(--color-primary-dark)',
+                              margin: '2px 0 0',
+                              fontFamily: 'var(--font-mono)',
+                            }}
+                          >
                             {roleLabel}
                           </p>
-                          <p style={{ fontSize: '0.6875rem', color: 'var(--color-ink-muted)', margin: '2px 0 0' }}>
+
+                          <p
+                            style={{
+                              fontSize: '0.6875rem',
+                              color: 'var(--color-ink-muted)',
+                              margin: '2px 0 0',
+                            }}
+                          >
                             {user?.email}
                           </p>
                         </div>
 
-                        {/* Settings in dropdown (mobile-friendly) */}
-                        <div style={{ padding: '10px 16px', borderBottom: '1px solid var(--color-border)' }}>
-                          <p style={{ fontSize: '0.6875rem', fontWeight: 700, color: 'var(--color-ink-soft)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>
-                            {lang === 'vi' ? 'Cài đặt giao diện' : 'Display Settings'}
+                        {/* Settings in dropdown */}
+                        <div
+                          style={{
+                            padding: '10px 16px',
+                            borderBottom: '1px solid var(--color-border)',
+                          }}
+                        >
+                          <p
+                            style={{
+                              fontSize: '0.6875rem',
+                              fontWeight: 700,
+                              color: 'var(--color-ink-soft)',
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.08em',
+                              marginBottom: '8px',
+                            }}
+                          >
+                            {lang === 'vi'
+                              ? 'Cài đặt giao diện'
+                              : 'Display Settings'}
                           </p>
+
                           <SettingsToggle compact />
                         </div>
 
                         {/* Logout */}
                         <div style={{ padding: '6px' }}>
                           <button
+                            type="button"
                             onClick={handleLogout}
                             role="menuitem"
                             style={{
-                              width: '100%', padding: '10px 12px',
-                              display: 'flex', alignItems: 'center', gap: '10px',
-                              background: 'none', border: 'none', cursor: 'pointer',
-                              borderRadius: '8px', textAlign: 'left',
-                              fontSize: '0.8125rem', fontWeight: 600,
-                              color: '#dc2626', fontFamily: 'var(--font-sans)',
+                              width: '100%',
+                              padding: '10px 12px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '10px',
+                              background: 'none',
+                              border: 'none',
+                              cursor: 'pointer',
+                              borderRadius: '8px',
+                              textAlign: 'left',
+                              fontSize: '0.8125rem',
+                              fontWeight: 600,
+                              color: '#dc2626',
+                              fontFamily: 'var(--font-sans)',
                               transition: 'background 0.15s',
                             }}
-                            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(220,38,38,0.08)'}
-                            onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                            onMouseEnter={(event) => {
+                              event.currentTarget.style.background =
+                                'rgba(220,38,38,0.08)';
+                            }}
+                            onMouseLeave={(event) => {
+                              event.currentTarget.style.background = 'none';
+                            }}
                           >
                             <FiLogOut aria-hidden="true" />
-                            {t.layout?.logout || 'Đăng xuất'}
+                            {t?.layout?.logout || 'Đăng xuất'}
                           </button>
                         </div>
                       </div>
@@ -296,44 +620,117 @@ export default function DashboardLayout() {
           </div>
         </header>
 
-        {/* ─── MAIN CONTENT ─── */}
-        <main style={isFocusRoom ? { flex: 1, width: '100%', maxWidth: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', height: 'calc(100vh - var(--dashboard-header-height, 64px))', overflow: 'hidden' } : { flex: 1, maxWidth: '1440px', width: '100%', margin: '0 auto', padding: '24px 24px 80px' }}>
+        {/* Main content: chỉ render một Outlet */}
+        <main
+          style={
+            isFocusRoom
+              ? {
+                  flex: 1,
+                  width: '100%',
+                  maxWidth: 'none',
+                  margin: 0,
+                  padding: 0,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  height:
+                    'calc(100vh - var(--dashboard-header-height, 64px))',
+                  overflow: 'hidden',
+                }
+              : {
+                  flex: 1,
+                  maxWidth: '1440px',
+                  width: '100%',
+                  margin: '0 auto',
+                  padding: '24px 24px 80px',
+                }
+          }
+        >
           <Outlet />
         </main>
 
-        {/* ─── FOOTER ─── (ẩn ở trang flashcard) */}
-        {!location.pathname.startsWith('/student/flashcards') && !location.pathname.startsWith('/lecturer/flashcards') && !isFocusRoom && (
-          <footer style={{
-            background: 'var(--color-surface)',
-            borderTop: '1px solid var(--color-border)',
-            padding: '16px 24px',
-            transition: 'background 0.3s',
-          }}>
-            <div style={{
-              maxWidth: '1440px', margin: '0 auto',
-              display: 'flex', flexWrap: 'wrap',
-              alignItems: 'center', justifyContent: 'space-between', gap: '12px',
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.75rem' }}>
-                <span style={{ fontWeight: 800, color: 'var(--color-primary-dark)' }}>EDUX FPT UNIVERSITY</span>
-                <span style={{ color: 'var(--color-border-medium)' }}>•</span>
-                <span style={{ color: 'var(--color-ink-muted)' }}>{t.layout?.footer}</span>
+        {/* Footer: ẩn ở trang flashcard, grading và focus room */}
+        {!isGradePage &&
+          !location.pathname.startsWith('/student/flashcards') &&
+          !location.pathname.startsWith('/lecturer/flashcards') &&
+          !isFocusRoom && (
+            <footer
+              style={{
+                background: 'var(--color-surface)',
+                borderTop: '1px solid var(--color-border)',
+                padding: '16px 24px',
+                transition: 'background 0.3s',
+              }}
+            >
+              <div
+                style={{
+                  maxWidth: '1440px',
+                  margin: '0 auto',
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '12px',
+                }}
+              >
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    fontSize: '0.75rem',
+                  }}
+                >
+                  <span
+                    style={{
+                      fontWeight: 800,
+                      color: 'var(--color-primary-dark)',
+                    }}
+                  >
+                    EDUX FPT UNIVERSITY
+                  </span>
+
+                  <span style={{ color: 'var(--color-border-medium)' }}>
+                    •
+                  </span>
+
+                  <span style={{ color: 'var(--color-ink-muted)' }}>
+                    {t?.layout?.footer}
+                  </span>
+                </div>
+
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '16px',
+                    fontSize: '0.75rem',
+                    color: 'var(--color-ink-soft)',
+                  }}
+                >
+                  <span>
+                    {t?.layout?.hotline}: (024) 7300 1866
+                  </span>
+                  <span>itsupport@fpt.edu.vn</span>
+                  <span>{t?.layout?.copyright}</span>
+                </div>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '0.75rem', color: 'var(--color-ink-soft)' }}>
-                <span>{t.layout?.hotline}: (024) 7300 1866</span>
-                <span>itsupport@fpt.edu.vn</span>
-                <span>{t.layout?.copyright}</span>
-              </div>
-            </div>
-          </footer>
-        )}
+            </footer>
+          )}
 
         {/* Click outside overlay */}
+        {user?.role === ROLES.STUDENT && <AIChatBox />}
+
         {showUserMenu && (
-          <div style={{ position: 'fixed', inset: 0, zIndex: 39 }} onClick={() => setShowUserMenu(false)} />
+          <div
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 39,
+            }}
+            onClick={() => setShowUserMenu(false)}
+          />
         )}
       </div>
     </div>
   );
 }
-

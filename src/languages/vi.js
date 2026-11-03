@@ -296,6 +296,9 @@ const vi = {
     subtitle: 'Tìm lớp học, bài tập, tài liệu và bộ flashcard mà tài khoản của bạn được phép truy cập.',
     inputLabel: 'Nội dung cần tìm',
     inputPlaceholder: 'Nhập để lọc lớp, bài tập, tài liệu hoặc flashcard',
+    resultsEyebrow: 'TÌM KIẾM TOÀN HỆ THỐNG',
+    resultAllHeader: 'Khám phá nội dung',
+    filterLabel: 'Lọc theo',
     typesAriaLabel: 'Loại nội dung',
     types: {
       all: 'Tất cả',
@@ -313,6 +316,10 @@ const vi = {
     resultCount: 'Hiển thị {total} kết quả bạn có quyền truy cập',
     noDescription: 'Không có mô tả',
     paginationInfo: 'Trang {page}/{totalPages} · {total} kết quả',
+    pageListLabel: 'Danh sách trang',
+    pageLabel: 'Trang',
+    jumpLabel: 'Đến trang',
+    jumpBtn: 'Đi',
     prevBtn: 'Trước',
     nextBtn: 'Sau',
     searchError: 'Không thể thực hiện tìm kiếm. Vui lòng thử lại.'

@@ -10,12 +10,14 @@
 @import "tailwindcss";
 
 /* ── Reset & Base ── */
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
 }
 
 :root {
@@ -86,6 +88,21 @@ h6 {
   font-weight: 700;
   line-height: 1.3;
   color: var(--color-ink);
+}
+
+/* Ensure headings & text inside dark hero banners stay bright white */
+.card[style*="linear-gradient"] h1,
+.card[style*="linear-gradient"] h2,
+.card[style*="linear-gradient"] h3,
+div[style*="linear-gradient"] h1,
+div[style*="linear-gradient"] h2,
+div[style*="linear-gradient"] h3 {
+  color: #ffffff !important;
+}
+
+div[style*="linear-gradient"] p,
+.card[style*="linear-gradient"] p {
+  color: rgba(255, 255, 255, 0.88);
 }
 
 a {
@@ -778,7 +795,7 @@ a:hover {
 .dashboard-header__inner {
   display: flex;
   min-width: 0;
-  min-height: 68px;
+  min-height: 64px;
   align-items: center;
   gap: 12px;
   padding: 0 22px;
@@ -804,7 +821,7 @@ a:hover {
 
 .dashboard-header__row {
   max-width: none !important;
-  height: 68px !important;
+  height: 64px !important;
   padding: 0 !important;
 }
 
@@ -959,11 +976,14 @@ a:hover {
 
 /* Keep the toolbar above the navigation and page content. */
 .dashboard-layout {
-  --dashboard-header-height: 72px;
+  --dashboard-header-height: 64px;
   display: grid;
   grid-template-columns: var(--dashboard-sidebar-width) minmax(0, 1fr);
   grid-template-rows: var(--dashboard-header-height) minmax(0, 1fr) auto;
   align-items: stretch;
+  gap: 0;
+  row-gap: 0;
+  column-gap: 0;
 }
 
 .dashboard-layout--collapsed {
@@ -1032,6 +1052,72 @@ a:hover {
   min-height: 42px;
 }
 
+.dashboard-header-search {
+  position: relative;
+  display: flex;
+  flex: 1 1 420px;
+  align-items: center;
+  max-width: 560px;
+  min-width: 180px;
+  margin-inline: clamp(4px, 2vw, 24px);
+}
+
+.dashboard-header-search__icon {
+  position: absolute;
+  left: 14px;
+  width: 18px;
+  height: 18px;
+  color: var(--color-ink-soft);
+  pointer-events: none;
+}
+
+.dashboard-header-search__input {
+  width: 100%;
+  height: 42px;
+  padding: 0 46px 0 42px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  outline: none;
+  background: var(--color-primary-card);
+  color: var(--color-ink);
+  font: 500 .8125rem/1 var(--font-sans);
+  transition: border-color .18s ease, box-shadow .18s ease, background-color .18s ease;
+}
+
+.dashboard-header-search__input::placeholder {
+  color: var(--color-ink-muted);
+}
+
+.dashboard-header-search__input:focus {
+  border-color: var(--color-primary);
+  background: var(--color-surface);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 16%, transparent);
+}
+
+.dashboard-header-search__submit {
+  position: absolute;
+  right: 5px;
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--color-primary-dark);
+  cursor: pointer;
+}
+
+.dashboard-header-search__submit:hover {
+  background: var(--color-primary-bg);
+}
+
+.dashboard-header-search__submit svg {
+  width: 17px;
+  height: 17px;
+}
+
 .dashboard-header__row>div:first-child>div {
   display: flex !important;
   flex: 0 1 auto;
@@ -1079,8 +1165,10 @@ a:hover {
   top: var(--dashboard-header-height);
   grid-column: 1;
   grid-row: 2;
-  align-self: start;
+  align-self: stretch;
   height: calc(100dvh - var(--dashboard-header-height));
+  margin-top: 0;
+  border-top: 0;
 }
 
 .dashboard-sidebar--collapsed,
@@ -1131,6 +1219,26 @@ a:hover {
   .dashboard-header__row {
     gap: 6px !important;
     padding-inline: 0 !important;
+  }
+
+  .dashboard-header-search {
+    flex: 0 0 42px;
+    min-width: 42px;
+    margin-inline: 0;
+  }
+
+  .dashboard-header-search__icon,
+  .dashboard-header-search__input {
+    display: none;
+  }
+
+  .dashboard-header-search__submit {
+    position: static;
+    width: 42px;
+    height: 42px;
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    background: var(--color-primary-card);
   }
 
   .dashboard-header__row>div:first-child {
@@ -1374,3 +1482,78 @@ a:hover {
   overflow-y: hidden;
   padding: 4px 0;
 }
+
+/* ==========================================================================
+   FLUID FULL-HEIGHT WORKSPACE FOR LECTURER GRADING STUDIO
+   Ensures flush alignment with top Navbar and left Sidebar
+   ========================================================================== */
+.dashboard-layout--grade {
+  height: 100vh !important;
+  max-height: 100vh !important;
+  overflow: hidden !important;
+  grid-template-rows: 64px 1fr !important;
+  gap: 0 !important;
+  row-gap: 0 !important;
+  column-gap: 0 !important;
+}
+
+.dashboard-layout--grade .dashboard-header {
+  height: 64px !important;
+  min-height: 64px !important;
+  max-height: 64px !important;
+  border-bottom: 1px solid var(--color-border) !important;
+  box-sizing: border-box !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.dashboard-layout--grade .dashboard-header__inner {
+  height: 64px !important;
+  min-height: 64px !important;
+  max-height: 64px !important;
+  box-sizing: border-box !important;
+}
+
+.dashboard-layout--grade .dashboard-header__row {
+  height: 64px !important;
+  box-sizing: border-box !important;
+}
+
+.dashboard-layout--grade .dashboard-sidebar {
+  grid-column: 1 !important;
+  grid-row: 2 !important;
+  align-self: stretch !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  margin: 0 !important;
+  margin-top: 0 !important;
+  top: 0 !important;
+  padding-top: 8px !important;
+  border-top: none !important;
+  overflow-y: auto !important;
+}
+
+.dashboard-layout--grade .dashboard-sidebar .dashboard-sidebar__section-label {
+  margin-top: 4px !important;
+  margin-bottom: 6px !important;
+}
+
+.dashboard-layout--grade .dashboard-layout__main {
+  height: 100% !important;
+  overflow: hidden !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.dashboard-layout--grade .dashboard-layout__main > main {
+  padding: 0 !important;
+  margin: 0 !important;
+  max-width: none !important;
+  width: 100% !important;
+  height: 100% !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  border-top: 0 !important;
+}
+

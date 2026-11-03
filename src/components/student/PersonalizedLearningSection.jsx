@@ -252,12 +252,15 @@ export default function PersonalizedLearningSection() {
     }
   }, [selectedSubjectId, loadLearningData]);
 
-  // 3. User manually triggers plan generation
-  const handleGeneratePlan = async () => {
+  // 3. User manually triggers plan generation (hoặc tạo lại từ đầu)
+  const handleGeneratePlan = async (force = false) => {
     if (!selectedSubjectId) return;
     try {
       setGeneratingPlan(true);
       setError(null);
+      if (force) {
+        await LearningService.generateStudyPlan(selectedSubjectId, { force: true });
+      }
       await loadLearningData(selectedSubjectId);
     } catch (err) {
       setError('Không thể tạo lịch ôn tập. Vui lòng thử lại sau.');
@@ -615,9 +618,9 @@ export default function PersonalizedLearningSection() {
                   </h3>
                 </div>
 
-                {(!studyPlan || !detailedDays.length) && (
+                {(!studyPlan || !detailedDays.length) ? (
                   <button
-                    onClick={handleGeneratePlan}
+                    onClick={() => handleGeneratePlan(false)}
                     disabled={generatingPlan}
                     className="btn btn-primary"
                     style={{
@@ -636,6 +639,33 @@ export default function PersonalizedLearningSection() {
                       <>
                         <Sparkles size={14} />
                         Tạo lịch ôn tập tuần này bằng AI
+                      </>
+                    )}
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => handleGeneratePlan(true)}
+                    disabled={generatingPlan}
+                    style={{
+                      padding: '7px 14px', borderRadius: '10px',
+                      fontSize: '0.8125rem', fontWeight: 700,
+                      display: 'inline-flex', alignItems: 'center', gap: '6px',
+                      cursor: generatingPlan ? 'not-allowed' : 'pointer',
+                      background: 'var(--color-surface, #ffffff)',
+                      border: '1.5px solid var(--color-primary, #ea580c)',
+                      color: 'var(--color-primary, #ea580c)'
+                    }}
+                    title="Xếp lại toàn bộ lịch 7 ngày dựa trên các câu hỏi flashcard hiện có của môn học"
+                  >
+                    {generatingPlan ? (
+                      <>
+                        <RefreshCw size={14} className="animate-spin" />
+                        Đang xếp lại lịch...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw size={14} />
+                        Tạo lại lịch học mới bằng AI
                       </>
                     )}
                   </button>

@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Declarations - 5 Rubrics Quick View</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        /* Thanh cuộn mảnh cho modal và từng ô văn bản */
+        .custom-scroll::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+
+        .custom-scroll::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 4px;
+        }
+
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+
+        .custom-scroll::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+
+<body class="bg-slate-900/80 min-h-screen flex items-center justify-center p-4">
+
+    <!-- ==================== SUBWINDOW MODAL ==================== -->
+    <div id="quickview-modal"
+        class="bg-white w-full max-w-5xl rounded-3xl shadow-2xl overflow-hidden border border-slate-100 flex flex-col transition-all">
+
+        <!-- MODAL HEADER -->
+        <div class="px-7 pt-6 pb-4 flex items-start justify-between border-b border-slate-100 shrink-0">
+            <div class="flex items-center gap-3.5">
+                <!-- Icon mắt Quick View -->
+                <div
+                    class="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-lg shrink-0">
+                    <i class="fa-regular fa-eye"></i>
+                </div>
+                <div>
+                    <h2 class="text-lg font-bold text-slate-800 leading-snug">AI Declarations</h2>
+                    <p class="text-xs text-slate-400">Quick view of student's AI usage report (5 phases)</p>
+                </div>
+            </div>
+
+            <!-- Nút đóng X -->
+            <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 p-2 text-base transition">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <!-- MODAL BODY: BẢNG CUỘN ĐỦ 5 RUBRICS -->
+        <div class="p-7 overflow-y-auto max-h-[65vh] custom-scroll">
+            <table class="w-full border-collapse text-left text-xs">
+                <thead class="sticky top-0 bg-white border-b border-slate-100 z-10 shadow-xs">
+                    <tr class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                        <th class="pb-3 w-[16%]">TOOL & PURPOSE</th>
+                        <th class="pb-3 w-[25%] px-2">PROMPT CONTENT</th>
+                        <th class="pb-3 w-[25%] px-2">AI RESPONSE</th>
+                        <th class="pb-3 w-[24%] px-2">STUDENT REFLECTION</th>
+                        <th class="pb-3 w-[10%] text-center">DECISION</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 text-[11px] text-slate-700">
+
+                    <!-- 1. AI REFLECTION -->
+                    <tr>
+                        <td class="py-4 pr-3 align-top">
+                            <div class="font-extrabold text-indigo-600 tracking-wide text-xs">CHATGPT</div>
+                            <span
+                                class="inline-block mt-1.5 px-2.5 py-1 bg-slate-50 text-slate-600 border border-slate-200/80 rounded-md font-semibold text-[10px]">
+                                AI Reflection
+                            </span>
+                        </td>
+                        <td class="py-4 px-2 align-top">
+                            <div
+                                class="bg-slate-50/70 border border-slate-200/70 rounded-xl p-3 h-28 overflow-y-auto custom-scroll leading-relaxed text-slate-600">
+                                I am building a Flutter application called Smart Student Grade Manager.<br><br>
+                                Please break this project into small development modules with a recommended
+                                implementation order...
+                            </div>
+                        </td>
+                        <td class="py-4 px-2 align-top">
+                            <div
+                                class="bg-slate-50/70 border border-slate-200/70 rounded-xl p-3 h-28 overflow-y-auto custom-scroll leading-relaxed text-slate-600">
+                                AI divided the project into six main modules:<br><br>
+                                1. Authentication<br>
+                                2. Student Management<br>
+                                3. Grade Management<br>
+                                4. GPA Calculation...
+                            </div>
+                        </td>
+                        <td class="py-4 px-2 align-top">
+                            <div
+                                class="bg-slate-50/70 border border-slate-200/70 rounded-xl p-3 h-28 overflow-y-auto custom-scroll leading-relaxed text-slate-600">
+                                The decomposition helped me understand the overall architecture before coding. Instead
+                                of building everything at once, I completed each module independently, making debugging
+                                easier and reducing dev complexity.
+                            </div>
+                        </td>
+                        <td class="py-4 pl-3 align-top text-center">
+                            <span
+                                class="inline-block px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-lg text-[10px] font-bold lowercase">
+                                accepted
+                            </span>
+                        </td>
+                    </tr>
+
+                    <!-- 2. DECOMPOSITION -->
+                    <tr>
+                        <td class="py-4 pr-3 align-top">
+                            <div class="font-extrabold text-indigo-600 tracking-wide text-xs">CHATGPT</div>
+                            <span
+                                class="inline-block mt-1.5 px-2.5 py-1 bg-slate-50 text-slate-600 border border-slate-200/80 rounded-md font-semibold text-[10px]">
+                                Decomposition
+                            </span>
+                        </td>
+                        <td class="py-4 px-2 align-top">
+                            <div
+                                class="bg-slate-50/70 border border-slate-200/70 rounded-xl p-3 h-28 overflow-y-auto custom-scroll leading-relaxed text-slate-600">
+                                Suggest a clean architecture for a Flutter application using Provider and SQLite.
+                            </div>
+                        </td>
+                        <td class="py-4 px-2 align-top">
+                            <div
+                                class="bg-slate-50/70 border border-slate-200/70 rounded-xl p-3 h-28 overflow-y-auto custom-scroll leading-relaxed text-slate-600">
+                                AI proposed separating the application into:<br>
+                                - Presentation layer (UI & Provider state)<br>
+                                - Domain layer (Business logic & Models)<br>
+                                - Data layer (Database helper & SQLite repositories)
+                            </div>
+                        </td>
+                        <td class="py-4 px-2 align-top">
+                            <div
+                                class="bg-slate-50/70 border border-slate-200/70 rounded-xl p-3 h-28 overflow-y-auto custom-scroll leading-relaxed text-slate-600">
+                                This abstraction improved code organization. Separating responsibilities made the
+                                project easier to maintain and test.
+                            </div>
+                        </td>
+                        <td class="py-4 pl-3 align-top text-center">
+                            <span
+                                class="inline-block px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-lg text-[10px] font-bold lowercase">
+                                accepted
+                            </span>
+                        </td>
+                    </tr>
+
+                    <!-- 3. PATTERN RECOGNITION -->
+                    <tr>
+                        <td class="py-4 pr-3 align-top">
+                            <div class="font-extrabold text-indigo-600 tracking-wide text-xs">GITHUB COPILOT</div>
+                            <span
+                                class="inline-block mt-1.5 px-2.5 py-1 bg-slate-50 text-slate-600 border border-slate-200/80 rounded-md font-semibold text-[10px]">
+                                Pattern Recognition
+                            </span>
+                        </td>
+                        <td class="py-4 px-2 align-top">
+                            <div
+                                class="bg-slate-50/70 border border-slate-200/70 rounded-xl p-3 h-28 overflow-y-auto custom-scroll leading-relaxed text-slate-600">
+                                "Detect repetitive boilerplate code in database query methods and suggest a reusable
+                                repository pattern."
+                            </div>
+                        </td>
+                        <td class="py-4 px-2 align-top">
+                            <div
+                                class="bg-slate-50/70 border border-slate-200/70 rounded-xl p-3 h-28 overflow-y-auto custom-scroll leading-relaxed text-slate-600">
+                                Suggested implementing a BaseRepository generic class with CRUD templates to avoid
+                                repetitive query statements across models.
+                            </div>
+                        </td>
+                        <td class="py-4 px-2 align-top">
+                            <div
+                                class="bg-slate-50/70 border border-slate-200/70 rounded-xl p-3 h-28 overflow-y-auto custom-scroll leading-relaxed text-slate-600">
+                                Recognized the common CRUD patterns across 4 entities. Adapted the generic template,
+                                which reduced duplicate code by 40%.
+                            </div>
+                        </td>
+                        <td class="py-4 pl-3 align-top text-center">
+                            <span
+                                class="inline-block px-3 py-1 bg-blue-50 text-blue-700 border border-blue-100 rounded-lg text-[10px] font-bold lowercase">
+                                modified
+                            </span>
+                        </td>
+                    </tr>
+
+                    <!-- 4. ABSTRACTION -->
+                    <tr>
+                        <td class="py-4 pr-3 align-top">
+                            <div class="font-extrabold text-indigo-600 tracking-wide text-xs">CLAUDE 3.5</div>
+                            <span
+                                class="inline-block mt-1.5 px-2.5 py-1 bg-slate-50 text-slate-600 border border-slate-200/80 rounded-md font-semibold text-[10px]">
+                                Abstraction
+                            </span>
+                        </td>
+                        <td class="py-4 px-2 align-top">
+                            <div
+                                class="bg-slate-50/70 border border-slate-200/70 rounded-xl p-3 h-28 overflow-y-auto custom-scroll leading-relaxed text-slate-600">
+                                "How can I abstract user preferences and local storage so the UI does not depend on
+                                shared_preferences directly?"
+                            </div>
+                        </td>
+                        <td class="py-4 px-2 align-top">
+                            <div
+                                class="bg-slate-50/70 border border-slate-200/70 rounded-xl p-3 h-28 overflow-y-auto custom-scroll leading-relaxed text-slate-600">
+                                Proposed an IStorageService abstract class with get, set, and clear contracts, hiding
+                                package specifics behind an interface.
+                            </div>
+                        </td>
+                        <td class="py-4 px-2 align-top">
+                            <div
+                                class="bg-slate-50/70 border border-slate-200/70 rounded-xl p-3 h-28 overflow-y-auto custom-scroll leading-relaxed text-slate-600">
+                                Filtered out platform-specific storage details. This allows future switching to secure
+                                storage or hive without updating screens.
+                            </div>
+                        </td>
+                        <td class="py-4 pl-3 align-top text-center">
+                            <span
+                                class="inline-block px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-lg text-[10px] font-bold lowercase">
+                                accepted
+                            </span>
+                        </td>
+                    </tr>
+
+                    <!-- 5. ALGORITHMIC THINKING -->
+                    <tr>
+                        <td class="py-4 pr-3 align-top">
+                            <div class="font-extrabold text-indigo-600 tracking-wide text-xs">GEMINI 1.5 PRO</div>
+                            <span
+                                class="inline-block mt-1.5 px-2.5 py-1 bg-slate-50 text-slate-600 border border-slate-200/80 rounded-md font-semibold text-[10px]">
+                                Algorithmic Thinking
+                            </span>
+                        </td>
+                        <td class="py-4 px-2 align-top">
+                            <div
+                                class="bg-slate-50/70 border border-slate-200/70 rounded-xl p-3 h-28 overflow-y-auto custom-scroll leading-relaxed text-slate-600">
+                                "Provide an algorithm to compute weighted GPA taking into account course credits and
+                                letter-grade conversion bounds."
+                            </div>
+                        </td>
+                        <td class="py-4 px-2 align-top">
+                            <div
+                                class="bg-slate-50/70 border border-slate-200/70 rounded-xl p-3 h-28 overflow-y-auto custom-scroll leading-relaxed text-slate-600">
+                                Provided a 4-step reduction algorithm: map grade to 4.0 scale, multiply by credits, sum
+                                grade points, and divide by total credits.
+                            </div>
+                        </td>
+                        <td class="py-4 px-2 align-top">
+                            <div
+                                class="bg-slate-50/70 border border-slate-200/70 rounded-xl p-3 h-28 overflow-y-auto custom-scroll leading-relaxed text-slate-600">
+                                Followed the proposed reduction steps and added boundary handling for zero credits and
+                                pass/fail ungraded modules.
+                            </div>
+                        </td>
+                        <td class="py-4 pl-3 align-top text-center">
+                            <span
+                                class="inline-block px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-lg text-[10px] font-bold lowercase">
+                                accepted
+                            </span>
+                        </td>
+                    </tr>
+
+                </tbody>
+            </table>
+        </div>
+
+        <!-- MODAL FOOTER -->
+        <div class="px-7 py-4 bg-slate-50/60 border-t border-slate-100 flex justify-end shrink-0">
+            <button onclick="closeModal()"
+                class="px-5 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold rounded-xl text-xs transition shadow-xs">
+                Close Panel
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+        function closeModal() {
+            const modal = document.getElementById('quickview-modal');
+            modal.style.transform = 'scale(0.96)';
+            modal.style.opacity = '0';
+            setTimeout(() => {
+                modal.style.display = 'none';
+            }, 150);
+        }
+    </script>
+</body>
+
+</html>

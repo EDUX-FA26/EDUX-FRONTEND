@@ -94,8 +94,8 @@ export default function AdminDashboardPage() {
             <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#a855f7', display: 'inline-block' }} />
             {t.dashboard?.adminBadge}
           </div>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: 0, letterSpacing: '-0.02em' }}>{t.dashboard?.adminTitle}</h1>
-          <p style={{ marginTop: '6px', color: '#94a3b8', fontSize: '0.875rem' }}>
+          <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: 0, letterSpacing: '-0.02em', color: '#ffffff' }}>{t.dashboard?.adminTitle}</h1>
+          <p style={{ marginTop: '8px', color: 'rgba(255, 255, 255, 0.9)', fontSize: '0.9375rem', lineHeight: '1.5', margin: '8px 0 0 0' }}>
             {t.dashboard?.welcomeStudent} <strong style={{ color: 'white' }}>{user?.full_name || user?.email}</strong> — {t.dashboard?.adminDesc}
           </p>
         </div>
