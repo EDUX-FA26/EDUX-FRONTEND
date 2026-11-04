@@ -29,6 +29,7 @@ export default function LecturerGradingPage() {
   const [studentInfo, setStudentInfo] = useState<StudentInfo>(DEFAULT_STUDENT);
   const [topics, setTopics] = useState<any[]>([]);
   const [isLoadingTopics, setIsLoadingTopics] = useState<boolean>(false);
+  const [savedAiEvaluation, setSavedAiEvaluation] = useState<any>(null);
   const stateData = location.state as any;
   const initialCourseName =
     stateData?.courseTitle ||
@@ -185,16 +186,18 @@ export default function LecturerGradingPage() {
               });
 
               // Existing Grade if already graded
-              if (subData.grade || subData.score != null) {
+              const savedRubrics = subData.rubrics || subData.grade?.rubrics;
+              const hasSavedGrade = subData.grade || subData.score != null;
+
+              if (hasSavedGrade) {
                 const gradeObj = subData.grade || {};
                 setExistingGradeId(gradeObj.id || subData.grade_id || null);
                 const scoreNum = Number(subData.score || gradeObj.score || 0);
-                const rubricsObj = subData.rubrics || gradeObj.rubrics;
 
-                if (rubricsObj && rubricsObj.abstraction !== undefined && rubricsObj.implementation !== undefined) {
-                  setInitialScores(rubricsObj);
-                } else if (rubricsObj && (rubricsObj.decomposition !== undefined || rubricsObj.pattern !== undefined)) {
-                  const totalOld = (rubricsObj.decomposition || 0) + (rubricsObj.pattern || 0) + (rubricsObj.abstraction || 0) + (rubricsObj.algorithmic || 0) + (rubricsObj.reflection || 0);
+                if (savedRubrics && savedRubrics.abstraction !== undefined && savedRubrics.implementation !== undefined) {
+                  setInitialScores(savedRubrics);
+                } else if (savedRubrics && (savedRubrics.decomposition !== undefined || savedRubrics.pattern !== undefined)) {
+                  const totalOld = (savedRubrics.decomposition || 0) + (savedRubrics.pattern || 0) + (savedRubrics.abstraction || 0) + (savedRubrics.algorithmic || 0) + (savedRubrics.reflection || 0);
                   const ratio = totalOld > 0 ? totalOld / 10 : 0;
                   setInitialScores({
                     abstraction: parseFloat((2.0 * ratio).toFixed(2)),
@@ -203,8 +206,8 @@ export default function LecturerGradingPage() {
                     ai_interaction: parseFloat((1.5 * ratio).toFixed(2)),
                     reflection: parseFloat((1.0 * ratio).toFixed(2)),
                   });
-                } else if (rubricsObj && (rubricsObj.r1 !== undefined || rubricsObj.r2 !== undefined)) {
-                  const sum = (rubricsObj.r1 || 0) + (rubricsObj.r2 || 0) + (rubricsObj.r3 || 0);
+                } else if (savedRubrics && (savedRubrics.r1 !== undefined || savedRubrics.r2 !== undefined)) {
+                  const sum = (savedRubrics.r1 || 0) + (savedRubrics.r2 || 0) + (savedRubrics.r3 || 0);
                   const ratio = sum > 0 ? sum / 10 : 0;
                   setInitialScores({
                     abstraction: parseFloat((2.0 * ratio).toFixed(2)),
@@ -224,6 +227,19 @@ export default function LecturerGradingPage() {
                   });
                 }
                 setInitialFeedback(subData.feedback || gradeObj.feedback || '');
+              } else if (subData.ai_evaluation_data || subData.ai_rubric_scores) {
+                // Chưa chấm điểm thủ công nhưng đã có bản ghi Snapshot AI Evaluation lưu trong DB
+                const aiScores = subData.ai_rubric_scores || subData.ai_evaluation_data?.rubric_scores;
+                if (aiScores && aiScores.abstraction !== undefined) {
+                  setInitialScores(aiScores);
+                }
+                if (subData.ai_overall_verdict || subData.ai_evaluation_data?.overall_verdict) {
+                  setInitialFeedback(subData.ai_overall_verdict || subData.ai_evaluation_data?.overall_verdict);
+                }
+              }
+
+              if (subData.ai_evaluation_data) {
+                setSavedAiEvaluation(subData.ai_evaluation_data);
               }
 
               // Submission Files
@@ -734,6 +750,7 @@ export default function LecturerGradingPage() {
         auditData={auditRawData}
         topics={topics}
         isLoadingTopics={isLoadingTopics}
+        savedEvaluation={savedAiEvaluation}
         initialRubrics={initialScores}
         initialFeedback={initialFeedback}
         onBack={handleBack}

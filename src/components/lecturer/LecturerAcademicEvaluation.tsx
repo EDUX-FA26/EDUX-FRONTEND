@@ -21,12 +21,13 @@ import {
   HelpCircle,
   Check,
   BookOpen,
-  Compass
+  Compass,
+  RefreshCw
 } from 'lucide-react';
 import './LecturerAcademicEvaluation.css';
 import SubmissionFileViewer from './SubmissionFileViewer';
 import { SubmissionFile, AuditIntegrity, VivaQuestion } from '../../types/submission';
-import { normalizeAuditData } from '../../helper/aiAuditHelper';
+import { normalizeAuditData, formatCleanVietnamese } from '../../helper/aiAuditHelper';
 import TopicService from '../../services/topic.service';
 
 /* ==========================================================================
@@ -187,6 +188,7 @@ export interface LecturerAcademicEvaluationProps {
   initialRubrics?: RubricScores;
   initialFeedback?: string;
   initialAiCompliance?: AiComplianceStatus;
+  savedEvaluation?: any;
   topics?: any[];
   isLoadingTopics?: boolean;
   onBack?: () => void;
@@ -346,6 +348,7 @@ export default function LecturerAcademicEvaluation({
   initialRubrics = DEFAULT_RUBRIC_SCORES,
   initialFeedback = '',
   initialAiCompliance = 'compliant',
+  savedEvaluation,
   topics,
   isLoadingTopics,
   onBack,
@@ -651,6 +654,7 @@ export default function LecturerAcademicEvaluation({
 
   // Modals & Popups
   const [showResubmitModal, setShowResubmitModal] = useState(false);
+  const [showRegenerateModal, setShowRegenerateModal] = useState(false);
   const [resubmitReason, setResubmitReason] = useState('Vui lòng bổ sung thêm giải trình chi tiết về Redis Token Blacklist trong phase AI Reflection.');
   const [showVivaModal, setShowVivaModal] = useState(false);
   const [showAnnotateToast, setShowAnnotateToast] = useState(false);
@@ -695,10 +699,30 @@ export default function LecturerAcademicEvaluation({
     if (!feedback) {
       setFeedback('Code có kiến trúc tốt, phân tách service layer rõ ràng. Khai báo AI minh bạch và có tự phản chiếu xác đáng.');
     }
-    showToastNotification('Đã áp dụng gợi ý AI', 'Đã điền điểm gợi ý 8.50/10 vào 5 tiêu chí rubric chuẩn SE/IT.');
   };
 
-  const handleAuditWithAi = async () => {
+  // Hydrate saved snapshot evaluation from DB if available
+  React.useEffect(() => {
+    if (savedEvaluation) {
+      if (Array.isArray(savedEvaluation.viva_questions) && savedEvaluation.viva_questions.length > 0) {
+        setVivaQuestions(savedEvaluation.viva_questions);
+      }
+      if (savedEvaluation.audit_integrity) {
+        setAuditIntegrity(savedEvaluation.audit_integrity);
+      }
+      if (savedEvaluation.overall_verdict || savedEvaluation.ai_verdict) {
+        const text = savedEvaluation.overall_verdict || savedEvaluation.ai_verdict;
+        setOverallAiFeedback(text);
+        setAiVerdict(text);
+      }
+      if (savedEvaluation.rubric_reasonings) {
+        setRubricReasonings(savedEvaluation.rubric_reasonings);
+      }
+    }
+  }, [savedEvaluation]);
+
+  const handleAuditWithAi = async (options: { force?: boolean; applyScores?: boolean } = {}) => {
+    const { force = false, applyScores = false } = options;
     if (!activeSubmissionId) {
       showToastNotification('Lỗi thẩm định', 'Không xác định được mã bài nộp (submissionId).', 'error');
       return;
@@ -708,6 +732,7 @@ export default function LecturerAcademicEvaluation({
       setIsAuditingAi(true);
 
       const payload = {
+        force,
         aiAuditSummary: {
           declarationAlignment: '96.4%',
           transparencyIndex: 'A+',
@@ -724,30 +749,36 @@ export default function LecturerAcademicEvaluation({
       const res = await SubmissionService.auditRubric(activeSubmissionId, payload);
       const aiData = res?.data || res;
 
-      if (!aiData || (!aiData.rubrics && !aiData.rubric_scores)) {
-        throw new Error('Dữ liệu thẩm định AI không đúng định dạng JSON.');
+      if (!aiData) {
+        throw new Error('Dữ liệu thẩm định AI không tồn tại.');
       }
 
-      isUserModifiedRef.current = true;
-      const newScores: RubricScores = { ...scores };
-      const newReasons: Record<string, string> = {};
+      // CHỈ CẬP NHẬT ĐIỂM SỐ NẾU applyScores = true (khi Giảng viên chủ động bấm Khớp điểm hoặc Chấm lại bằng AI)
+      // Thao tác Thanh tra/Vấn đáp TUYỆT ĐỐI KHÔNG ĐƯỢC THAY ĐỔI ĐIỂM SỐ
+      if (applyScores && (aiData.rubrics || aiData.rubric_scores)) {
+        isUserModifiedRef.current = true;
+        const newScores: RubricScores = { ...scores };
+        const newReasons: Record<string, string> = {};
 
-      if (Array.isArray(aiData.rubrics)) {
-        aiData.rubrics.forEach((item: any) => {
-          if (item.criterion_id) {
-            newScores[item.criterion_id] = typeof item.score === 'number' ? item.score : parseFloat(item.score);
-            newReasons[item.criterion_id] = item.short_reason || '';
+        if (Array.isArray(aiData.rubrics)) {
+          aiData.rubrics.forEach((item: any) => {
+            if (item.criterion_id) {
+              newScores[item.criterion_id] = typeof item.score === 'number' ? item.score : parseFloat(item.score);
+              newReasons[item.criterion_id] = item.short_reason || '';
+            }
+          });
+        } else if (aiData.rubric_scores) {
+          Object.assign(newScores, aiData.rubric_scores);
+          if (aiData.rubric_reasonings) {
+            Object.assign(newReasons, aiData.rubric_reasonings);
           }
-        });
-      } else if (aiData.rubric_scores) {
-        Object.assign(newScores, aiData.rubric_scores);
-        if (aiData.rubric_reasonings) {
-          Object.assign(newReasons, aiData.rubric_reasonings);
         }
-      }
 
-      setScores(newScores);
-      setRubricReasonings(newReasons);
+        setScores(newScores);
+        setRubricReasonings(newReasons);
+      } else if (aiData.rubric_reasonings) {
+        setRubricReasonings(aiData.rubric_reasonings);
+      }
 
       if (Array.isArray(aiData.viva_questions) && aiData.viva_questions.length > 0) {
         setVivaQuestions(aiData.viva_questions);
@@ -762,25 +793,10 @@ export default function LecturerAcademicEvaluation({
       const verdict = aiData.overall_verdict || aiData.ai_verdict || aiData.overall_feedback || '';
       if (verdict) {
         setAiVerdict(verdict);
-        if (!feedback) {
+        if (!feedback && applyScores) {
           setFeedback(verdict);
         }
       }
-
-      const calculatedTotal = aiData.total_score != null
-        ? Number(aiData.total_score).toFixed(2)
-        : (
-            (newScores.abstraction || 0) +
-            (newScores.implementation || 0) +
-            (newScores.verification || 0) +
-            (newScores.ai_interaction || 0) +
-            (newScores.reflection || 0)
-          ).toFixed(2);
-
-      showToastNotification(
-        'Thẩm định AI thành công',
-        `Đã khớp điểm từ Gemini: Tổng điểm ${calculatedTotal}/10.`
-      );
     } catch (err: any) {
       console.error('[ART-AI] AI Audit error:', err);
       const errMsg = err?.response?.data?.message || err?.message || 'Không thể thẩm định qua Gemini API.';
@@ -1267,7 +1283,7 @@ export default function LecturerAcademicEvaluation({
                   onClick={() => {
                     setShowVivaModal(true);
                     if (vivaQuestions.length === 0 && !isAuditingAi) {
-                      handleAuditWithAi();
+                      handleAuditWithAi({ force: false, applyScores: false });
                     }
                     if (onRunAuditViva) onRunAuditViva();
                   }}
@@ -1299,12 +1315,12 @@ export default function LecturerAcademicEvaluation({
                   <span className="text-slate-400 font-semibold text-sm ml-1.5">/ 10</span>
                 </div>
 
-                <div>
+                <div className="flex items-center justify-center gap-2 flex-wrap">
                   <button
                     type="button"
                     disabled={isAuditingAi}
-                    onClick={handleAuditWithAi}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-500/20 transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                    onClick={() => handleAuditWithAi({ force: false, applyScores: true })}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-500/20 transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     {isAuditingAi ? (
                       <>
@@ -1315,6 +1331,26 @@ export default function LecturerAcademicEvaluation({
                       <>
                         <Sparkles size={14} className="text-amber-300" />
                         <span>Khớp từng tiêu chí với AI</span>
+                      </>
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={isAuditingAi}
+                    onClick={() => setShowRegenerateModal(true)}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-xs font-bold transition shadow-2xs cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                    title="Chấm lại bằng AI (Regenerate AI Evaluation)"
+                  >
+                    {isAuditingAi ? (
+                      <>
+                        <div className="w-3 h-3 border-2 border-slate-500 border-t-transparent rounded-full animate-spin" />
+                        <span>Đang phân tích lại...</span>
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw size={13} className="text-slate-500" />
+                        <span>Chấm lại bằng AI</span>
                       </>
                     )}
                   </button>
@@ -1345,7 +1381,7 @@ export default function LecturerAcademicEvaluation({
                     <button
                       type="button"
                       onClick={() => {
-                        const textToUse = aiVerdict || overallAiFeedback;
+                        const textToUse = formatCleanVietnamese(aiVerdict || overallAiFeedback);
                         isUserModifiedRef.current = true;
                         setFeedback(textToUse);
                       }}
@@ -1358,7 +1394,7 @@ export default function LecturerAcademicEvaluation({
                   </div>
 
                   <p className="text-slate-700 text-xs leading-relaxed whitespace-pre-wrap break-words font-medium">
-                    {aiVerdict || overallAiFeedback}
+                    {formatCleanVietnamese(aiVerdict || overallAiFeedback)}
                   </p>
                 </div>
               )}
@@ -1720,6 +1756,72 @@ export default function LecturerAcademicEvaluation({
         </div>
       )}
 
+      {/* ==================== MODAL: CONFIRM REGENERATE AI EVALUATION ==================== */}
+      {showRegenerateModal && (
+        <div className="fixed inset-0 z-[999] bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-sm w-full p-5 space-y-4 animate-in zoom-in-95 duration-150">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 border border-purple-200/80 flex items-center justify-center shrink-0 shadow-2xs">
+                <Sparkles size={20} className="text-purple-600" />
+              </div>
+              <div className="space-y-1 min-w-0 flex-1">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-bold text-slate-800 leading-snug">
+                    Xác nhận phân tích lại bằng AI?
+                  </h3>
+                  <button
+                    type="button"
+                    disabled={isAuditingAi}
+                    onClick={() => setShowRegenerateModal(false)}
+                    className="text-slate-400 hover:text-slate-600 transition -mr-1 -mt-1 p-1 disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
+                    <X size={15} />
+                  </button>
+                </div>
+                <p className="text-xs text-slate-600 leading-relaxed pt-0.5">
+                  Thao tác này sẽ gọi AI tạo điểm gợi ý và nhận xét mới, đồng thời ghi đè lên kết quả đánh giá hiện tại.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                disabled={isAuditingAi}
+                onClick={() => setShowRegenerateModal(false)}
+                className="px-3.5 py-2 border border-slate-200 text-slate-600 hover:bg-slate-50 rounded-xl text-xs font-semibold transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                type="button"
+                disabled={isAuditingAi}
+                onClick={async () => {
+                  try {
+                    await handleAuditWithAi({ force: true, applyScores: true });
+                  } finally {
+                    setShowRegenerateModal(false);
+                  }
+                }}
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold transition shadow-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isAuditingAi ? (
+                  <>
+                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Đang phân tích...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles size={13} />
+                    <span>Xác nhận phân tích</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ==================== MODAL 2: VIVA & AUDIT INSPECTOR ==================== */}
       {showVivaModal && (
         <div className="fixed inset-0 z-[999] bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5 md:p-6 overflow-hidden animate-in fade-in duration-200">
@@ -1920,7 +2022,7 @@ export default function LecturerAcademicEvaluation({
                               <span>Nội dung câu hỏi vấn đáp cho giảng viên:</span>
                             </div>
                             <p className="text-xs sm:text-[13px] text-slate-800 leading-relaxed font-semibold">
-                              {q.question}
+                              {formatCleanVietnamese(q.question)}
                             </p>
                           </div>
 
@@ -1932,7 +2034,7 @@ export default function LecturerAcademicEvaluation({
                                 <span>Gợi ý câu trả lời kỳ vọng (Expected Answer Criteria):</span>
                               </div>
                               <p className="text-xs text-slate-700 leading-relaxed font-normal">
-                                {answerCriteria}
+                                {formatCleanVietnamese(answerCriteria)}
                               </p>
                             </div>
                           )}
@@ -1950,7 +2052,7 @@ export default function LecturerAcademicEvaluation({
                     {!isAuditingAi && (
                       <button
                         type="button"
-                        onClick={handleAuditWithAi}
+                        onClick={() => handleAuditWithAi({ force: false, applyScores: false })}
                         className="px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl text-xs font-bold transition shadow-md shadow-indigo-500/20 cursor-pointer"
                       >
                         Phân Tích Code & Tạo Câu Hỏi Viva
