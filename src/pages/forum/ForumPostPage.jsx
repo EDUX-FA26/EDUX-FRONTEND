@@ -35,10 +35,14 @@ export default function ForumPostPage() {
   return <main style={pageStyle}>
     <button type="button" className="btn" onClick={() => navigate(-1)}><ArrowLeft size={16} /> Quay lại diễn đàn</button>
     {error && <div style={errorStyle}>{error}</div>}
-    <article style={detailCard}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16 }}><div><span style={badge}>{post.post_type === 'CONFESSION' ? 'Confession' : 'Hỏi đáp'}</span><h1 style={{ margin: '12px 0 6px' }}>{post.title}</h1><p style={{ color: 'var(--color-ink-soft)', margin: 0 }}>{post.is_anonymous ? 'Ẩn danh' : (post.author_name || 'EDUX User')} · {new Date(post.created_at).toLocaleString('vi-VN')}</p></div><div style={{ color: 'var(--color-ink-soft)', display: 'flex', gap: 12 }}><span><Heart size={16} /> {post.like_count || 0}</span><span><MessageCircle size={16} /> {post.comment_count || 0}</span><span>◉ {post.view_count || 0}</span></div></div>
-      <p style={{ whiteSpace: 'pre-wrap', lineHeight: 1.8, color: 'var(--color-ink-muted)', marginTop: 26 }}>{post.content}</p>
+    <div style={followRow}><span style={topicBadge}>{post.post_type === 'CONFESSION' ? 'Confession' : 'Hỏi Đáp'}</span><strong style={topicTitle}>{post.subject_code || post.title}</strong><span style={topicMeta}>{post.is_anonymous ? 'Ẩn danh' : (post.author_name || 'EDUX User')} · {new Date(post.created_at).toLocaleDateString('vi-VN')}</span></div>
+    <div style={breadcrumb}>⌂ &nbsp; CỘNG ĐỒNG &nbsp;›&nbsp; <strong>{post.post_type === 'CONFESSION' ? 'Confession' : 'Hỏi đáp'}</strong></div>
+    <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}><button type="button" className="btn">Theo dõi</button></div>
+    <article style={postShell}>
+      <aside style={authorCard}><div style={authorAvatar}>{(post.is_anonymous ? '?' : (post.author_name || 'E')[0]).toUpperCase()}</div><strong style={authorName}>{post.is_anonymous ? 'Ẩn danh' : (post.author_name || 'EDUX User')}</strong><span style={authorRole}>{post.author_role === 'lecturer' ? 'Giảng viên' : 'Thành viên'}</span><div style={authorStats}><span>Tham gia</span><b>EDUX</b><span>Bài viết</span><b>—</b><span>Reaction</span><b>{post.like_count || 0}</b></div></aside>
+      <div style={postContent}><div style={postMetaRow}><span>{new Date(post.created_at).toLocaleDateString('vi-VN')}</span><span>#1</span></div><h1 style={{ margin: '14px 0 8px', fontSize: 20, color: 'var(--color-ink)' }}>{post.title}</h1><p style={{ whiteSpace: 'pre-wrap', lineHeight: 1.8, color: 'var(--color-ink)', margin: 0 }}>{post.content}</p>
       {Array.isArray(post.attachments) && post.attachments.length > 0 && <div style={attachmentsStyle}><strong>Tệp đính kèm</strong>{post.attachments.map((file) => <a key={`${file.name}-${file.size}`} href={file.dataUrl} download={file.name} target="_blank" rel="noreferrer" style={attachmentLink}>{file.name} <span>↓</span></a>)}</div>}
+      <div style={postActions}><button type="button" style={replyStyle}><Heart size={16} /> Like</button><button type="button" style={replyStyle} onClick={() => document.querySelector('textarea')?.focus()}><Reply size={16} /> Trả lời</button></div></div>
     </article>
     <section style={detailCard}><h2 style={{ marginTop: 0 }}>Bình luận ({post.comments?.length || 0})</h2>{(post.comments || []).map((item) => <div key={item.id} style={{ padding: '12px 0', borderBottom: '1px solid var(--color-border)', marginLeft: item.parent_id ? 28 : 0 }}><strong>{item.author_name || 'EDUX User'}</strong><p style={{ margin: '6px 0', color: 'var(--color-ink-muted)' }}>{item.content}</p><button type="button" style={replyStyle} onClick={() => setReplyTo(item.id)}><Reply size={14} /> Trả lời</button></div>)}<div style={replyComposer}><div style={replyAvatar}>{(user?.full_name || user?.email || 'E')[0].toUpperCase()}</div><div style={replyEditor}><div style={replyToolbar}><button type="button" style={toolButton}><strong>B</strong></button><button type="button" style={toolButton}><em>I</em></button><button type="button" style={toolButton}><span>Tᵀ</span></button><button type="button" style={toolButton}><Link size={17} /></button><button type="button" style={toolButton}><Image size={17} /></button><button type="button" style={toolButton}><Smile size={17} /></button></div><textarea value={comment} onChange={(e) => setComment(e.target.value)} placeholder={replyTo ? 'Viết câu trả lời...' : 'Viết bình luận...'} style={replyTextarea} /><div style={{ display: 'flex', justifyContent: 'flex-end', padding: '0 12px 12px' }}><button type="button" className="btn btn-primary" onClick={sendComment}><Reply size={16} /> Trả lời</button></div></div></div></section>
   </main>;
@@ -46,6 +50,20 @@ export default function ForumPostPage() {
 
 const pageStyle = { maxWidth: 900, margin: '0 auto', padding: '32px 24px 80px' };
 const detailCard = { background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 16, padding: 24, marginTop: 16 };
+const followRow = { background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 10, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 10, color: 'var(--color-ink)' };
+const topicBadge = { background: '#fff26a', color: '#3d3700', borderRadius: 8, padding: '5px 9px', fontWeight: 800 };
+const topicTitle = { fontSize: 24, fontWeight: 500 };
+const topicMeta = { color: 'var(--color-ink-muted)', fontSize: 13 };
+const breadcrumb = { margin: '18px 0', color: 'var(--color-ink-muted)', fontSize: 13 };
+const postShell = { display: 'grid', gridTemplateColumns: '190px minmax(0,1fr)', gap: 14, background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 14, padding: 10 };
+const authorCard = { background: 'var(--color-primary-card)', border: '1px solid var(--color-border)', borderRadius: 10, padding: 12, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', minHeight: 240 };
+const authorAvatar = { width: 112, height: 112, borderRadius: '50%', background: 'var(--color-primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 42, fontWeight: 800, marginBottom: 10 };
+const authorName = { color: 'var(--color-primary-dark)', fontSize: 17 };
+const authorRole = { color: 'var(--color-ink-muted)', fontSize: 13, marginTop: 3 };
+const authorStats = { width: '100%', marginTop: 'auto', display: 'grid', gridTemplateColumns: '1fr auto', gap: 5, textAlign: 'left', color: 'var(--color-ink-muted)', fontSize: 12 };
+const postContent = { minWidth: 0, padding: '2px 10px 0' };
+const postMetaRow = { display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--color-border)', padding: '4px 0 10px', color: 'var(--color-ink-muted)', fontSize: 13 };
+const postActions = { display: 'flex', justifyContent: 'flex-end', gap: 18, borderTop: '1px solid var(--color-border)', marginTop: 20, paddingTop: 12 };
 const badge = { display: 'inline-block', background: 'var(--color-primary-card)', color: 'var(--color-primary-dark)', borderRadius: 999, padding: '5px 10px', fontSize: 12, fontWeight: 800 };
 const inputStyle = { flex: 1, border: '1px solid var(--color-border-medium)', borderRadius: 9, padding: '11px 13px', background: 'var(--color-surface)', color: 'var(--color-ink)' };
 const replyStyle = { border: 0, background: 'transparent', color: 'var(--color-primary-dark)', cursor: 'pointer', display: 'inline-flex', gap: 5, alignItems: 'center' };
