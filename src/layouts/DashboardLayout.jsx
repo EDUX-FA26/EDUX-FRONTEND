@@ -5,7 +5,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { ROLES, SEMESTER_LABEL } from '../config/constants';
 import SettingsToggle from '../components/common/SettingsToggle';
 import { FiChevronDown, FiGrid, FiLogOut, FiMenu, FiSearch } from 'react-icons/fi';
-import { Flame, LibraryBig, BookMarked, Sparkles } from 'lucide-react';
+import { Flame, LibraryBig, BookMarked, Sparkles, MessagesSquare } from 'lucide-react';
 import AIChatBox from '../components/student/AIChatBox';
 
 // Nav config theo role
@@ -16,11 +16,13 @@ const NAV_BY_ROLE = {
     { id: 'classes', icon: LibraryBig, path: '/student/classes', key: 'classes', label: 'Lớp học' },
     { id: 'streak', icon: Flame, path: '/student/streak', key: 'streak' },
     { id: 'flashcards', icon: BookMarked, path: '/student/flashcards', key: 'flashcards' },
+    { id: 'forum', icon: MessagesSquare, path: '/student/forum', key: 'forum', label: 'Diễn đàn' },
   ],
   [ROLES.LECTURER]: [
     { id: 'dashboard', icon: FiGrid, path: '/lecturer/dashboard', key: 'overview' },
     { id: 'flashcards', icon: BookMarked, path: '/lecturer/flashcards', key: 'flashcards' },
     { id: 'classes', icon: LibraryBig, path: '/lecturer/classes', key: 'classes', label: 'Lớp học' },
+    { id: 'forum', icon: MessagesSquare, path: '/lecturer/forum', key: 'forum', label: 'Diễn đàn' },
   ],
   [ROLES.ADMIN]: [
     { id: 'dashboard', icon: 'dashboard', path: '/admin/dashboard', key: 'overview', label: 'Tổng quan' },
@@ -31,6 +33,7 @@ const NAV_BY_ROLE = {
     { id: 'semesters', icon: 'calendar_month', path: '/admin/semesters', key: 'semesters', label: 'Học kỳ' },
     { id: 'subjects', icon: 'menu_book', path: '/admin/subjects', key: 'subjects', label: 'Môn học' },
     { id: 'logs', icon: 'history', path: '/admin/logs', key: 'logs', label: 'System Logs' },
+    { id: 'forum', icon: 'forum', path: '/admin/forum', key: 'forum', label: 'Diễn đàn' },
   ],
 };
 

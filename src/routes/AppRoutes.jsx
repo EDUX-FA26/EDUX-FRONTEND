@@ -27,6 +27,7 @@ import StudentFlashcardSelectPage from '../pages/student/StudentFlashcardSelectP
 import FlashcardTestPage from '../pages/student/FlashcardTestPage';
 import FlashcardTestResultPage from '../pages/student/FlashcardTestResultPage';
 import PersonalizedLearningPage from '../pages/student/PersonalizedLearningPage';
+import ForumPage from '../pages/forum/ForumPage';
 
 // Layouts
 import DashboardLayout from '../layouts/DashboardLayout';
@@ -76,6 +77,7 @@ export default function AppRoutes() {
         <Route path="flashcards/tests/:testId" element={<FlashcardTestPage />} />
         <Route path="flashcards/tests/:testId/result" element={<FlashcardTestResultPage />} />
         <Route path="search" element={<SearchPage />} />
+        <Route path="forum" element={<ForumPage />} />
         <Route path="classes" element={<StudentClassesPage />} />
         <Route path="classes/:classId" element={<StudentClassDetailPage />} />
         <Route path="classes/:classId/materials" element={<ClassMaterialsPage />} />
@@ -98,6 +100,7 @@ export default function AppRoutes() {
         {/* Bước 2: quản lý flashcard theo môn */}
         <Route path="flashcards/subject/:subjectId" element={<LecturerFlashcardsPage />} />
         <Route path="search" element={<SearchPage />} />
+        <Route path="forum" element={<ForumPage />} />
         <Route path="classes" element={<LecturerClassesPage />} />
         <Route path="classes/:classId" element={<LecturerClassDetailPage />} />
         <Route path="classes/:classId/materials" element={<ClassMaterialsPage />} />
@@ -149,6 +152,7 @@ export default function AppRoutes() {
         <Route path="semesters" element={<SemesterManagementPage />} />
         <Route path="subjects" element={<SubjectManagementPage />} />
         <Route path="search" element={<SearchPage />} />
+        <Route path="forum" element={<ForumPage />} />
         <Route path="logs" element={<SystemLogsPage />} />
         <Route index element={<Navigate to="dashboard" replace />} />
       </Route>
