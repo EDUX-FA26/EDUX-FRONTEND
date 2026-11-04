@@ -23,6 +23,8 @@ import {
   Plus,
   Check,
   FileCode,
+  FileArchive,
+  AlertTriangle,
   ShieldCheck,
   Sparkles,
   RefreshCw,
@@ -32,6 +34,7 @@ import {
   FileCheck2,
   Undo2
 } from 'lucide-react';
+import AssignmentService from '../../services/assignment.service';
 import './StudentAssignmentFlow.css';
 
 /* ==========================================================================
@@ -87,7 +90,15 @@ export interface Assignment {
   courseCode: string;
   courseTitle: string;
   dueDate: string;
+  deadlineRaw?: string | null;
+  allowLateSubmission?: boolean;
   content: string;
+  instructions?: string;
+  maxScore?: number | null;
+  weight?: number | null;
+  aiDeclarationRequired?: boolean;
+  minAiInteractions?: number;
+  maxAiInteractions?: number;
   instructor: {
     name: string;
     avatarUrl?: string;
@@ -98,6 +109,8 @@ export interface Assignment {
     name: string;
     size: string;
     url?: string;
+    materialId?: string;
+    assignmentId?: string;
   }>;
   score?: number | null;
 }
@@ -124,6 +137,7 @@ export interface SubmissionFile {
 }
 
 export interface SubmissionData {
+  id?: string;
   status: SubmissionStatus;
   submittedAt: string | null;
   lastEditedAt?: string | null;
@@ -516,6 +530,33 @@ export const AssignmentOverview: React.FC<AssignmentOverviewProps> = ({
 
   return (
     <div className="space-y-5">
+      {/* Requirements Card: AI Declaration Requirement */}
+      {assignment.aiDeclarationRequired !== false ? (
+        <div className="saf-overview-card bg-amber-50/80 border border-amber-200/90 rounded-2xl p-4 shadow-xs space-y-2">
+          <div className="flex items-center gap-2 text-amber-800 font-bold text-xs uppercase tracking-wide">
+            <Sparkles size={15} className="text-amber-600 shrink-0" />
+            <span>Yêu cầu khai báo AI</span>
+          </div>
+          <p className="text-xs text-amber-900 leading-relaxed font-medium">
+            ⚠️ Bài tập này bắt buộc khai báo minh bạch AI Audit Log (các công cụ và prompt AI sử dụng khi làm bài).
+          </p>
+          <div className="pt-2 border-t border-amber-200/60 flex items-center gap-1.5 text-[11px] text-amber-700">
+            <CheckCircle2 size={13} className="text-amber-600 shrink-0" />
+            <span>Phải hoàn tất ít nhất 1 mục khai báo tương tác AI tại Bước 2</span>
+          </div>
+        </div>
+      ) : (
+        <div className="saf-overview-card bg-slate-50 border border-slate-200 rounded-2xl p-4 shadow-xs space-y-1.5">
+          <div className="flex items-center gap-2 text-slate-700 font-bold text-xs uppercase tracking-wide">
+            <ShieldCheck size={15} className="text-emerald-500 shrink-0" />
+            <span>Không yêu cầu khai báo AI</span>
+          </div>
+          <p className="text-xs text-slate-600 leading-relaxed font-medium">
+            ℹ️ Bài tập nộp thông thường (Không bắt buộc khai báo tương tác AI).
+          </p>
+        </div>
+      )}
+
       {/* Card 1: Table of contents */}
       <div className="saf-overview-card bg-white border border-slate-200 rounded-2xl p-5 shadow-xs">
         <button
@@ -551,47 +592,24 @@ export const AssignmentOverview: React.FC<AssignmentOverviewProps> = ({
                 Current
               </span>
             </div>
-
-            {/* Peer assignments for realism */}
-            <div className="flex items-center justify-between p-2.5 rounded-xl hover:bg-slate-50 transition cursor-pointer text-slate-500">
-              <div className="flex items-center gap-2.5 min-w-0">
-                <span className="w-6 h-6 rounded bg-slate-100 text-slate-400 flex items-center justify-center text-xs shrink-0">
-                  <FileText size={12} />
-                </span>
-                <span className="text-xs font-medium truncate">
-                  Assignment 1: RESTful Architecture
-                </span>
-              </div>
-              <span className="text-[10px] text-slate-400 font-mono">10/10</span>
-            </div>
-
-            <div className="flex items-center justify-between p-2.5 rounded-xl hover:bg-slate-50 transition cursor-pointer text-slate-500">
-              <div className="flex items-center gap-2.5 min-w-0">
-                <span className="w-6 h-6 rounded bg-slate-100 text-slate-400 flex items-center justify-center text-xs shrink-0">
-                  <FileText size={12} />
-                </span>
-                <span className="text-xs font-medium truncate">
-                  Assignment 2: PostgreSQL Index Tuning
-                </span>
-              </div>
-              <span className="text-[10px] text-slate-400 font-mono">9.5/10</span>
-            </div>
           </div>
         )}
       </div>
 
       {/* Card 2: Content */}
       <div className="saf-overview-card bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-3">
-        <h3 className="font-bold text-slate-800 text-sm">Content</h3>
-        <p className="text-xs text-slate-600 leading-relaxed">
-          {assignment.content}
+        <h3 className="font-bold text-slate-800 text-sm">Description</h3>
+        <p className="text-xs text-slate-600 leading-relaxed whitespace-pre-line">
+          {assignment.content || 'N/A'}
         </p>
 
         <div className="pt-3 border-t border-slate-100 flex items-center gap-2 text-slate-500 text-xs">
           <div className="w-6 h-6 rounded-full bg-blue-50 text-blue-600 font-bold text-[10px] flex items-center justify-center">
-            {assignment.instructor.name.substring(0, 2).toUpperCase()}
+            {assignment.instructor?.name && assignment.instructor.name !== 'N/A'
+              ? assignment.instructor.name.substring(0, 2).toUpperCase()
+              : 'GV'}
           </div>
-          <span>Posted by {assignment.instructor.name}</span>
+          <span>Posted by {assignment.instructor?.name || 'N/A'}</span>
         </div>
       </div>
 
@@ -620,44 +638,64 @@ export const AssignmentOverview: React.FC<AssignmentOverviewProps> = ({
                 : 'bg-slate-100 text-slate-600'
             }`}
           >
-            {score != null ? `${Number(score).toFixed(2)} / 10` : 'SCORE: N/A'}
+            {score != null ? `${Number(score).toFixed(2)} / ${assignment.maxScore ?? 10}` : 'SCORE: N/A'}
           </span>
         </div>
 
-        {assignment.additionalFiles && assignment.additionalFiles.length > 0 && (
-          <div className="pt-2 space-y-2 border-t border-slate-100">
+        <div className="pt-2 space-y-2 border-t border-slate-100">
             <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
               Resources Attached
             </span>
-            {assignment.additionalFiles.map((file) => (
-              <a
-                key={file.id}
-                href={file.url || '#'}
-                onClick={(e) => {
-                  e.preventDefault();
-                  alert(`Downloading ${file.name}`);
-                }}
-                className="flex items-center justify-between bg-slate-50 hover:bg-blue-50/60 p-2.5 rounded-xl border border-slate-200/80 transition group"
-              >
-                <div className="flex items-center gap-2 min-w-0">
-                  <FileText size={15} className="text-blue-500 shrink-0" />
-                  <div className="min-w-0">
-                    <p className="text-xs font-semibold text-slate-700 group-hover:text-blue-600 truncate">
-                      {file.name}
-                    </p>
-                    <span className="text-[10px] text-slate-400 font-mono">
-                      {file.size}
-                    </span>
+            {assignment.additionalFiles && assignment.additionalFiles.length > 0 ? (
+              assignment.additionalFiles.map((file) => (
+                <a
+                  key={file.id}
+                  href={file.url || '#'}
+                  onClick={async (e) => {
+                    e.preventDefault();
+                    if (file.materialId && file.assignmentId) {
+                      try {
+                        const res = await AssignmentService.getMaterialDownloadUrl(file.assignmentId, file.materialId);
+                        const downloadUrl = res?.data?.download_url || res?.download_url;
+                        if (downloadUrl) {
+                          window.open(downloadUrl, '_blank');
+                          return;
+                        }
+                      } catch (err) {
+                        console.error('Download material failed:', err);
+                      }
+                    }
+                    if (file.url && file.url !== '#') {
+                      window.open(file.url, '_blank');
+                    } else {
+                      alert(`Tải file tài liệu: ${file.name}`);
+                    }
+                  }}
+                  className="flex items-center justify-between bg-slate-50 hover:bg-blue-50/60 p-2.5 rounded-xl border border-slate-200/80 transition group"
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <FileText size={15} className="text-blue-500 shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold text-slate-700 group-hover:text-blue-600 truncate">
+                        {file.name}
+                      </p>
+                      <span className="text-[10px] text-slate-400 font-mono">
+                        {file.size}
+                      </span>
+                    </div>
                   </div>
-                </div>
-                <Download
-                  size={14}
-                  className="text-slate-400 group-hover:text-blue-600 shrink-0"
-                />
-              </a>
-            ))}
+                  <Download
+                    size={14}
+                    className="text-slate-400 group-hover:text-blue-600 shrink-0"
+                  />
+                </a>
+              ))
+            ) : (
+              <div className="text-[11px] text-slate-400 italic">
+                Chưa có tài liệu đính kèm (N/A)
+              </div>
+            )}
           </div>
-        )}
       </div>
     </div>
   );
@@ -911,32 +949,43 @@ export const AiAuditLogCard: React.FC<AiAuditLogCardProps> = ({
               </div>
 
               {isExpanded && (
-                <div className="px-4 pb-4 pt-1 bg-slate-50/40 border-t border-slate-100 text-xs space-y-3 animate-in fade-in duration-150">
-                  <div>
-                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1">
-                      Prompt / Input Used
-                    </span>
-                    <p className="p-2.5 rounded-lg bg-white border border-slate-200 font-mono text-[11px] text-slate-700 whitespace-pre-wrap">
-                      {item.prompt || 'No prompt recorded.'}
-                    </p>
-                  </div>
+                <div className="p-4 bg-slate-50/40 border-t border-slate-100 animate-in fade-in duration-150">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 items-stretch">
+                    {/* CỘT 1: PROMPT INPUT */}
+                    <div className="flex flex-col space-y-1.5">
+                      <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+                        Prompt / Input Used
+                      </span>
+                      <div className="flex-1 min-h-[100px] max-h-48 overflow-y-auto custom-scroll p-3 rounded-xl bg-slate-50 border border-slate-200 font-mono text-[11px] text-slate-700 whitespace-pre-wrap break-words leading-relaxed">
+                        {item.prompt || (
+                          <span className="italic text-slate-400 font-sans">No prompt recorded.</span>
+                        )}
+                      </div>
+                    </div>
 
-                  <div>
-                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1">
-                      AI Response Summary
-                    </span>
-                    <p className="p-2.5 rounded-lg bg-white border border-slate-200 text-slate-700 leading-relaxed whitespace-pre-wrap">
-                      {item.responseSummary || 'No summary recorded.'}
-                    </p>
-                  </div>
+                    {/* CỘT 2: AI RESPONSE */}
+                    <div className="flex flex-col space-y-1.5">
+                      <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+                        AI Response Summary
+                      </span>
+                      <div className="flex-1 min-h-[100px] max-h-48 overflow-y-auto custom-scroll p-3 rounded-xl bg-blue-50/50 border border-blue-100 text-[11px] text-slate-700 whitespace-pre-wrap break-words leading-relaxed">
+                        {item.responseSummary || (
+                          <span className="italic text-slate-400">No summary recorded.</span>
+                        )}
+                      </div>
+                    </div>
 
-                  <div>
-                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1">
-                      Student's Critical Self-Reflection
-                    </span>
-                    <p className="p-2.5 rounded-lg bg-blue-50/40 border border-blue-100 text-slate-800 leading-relaxed whitespace-pre-wrap">
-                      {item.reflection || 'No reflection recorded.'}
-                    </p>
+                    {/* CỘT 3: STUDENT REFLECTION */}
+                    <div className="flex flex-col space-y-1.5">
+                      <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+                        Student's Self-Reflection
+                      </span>
+                      <div className="flex-1 min-h-[100px] max-h-48 overflow-y-auto custom-scroll p-3 rounded-xl bg-amber-50/40 border border-amber-100 text-[11px] font-medium text-slate-800 whitespace-pre-wrap break-words leading-relaxed">
+                        {item.reflection || (
+                          <span className="italic text-slate-400 font-normal">No reflection recorded.</span>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
@@ -955,11 +1004,17 @@ export const AiAuditLogCard: React.FC<AiAuditLogCardProps> = ({
 interface SubmissionStatusViewProps {
   submission: SubmissionData;
   onAddOrEditClick: () => void;
+  maxScore?: number;
+  isLateBlocked?: boolean;
+  dueDate?: string;
 }
 
 export const SubmissionStatusView: React.FC<SubmissionStatusViewProps> = ({
   submission,
   onAddOrEditClick,
+  maxScore = 10,
+  isLateBlocked = false,
+  dueDate = 'N/A',
 }) => {
   const isGraded = submission.status === 'Graded' || submission.score != null || submission.grade?.score != null;
   const isSubmitted = submission.status === 'Submitted' || isGraded;
@@ -1027,28 +1082,44 @@ export const SubmissionStatusView: React.FC<SubmissionStatusViewProps> = ({
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={onAddOrEditClick}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold tracking-wide uppercase transition shadow-xs cursor-pointer ${
-            isSubmitted
-              ? 'bg-white border border-blue-600 text-blue-600 hover:bg-blue-50'
-              : 'bg-gradient-to-r from-orange-500 to-amber-500 hover:opacity-95 text-white shadow-orange-500/20'
-          }`}
-        >
-          {isSubmitted ? (
-            <>
-              <Edit3 size={15} />
-              <span>{isGraded ? 'EDIT SUBMISSION (GRADED)' : 'EDIT SUBMISSION'}</span>
-            </>
-          ) : (
-            <>
-              <Plus size={15} />
-              <span>ADD SUBMISSION</span>
-            </>
-          )}
-        </button>
+        {isLateBlocked ? (
+          <div className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-100 text-slate-400 border border-slate-200 text-xs font-bold uppercase tracking-wide cursor-not-allowed">
+            <AlertCircle size={15} />
+            <span>Hết hạn nộp</span>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={onAddOrEditClick}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold tracking-wide uppercase transition shadow-xs cursor-pointer ${
+              isSubmitted
+                ? 'bg-white border border-blue-600 text-blue-600 hover:bg-blue-50'
+                : 'bg-gradient-to-r from-orange-500 to-amber-500 hover:opacity-95 text-white shadow-orange-500/20'
+            }`}
+          >
+            {isSubmitted ? (
+              <>
+                <Edit3 size={15} />
+                <span>{isGraded ? 'EDIT SUBMISSION (GRADED)' : 'EDIT SUBMISSION'}</span>
+              </>
+            ) : (
+              <>
+                <Plus size={15} />
+                <span>ADD SUBMISSION</span>
+              </>
+            )}
+          </button>
+        )}
       </div>
+
+      {isLateBlocked && (
+        <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-2xl flex items-center gap-3 text-xs text-rose-700 font-medium">
+          <AlertCircle size={18} className="text-rose-500 shrink-0" />
+          <div>
+            <span>Hạn nộp bài đã kết thúc{dueDate && dueDate !== 'N/A' ? ` (${dueDate})` : ''}. Bài tập này không cho phép nộp muộn.</span>
+          </div>
+        </div>
+      )}
 
       {/* Bảng thông tin trạng thái bài nộp chuẩn EduX */}
       <div className="space-y-5">
@@ -1095,126 +1166,43 @@ export const SubmissionStatusView: React.FC<SubmissionStatusViewProps> = ({
           </div>
         </div>
 
-        {/* BẢNG ĐIỂM CHUYÊN SÂU 5 RUBRICS KHI ĐÃ ĐƯỢC CHẤM ĐIỂM */}
+        {/* KẾT QUẢ ĐÁNH GIÁ (EVALUATION RESULT) - ĐÃ TỐI GIẢN HÓA */}
         {isGraded && (
           <div className="pt-2 border-t border-slate-100">
             <div className="bg-gradient-to-br from-indigo-50/70 via-white to-purple-50/50 border border-indigo-100 rounded-2xl p-5 space-y-4 shadow-xs">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-indigo-100/80">
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-indigo-600 animate-pulse"></span>
+                    <span className="w-2.5 h-2.5 rounded-full bg-indigo-600"></span>
                     <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide">
-                      Academic Evaluation & 5 Rubrics Score
+                      Kết quả đánh giá (Evaluation Result)
                     </h3>
                   </div>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    Kết quả đánh giá học thuật & phân tích tư duy tính toán (Computational Thinking)
+                    Điểm số chính thức và nhận xét từ giảng viên
                   </p>
                 </div>
                 
                 <div className="inline-flex items-baseline gap-1.5 bg-white border-2 border-indigo-200 px-4 py-2 rounded-xl shadow-xs self-start sm:self-auto">
                   <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Final Grade:</span>
                   <span className="text-2xl font-black text-indigo-600">
-                    {Number(finalScore).toFixed(2)}
+                    {finalScore != null ? Number(finalScore).toFixed(2) : 'N/A'}
                   </span>
-                  <span className="text-xs font-bold text-slate-400">/ 10.00</span>
+                  <span className="text-xs font-bold text-slate-400">
+                    / {Number(submission.grade?.max_score ?? maxScore ?? 10).toFixed(2)}
+                  </span>
                 </div>
               </div>
 
-              {/* 5 Rubrics Breakdown Grid */}
-              {rubricDetails && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 pt-1">
-                  {/* Rubric 1 */}
-                  <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs space-y-1">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-bold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded">
-                        Rubric 1
-                      </span>
-                      <span className="text-xs font-extrabold text-blue-600 font-mono">
-                        {rubricDetails.decomposition.toFixed(2)} / 2.0
-                      </span>
-                    </div>
-                    <div className="text-[11px] font-bold text-slate-800 truncate" title="Decomposition (Phân rã bài toán)">
-                      Decomposition
-                    </div>
-                    <div className="text-[10px] text-slate-500 leading-tight">
-                      Phân chia module & dịch vụ độc lập
-                    </div>
-                  </div>
-
-                  {/* Rubric 2 */}
-                  <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs space-y-1">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-bold text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded">
-                        Rubric 2
-                      </span>
-                      <span className="text-xs font-extrabold text-indigo-600 font-mono">
-                        {rubricDetails.pattern.toFixed(2)} / 2.0
-                      </span>
-                    </div>
-                    <div className="text-[11px] font-bold text-slate-800 truncate" title="Pattern Recognition (Nhận diện mẫu)">
-                      Pattern Recognition
-                    </div>
-                    <div className="text-[10px] text-slate-500 leading-tight">
-                      Áp dụng chuẩn Design Patterns
-                    </div>
-                  </div>
-
-                  {/* Rubric 3 */}
-                  <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs space-y-1">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-bold text-cyan-700 bg-cyan-50 px-1.5 py-0.5 rounded">
-                        Rubric 3
-                      </span>
-                      <span className="text-xs font-extrabold text-cyan-600 font-mono">
-                        {rubricDetails.abstraction.toFixed(2)} / 2.0
-                      </span>
-                    </div>
-                    <div className="text-[11px] font-bold text-slate-800 truncate" title="Abstraction (Trừu tượng hóa)">
-                      Abstraction
-                    </div>
-                    <div className="text-[10px] text-slate-500 leading-tight">
-                      Thiết kế Provider & Interface
-                    </div>
-                  </div>
-
-                  {/* Rubric 4 */}
-                  <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs space-y-1">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-bold text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded">
-                        Rubric 4
-                      </span>
-                      <span className="text-xs font-extrabold text-teal-600 font-mono">
-                        {rubricDetails.algorithmic.toFixed(2)} / 2.0
-                      </span>
-                    </div>
-                    <div className="text-[11px] font-bold text-slate-800 truncate" title="Algorithmic Thinking (Tư duy thuật toán)">
-                      Algorithmic Thinking
-                    </div>
-                    <div className="text-[10px] text-slate-500 leading-tight">
-                      Tối ưu giải thuật & xử lý lỗi
-                    </div>
-                  </div>
-
-                  {/* Rubric 5 */}
-                  <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs space-y-1">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-bold text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded">
-                        Rubric 5
-                      </span>
-                      <span className="text-xs font-extrabold text-purple-600 font-mono">
-                        {rubricDetails.reflection.toFixed(2)} / 2.0
-                      </span>
-                    </div>
-                    <div className="text-[11px] font-bold text-slate-800 truncate" title="AI Reflection (Đánh giá liêm chính AI)">
-                      AI Reflection
-                    </div>
-                    <div className="text-[10px] text-slate-500 leading-tight">
-                      Tự phản chiếu & liêm chính AI
-                    </div>
-                  </div>
+              {/* Nhận xét của Giảng viên */}
+              <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-2xs space-y-1.5">
+                <div className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                  Nhận xét của Giảng viên
                 </div>
-              )}
+                <p className="text-xs text-slate-600 leading-relaxed whitespace-pre-line">
+                  {submission.feedback || submission.grade?.feedback || 'Chưa có nhận xét'}
+                </p>
+              </div>
             </div>
           </div>
         )}
@@ -1258,7 +1246,8 @@ export const SubmissionStatusView: React.FC<SubmissionStatusViewProps> = ({
           )}
         </div>
 
-        {/* Hàng 3: FEEDBACK */}
+        {/* Hàng 3: FEEDBACK (khi chưa có điểm) */}
+        {!isGraded && (
         <div className="pt-2 border-t border-slate-100">
           <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">
             FEEDBACK
@@ -1270,6 +1259,7 @@ export const SubmissionStatusView: React.FC<SubmissionStatusViewProps> = ({
               : '—'}
           </div>
         </div>
+        )}
 
         {/* Hàng 4: AI AUDIT LOG STATUS */}
         <div className="pt-2 border-t border-slate-100">
@@ -1302,34 +1292,54 @@ export const SubmissionStatusView: React.FC<SubmissionStatusViewProps> = ({
 };
 
 /* ==========================================================================
-   7. SUB-COMPONENT: STEP 1 - FILE UPLOADER (HỖ TRỢ EDIT MODE CỤ THỂ)
+   7. SUB-COMPONENT: STEP 1 - FILE UPLOADER (TỐI GIẢN & HỖ TRỢ ĐA ĐỊNH DẠNG)
    ========================================================================== */
 
 interface FileUploaderProps {
-  selectedFile: SubmissionFile | null;
-  existingFile: SubmissionFile | null;
+  currentFile: SubmissionFile | null;
   isEditMode: boolean;
-  fileMode: 'keep' | 'replace';
-  onFileModeChange: (mode: 'keep' | 'replace') => void;
   onFileSelect: (file: File) => void;
   onFileRemove: () => void;
   onCancel: () => void;
   onNext: () => void;
+  aiDeclarationRequired?: boolean;
+  onSubmitDirect?: () => void;
+  isSubmittingPayload?: boolean;
 }
 
+const ALLOWED_FILE_EXTENSIONS = [
+  'java', 'py', 'cpp', 'c', 'cs', 'js', 'ts', 'html', 'css',
+  'zip', 'rar', '7z', 'tar', 'gz',
+  'pdf', 'docx', 'doc'
+];
+const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024; // 50MB
+
 export const FileUploader: React.FC<FileUploaderProps> = ({
-  selectedFile,
-  existingFile,
+  currentFile,
   isEditMode,
-  fileMode,
-  onFileModeChange,
   onFileSelect,
   onFileRemove,
   onCancel,
   onNext,
+  aiDeclarationRequired = true,
+  onSubmitDirect,
+  isSubmittingPayload = false,
 }) => {
+  const isAiRequired = Boolean(aiDeclarationRequired ?? false);
   const [isDragging, setIsDragging] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const getFileIcon = (fileName: string) => {
+    const ext = fileName.split('.').pop()?.toLowerCase() || '';
+    if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext)) {
+      return <FileArchive size={24} className="text-amber-600" />;
+    }
+    if (['java', 'py', 'cpp', 'c', 'cs', 'js', 'ts', 'html', 'css'].includes(ext)) {
+      return <FileCode size={24} className="text-indigo-600" />;
+    }
+    return <FileText size={24} className="text-blue-600" />;
+  };
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -1345,202 +1355,134 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
     e.preventDefault();
     setIsDragging(false);
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      if (e.dataTransfer.files.length > 1) {
+        alert('Vui lòng nén toàn bộ các file thành một tệp .ZIP duy nhất trước khi nộp!');
+        return;
+      }
       validateAndProcessFile(e.dataTransfer.files[0]);
     }
   };
 
   const handleNativeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
+      if (e.target.files.length > 1) {
+        alert('Vui lòng nén toàn bộ các file thành một tệp .ZIP duy nhất trước khi nộp!');
+        return;
+      }
       validateAndProcessFile(e.target.files[0]);
+    }
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
 
   const validateAndProcessFile = (file: File) => {
-    const maxSizeBytes = 10 * 1024 * 1024; // 10MB limit
-    if (file.size > maxSizeBytes) {
-      alert('Tệp vượt quá dung lượng cho phép (Tối đa 10MB)!');
+    const nameLower = file.name.toLowerCase();
+    const ext = nameLower.split('.').pop() || '';
+    const isTarGz = nameLower.endsWith('.tar.gz');
+
+    if (!ALLOWED_FILE_EXTENSIONS.includes(ext) && !isTarGz) {
+      alert('Định dạng tệp không được hỗ trợ! Vui lòng chọn tệp mã nguồn (.java, .py, .cpp, .js...), tài liệu (.pdf, .docx) hoặc tệp nén (.zip, .rar).');
       return;
     }
+
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      alert('Tệp vượt quá dung lượng cho phép (Tối đa 50MB)!');
+      return;
+    }
+
     onFileSelect(file);
+  };
+
+  const handleConfirmDelete = () => {
+    setShowDeleteConfirm(false);
+    onFileRemove();
   };
 
   return (
     <div className="space-y-6">
-      {/* Banner phân biệt chế độ EDIT SUBMISSION */}
-      {isEditMode && (
-        <div className="bg-amber-50/70 border border-amber-200/80 rounded-2xl p-4 flex items-start gap-3">
-          <History size={18} className="text-amber-600 mt-0.5 shrink-0" />
-          <div className="text-xs leading-relaxed text-amber-900">
-            <span className="font-bold">Edit Submission Mode:</span> Bạn đang cập nhật bài nộp đã có. 
-            Bạn có thể <strong>giữ nguyên tệp hiện tại</strong> hoặc <strong>tải lên tệp thay thế mới</strong>.
-            Các khai báo AI ở Bước 2 cũng đã được nạp sẵn để bạn dễ dàng chỉnh sửa.
-          </div>
-        </div>
-      )}
-
       {/* Title */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 text-xs font-bold text-slate-700 tracking-wide uppercase">
           <UploadCloud size={16} className="text-blue-600" />
           <span>{isEditMode ? 'STEP 1: SUBMISSION FILE MANAGEMENT' : 'STEP 1: UPLOAD SUBMISSION FILE'}</span>
         </div>
-
-        {/* Tab chuyển đổi trong Edit Mode: Giữ tệp cũ vs Thay thế tệp */}
-        {isEditMode && existingFile && (
-          <div className="saf-segmented-group">
-            <button
-              type="button"
-              onClick={() => onFileModeChange('keep')}
-              className={`saf-segmented-btn ${
-                fileMode === 'keep' ? 'saf-segmented-btn--active' : ''
-              }`}
-            >
-              Keep Existing File
-            </button>
-            <button
-              type="button"
-              onClick={() => onFileModeChange('replace')}
-              className={`saf-segmented-btn ${
-                fileMode === 'replace' ? 'saf-segmented-btn--active' : ''
-              }`}
-            >
-              Replace with New File
-            </button>
-          </div>
-        )}
       </div>
 
-      {/* Hiển thị tệp hiện tại trong Edit Mode (khi chọn 'keep') */}
-      {isEditMode && fileMode === 'keep' && existingFile && (
-        <div className="saf-file-kept-box space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
-                <FileCheck2 size={22} />
+      {/* TRẠNG THÁI A: ĐÃ CÓ FILE NỘP TRƯỚC ĐÓ HOẶC VỪA CHỌN FILE MỚI */}
+      {currentFile ? (
+        <div className="space-y-3">
+          <div className="p-4 rounded-2xl border border-slate-200 bg-white hover:border-slate-300 transition shadow-2xs flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3.5 min-w-0">
+              <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0">
+                {getFileIcon(currentFile.name)}
               </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-slate-800">
-                    {existingFile.name}
-                  </span>
-                  <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full">
-                    Current Version Kept
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="text-xs font-bold text-slate-800 truncate" title={currentFile.name}>
+                    {currentFile.name}
+                  </p>
+                  <span className="bg-emerald-50 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-200 shrink-0">
+                    {isEditMode ? 'Tệp bài nộp hiện tại' : 'Tệp đã chọn'}
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-500 font-mono mt-0.5">
-                  {formatFileSize(existingFile.size)} • Originally submitted file
+                <p className="text-[11px] text-slate-400 font-mono mt-0.5">
+                  {formatFileSize(currentFile.size)} • Sẵn sàng để nộp bài
                 </p>
               </div>
             </div>
 
+            {/* Nút icon X (Xóa file) */}
             <button
               type="button"
-              onClick={() => onFileModeChange('replace')}
-              className="text-xs font-bold text-blue-600 hover:underline px-3 py-1.5 rounded-lg hover:bg-blue-50 transition cursor-pointer"
+              onClick={() => setShowDeleteConfirm(true)}
+              className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition cursor-pointer shrink-0"
+              title="Xóa tệp này để tải lên tệp mới"
             >
-              Replace this file
+              <X size={18} />
             </button>
           </div>
 
-          <div className="text-[11px] text-slate-500 pt-2 border-t border-emerald-200/50 flex items-center gap-1.5">
-            <CheckCircle2 size={13} className="text-emerald-600 shrink-0" />
-            <span>Tệp này sẽ được giữ nguyên khi bạn lưu. Bạn có thể nhấn <strong>"Next: AI Declaration"</strong> ngay để chỉnh sửa các tiêu chí AI.</span>
+          <p className="text-[11px] text-slate-500 italic pl-1">
+            ℹ️ Bạn có thể giữ nguyên tệp này để tiếp tục, hoặc bấm nút <strong>[✕]</strong> để xóa và tải lên tệp mới.
+          </p>
+        </div>
+      ) : (
+        /* TRẠNG THÁI B: CHƯA CÓ FILE HOẶC ĐÃ XÁC NHẬN XÓA FILE CŨ */
+        <div className="space-y-4">
+          <div
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            onClick={() => fileInputRef.current?.click()}
+            className={`saf-dropzone ${isDragging ? 'saf-dropzone--active' : ''}`}
+          >
+            <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center text-lg mb-3 shadow-xs">
+              <UploadCloud size={24} />
+            </div>
+            <p className="text-xs font-bold text-slate-800">
+              Kéo thả tệp bài làm vào đây hoặc nhấn để chọn tệp
+            </p>
+            <p className="text-[11px] text-slate-400 mt-1 max-w-md mx-auto">
+              Hỗ trợ các định dạng mã nguồn (.java, .py, .cpp, .js), tài liệu (.pdf, .docx) hoặc tệp nén (.zip, .rar). Tối đa 50MB.
+            </p>
+            <input
+              ref={fileInputRef}
+              type="file"
+              onChange={handleNativeChange}
+              accept=".java,.py,.cpp,.c,.cs,.js,.ts,.html,.css,.zip,.rar,.7z,.tar.gz,.pdf,.docx,.doc"
+              className="hidden"
+            />
+          </div>
+
+          {/* Quy tắc bắt buộc: Nộp nhiều file phải nén ZIP */}
+          <div className="bg-amber-50/80 border border-amber-200/90 rounded-xl p-3.5 flex items-start gap-2.5 text-xs text-amber-900 shadow-2xs">
+            <AlertTriangle size={16} className="text-amber-600 shrink-0 mt-0.5" />
+            <div className="leading-relaxed">
+              <span className="font-bold">Quy tắc bắt buộc:</span> Nếu bài làm có nhiều tệp tin hoặc thư mục mã nguồn dự án, vui lòng đóng gói thành một tệp tin duy nhất định dạng <strong>.ZIP</strong> trước khi nộp.
+            </div>
           </div>
         </div>
-      )}
-
-      {/* Giao diện Upload File (khi tạo mới HOẶC khi edit mode chọn 'replace') */}
-      {(!isEditMode || fileMode === 'replace') && (
-        <>
-          {!selectedFile ? (
-            <div
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-              onClick={() => fileInputRef.current?.click()}
-              className={`saf-dropzone ${
-                isDragging ? 'saf-dropzone--active' : ''
-              }`}
-            >
-              <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center text-lg mb-3 shadow-xs">
-                <UploadCloud size={24} />
-              </div>
-              <p className="text-xs font-bold text-slate-800">
-                {isEditMode
-                  ? 'Click to browse or drop replacement file'
-                  : 'Click to browse or drag and drop your submission file'}
-              </p>
-              <p className="text-[11px] text-slate-400 mt-1">
-                Supported formats: PDF, ZIP, RAR, DOCX, TXT (Max 10MB)
-              </p>
-              <input
-                ref={fileInputRef}
-                type="file"
-                onChange={handleNativeChange}
-                accept=".pdf,.zip,.rar,.docx,.txt"
-                className="hidden"
-              />
-            </div>
-          ) : (
-            <div className="p-5 rounded-2xl border border-blue-200 bg-blue-50/30 flex items-center justify-between">
-              <div className="flex items-center gap-4 min-w-0">
-                <div className="w-12 h-12 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
-                  <FileCode size={24} />
-                </div>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="text-xs font-bold text-slate-800 truncate">
-                      {selectedFile.name}
-                    </p>
-                    {isEditMode && (
-                      <span className="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-full">
-                        New Replacement File
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-[11px] text-slate-500 font-mono mt-0.5">
-                    {formatFileSize(selectedFile.size)} • Ready for declaration
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                {isEditMode && existingFile && (
-                  <button
-                    type="button"
-                    onClick={() => onFileModeChange('keep')}
-                    className="flex items-center gap-1 text-xs font-semibold text-slate-600 hover:text-slate-900 px-2 py-1 cursor-pointer"
-                  >
-                    <Undo2 size={13} />
-                    <span>Revert to original</span>
-                  </button>
-                )}
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="text-xs font-semibold text-blue-600 hover:underline px-2 py-1 cursor-pointer"
-                >
-                  Change file
-                </button>
-                <button
-                  type="button"
-                  onClick={onFileRemove}
-                  className="p-2 text-slate-400 hover:text-rose-500 rounded-lg hover:bg-rose-50 transition cursor-pointer"
-                  title="Remove file"
-                >
-                  <Trash2 size={16} />
-                </button>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  onChange={handleNativeChange}
-                  accept=".pdf,.zip,.rar,.docx,.txt"
-                  className="hidden"
-                />
-              </div>
-            </div>
-          )}
-        </>
       )}
 
       {/* Buttons Step 1 */}
@@ -1553,25 +1495,101 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
           {isEditMode ? 'Discard Changes / Back' : 'Cancel / Back to Status'}
         </button>
 
-        <button
-          type="button"
-          onClick={() => {
-            if (!isEditMode && !selectedFile) {
-              alert('Vui lòng chọn hoặc tải lên tệp bài nộp trước khi tiếp tục!');
-              return;
-            }
-            if (isEditMode && fileMode === 'replace' && !selectedFile) {
-              alert('Bạn đang chọn thay thế tệp, vui lòng chọn tệp mới hoặc chuyển sang "Keep Existing File"!');
-              return;
-            }
-            onNext();
-          }}
-          className="saf-btn-primary"
-        >
-          <span>{isEditMode ? 'Next: Edit AI Declaration' : 'Next: AI Declaration'}</span>
-          <ArrowRight size={14} />
-        </button>
+        {!isAiRequired ? (
+          <button
+            type="button"
+            disabled={isSubmittingPayload}
+            onClick={() => {
+              if (!currentFile) {
+                alert('Vui lòng chọn hoặc tải lên tệp bài nộp trước khi nộp!');
+                return;
+              }
+              if (onSubmitDirect) onSubmitDirect();
+            }}
+            className="saf-btn-primary flex items-center gap-1.5"
+          >
+            <CheckCircle2 size={15} />
+            <span>
+              {isSubmittingPayload
+                ? 'Submitting...'
+                : (isEditMode ? 'Update Assignment' : 'Submit Assignment')}
+            </span>
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => {
+              if (!currentFile) {
+                alert('Vui lòng chọn hoặc tải lên tệp bài nộp trước khi tiếp tục!');
+                return;
+              }
+              onNext();
+            }}
+            className="saf-btn-primary"
+          >
+            <span>{isEditMode ? 'Next: Edit AI Declaration' : 'Next: AI Declaration'}</span>
+            <ArrowRight size={14} />
+          </button>
+        )}
       </div>
+
+      {/* MODAL CONFIRM DELETE FILE */}
+      {showDeleteConfirm && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(15, 23, 42, 0.45)',
+            backdropFilter: 'blur(2px)',
+            zIndex: 99999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px',
+          }}
+          onClick={() => setShowDeleteConfirm(false)}
+        >
+          <div
+            className="bg-white rounded-2xl p-6 max-w-md w-full shadow-xl border border-slate-200 animate-in fade-in zoom-in-95 duration-150 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
+                <Trash2 size={20} />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-slate-900">
+                  Xác nhận xóa tệp bài nộp?
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Thao tác này sẽ gỡ tệp bài làm hiện tại khỏi phiên nộp bài.
+                </p>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-600 leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-100">
+              Tệp bài làm hiện tại sẽ bị gỡ bỏ. Bạn sẽ cần tải lên tệp bài làm mới để hoàn tất việc nộp lại bài tập.
+            </p>
+
+            <div className="flex items-center justify-end gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowDeleteConfirm(false)}
+                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 transition cursor-pointer"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 transition cursor-pointer shadow-xs"
+              >
+                Xác nhận xóa
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -1848,7 +1866,7 @@ export const AiRubricForm: React.FC<AiRubricFormProps> = ({
               className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold text-indigo-600 bg-indigo-50/80 hover:bg-indigo-100 border border-dashed border-indigo-300 transition cursor-pointer whitespace-nowrap shrink-0 select-none"
             >
               <Plus size={13} />
-              <span>+ Thêm khai báo</span>
+              <span>+ Thêm mục khai báo</span>
             </button>
           </div>
 
@@ -2195,9 +2213,16 @@ interface StudentAssignmentFlowProps {
   }) => Promise<boolean>;
 }
 
+export const EMPTY_SUBMISSION_STATE: SubmissionData = {
+  status: 'No submission',
+  submittedAt: null,
+  file: null,
+  declarations: INITIAL_DECLARATIONS,
+};
+
 export default function StudentAssignmentFlow({
   initialAssignment = DEFAULT_ASSIGNMENT,
-  initialSubmission = SAMPLE_SUBMITTED_STATE,
+  initialSubmission = null,
   onBackToCourse,
   onSubmitApiHandler,
 }: StudentAssignmentFlowProps) {
@@ -2207,7 +2232,7 @@ export default function StudentAssignmentFlow({
 
   // Core Data States
   const [assignment, setAssignment] = useState<Assignment>(initialAssignment);
-  const [submission, setSubmission] = useState<SubmissionData>(initialSubmission);
+  const [submission, setSubmission] = useState<SubmissionData>(initialSubmission || EMPTY_SUBMISSION_STATE);
 
   // Sync state with incoming props
   React.useEffect(() => {
@@ -2223,16 +2248,21 @@ export default function StudentAssignmentFlow({
       if (initialSubmission.declarations) {
         setDraftDeclarations(initialSubmission.declarations);
       }
+    } else {
+      setSubmission(EMPTY_SUBMISSION_STATE);
+      setDraftFile(null);
+      setDraftDeclarations(INITIAL_DECLARATIONS);
     }
   }, [initialSubmission]);
 
   // Edit Mode Flag: true nếu bài đã nộp trước đó
   const isEditMode = submission.status === 'Submitted' || submission.status === 'Graded';
 
-  // File Management State trong Edit Mode: 'keep' (giữ file cũ) hoặc 'replace' (tải file mới)
-  const [fileMode, setFileMode] = useState<'keep' | 'replace'>(
-    isEditMode && submission.file ? 'keep' : 'replace'
-  );
+  // Kiểm tra hạn nộp bài
+  const isDeadlinePassed = Boolean(assignment.deadlineRaw && new Date() > new Date(assignment.deadlineRaw));
+  const isLateBlocked = isDeadlinePassed && assignment.allowLateSubmission === false;
+
+
 
   // Draft States trong Form
   const [draftFile, setDraftFile] = useState<SubmissionFile | null>(submission.file);
@@ -2269,10 +2299,14 @@ export default function StudentAssignmentFlow({
   };
 
   const handleOpenForm = () => {
+    if (isLateBlocked) {
+      alert('Hạn nộp bài đã kết thúc và bài tập này không cho phép nộp muộn!');
+      return;
+    }
+
     // Populate draft state from existing submission
     setDraftFile(submission.file);
     setDraftRawFile(null);
-    setFileMode(isEditMode && submission.file ? 'keep' : 'replace');
     
     // Deep clone declarations
     const clonedDeclarations = {} as Record<RubricKey, AiDeclarationRubric>;
@@ -2322,18 +2356,13 @@ export default function StudentAssignmentFlow({
 
   // Logic khi bấm "Submit Assignment" hoặc "Update Submission"
   const handleSubmitAssignment = async () => {
-    // Determine effective file
-    let effectiveFile: SubmissionFile | null = null;
-
-    if (isEditMode && fileMode === 'keep') {
-      effectiveFile = submission.file;
-    } else {
-      effectiveFile = draftFile || (draftRawFile ? {
-        name: draftRawFile.name,
-        size: draftRawFile.size,
-        type: draftRawFile.type,
-      } : null);
+    if (isLateBlocked) {
+      alert('Hạn nộp bài đã kết thúc và bài tập này không cho phép nộp muộn!');
+      return;
     }
+
+    // Determine effective file
+    const effectiveFile = draftRawFile || draftFile;
 
     if (!effectiveFile) {
       alert('Vui lòng chọn hoặc tải lên tệp bài nộp tại Bước 1!');
@@ -2407,7 +2436,32 @@ export default function StudentAssignmentFlow({
       );
     } catch (err: any) {
       console.error('Submission error:', err);
-      alert('Có lỗi xảy ra khi gửi bài. Vui lòng thử lại!');
+      const serverMessage = err.response?.data?.message || err.message || '';
+      let friendlyMsg = 'Có lỗi xảy ra khi gửi bài. Vui lòng thử lại!';
+
+      if (serverMessage === 'DEADLINE_PASSED_AND_LATE_SUBMISSION_NOT_ALLOWED') {
+        friendlyMsg = 'Hạn nộp bài đã kết thúc và bài tập này không cho phép nộp muộn!';
+      } else if (serverMessage === 'NOT_ENROLLED_IN_CLASS') {
+        friendlyMsg = 'Bạn chưa được ghi danh vào lớp học này!';
+      } else if (
+        serverMessage === 'ONLY_STUDENT_CAN_SUBMIT' ||
+        serverMessage.includes('Insufficient permissions') ||
+        serverMessage.includes('403')
+      ) {
+        friendlyMsg = 'Tài khoản hiện tại không có quyền nộp bài cho sinh viên!';
+      } else if (serverMessage.startsWith('AI_DECLARATION_REQUIRED')) {
+        friendlyMsg = serverMessage.replace('AI_DECLARATION_REQUIRED: ', '');
+      } else if (serverMessage === 'SUBMISSION_EMPTY_CONTENT') {
+        friendlyMsg = 'Vui lòng đính kèm tệp bài nộp hoặc ghi chú!';
+      } else if (serverMessage === 'ASSIGNMENT_NOT_PUBLISHED') {
+        friendlyMsg = 'Bài tập này chưa được công bố!';
+      } else if (serverMessage === 'SUBMISSION_LOCKED') {
+        friendlyMsg = 'Bài nộp đã bị khóa!';
+      } else if (serverMessage) {
+        friendlyMsg = serverMessage;
+      }
+
+      alert(friendlyMsg);
     } finally {
       setIsSubmittingPayload(false);
     }
@@ -2439,14 +2493,14 @@ export default function StudentAssignmentFlow({
             className="hover:text-blue-600 transition flex items-center gap-1 cursor-pointer"
           >
             <ArrowLeft size={14} />
-            <span>Back to {assignment.courseCode}</span>
+            <span>Back to {assignment.courseCode || 'N/A'}</span>
           </button>
           <span className="text-slate-300">/</span>
           <span className="text-slate-400 truncate max-w-xs sm:max-w-md">
-            {assignment.courseTitle}
+            {assignment.courseTitle || 'N/A'}
           </span>
           <span className="text-slate-300">/</span>
-          <span className="text-slate-700 font-bold">{assignment.title}</span>
+          <span className="text-slate-700 font-bold">{assignment.title || 'N/A'}</span>
         </nav>
 
         {/* Header Tiêu đề & Status Badge */}
@@ -2469,7 +2523,7 @@ export default function StudentAssignmentFlow({
               ) : null}
             </div>
             <p className="text-xs text-slate-500 mt-0.5">
-              Course: <span className="font-semibold">{assignment.courseCode}</span> • Due Date: {assignment.dueDate}
+              Course: <span className="font-semibold">{assignment.courseCode || 'N/A'}</span> • Due Date: {assignment.dueDate || 'N/A'}
             </p>
           </div>
 
@@ -2504,6 +2558,9 @@ export default function StudentAssignmentFlow({
               <SubmissionStatusView
                 submission={submission}
                 onAddOrEditClick={handleOpenForm}
+                maxScore={assignment.maxScore ?? 10}
+                isLateBlocked={isLateBlocked}
+                dueDate={assignment.dueDate}
               />
             ) : (
               /* CHẾ ĐỘ B: FORM STEPPER (ADD HOẶC EDIT) */
@@ -2514,7 +2571,7 @@ export default function StudentAssignmentFlow({
                     <div className="flex items-center gap-2">
                       <h2 className="text-lg font-bold text-slate-900 tracking-tight">
                         {isEditMode
-                          ? 'Edit Submission & AI Declaration'
+                          ? (assignment.aiDeclarationRequired !== false ? 'Edit Submission & AI Declaration' : 'Edit Submission File')
                           : 'Submit Assignment'}
                       </h2>
                       {isEditMode && (
@@ -2524,68 +2581,73 @@ export default function StudentAssignmentFlow({
                       )}
                     </div>
                     <p className="text-xs text-slate-500">
-                      Step {formStep} of 2 •{' '}
-                      {formStep === 1
-                        ? isEditMode ? 'File Management' : 'File Upload'
-                        : 'Computational Thinking Rubrics'}
+                      {assignment.aiDeclarationRequired !== false ? (
+                        <>
+                          Step {formStep} of 2 •{' '}
+                          {formStep === 1
+                            ? isEditMode ? 'File Management' : 'File Upload'
+                            : 'Computational Thinking Rubrics'}
+                        </>
+                      ) : (
+                        'Upload your assignment submission file to complete'
+                      )}
                     </p>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    {/* Step 1 Indicator */}
-                    <button
-                      type="button"
-                      onClick={() => setFormStep(1)}
-                      className={`w-7 h-7 rounded-full font-bold text-xs flex items-center justify-center transition cursor-pointer ${
-                        formStep === 1
-                          ? 'bg-blue-600 text-white shadow-xs'
-                          : 'bg-emerald-500 text-white'
-                      }`}
-                    >
-                      {formStep > 1 ? <Check size={14} /> : 1}
-                    </button>
-
-                    {/* Step Connector */}
-                    <div
-                      className={`w-8 h-0.5 transition ${
-                        formStep === 2 ? 'bg-emerald-500' : 'bg-slate-200'
-                      }`}
-                    />
-
-                    {/* Step 2 Indicator */}
-                    <button
-                      type="button"
-                      onClick={() => setFormStep(2)}
-                      className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-bold text-xs transition cursor-pointer ${
-                        formStep === 2
-                          ? 'bg-blue-50 text-blue-600 border border-blue-200'
-                          : 'text-slate-400'
-                      }`}
-                    >
-                      <span
-                        className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${
-                          formStep === 2
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-slate-100 text-slate-400'
+                  {assignment.aiDeclarationRequired !== false && (
+                    <div className="flex items-center gap-2">
+                      {/* Step 1 Indicator */}
+                      <button
+                        type="button"
+                        onClick={() => setFormStep(1)}
+                        className={`w-7 h-7 rounded-full font-bold text-xs flex items-center justify-center transition cursor-pointer ${
+                          formStep === 1
+                            ? 'bg-blue-600 text-white shadow-xs'
+                            : 'bg-emerald-500 text-white'
                         }`}
                       >
-                        2
-                      </span>
-                      <span className="text-[10px] tracking-wider uppercase">
-                        AI_DECLARATION
-                      </span>
-                    </button>
-                  </div>
+                        {formStep > 1 ? <Check size={14} /> : 1}
+                      </button>
+
+                      {/* Step Connector */}
+                      <div
+                        className={`w-8 h-0.5 transition ${
+                          formStep === 2 ? 'bg-emerald-500' : 'bg-slate-200'
+                        }`}
+                      />
+
+                      {/* Step 2 Indicator */}
+                      <button
+                        type="button"
+                        onClick={() => setFormStep(2)}
+                        className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-bold text-xs transition cursor-pointer ${
+                          formStep === 2
+                            ? 'bg-blue-50 text-blue-600 border border-blue-200'
+                            : 'text-slate-400'
+                        }`}
+                      >
+                        <span
+                          className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${
+                            formStep === 2
+                              ? 'bg-blue-600 text-white'
+                              : 'bg-slate-100 text-slate-400'
+                          }`}
+                        >
+                          2
+                        </span>
+                        <span className="text-[10px] tracking-wider uppercase">
+                          AI_DECLARATION
+                        </span>
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {/* Form Step Body */}
                 {formStep === 1 ? (
                   <FileUploader
-                    selectedFile={draftFile}
-                    existingFile={submission.file}
+                    currentFile={draftFile}
                     isEditMode={isEditMode}
-                    fileMode={fileMode}
-                    onFileModeChange={(mode) => setFileMode(mode)}
                     onFileSelect={(file) => {
                       setDraftRawFile(file);
                       setDraftFile({
@@ -2601,6 +2663,9 @@ export default function StudentAssignmentFlow({
                     }}
                     onCancel={handleCancelForm}
                     onNext={() => setFormStep(2)}
+                    aiDeclarationRequired={assignment.aiDeclarationRequired !== false}
+                    onSubmitDirect={handleSubmitAssignment}
+                    isSubmittingPayload={isSubmittingPayload}
                   />
                 ) : (
                   <AiRubricForm
