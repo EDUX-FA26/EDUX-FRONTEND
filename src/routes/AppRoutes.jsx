@@ -30,6 +30,7 @@ import PersonalizedLearningPage from '../pages/student/PersonalizedLearningPage'
 import ForumPage from '../pages/forum/ForumPage';
 import ForumPostPage from '../pages/forum/ForumPostPage';
 import ForumCreatePage from '../pages/forum/ForumCreatePage';
+import NotificationCenterPage from '../pages/notifications/NotificationCenterPage';
 
 // Layouts
 import DashboardLayout from '../layouts/DashboardLayout';
@@ -82,6 +83,7 @@ export default function AppRoutes() {
         <Route path="forum" element={<ForumPage />} />
         <Route path="forum/new" element={<ForumCreatePage />} />
         <Route path="forum/:postId" element={<ForumPostPage />} />
+        <Route path="notifications" element={<NotificationCenterPage />} />
         <Route path="classes" element={<StudentClassesPage />} />
         <Route path="classes/:classId" element={<StudentClassDetailPage />} />
         <Route path="classes/:classId/materials" element={<ClassMaterialsPage />} />
@@ -107,6 +109,7 @@ export default function AppRoutes() {
         <Route path="forum" element={<ForumPage />} />
         <Route path="forum/new" element={<ForumCreatePage />} />
         <Route path="forum/:postId" element={<ForumPostPage />} />
+        <Route path="notifications" element={<NotificationCenterPage />} />
         <Route path="classes" element={<LecturerClassesPage />} />
         <Route path="classes/:classId" element={<LecturerClassDetailPage />} />
         <Route path="classes/:classId/materials" element={<ClassMaterialsPage />} />
