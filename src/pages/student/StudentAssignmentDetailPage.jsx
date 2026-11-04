@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import AssignmentService from '../../services/assignment.service';
 import SubmissionService from '../../services/submission.service';
-import MockSubmissionService from '../../services/mockSubmissionService';
 import { formatDateDMY } from '../../helper/dateFormat';
 import StudentAssignmentFlow, {
   INITIAL_DECLARATIONS
@@ -18,126 +17,80 @@ export default function StudentAssignmentDetailPage() {
     const [detailedSubmission, setDetailedSubmission] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        const fetchDetail = async () => {
-            try {
-                if (id && !id.startsWith('asm-')) {
-                    try {
-                        const res = await AssignmentService.getAssignmentDetail(id);
-                        const data = res?.data || res;
-                        if (data) setAssignment(data);
-                    } catch (e) {}
-
-                    try {
-                        const subData = await SubmissionService.getMySubmissions({ assignment_id: id });
-                        let sub = null;
-                        if (subData && subData.data && subData.data.length > 0) {
-                            sub = subData.data[0];
-                        }
-
-                        const mock = await MockSubmissionService.getMySubmission(id);
-                        const db = MockSubmissionService.getInitialDatabase ? MockSubmissionService.getInitialDatabase() : {};
-                        const localGraded = (sub?.id && db[sub.id]) || (sub?.student_code && db[sub.student_code]) || db['sub-de181802'] || mock;
-
-                        const rawMergedScore = localGraded?.grade?.score ?? localGraded?.score ?? sub?.score ?? null;
-                        const mergedScore = rawMergedScore != null ? Number(rawMergedScore) : null;
-                        const mergedFeedback = localGraded?.grade?.feedback ?? localGraded?.feedback ?? sub?.feedback ?? null;
-                        const mergedRubrics = localGraded?.grade?.rubrics ?? localGraded?.rubrics ?? sub?.rubrics ?? null;
-                        const isGradedStatus = mergedScore !== null || sub?.status === 'graded' || sub?.status === 'GRADED' || localGraded?.status === 'GRADED';
-
-                        if (sub) {
-                            sub = {
-                                ...sub,
-                                score: mergedScore,
-                                feedback: mergedFeedback,
-                                rubrics: mergedRubrics,
-                                grade: localGraded?.grade || (mergedScore != null ? { score: mergedScore, feedback: mergedFeedback, rubrics: mergedRubrics } : null),
-                                status: isGradedStatus ? 'GRADED' : sub.status,
-                            };
-                            setSubmission(sub);
-                            try {
-                                const detail = await SubmissionService.getSubmissionById(sub.id);
-                                if (detail.success) setDetailedSubmission(detail.data);
-                            } catch (err) {}
-                        } else if (localGraded) {
-                            setSubmission({
-                                ...localGraded,
-                                score: mergedScore,
-                                feedback: mergedFeedback,
-                                rubrics: mergedRubrics,
-                                grade: localGraded?.grade || (mergedScore != null ? { score: mergedScore, feedback: mergedFeedback, rubrics: mergedRubrics } : null),
-                                status: isGradedStatus ? 'GRADED' : (localGraded.status || 'SUBMITTED'),
-                            });
-                        }
-                    } catch (e) {
-                        const mock = await MockSubmissionService.getMySubmission(id);
-                        if (mock) setSubmission(mock);
-                    }
-                } else {
-                    const mock = await MockSubmissionService.getMySubmission(id || 'asg-swd392-01');
-                    if (mock) setSubmission(mock);
+    const fetchDetail = async () => {
+        try {
+            if (id) {
+                // 1. Fetch real assignment detail
+                try {
+                    const res = await AssignmentService.getAssignmentDetail(id);
+                    const data = res?.data || res;
+                    if (data) setAssignment(data);
+                } catch (e) {
+                    console.error("Failed to fetch assignment detail:", e);
                 }
-            } catch (error) {
-                console.error("Failed to fetch assignment or submission:", error);
-                const mock = await MockSubmissionService.getMySubmission(id || 'asg-swd392-01');
-                if (mock) setSubmission(mock);
-            } finally {
-                setLoading(false);
+
+                // 2. Fetch real student submission for this assignment
+                try {
+                    const subData = await SubmissionService.getMySubmissions({ assignment_id: id });
+                    let sub = null;
+                    if (subData && subData.data && subData.data.length > 0) {
+                        sub = subData.data[0];
+                    }
+
+                    if (sub && sub.id) {
+                        try {
+                            const detail = await SubmissionService.getSubmissionById(sub.id, true);
+                            if (detail?.success && detail?.data) {
+                                setDetailedSubmission(detail.data);
+                                sub = {
+                                    ...sub,
+                                    ...detail.data
+                                };
+                            }
+                        } catch (err) {
+                            console.error("Failed to fetch detailed submission:", err);
+                        }
+                        setSubmission(sub);
+                    } else {
+                        setSubmission(null);
+                        setDetailedSubmission(null);
+                    }
+                } catch (e) {
+                    console.error("Failed to fetch student submission:", e);
+                    setSubmission(null);
+                    setDetailedSubmission(null);
+                }
             }
-        };
+        } catch (error) {
+            console.error("Failed to load assignment page:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
         fetchDetail();
     }, [id]);
 
-    const titleMap = {
-        '2': 'Assignment 2',
-        '4': 'Assignment 4',
-        'project': 'Nộp Project',
-        '3': 'Assignment 3',
-        '1': 'Assignment 1',
-        'asm-1': 'React Fundamental Exercises',
-        'asm-2': 'State Management Project',
-        'asm-3': 'Node.js Express API',
-        'asm-4': 'MongoDB Aggregation',
-        'asm-5': 'Final Backend Architecture'
-    };
+    const title = submission?.assignment_title || assignment?.title || 'N/A';
 
-    const title =
-        submission?.assignment_title ||
-        assignment?.title ||
-        titleMap[id] ||
-        `Assignment ${id}`;
-
-    const isGraded =
-        submission?.status === 'graded' ||
-        submission?.status === 'GRADED' ||
-        submission?.status === 'Graded' ||
-        submission?.score != null ||
-        submission?.grade?.score != null;
-
-    const rawEffectiveScore = submission?.score ?? submission?.grade?.score ?? null;
+    const rawEffectiveScore = submission?.score ?? detailedSubmission?.score ?? null;
     const effectiveScore = rawEffectiveScore != null ? Number(rawEffectiveScore) : null;
-    const effectiveFeedback = submission?.feedback ?? submission?.grade?.feedback ?? '';
-    let effectiveRubrics = submission?.rubrics ?? submission?.grade?.rubrics ?? null;
+    const effectiveFeedback = submission?.feedback ?? detailedSubmission?.feedback ?? '';
+    const isGraded = effectiveScore != null || submission?.status === 'graded' || submission?.status === 'GRADED' || submission?.status === 'Graded';
 
-    if (!effectiveRubrics && MockSubmissionService.getInitialDatabase) {
-        const db = MockSubmissionService.getInitialDatabase();
-        const local = (submission?.id && db[submission.id]) || (submission?.student_code && db[submission.student_code]) || db['sub-de181802'];
-        if (local && (local.rubrics || local.grade?.rubrics)) {
-            effectiveRubrics = local.rubrics || local.grade?.rubrics;
-        }
-    }
-
-    // Format Assignment for StudentAssignmentFlow
+    // Format Assignment from DB for StudentAssignmentFlow
     const formattedAssignment = {
-        id: id || 'asm-1',
-        title: title || 'N/A',
+        id: id || '',
+        title: title,
         courseCode: assignment?.course_code || assignment?.subject_code || assignment?.class_code || 'N/A',
         courseTitle: assignment?.course_name || assignment?.subject_name || assignment?.class_name || 'N/A',
         dueDate: assignment?.deadline ? formatDateDMY(assignment.deadline) : 'N/A',
+        deadlineRaw: assignment?.deadline || null,
+        allowLateSubmission: Boolean(assignment?.allow_late_submission),
         content: assignment?.description || 'N/A',
-        instructions: assignment?.instructions || 'N/A',
-        maxScore: assignment?.max_score != null ? assignment.max_score : 10,
-        weight: assignment?.weight != null ? assignment.weight : null,
+        maxScore: assignment?.max_score != null ? Number(assignment.max_score) : 10,
+        weight: assignment?.weight != null ? Number(assignment.weight) : null,
         instructor: {
             name: assignment?.lecturer_name || assignment?.lecturer?.name || 'N/A',
             role: 'Giảng viên'
@@ -153,49 +106,40 @@ export default function StudentAssignmentDetailPage() {
                 materialId: m.id,
                 assignmentId: assignment?.id || id
             }))
-            : (!id || id.startsWith('asm-') ? [
-                { id: 'f1', name: 'Project_Specification_v2.pdf', size: '1.8 MB', url: '#' },
-                { id: 'f2', name: 'C4_Model_Template.drawio', size: '640 KB', url: '#' }
-            ] : []),
+            : [],
         score: effectiveScore,
         aiDeclarationRequired: assignment?.ai_declaration_required !== false,
         minAiInteractions: assignment?.min_ai_interactions != null ? Number(assignment.min_ai_interactions) : 1,
         maxAiInteractions: assignment?.max_ai_interactions != null ? Number(assignment.max_ai_interactions) : 20,
     };
 
-    // Format Submission data from backend if present, else fallback
+    // Format real Submission data from backend if present, else null
     let formattedSubmission = null;
 
     if (submission) {
         let submittedFile = null;
-        if (detailedSubmission && detailedSubmission.versions && detailedSubmission.versions.length > 0) {
-            const latestVer = detailedSubmission.versions[0];
-            let files = [];
+        const latestVer = detailedSubmission?.versions?.find(v => v.is_latest) || detailedSubmission?.versions?.[0];
+        let files = [];
+        if (latestVer?.files) {
             try {
                 files = typeof latestVer.files === 'string' ? JSON.parse(latestVer.files) : latestVer.files;
             } catch (e) {}
-            if (files && files.length > 0) {
-                submittedFile = {
-                    name: files[0].name || files[0].filename || 'SE18D01_VietKhoa_C4Diagrams.pdf',
-                    size: files[0].size || 3420000,
-                    type: files[0].type || 'application/pdf',
-                    url: files[0].url
-                };
-            }
+        } else if (submission.latest_files) {
+            try {
+                files = typeof submission.latest_files === 'string' ? JSON.parse(submission.latest_files) : submission.latest_files;
+            } catch (e) {}
         } else if (submission.file) {
-            submittedFile = {
-                name: submission.file.name || 'SE18D01_TranThiB_BackendArchitecture.zip',
-                size: submission.file.size || 4850000,
-                type: submission.file.mimeType || 'application/zip',
-                url: submission.file.url
-            };
+            files = [submission.file];
         }
 
-        if (!submittedFile) {
+        if (files && files.length > 0) {
+            const f = files[0];
             submittedFile = {
-                name: 'SE18D01_VietKhoa_C4Diagrams.pdf',
-                size: 3420000,
-                type: 'application/pdf'
+                id: f.id,
+                name: f.name || f.filename || 'Submitted_File',
+                size: Number(f.size || 0),
+                type: f.type || f.mime_type || 'application/octet-stream',
+                url: f.url || f.file_url
             };
         }
 
@@ -203,29 +147,38 @@ export default function StudentAssignmentDetailPage() {
         let parsedDeclarations = INITIAL_DECLARATIONS;
         let parsedScopes = null;
         try {
-            const noteData = detailedSubmission?.versions?.[0]?.note || submission?.note;
+            const noteData = latestVer?.note || submission?.latest_note || submission?.note;
             if (noteData) {
                 const normalized = normalizeAuditData(noteData);
                 if (normalized.scopes && normalized.scopes.length > 0) {
                     parsedScopes = normalized.scopes;
                     parsedDeclarations = normalized.scopes[0].declarations || parsedDeclarations;
+                } else if (normalized.declarations) {
+                    parsedDeclarations = normalized.declarations;
                 }
             }
         } catch (e) {}
 
+        const submissionTime = submission.submitted_at || latestVer?.submitted_at;
+        const editedTime = submission.updated_at || latestVer?.updated_at;
+
         formattedSubmission = {
+            id: submission.id,
             status: isGraded ? 'Graded' : 'Submitted',
-            submittedAt: submission.submitted_at || submission.submittedAt || '2026-03-24 14:20:00',
-            lastEditedAt: submission.updated_at || submission.lastUpdatedAt || '2026-03-24 14:20:00',
-            version: detailedSubmission?.versions?.length || submission.version || 1,
+            submittedAt: submissionTime ? formatDateDMY(submissionTime) : 'N/A',
+            lastEditedAt: editedTime ? formatDateDMY(editedTime) : null,
+            version: latestVer?.version_no || detailedSubmission?.versions?.length || submission.version || 1,
             file: submittedFile,
-            feedback: effectiveFeedback || (isGraded ? 'Bài nộp đã được chấm điểm hoàn tất.' : 'No feedback yet. Submitted successfully. Waiting for grading.'),
-            transparencyScore: submission.transparencyScore || submission.aiAuditLog?.transparencyScore || 94,
+            feedback: effectiveFeedback || (isGraded ? 'Bài nộp đã được chấm điểm hoàn tất.' : 'Chưa có nhận xét. Bài nộp đang chờ giảng viên chấm điểm.'),
+            transparencyScore: submission.transparencyScore || (parsedScopes ? 95 : null),
             declarations: parsedDeclarations,
             scopes: parsedScopes || submission.scopes,
             score: effectiveScore,
-            grade: submission.grade || (effectiveScore != null ? { score: effectiveScore, feedback: effectiveFeedback, rubrics: effectiveRubrics } : null),
-            rubrics: effectiveRubrics,
+            grade: {
+                score: effectiveScore,
+                max_score: submission.max_score || detailedSubmission?.max_score || 10,
+                feedback: effectiveFeedback
+            }
         };
     }
 
@@ -242,30 +195,17 @@ export default function StudentAssignmentDetailPage() {
                 declarations,
               }
             ],
-            declarations: declarations || scopes?.[0]?.declarations, // for backward compat
+            declarations: declarations || scopes?.[0]?.declarations,
             isEdit,
             submittedAt: new Date().toISOString()
         });
 
-        if (id && !id.startsWith('asm-')) {
+        if (id) {
             await SubmissionService.submitAssignment(id, rawFile, notePayload);
-        } else {
-            // Simulated delay for mock assignments
-            await new Promise((resolve) => setTimeout(resolve, 800));
         }
 
         // Refresh submission data
-        try {
-            const subData = await SubmissionService.getMySubmissions({ assignment_id: id });
-            if (subData && subData.data && subData.data.length > 0) {
-                setSubmission(subData.data[0]);
-                const detail = await SubmissionService.getSubmissionById(subData.data[0].id);
-                if (detail.success) setDetailedSubmission(detail.data);
-            }
-        } catch (err) {
-            console.error(err);
-        }
-
+        await fetchDetail();
         return true;
     };
 
@@ -285,7 +225,7 @@ export default function StudentAssignmentDetailPage() {
     return (
         <StudentAssignmentFlow
             initialAssignment={formattedAssignment}
-            initialSubmission={formattedSubmission || undefined}
+            initialSubmission={formattedSubmission}
             onBackToCourse={() => navigate('/student/classes')}
             onSubmitApiHandler={handleApiSubmit}
         />

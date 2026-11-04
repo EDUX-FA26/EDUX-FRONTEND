@@ -20,7 +20,6 @@ export default function AssignmentFormModal({
     const [maxScore, setMaxScore] = useState(10);
     const [weight, setWeight] = useState(10);
     const [description, setDescription] = useState('');
-    const [instructions, setInstructions] = useState('');
     const [aiDeclarationRequired, setAiDeclarationRequired] = useState(true);
     const [newMaterials, setNewMaterials] = useState([]);
     const [existingMaterials, setExistingMaterials] = useState([]);
@@ -52,7 +51,6 @@ export default function AssignmentFormModal({
             setMaxScore(initialData.max_score ?? 10);
             setWeight(initialData.weight ?? 10);
             setDescription(initialData.description || '');
-            setInstructions(initialData.instructions || '');
             setAiDeclarationRequired(initialData.ai_declaration_required !== false);
             setExistingMaterials(initialData.materials || []);
             setNewMaterials([]);
@@ -64,7 +62,6 @@ export default function AssignmentFormModal({
             setMaxScore(10);
             setWeight(10);
             setDescription('');
-            setInstructions('');
             setAiDeclarationRequired(true);
             setExistingMaterials([]);
             setNewMaterials([]);
@@ -101,7 +98,7 @@ export default function AssignmentFormModal({
         formData.append('max_score', String(maxScore ?? 10));
         formData.append('weight', String(weight ?? 10));
         formData.append('description', description.trim());
-        formData.append('instructions', instructions.trim());
+        formData.append('instructions', '');
         formData.append('ai_declaration_required', String(aiDeclarationRequired));
         formData.append('allow_late_submission', 'false'); // Mặc định không cho nộp muộn
 
@@ -324,29 +321,6 @@ export default function AssignmentFormModal({
                             }}
                         />
                     </div>
-
-                    {/* Hướng dẫn nộp bài */}
-                    <div>
-                        <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', marginBottom: '6px', color: 'var(--color-ink)' }}>
-                            Hướng dẫn làm bài & nộp bài (Instructions)
-                        </label>
-                        <textarea
-                            rows={2}
-                            value={instructions}
-                            onChange={(e) => setInstructions(e.target.value)}
-                            placeholder="Hướng dẫn định dạng nộp, cấu trúc thư mục, quy định..."
-                            style={{
-                                width: '100%',
-                                padding: '9px 12px',
-                                border: '1px solid var(--color-border)',
-                                borderRadius: '6px',
-                                fontSize: '13px',
-                                outline: 'none',
-                                resize: 'vertical',
-                            }}
-                        />
-                    </div>
-
                     {/* CẤU HÌNH AI AUDIT LOG (TOGGLE ĐƠN GIẢN) */}
                     <div
                         style={{

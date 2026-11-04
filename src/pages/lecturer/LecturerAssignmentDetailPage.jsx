@@ -53,8 +53,7 @@ export default function LecturerAssignmentDetailPage() {
                     ...prev,
                     title: formData.get('title') || prev?.title,
                     description: formData.get('description') || prev?.description,
-                    instructions: formData.get('instructions') || prev?.instructions,
-                    deadline: formData.get('deadline') || prev?.deadline,
+                                        deadline: formData.get('deadline') || prev?.deadline,
                     max_score: Number(formData.get('max_score')) || prev?.max_score,
                     weight: Number(formData.get('weight')) || prev?.weight,
                     publish_status: formData.get('publish_status') || prev?.publish_status,
@@ -656,10 +655,7 @@ export default function LecturerAssignmentDetailPage() {
                                 {assignment?.description || 'N/A'}
                             </p>
 
-                            <h4 style={{ fontWeight: 'bold', color: 'var(--color-ink)', fontSize: '13px', margin: '16px 0 8px 0' }}>Hướng dẫn làm bài & nộp bài (Instructions)</h4>
-                            <p style={{ fontSize: '12px', color: 'var(--color-ink-soft)', margin: 0, whiteSpace: 'pre-line', lineHeight: '1.6' }}>
-                                {assignment?.instructions || 'N/A'}
-                            </p>
+                            
                         </div>
 
                         <div className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
