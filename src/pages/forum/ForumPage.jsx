@@ -44,6 +44,7 @@ export default function ForumPage() {
       setError(err.response?.data?.message || 'Không thể tải diễn đàn.');
     } finally { setLoading(false); }
   };
+  const refreshStats = () => ForumService.getMyStats().then((result) => setProfileStats(result.data || result)).catch(() => {});
 
   useEffect(() => {
     loadPosts();
@@ -87,6 +88,7 @@ export default function ForumPage() {
       setPosts((items) => items.map((post) => post.id === postId
         ? { ...post, liked_by_me: liked, like_count: Math.max(0, (post.like_count || 0) + (liked === nextLiked ? 0 : (liked ? 1 : -1))) }
         : post));
+      refreshStats();
     } catch (err) {
       setPosts((items) => items.map((post) => post.id === postId ? current : post));
       setError(err.response?.data?.message || 'Không thể cập nhật lượt thích.');
@@ -123,6 +125,7 @@ export default function ForumPage() {
       setPosts((items) => items.map((post) => post.id === postId
         ? { ...post, comment_count: (post.comment_count || 0) + 1 }
         : post));
+      refreshStats();
     } catch (err) { setError(err.response?.data?.message || 'Không thể gửi bình luận.'); }
   };
 
