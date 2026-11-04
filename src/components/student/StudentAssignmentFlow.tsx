@@ -89,6 +89,12 @@ export interface Assignment {
   courseTitle: string;
   dueDate: string;
   content: string;
+  instructions?: string;
+  maxScore?: number | null;
+  weight?: number | null;
+  aiDeclarationRequired?: boolean;
+  minAiInteractions?: number;
+  maxAiInteractions?: number;
   instructor: {
     name: string;
     avatarUrl?: string;
@@ -610,16 +616,27 @@ export const AssignmentOverview: React.FC<AssignmentOverviewProps> = ({
 
       {/* Card 2: Content */}
       <div className="saf-overview-card bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-3">
-        <h3 className="font-bold text-slate-800 text-sm">Content</h3>
-        <p className="text-xs text-slate-600 leading-relaxed">
-          {assignment.content}
+        <h3 className="font-bold text-slate-800 text-sm">Description</h3>
+        <p className="text-xs text-slate-600 leading-relaxed whitespace-pre-line">
+          {assignment.content || 'N/A'}
         </p>
+
+        {assignment.instructions && (
+          <div className="pt-2 border-t border-slate-100">
+            <h4 className="font-bold text-slate-800 text-xs mb-1">Instructions</h4>
+            <p className="text-xs text-slate-600 leading-relaxed whitespace-pre-line">
+              {assignment.instructions || 'N/A'}
+            </p>
+          </div>
+        )}
 
         <div className="pt-3 border-t border-slate-100 flex items-center gap-2 text-slate-500 text-xs">
           <div className="w-6 h-6 rounded-full bg-blue-50 text-blue-600 font-bold text-[10px] flex items-center justify-center">
-            {assignment.instructor.name.substring(0, 2).toUpperCase()}
+            {assignment.instructor?.name && assignment.instructor.name !== 'N/A'
+              ? assignment.instructor.name.substring(0, 2).toUpperCase()
+              : 'GV'}
           </div>
-          <span>Posted by {assignment.instructor.name}</span>
+          <span>Posted by {assignment.instructor?.name || 'N/A'}</span>
         </div>
       </div>
 
@@ -648,60 +665,64 @@ export const AssignmentOverview: React.FC<AssignmentOverviewProps> = ({
                 : 'bg-slate-100 text-slate-600'
             }`}
           >
-            {score != null ? `${Number(score).toFixed(2)} / 10` : 'SCORE: N/A'}
+            {score != null ? `${Number(score).toFixed(2)} / ${assignment.maxScore ?? 10}` : 'SCORE: N/A'}
           </span>
         </div>
 
-        {assignment.additionalFiles && assignment.additionalFiles.length > 0 && (
-          <div className="pt-2 space-y-2 border-t border-slate-100">
+        <div className="pt-2 space-y-2 border-t border-slate-100">
             <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
               Resources Attached
             </span>
-            {assignment.additionalFiles.map((file) => (
-              <a
-                key={file.id}
-                href={file.url || '#'}
-                onClick={async (e) => {
-                  e.preventDefault();
-                  if (file.materialId && file.assignmentId) {
-                    try {
-                      const res = await AssignmentService.getMaterialDownloadUrl(file.assignmentId, file.materialId);
-                      const downloadUrl = res?.data?.download_url || res?.download_url;
-                      if (downloadUrl) {
-                        window.open(downloadUrl, '_blank');
-                        return;
+            {assignment.additionalFiles && assignment.additionalFiles.length > 0 ? (
+              assignment.additionalFiles.map((file) => (
+                <a
+                  key={file.id}
+                  href={file.url || '#'}
+                  onClick={async (e) => {
+                    e.preventDefault();
+                    if (file.materialId && file.assignmentId) {
+                      try {
+                        const res = await AssignmentService.getMaterialDownloadUrl(file.assignmentId, file.materialId);
+                        const downloadUrl = res?.data?.download_url || res?.download_url;
+                        if (downloadUrl) {
+                          window.open(downloadUrl, '_blank');
+                          return;
+                        }
+                      } catch (err) {
+                        console.error('Download material failed:', err);
                       }
-                    } catch (err) {
-                      console.error('Download material failed:', err);
                     }
-                  }
-                  if (file.url && file.url !== '#') {
-                    window.open(file.url, '_blank');
-                  } else {
-                    alert(`Tải file tài liệu: ${file.name}`);
-                  }
-                }}
-                className="flex items-center justify-between bg-slate-50 hover:bg-blue-50/60 p-2.5 rounded-xl border border-slate-200/80 transition group"
-              >
-                <div className="flex items-center gap-2 min-w-0">
-                  <FileText size={15} className="text-blue-500 shrink-0" />
-                  <div className="min-w-0">
-                    <p className="text-xs font-semibold text-slate-700 group-hover:text-blue-600 truncate">
-                      {file.name}
-                    </p>
-                    <span className="text-[10px] text-slate-400 font-mono">
-                      {file.size}
-                    </span>
+                    if (file.url && file.url !== '#') {
+                      window.open(file.url, '_blank');
+                    } else {
+                      alert(`Tải file tài liệu: ${file.name}`);
+                    }
+                  }}
+                  className="flex items-center justify-between bg-slate-50 hover:bg-blue-50/60 p-2.5 rounded-xl border border-slate-200/80 transition group"
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <FileText size={15} className="text-blue-500 shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold text-slate-700 group-hover:text-blue-600 truncate">
+                        {file.name}
+                      </p>
+                      <span className="text-[10px] text-slate-400 font-mono">
+                        {file.size}
+                      </span>
+                    </div>
                   </div>
-                </div>
-                <Download
-                  size={14}
-                  className="text-slate-400 group-hover:text-blue-600 shrink-0"
-                />
-              </a>
-            ))}
+                  <Download
+                    size={14}
+                    className="text-slate-400 group-hover:text-blue-600 shrink-0"
+                  />
+                </a>
+              ))
+            ) : (
+              <div className="text-[11px] text-slate-400 italic">
+                Chưa có tài liệu đính kèm (N/A)
+              </div>
+            )}
           </div>
-        )}
       </div>
     </div>
   );
@@ -2509,14 +2530,14 @@ export default function StudentAssignmentFlow({
             className="hover:text-blue-600 transition flex items-center gap-1 cursor-pointer"
           >
             <ArrowLeft size={14} />
-            <span>Back to {assignment.courseCode}</span>
+            <span>Back to {assignment.courseCode || 'N/A'}</span>
           </button>
           <span className="text-slate-300">/</span>
           <span className="text-slate-400 truncate max-w-xs sm:max-w-md">
-            {assignment.courseTitle}
+            {assignment.courseTitle || 'N/A'}
           </span>
           <span className="text-slate-300">/</span>
-          <span className="text-slate-700 font-bold">{assignment.title}</span>
+          <span className="text-slate-700 font-bold">{assignment.title || 'N/A'}</span>
         </nav>
 
         {/* Header Tiêu đề & Status Badge */}
@@ -2539,7 +2560,7 @@ export default function StudentAssignmentFlow({
               ) : null}
             </div>
             <p className="text-xs text-slate-500 mt-0.5">
-              Course: <span className="font-semibold">{assignment.courseCode}</span> • Due Date: {assignment.dueDate}
+              Course: <span className="font-semibold">{assignment.courseCode || 'N/A'}</span> • Due Date: {assignment.dueDate || 'N/A'}
             </p>
           </div>
 

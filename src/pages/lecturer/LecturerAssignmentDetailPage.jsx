@@ -9,6 +9,7 @@ import GradingService from '../../services/grading.service';
 import MockSubmissionService from '../../services/mockSubmissionService';
 import { formatDateDMY } from '../../helper/dateFormat';
 import AIAuditQuickViewHover from '../../components/lecturer/AIAuditQuickViewHover';
+import AssignmentFormModal from '../../components/lecturer/AssignmentFormModal';
 
 export default function LecturerAssignmentDetailPage() {
     const { id } = useParams();
@@ -24,23 +25,9 @@ export default function LecturerAssignmentDetailPage() {
     const [gradeForm, setGradeForm] = useState({ score: '', feedback: '' });
     const [isSavingGrade, setIsSavingGrade] = useState(false);
 
-    const editFileInputRef = useRef(null);
-
-    // --- STATE DÀNH CHO MODAL CHỈNH SỬA BÀI TẬP & CẤU HÌNH AI TRACKING ---
+    // --- STATE DÀNH CHO MODAL CHỈNH SỬA BÀI TẬP ---
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isSavingEdit, setIsSavingEdit] = useState(false);
-    const [editMaterials, setEditMaterials] = useState([]);
-    const [editForm, setEditForm] = useState({
-        title: '',
-        deadline: '',
-        description: '',
-        instructions: '',
-        max_score: 10,
-        weight: 10,
-        allow_late_submission: true,
-        publish_status: 'published',
-        ai_declaration_required: true,
-    });
 
     const formatFileSize = (bytes) => {
         if (!bytes || bytes === 0) return '0 B';
@@ -52,75 +39,29 @@ export default function LecturerAssignmentDetailPage() {
     };
 
     const handleOpenEditModal = () => {
-        let deadlineFormatted = '';
-        if (assignment?.deadline) {
-            try {
-                const d = new Date(assignment.deadline);
-                const pad = (n) => String(n).padStart(2, '0');
-                deadlineFormatted = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-            } catch (e) {}
-        }
-        setEditForm({
-            title: assignment?.title || '',
-            deadline: deadlineFormatted,
-            description: assignment?.description || '',
-            instructions: assignment?.instructions || '',
-            max_score: assignment?.max_score ?? 10,
-            weight: assignment?.weight ?? 10,
-            allow_late_submission: assignment?.allow_late_submission !== false,
-            publish_status: assignment?.publish_status || 'published',
-            ai_declaration_required: assignment?.ai_declaration_required !== false,
-        });
-        setEditMaterials([]);
         setIsEditModalOpen(true);
     };
 
-    const handleEditFileSelect = (e) => {
-        const files = Array.from(e.target.files || []);
-        if (files.length > 0) {
-            setEditMaterials(prev => [...prev, ...files]);
-        }
-        if (editFileInputRef.current) {
-            editFileInputRef.current.value = '';
-        }
-    };
-
-    const handleRemoveEditFile = (indexToRemove) => {
-        setEditMaterials(prev => prev.filter((_, idx) => idx !== indexToRemove));
-    };
-
-    const handleSaveEdit = async (e) => {
-        e.preventDefault();
-        if (!editForm.title || !editForm.deadline) {
-            showToast('Vui lòng điền đủ tiêu đề và hạn nộp!', 'error');
-            return;
-        }
-
+    const handleSaveEdit = async (formData) => {
         setIsSavingEdit(true);
         try {
-            const formData = new FormData();
-            formData.append('title', editForm.title);
-            formData.append('deadline', new Date(editForm.deadline).toISOString());
-            if (editForm.description) formData.append('description', editForm.description);
-            if (editForm.instructions) formData.append('instructions', editForm.instructions);
-            formData.append('max_score', String(editForm.max_score ?? 10));
-            formData.append('weight', String(editForm.weight ?? 0));
-            formData.append('allow_late_submission', String(editForm.allow_late_submission));
-            formData.append('publish_status', editForm.publish_status || 'published');
-            formData.append('ai_declaration_required', String(editForm.ai_declaration_required));
-
-            editMaterials.forEach(file => {
-                formData.append('materials', file);
-            });
-
             if (id && !id.startsWith('asm-')) {
                 await AssignmentService.updateAssignment(id, formData);
                 await fetchDetail();
             } else {
-                setAssignment(prev => ({ ...prev, ...editForm }));
+                setAssignment(prev => ({
+                    ...prev,
+                    title: formData.get('title') || prev?.title,
+                    description: formData.get('description') || prev?.description,
+                    instructions: formData.get('instructions') || prev?.instructions,
+                    deadline: formData.get('deadline') || prev?.deadline,
+                    max_score: Number(formData.get('max_score')) || prev?.max_score,
+                    weight: Number(formData.get('weight')) || prev?.weight,
+                    publish_status: formData.get('publish_status') || prev?.publish_status,
+                    ai_declaration_required: formData.get('ai_declaration_required') === 'true',
+                }));
             }
 
-            setEditMaterials([]);
             showToast('Cập nhật bài tập thành công!', 'success');
             setIsEditModalOpen(false);
         } catch (err) {
@@ -710,8 +651,15 @@ export default function LecturerAssignmentDetailPage() {
                         </div>
 
                         <div className="card" style={{ padding: '20px' }}>
-                            <h3 style={{ fontWeight: 'bold', color: 'var(--color-ink)', fontSize: '14px', margin: '0 0 12px 0' }}>Content</h3>
-                            <p style={{ fontSize: '12px', color: 'var(--color-ink-soft)', margin: 0 }}>{title}</p>
+                            <h3 style={{ fontWeight: 'bold', color: 'var(--color-ink)', fontSize: '14px', margin: '0 0 10px 0' }}>Mô tả bài tập (Description)</h3>
+                            <p style={{ fontSize: '12px', color: 'var(--color-ink-soft)', margin: 0, whiteSpace: 'pre-line', lineHeight: '1.6' }}>
+                                {assignment?.description || 'N/A'}
+                            </p>
+
+                            <h4 style={{ fontWeight: 'bold', color: 'var(--color-ink)', fontSize: '13px', margin: '16px 0 8px 0' }}>Hướng dẫn làm bài & nộp bài (Instructions)</h4>
+                            <p style={{ fontSize: '12px', color: 'var(--color-ink-soft)', margin: 0, whiteSpace: 'pre-line', lineHeight: '1.6' }}>
+                                {assignment?.instructions || 'N/A'}
+                            </p>
                         </div>
 
                         <div className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -725,14 +673,12 @@ export default function LecturerAssignmentDetailPage() {
                             </div>
 
                             <div style={{ fontSize: '12px', color: 'var(--color-ink-soft)' }}>
-                                <span style={{ fontWeight: 'bold', color: 'var(--color-ink)' }}>DUE DATE:</span> {assignment?.deadline ? formatDateDMY(assignment.deadline) : '2026-03-25 12:50:00'}
+                                <span style={{ fontWeight: 'bold', color: 'var(--color-ink)' }}>DUE DATE:</span> {assignment?.deadline ? formatDateDMY(assignment.deadline) : 'N/A'}
                             </div>
                             <div style={{ fontSize: '12px', fontWeight: 'bold' }}>
                                 <span style={{ color: 'var(--color-ink-soft)', fontWeight: 'normal' }}>(GMT+07)</span>
-                                <span style={{ color: 'var(--color-danger)' }}> - MAX SCORE: {assignment?.max_score ?? 10}</span>
-                                {assignment?.weight != null && (
-                                    <span style={{ color: 'var(--color-primary, #4f46e5)' }}> - WEIGHT: {assignment.weight}%</span>
-                                )}
+                                <span style={{ color: 'var(--color-danger)' }}> - MAX SCORE: {assignment?.max_score != null ? assignment.max_score : 'N/A'}</span>
+                                <span style={{ color: 'var(--color-primary, #4f46e5)' }}> - WEIGHT: {assignment?.weight != null ? `${assignment.weight}%` : 'N/A'}</span>
                             </div>
 
                             {/* Render materials */}
@@ -804,7 +750,7 @@ export default function LecturerAssignmentDetailPage() {
                                     ))
                                 ) : (
                                     <div style={{ fontSize: '11px', color: 'var(--color-ink-muted)', fontStyle: 'italic', padding: '4px 0' }}>
-                                        Chưa có tài liệu đính kèm. Bạn có thể bấm "Chỉnh sửa bài tập" để tải lên file.
+                                        Chưa có tài liệu đính kèm (N/A). Bạn có thể bấm "Chỉnh sửa bài tập" để tải lên file.
                                     </div>
                                 )}
                             </div>
@@ -859,7 +805,7 @@ export default function LecturerAssignmentDetailPage() {
                                                     )}
                                                 </td>
                                                 <td style={{ padding: '8px' }}>
-                                                    {formatDateDMY(sub.submitted_at)}
+                                                    {sub.submitted_at ? formatDateDMY(sub.submitted_at) : 'N/A'}
                                                 </td>
 
                                                 <td style={{ padding: '8px' }}>
@@ -1053,349 +999,16 @@ export default function LecturerAssignmentDetailPage() {
             )}
 
             {/* MODAL CHỈNH SỬA BÀI TẬP */}
-            {isEditModalOpen && createPortal(
-                <div style={{
-                    position: 'fixed',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    backgroundColor: 'rgba(15, 23, 42, 0.45)',
-                    backdropFilter: 'blur(2px)',
-                    zIndex: 99999,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: '16px'
-                }} onClick={() => setIsEditModalOpen(false)}>
-                    <div 
-                        className="card animate-fade-in" 
-                        style={{
-                            width: '100%',
-                            maxWidth: '680px',
-                            maxHeight: '90vh',
-                            overflowY: 'auto',
-                            backgroundColor: '#fff',
-                            borderRadius: '16px',
-                            padding: '24px',
-                            boxShadow: 'var(--shadow-lg)',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '18px'
-                        }}
-                        onClick={e => e.stopPropagation()}
-                    >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--color-border)', paddingBottom: '14px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: 'var(--color-primary-bg)', color: 'var(--color-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <Edit3 size={16} />
-                                </div>
-                                <h2 style={{ fontSize: '16px', fontWeight: 'bold', margin: 0, color: 'var(--color-ink)' }}>
-                                    Chỉnh sửa bài tập (Edit Assignment)
-                                </h2>
-                            </div>
-                            <button onClick={() => setIsEditModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-ink-muted)' }}>
-                                <XIcon size={20} />
-                            </button>
-                        </div>
-
-                        <form onSubmit={handleSaveEdit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                            {/* Tiêu đề */}
-                            <div>
-                                <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', marginBottom: '6px', color: 'var(--color-ink)' }}>
-                                    Tiêu đề bài tập *
-                                </label>
-                                <input
-                                    type="text"
-                                    required
-                                    value={editForm.title}
-                                    onChange={e => setEditForm(prev => ({ ...prev, title: e.target.value }))}
-                                    style={{ width: '100%', padding: '9px 12px', border: '1px solid var(--color-border)', borderRadius: '6px', fontSize: '13px', outline: 'none' }}
-                                    placeholder="Nhập tiêu đề bài tập..."
-                                />
-                            </div>
-
-                            {/* Hạn nộp & Trạng thái */}
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                                <div>
-                                    <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', marginBottom: '6px', color: 'var(--color-ink)' }}>
-                                        Hạn nộp (Deadline) *
-                                    </label>
-                                    <input
-                                        type="datetime-local"
-                                        required
-                                        value={editForm.deadline}
-                                        onChange={e => setEditForm(prev => ({ ...prev, deadline: e.target.value }))}
-                                        style={{ width: '100%', padding: '9px 12px', border: '1px solid var(--color-border)', borderRadius: '6px', fontSize: '13px', outline: 'none' }}
-                                    />
-                                </div>
-                                <div>
-                                    <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', marginBottom: '6px', color: 'var(--color-ink)' }}>
-                                        Trạng thái công bố (Publish Status)
-                                    </label>
-                                    <select
-                                        value={editForm.publish_status}
-                                        onChange={e => setEditForm(prev => ({ ...prev, publish_status: e.target.value }))}
-                                        style={{ width: '100%', padding: '9px 12px', border: '1px solid var(--color-border)', borderRadius: '6px', fontSize: '13px', outline: 'none', backgroundColor: '#fff' }}
-                                    >
-                                        <option value="draft">Bản nháp (Draft)</option>
-                                        <option value="published">Công bố (Published)</option>
-                                        <option value="closed">Đã đóng (Closed)</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            {/* Điểm tối đa & Trọng số */}
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                                <div>
-                                    <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', marginBottom: '6px', color: 'var(--color-ink)' }}>
-                                        Thang điểm tối đa
-                                    </label>
-                                    <input
-                                        type="number"
-                                        min="0"
-                                        step="0.5"
-                                        value={editForm.max_score}
-                                        onChange={e => setEditForm(prev => ({ ...prev, max_score: e.target.value }))}
-                                        style={{ width: '100%', padding: '9px 12px', border: '1px solid var(--color-border)', borderRadius: '6px', fontSize: '13px', outline: 'none' }}
-                                    />
-                                </div>
-                                <div>
-                                    <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', marginBottom: '6px', color: 'var(--color-ink)' }}>
-                                        Trọng số điểm (%)
-                                    </label>
-                                    <input
-                                        type="number"
-                                        min="0"
-                                        max="100"
-                                        value={editForm.weight}
-                                        onChange={e => setEditForm(prev => ({ ...prev, weight: e.target.value }))}
-                                        style={{ width: '100%', padding: '9px 12px', border: '1px solid var(--color-border)', borderRadius: '6px', fontSize: '13px', outline: 'none' }}
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Mô tả */}
-                            <div>
-                                <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', marginBottom: '6px', color: 'var(--color-ink)' }}>
-                                    Mô tả bài tập (Description)
-                                </label>
-                                <textarea
-                                    rows={2}
-                                    value={editForm.description}
-                                    onChange={e => setEditForm(prev => ({ ...prev, description: e.target.value }))}
-                                    placeholder="Mô tả nội dung, yêu cầu tổng quan..."
-                                    style={{ width: '100%', padding: '9px 12px', border: '1px solid var(--color-border)', borderRadius: '6px', fontSize: '13px', outline: 'none', resize: 'vertical' }}
-                                />
-                            </div>
-
-                            {/* Hướng dẫn nộp bài */}
-                            <div>
-                                <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', marginBottom: '6px', color: 'var(--color-ink)' }}>
-                                    Hướng dẫn làm bài & nộp bài (Instructions)
-                                </label>
-                                <textarea
-                                    rows={2}
-                                    value={editForm.instructions}
-                                    onChange={e => setEditForm(prev => ({ ...prev, instructions: e.target.value }))}
-                                    placeholder="Hướng dẫn chi tiết định dạng nộp, tiêu chí đánh giá..."
-                                    style={{ width: '100%', padding: '9px 12px', border: '1px solid var(--color-border)', borderRadius: '6px', fontSize: '13px', outline: 'none', resize: 'vertical' }}
-                                />
-                            </div>
-
-                            {/* Cho phép nộp muộn (Allow Late Submission) */}
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', borderRadius: '8px', border: '1px solid var(--color-border)', backgroundColor: 'var(--color-surface, #f8fafc)' }}>
-                                <div>
-                                    <div style={{ fontSize: '12px', fontWeight: '600', color: 'var(--color-ink)' }}>
-                                        Cho phép sinh viên nộp muộn (Allow Late Submission)
-                                    </div>
-                                    <div style={{ fontSize: '11px', color: 'var(--color-ink-muted)', marginTop: '2px' }}>
-                                        Khi bật, sinh viên vẫn có thể nộp bài sau thời hạn deadline (hệ thống sẽ đánh dấu nộp muộn).
-                                    </div>
-                                </div>
-                                <label style={{ position: 'relative', display: 'inline-block', width: '38px', height: '22px', flexShrink: 0, cursor: 'pointer' }}>
-                                    <input
-                                        type="checkbox"
-                                        checked={editForm.allow_late_submission}
-                                        onChange={e => setEditForm(prev => ({ ...prev, allow_late_submission: e.target.checked }))}
-                                        style={{ opacity: 0, width: 0, height: 0 }}
-                                    />
-                                    <span style={{
-                                        position: 'absolute', cursor: 'pointer', inset: 0,
-                                        backgroundColor: editForm.allow_late_submission ? 'var(--color-primary, #4f46e5)' : '#cbd5e1',
-                                        transition: '0.2s', borderRadius: '22px'
-                                    }}>
-                                        <span style={{
-                                            position: 'absolute', content: '""', height: '16px', width: '16px',
-                                            left: editForm.allow_late_submission ? '19px' : '3px', bottom: '3px',
-                                            backgroundColor: 'white', transition: '0.2s', borderRadius: '50%',
-                                            boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
-                                        }} />
-                                    </span>
-                                </label>
-                            </div>
-
-                            {/* CẤU HÌNH AI AUDIT LOG (TOGGLE ĐƠN GIẢN) */}
-                            <div style={{
-                                border: '1px solid var(--color-border)',
-                                borderRadius: '10px',
-                                padding: '14px 16px',
-                                backgroundColor: editForm.ai_declaration_required ? 'rgba(79, 70, 229, 0.03)' : 'var(--color-surface, #f8fafc)',
-                                transition: 'all 0.2s ease'
-                            }}>
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-                                    <div>
-                                        <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--color-ink)' }}>
-                                            Yêu cầu khai báo AI Audit Log
-                                        </div>
-                                        <div style={{ fontSize: '11px', color: 'var(--color-ink-muted)', marginTop: '2px', lineHeight: 1.4 }}>
-                                            Bật để yêu cầu sinh viên cung cấp bản giải trình minh bạch về việc sử dụng AI khi làm bài.
-                                        </div>
-                                    </div>
-                                    <label style={{ position: 'relative', display: 'inline-block', width: '42px', height: '24px', flexShrink: 0, cursor: 'pointer' }}>
-                                        <input
-                                            type="checkbox"
-                                            checked={editForm.ai_declaration_required}
-                                            onChange={e => setEditForm(prev => ({ ...prev, ai_declaration_required: e.target.checked }))}
-                                            style={{ opacity: 0, width: 0, height: 0 }}
-                                        />
-                                        <span style={{
-                                            position: 'absolute', cursor: 'pointer', inset: 0,
-                                            backgroundColor: editForm.ai_declaration_required ? 'var(--color-primary, #4f46e5)' : '#cbd5e1',
-                                            transition: '0.2s', borderRadius: '24px'
-                                        }}>
-                                            <span style={{
-                                                position: 'absolute', content: '""', height: '18px', width: '18px',
-                                                left: editForm.ai_declaration_required ? '20px' : '3px', bottom: '3px',
-                                                backgroundColor: 'white', transition: '0.2s', borderRadius: '50%',
-                                                boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
-                                            }} />
-                                        </span>
-                                    </label>
-                                </div>
-                            </div>
-
-                            {/* UPLOAD THÊM TÀI LIỆU MATERIALS */}
-                            <div>
-                                <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', marginBottom: '6px', color: 'var(--color-ink)' }}>
-                                    Tài liệu đính kèm (Materials)
-                                </label>
-                                
-                                {/* Hiện các file đã có */}
-                                {assignment?.materials && assignment.materials.length > 0 && (
-                                    <div style={{ marginBottom: '8px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                        <span style={{ fontSize: '11px', color: 'var(--color-ink-muted)' }}>Tài liệu hiện có trên hệ thống:</span>
-                                        {assignment.materials.map(mat => (
-                                            <div key={mat.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 10px', borderRadius: '6px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', fontSize: '11px' }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
-                                                    <FileText size={13} style={{ color: 'var(--color-primary)' }} />
-                                                    <span style={{ fontWeight: '500', color: 'var(--color-ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{mat.file_name}</span>
-                                                    <span style={{ color: 'var(--color-ink-muted)' }}>({formatFileSize(mat.file_size)})</span>
-                                                </div>
-                                                <span style={{ fontSize: '10px', color: '#16a34a', fontWeight: '600' }}>Đã tải lên</span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-
-                                <div
-                                    onClick={() => editFileInputRef.current?.click()}
-                                    style={{
-                                        border: '1.5px dashed var(--color-border, #cbd5e1)',
-                                        borderRadius: '10px',
-                                        padding: '14px',
-                                        textAlign: 'center',
-                                        backgroundColor: 'var(--color-surface, #f8fafc)',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s ease',
-                                    }}
-                                    onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--color-primary, #4f46e5)'}
-                                    onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--color-border, #cbd5e1)'}
-                                >
-                                    <input
-                                        type="file"
-                                        multiple
-                                        ref={editFileInputRef}
-                                        onChange={handleEditFileSelect}
-                                        style={{ display: 'none' }}
-                                    />
-                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
-                                        <UploadCloud size={20} style={{ color: 'var(--color-primary, #4f46e5)' }} />
-                                        <div style={{ fontSize: '12px', fontWeight: '600', color: 'var(--color-ink)' }}>
-                                            Nhấn để chọn file tài liệu mới đính kèm
-                                        </div>
-                                        <div style={{ fontSize: '11px', color: 'var(--color-ink-muted)' }}>
-                                            Hỗ trợ: PDF, DOCX, ZIP, PNG, JPG (Chọn nhiều file)
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Preview files to be uploaded */}
-                                {editMaterials.length > 0 && (
-                                    <div style={{ marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                        <span style={{ fontSize: '11px', color: 'var(--color-primary)', fontWeight: '600' }}>Tài liệu mới sắp được tải lên:</span>
-                                        {editMaterials.map((file, idx) => (
-                                            <div
-                                                key={idx}
-                                                style={{
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'space-between',
-                                                    padding: '7px 10px',
-                                                    borderRadius: '6px',
-                                                    backgroundColor: 'var(--color-surface, #f1f5f9)',
-                                                    border: '1px solid var(--color-border, #e2e8f0)',
-                                                    fontSize: '12px'
-                                                }}
-                                            >
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
-                                                    <FileText size={14} style={{ color: 'var(--color-primary, #4f46e5)', shrink: 0 }} />
-                                                    <span style={{ fontWeight: '600', color: 'var(--color-ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                        {file.name}
-                                                    </span>
-                                                    <span style={{ fontSize: '10px', color: 'var(--color-ink-muted)', fontFamily: 'monospace' }}>
-                                                        ({formatFileSize(file.size)})
-                                                    </span>
-                                                </div>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleRemoveEditFile(idx)}
-                                                    style={{
-                                                        background: 'transparent',
-                                                        border: 'none',
-                                                        color: 'var(--color-danger, #ef4444)',
-                                                        cursor: 'pointer',
-                                                        padding: '2px'
-                                                    }}
-                                                >
-                                                    <Trash2 size={13} />
-                                                </button>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-
-                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px', borderTop: '1px solid var(--color-border)', paddingTop: '14px' }}>
-                                <button
-                                    type="button"
-                                    onClick={() => setIsEditModalOpen(false)}
-                                    style={{ padding: '8px 18px', borderRadius: '6px', border: '1px solid var(--color-border)', backgroundColor: '#fff', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}
-                                >
-                                    Hủy
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={isSavingEdit}
-                                    style={{ padding: '8px 20px', borderRadius: '6px', border: 'none', backgroundColor: 'var(--color-primary)', color: '#fff', cursor: isSavingEdit ? 'not-allowed' : 'pointer', fontSize: '12px', fontWeight: '600' }}
-                                >
-                                    {isSavingEdit ? 'Đang lưu...' : 'Lưu cập nhật'}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>,
-                document.body
+            {isEditModalOpen && (
+                <AssignmentFormModal
+                    isOpen={isEditModalOpen}
+                    onClose={() => setIsEditModalOpen(false)}
+                    mode="edit"
+                    initialData={assignment}
+                    onSubmit={handleSaveEdit}
+                    isSubmitting={isSavingEdit}
+                    onDeleteExistingMaterial={handleDeleteMaterial}
+                />
             )}
         </div>
     );

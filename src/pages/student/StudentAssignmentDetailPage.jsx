@@ -23,7 +23,8 @@ export default function StudentAssignmentDetailPage() {
             try {
                 if (id && !id.startsWith('asm-')) {
                     try {
-                        const data = await AssignmentService.getAssignmentDetail(id);
+                        const res = await AssignmentService.getAssignmentDetail(id);
+                        const data = res?.data || res;
                         if (data) setAssignment(data);
                     } catch (e) {}
 
@@ -129,14 +130,17 @@ export default function StudentAssignmentDetailPage() {
     // Format Assignment for StudentAssignmentFlow
     const formattedAssignment = {
         id: id || 'asm-1',
-        title: title,
-        courseCode: assignment?.class_code || 'SWD392',
-        courseTitle: assignment?.class_name || 'Server-Side development with NodeJS, Express, and PostgreSQL',
-        dueDate: assignment?.deadline ? formatDateDMY(assignment.deadline) : '2026-03-25 12:50:00 (GMT+07)',
-        content: assignment?.description || 'Design and implement the high-concurrency Backend Architecture with C4 model specifications. Students must submit full architectural documentation and declare all GenAI tools employed across the 5 Computational Thinking rubrics.',
+        title: title || 'N/A',
+        courseCode: assignment?.course_code || assignment?.subject_code || assignment?.class_code || 'N/A',
+        courseTitle: assignment?.course_name || assignment?.subject_name || assignment?.class_name || 'N/A',
+        dueDate: assignment?.deadline ? formatDateDMY(assignment.deadline) : 'N/A',
+        content: assignment?.description || 'N/A',
+        instructions: assignment?.instructions || 'N/A',
+        maxScore: assignment?.max_score != null ? assignment.max_score : 10,
+        weight: assignment?.weight != null ? assignment.weight : null,
         instructor: {
-            name: assignment?.lecturer_name || 'Dr. Alan Smith',
-            role: 'Lecturer in Software Engineering'
+            name: assignment?.lecturer_name || assignment?.lecturer?.name || 'N/A',
+            role: 'Giảng viên'
         },
         additionalFiles: (assignment?.materials && assignment.materials.length > 0)
             ? assignment.materials.map(m => ({
