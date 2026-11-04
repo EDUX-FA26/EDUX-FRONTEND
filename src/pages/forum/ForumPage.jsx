@@ -15,6 +15,8 @@ export default function ForumPage() {
   const [decks, setDecks] = useState([]);
   const [form, setForm] = useState(initialForm);
   const [commentText, setCommentText] = useState({});
+  const [expandedComments, setExpandedComments] = useState({});
+  const [commentsByPost, setCommentsByPost] = useState({});
   const [showComposer, setShowComposer] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -54,16 +56,53 @@ export default function ForumPage() {
   };
 
   const toggleLike = async (postId) => {
-    try { await ForumService.toggleLike(postId); await loadPosts(); } catch (err) { setError(err.response?.data?.message || 'Không thể cập nhật lượt thích.'); }
+    const current = posts.find((post) => post.id === postId);
+    if (!current) return;
+    const nextLiked = !current.liked_by_me;
+    setPosts((items) => items.map((post) => post.id === postId
+      ? { ...post, liked_by_me: nextLiked, like_count: Math.max(0, (post.like_count || 0) + (nextLiked ? 1 : -1)) }
+      : post));
+    try {
+      const result = await ForumService.toggleLike(postId);
+      const liked = result.data?.liked ?? result.liked ?? nextLiked;
+      setPosts((items) => items.map((post) => post.id === postId
+        ? { ...post, liked_by_me: liked, like_count: Math.max(0, (post.like_count || 0) + (liked === nextLiked ? 0 : (liked ? 1 : -1))) }
+        : post));
+    } catch (err) {
+      setPosts((items) => items.map((post) => post.id === postId ? current : post));
+      setError(err.response?.data?.message || 'Không thể cập nhật lượt thích.');
+    }
+  };
+
+  const toggleComments = async (postId) => {
+    if (expandedComments[postId]) {
+      setExpandedComments((prev) => ({ ...prev, [postId]: false }));
+      return;
+    }
+    try {
+      const result = await ForumService.getPost(postId);
+      setCommentsByPost((prev) => ({ ...prev, [postId]: result.data?.comments || result.comments || [] }));
+      setExpandedComments((prev) => ({ ...prev, [postId]: true }));
+    } catch (err) {
+      setError(err.response?.data?.message || 'Không thể tải bình luận.');
+    }
   };
 
   const submitComment = async (postId) => {
     const content = commentText[postId]?.trim();
     if (!content) return;
     try {
-      await ForumService.addComment(postId, { content });
+      const result = await ForumService.addComment(postId, { content });
+      const added = result.data || result;
       setCommentText((prev) => ({ ...prev, [postId]: '' }));
-      await loadPosts();
+      setCommentsByPost((prev) => ({
+        ...prev,
+        [postId]: [...(prev[postId] || []), { ...added, author_name: user?.full_name || 'Bạn', author_role: user?.role }],
+      }));
+      setExpandedComments((prev) => ({ ...prev, [postId]: true }));
+      setPosts((items) => items.map((post) => post.id === postId
+        ? { ...post, comment_count: (post.comment_count || 0) + 1 }
+        : post));
     } catch (err) { setError(err.response?.data?.message || 'Không thể gửi bình luận.'); }
   };
 
@@ -91,8 +130,11 @@ export default function ForumPage() {
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}><div><strong>{post.author_name || 'EDUX User'}</strong><span style={{ color: '#8c7166', marginLeft: 8, fontSize: 13 }}>{post.author_role}</span><h2 style={{ margin: '8px 0 5px', fontSize: '1.15rem' }}>{post.title}</h2></div><time style={{ color: '#8c7166', fontSize: 12 }}>{new Date(post.created_at).toLocaleDateString('vi-VN')}</time></div>
         <p style={{ whiteSpace: 'pre-wrap', color: '#4e596b', lineHeight: 1.6 }}>{post.content}</p>
         {(post.subject_name || post.flashcard_deck_id) && <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>{post.subject_name && <span style={tagStyle}>{post.subject_code || 'Môn học'} · {post.subject_name}</span>}{post.flashcard_deck_id && <button type="button" style={linkStyle} onClick={() => openFlashcard(post)}><ExternalLink size={14} /> Mở FlashCard{post.flashcard_title ? `: ${post.flashcard_title}` : ''}</button>}</div>}
-        <div style={{ display: 'flex', gap: 18, borderTop: '1px solid #f1e7df', paddingTop: 12 }}><button type="button" style={actionStyle} onClick={() => toggleLike(post.id)}><Heart size={17} fill={post.liked_by_me ? '#ef6820' : 'none'} color={post.liked_by_me ? '#ef6820' : 'currentColor'} /> {post.like_count || 0}</button><span style={actionStyle}><MessageCircle size={17} /> {post.comment_count || 0}</span></div>
-        <div style={{ marginTop: 14 }}><div style={{ display: 'flex', gap: 8 }}><input value={commentText[post.id] || ''} onChange={(e) => setCommentText({ ...commentText, [post.id]: e.target.value })} placeholder="Viết bình luận..." style={{ ...inputStyle, margin: 0 }} /><button type="button" className="btn btn-primary" onClick={() => submitComment(post.id)}><Send size={16} /></button></div></div>
+        <div style={{ display: 'flex', gap: 18, borderTop: '1px solid #f1e7df', paddingTop: 12 }}><button type="button" style={actionStyle} onClick={() => toggleLike(post.id)}><Heart size={17} fill={post.liked_by_me ? '#ef6820' : 'none'} color={post.liked_by_me ? '#ef6820' : 'currentColor'} /> {post.like_count || 0}</button><button type="button" style={actionStyle} onClick={() => toggleComments(post.id)} aria-expanded={Boolean(expandedComments[post.id])}><MessageCircle size={17} /> {post.comment_count || 0} Bình luận</button></div>
+        {expandedComments[post.id] && <div style={{ marginTop: 14, borderTop: '1px solid #f1e7df', paddingTop: 12 }}>
+          {(commentsByPost[post.id] || []).length === 0 ? <p style={{ color: '#8c7166', fontSize: 13 }}>Chưa có bình luận. Hãy bắt đầu trao đổi.</p> : (commentsByPost[post.id] || []).map((comment) => <div key={comment.id} style={{ background: '#fff8f5', borderRadius: 10, padding: '9px 12px', marginBottom: 8 }}><strong style={{ fontSize: 13 }}>{comment.author_name || 'EDUX User'}</strong><p style={{ margin: '4px 0 0', whiteSpace: 'pre-wrap', color: '#4e596b' }}>{comment.content}</p></div>)}
+          <div style={{ display: 'flex', gap: 8 }}><input value={commentText[post.id] || ''} onChange={(e) => setCommentText({ ...commentText, [post.id]: e.target.value })} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitComment(post.id); } }} placeholder="Viết bình luận..." style={{ ...inputStyle, margin: 0 }} /><button type="button" className="btn btn-primary" onClick={() => submitComment(post.id)}><Send size={16} /></button></div>
+        </div>}
       </article>)}
     </main>
   );
