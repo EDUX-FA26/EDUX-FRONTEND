@@ -1,0 +1,35 @@
+import React, { useEffect, useState } from 'react';
+import { ArrowLeft, Image, Link, Send } from 'lucide-react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
+import ForumService from '../../services/forum.service';
+import FlashcardService from '../../services/flashcard.service';
+import ClassService from '../../services/class.service';
+
+export default function ForumCreatePage() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const postType = params.get('type') === 'CONFESSION' ? 'CONFESSION' : 'DISCUSSION';
+  const [form, setForm] = useState({ title: '', content: '', flashcardDeckId: '', visibility: 'PUBLIC', classIds: [], isAnonymous: postType === 'CONFESSION' });
+  const [decks, setDecks] = useState([]); const [classes, setClasses] = useState([]); const [saving, setSaving] = useState(false); const [error, setError] = useState('');
+
+  useEffect(() => {
+    FlashcardService.getDecks({ page: 1, limit: 100 }).then((r) => setDecks(r.data?.data || r.data || [])).catch(() => {});
+    ClassService.getMyClasses().then((r) => setClasses(r.data?.data || r.data || [])).catch(() => {});
+  }, []);
+
+  const submit = async (event) => {
+    event.preventDefault();
+    if (!form.title.trim() || !form.content.trim()) return;
+    try {
+      setSaving(true); setError('');
+      await ForumService.createPost({ title: form.title.trim(), content: form.content.trim(), flashcardDeckId: form.flashcardDeckId || null, visibility: user?.role === 'student' ? 'PUBLIC' : form.visibility, classIds: form.visibility === 'CLASS_ONLY' ? form.classIds : [], postType, isAnonymous: user?.role === 'student' && postType === 'CONFESSION' ? form.isAnonymous : false });
+      navigate(`/${user?.role || 'student'}/forum`);
+    } catch (err) { setError(err.response?.data?.message || 'Không thể đăng bài.'); } finally { setSaving(false); }
+  };
+
+  return <main style={pageStyle}><button type="button" className="btn" onClick={() => navigate(-1)}><ArrowLeft size={16} /> Quay lại diễn đàn</button><div style={crumbStyle}>CỘNG ĐỒNG <span>›</span> <strong>{postType === 'CONFESSION' ? 'Confession' : 'Hỏi đáp'}</strong></div><form onSubmit={submit} style={formStyle}><div style={titleRow}><span style={postType === 'CONFESSION' ? confessionBadge : discussionBadge}>{postType === 'CONFESSION' ? 'Confession' : 'Hỏi Đáp'}</span><input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Tiêu đề" required style={titleInput} /></div><div style={{ color: 'var(--color-ink-muted)', margin: '12px 0 18px' }}>{postType === 'CONFESSION' ? 'Chia sẻ suy nghĩ hoặc câu chuyện của bạn' : 'Hỏi đáp về học tập, công nghệ hoặc các vấn đề khác'}</div><div style={toolbar}><strong>B</strong><em>I</em><span>Tᵀ</span><Link size={18} /><Image size={18} /><span>☺</span><span>❝</span></div><textarea value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} placeholder={postType === 'CONFESSION' ? 'Bạn muốn chia sẻ điều gì?' : 'Nội dung câu hỏi của bạn...'} required rows={10} style={contentInput} />{error && <div style={errorStyle}>{error}</div>}<select value={form.flashcardDeckId} onChange={(e) => setForm({ ...form, flashcardDeckId: e.target.value })} style={fieldStyle}><option value="">Không gắn FlashCard</option>{decks.map((d) => <option key={d.id} value={d.id}>{d.title}{d.subject_name ? ` — ${d.subject_name}` : ''}</option>)}</select>{user?.role !== 'student' && <select value={form.visibility} onChange={(e) => setForm({ ...form, visibility: e.target.value, classIds: [] })} style={fieldStyle}><option value="PUBLIC">Công khai toàn hệ thống</option><option value="CLASS_ONLY">Chỉ chia sẻ cho lớp tôi dạy</option></select>}{form.visibility === 'CLASS_ONLY' && <div style={classBox}>{classes.map((item) => <label key={item.id}><input type="checkbox" checked={form.classIds.includes(item.id)} onChange={(e) => setForm((p) => ({ ...p, classIds: e.target.checked ? [...p.classIds, item.id] : p.classIds.filter((id) => id !== item.id) }))} /> {item.class_code || item.code || item.name}</label>)}</div>}{postType === 'CONFESSION' && user?.role === 'student' && <label style={{ display: 'flex', gap: 8, alignItems: 'center', margin: '10px 0' }}><input type="checkbox" checked={form.isAnonymous} onChange={(e) => setForm({ ...form, isAnonymous: e.target.checked })} /> Đăng ẩn danh</label>}<div style={actions}><button type="button" className="btn" onClick={() => navigate(-1)}>Hủy</button><button className="btn btn-primary" disabled={saving}><Send size={16} /> {saving ? 'Đang đăng...' : 'Đăng bài'}</button></div></form></main>;
+}
+
+const pageStyle = { maxWidth: 980, margin: '0 auto', padding: '28px 24px 80px' }; const crumbStyle = { margin: '22px 0 14px', color: 'var(--color-ink-muted)' }; const formStyle = { background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 14, padding: 18, boxShadow: 'var(--shadow-md)' }; const titleRow = { display: 'flex', alignItems: 'center', gap: 12, border: '1px solid var(--color-border)', borderRadius: 10, padding: 10 }; const discussionBadge = { background: '#fff26a', color: '#3d3700', borderRadius: 999, padding: '4px 9px', fontSize: 12, fontWeight: 800 }; const confessionBadge = { background: '#fce8f1', color: '#b42363', borderRadius: 999, padding: '4px 9px', fontSize: 12, fontWeight: 800 }; const titleInput = { flex: 1, minWidth: 0, border: 0, outline: 0, background: 'transparent', color: 'var(--color-ink)', font: 'inherit', fontSize: 22 }; const toolbar = { display: 'flex', gap: 18, color: 'var(--color-primary-dark)', padding: '12px 14px', border: '1px solid var(--color-border)', borderBottom: 0, borderRadius: '10px 10px 0 0' }; const contentInput = { width: '100%', boxSizing: 'border-box', resize: 'vertical', minHeight: 210, border: '1px solid var(--color-border)', borderRadius: '0 0 10px 10px', padding: 16, background: 'var(--color-surface)', color: 'var(--color-ink)', font: 'inherit', lineHeight: 1.6 }; const fieldStyle = { width: '100%', marginTop: 12, border: '1px solid var(--color-border-medium)', borderRadius: 8, padding: 10, background: 'var(--color-surface)', color: 'var(--color-ink)', font: 'inherit' }; const classBox = { display: 'grid', gap: 8, marginTop: 12, padding: 12, border: '1px solid var(--color-border)', borderRadius: 8 }; const actions = { display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 18 }; const errorStyle = { color: '#b42318', background: '#fff1f0', padding: 10, borderRadius: 8, marginTop: 12 };

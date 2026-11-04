@@ -29,6 +29,7 @@ import FlashcardTestResultPage from '../pages/student/FlashcardTestResultPage';
 import PersonalizedLearningPage from '../pages/student/PersonalizedLearningPage';
 import ForumPage from '../pages/forum/ForumPage';
 import ForumPostPage from '../pages/forum/ForumPostPage';
+import ForumCreatePage from '../pages/forum/ForumCreatePage';
 
 // Layouts
 import DashboardLayout from '../layouts/DashboardLayout';
@@ -79,6 +80,7 @@ export default function AppRoutes() {
         <Route path="flashcards/tests/:testId/result" element={<FlashcardTestResultPage />} />
         <Route path="search" element={<SearchPage />} />
         <Route path="forum" element={<ForumPage />} />
+        <Route path="forum/new" element={<ForumCreatePage />} />
         <Route path="forum/:postId" element={<ForumPostPage />} />
         <Route path="classes" element={<StudentClassesPage />} />
         <Route path="classes/:classId" element={<StudentClassDetailPage />} />
@@ -103,6 +105,7 @@ export default function AppRoutes() {
         <Route path="flashcards/subject/:subjectId" element={<LecturerFlashcardsPage />} />
         <Route path="search" element={<SearchPage />} />
         <Route path="forum" element={<ForumPage />} />
+        <Route path="forum/new" element={<ForumCreatePage />} />
         <Route path="forum/:postId" element={<ForumPostPage />} />
         <Route path="classes" element={<LecturerClassesPage />} />
         <Route path="classes/:classId" element={<LecturerClassDetailPage />} />
@@ -156,6 +159,7 @@ export default function AppRoutes() {
         <Route path="subjects" element={<SubjectManagementPage />} />
         <Route path="search" element={<SearchPage />} />
         <Route path="forum" element={<ForumPage />} />
+        <Route path="forum/new" element={<ForumCreatePage />} />
         <Route path="forum/:postId" element={<ForumPostPage />} />
         <Route path="logs" element={<SystemLogsPage />} />
         <Route index element={<Navigate to="dashboard" replace />} />
