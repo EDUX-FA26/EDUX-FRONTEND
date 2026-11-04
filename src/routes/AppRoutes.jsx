@@ -27,7 +27,7 @@ import StudentFlashcardSelectPage from '../pages/student/StudentFlashcardSelectP
 import FlashcardTestPage from '../pages/student/FlashcardTestPage';
 import FlashcardTestResultPage from '../pages/student/FlashcardTestResultPage';
 import PersonalizedLearningPage from '../pages/student/PersonalizedLearningPage';
-import ForumPage from '../pages/forum/ForumPage';
+import ForumPage from '../pages/forum/ForumPageStitch';
 import ForumPostPage from '../pages/forum/ForumPostPage';
 import ForumCreatePage from '../pages/forum/ForumCreatePage';
 import NotificationCenterPage from '../pages/notifications/NotificationCenterPage';
