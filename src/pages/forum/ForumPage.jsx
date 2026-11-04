@@ -144,10 +144,7 @@ export default function ForumPage() {
     <main style={{ maxWidth: 1280, margin: '0 auto', padding: '28px 24px 80px', color: '#f2f5f8' }}>
       <div style={forumLayout}>
       <section style={{ minWidth: 0 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, marginBottom: 24 }}>
-        <div><p style={{ color: 'var(--color-primary-dark)', fontWeight: 800, letterSpacing: 1, margin: 0 }}>EDUX COMMUNITY</p><h1 style={{ margin: '6px 0', fontSize: '2rem', color: 'var(--color-ink)' }}>Diễn đàn học tập</h1><p style={{ color: 'var(--color-ink-muted)', margin: 0 }}>Trao đổi bài học, FlashCard và kinh nghiệm học tập cùng cộng đồng EDUX.</p></div>
-        {canPost && <button className="btn btn-primary" onClick={() => { setShowComposer(true); setComposerType(null); }}><Plus size={17} /> Đăng bài</button>}
-      </div>
+      <div style={forumHero}><div><span style={heroPill}>● EDUX Community • FALL 2025</span><h1 style={heroTitle}>Diễn đàn học tập</h1><p style={heroSubtitle}>Trao đổi bài học, FlashCard và kinh nghiệm học tập cùng cộng đồng EDUX.</p></div>{canPost && <button className="btn btn-primary" onClick={() => { setShowComposer(true); setComposerType(null); }}><Plus size={17} /> Đăng bài</button>}</div>
       <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid #eadbd2', marginBottom: 16, overflowX: 'auto' }}>
         {[['', 'Thảo luận'], ['CONFESSION', 'Confession mới'], ['popular', 'Xem nhiều']].map(([value, label]) => {
           const active = value === 'popular' ? filters.sort === 'popular' : filters.type === value && filters.sort === 'latest';
@@ -206,6 +203,10 @@ export default function ForumPage() {
 }
 
 const inputStyle = { width: '100%', boxSizing: 'border-box', border: '1px solid var(--color-border-medium)', borderRadius: 8, padding: '11px 13px', marginBottom: 12, font: 'inherit', background: 'var(--color-surface)', color: 'var(--color-ink)' };
+const forumHero = { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 20, marginBottom: 24, padding: '28px 34px', borderRadius: 18, background: 'linear-gradient(120deg, #101a31 0%, #283a55 72%, #55443f 100%)', color: '#fff', boxShadow: '0 12px 30px rgba(27, 42, 69, .18)' };
+const heroPill = { display: 'inline-block', border: '1px solid rgba(255,255,255,.28)', borderRadius: 999, padding: '7px 13px', color: '#f7eee7', background: 'rgba(255,255,255,.1)', fontSize: 13, fontWeight: 700 };
+const heroTitle = { margin: '14px 0 4px', fontSize: '2rem', color: '#fff' };
+const heroSubtitle = { margin: 0, color: 'rgba(255,255,255,.82)' };
 const forumLayout = { display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 270px', gap: 18, alignItems: 'start' };
 const profileCard = { background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 14, padding: 18, boxShadow: 'var(--shadow-md)', position: 'sticky', top: 92, alignSelf: 'start', zIndex: 3 };
 const profileTop = { display: 'flex', alignItems: 'center', gap: 12, paddingBottom: 16, marginBottom: 12, borderBottom: '1px solid var(--color-border)' };
