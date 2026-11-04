@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Heart, MessageCircle, Send, ExternalLink, Plus, Search, Reply, X, Smile, Image, MoreHorizontal } from 'lucide-react';
+import { Heart, MessageCircle, Send, ExternalLink, Plus, Search, Reply, X, Smile, Image, MoreHorizontal, SlidersHorizontal } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import ForumService from '../../services/forum.service';
@@ -147,12 +147,21 @@ export default function ForumPage() {
     <main style={{ maxWidth: 1280, margin: '0 auto', padding: '28px 24px 80px', color: '#f2f5f8' }}>
       <div style={forumLayout}>
       <section style={{ minWidth: 0 }}>
-      <div style={forumHero}><div><span style={heroPill}>● EDUX Community • FALL 2025</span><h1 style={heroTitle}>Diễn đàn học tập</h1><p style={heroSubtitle}>Trao đổi bài học, FlashCard và kinh nghiệm học tập cùng cộng đồng EDUX.</p></div>{canPost && <button className="btn btn-primary" onClick={() => { setShowComposer(true); setComposerType(null); }}><Plus size={17} /> Đăng bài</button>}</div>
+      <div style={forumHero}><div><span style={heroPill}>● EDUX Community • FALL 2025</span><h1 style={heroTitle}>Diễn đàn học tập</h1><p style={heroSubtitle}>Trao đổi bài học, FlashCard và kinh nghiệm học tập cùng cộng đồng EDUX.</p></div>{canPost && <div style={heroActions}><button className="btn btn-primary" onClick={() => { setShowComposer(true); setComposerType(null); }}><Plus size={17} /> Đăng bài</button>{user?.role === 'lecturer' && <button type="button" className="btn" style={flashcardHeroButton} onClick={() => navigate('/lecturer/forum/new?type=DISCUSSION&attach=flashcard')}><ExternalLink size={16} /> Đăng kèm FlashCard <span style={lecturerPill}>GV</span></button>}</div>}</div>
       <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid #eadbd2', marginBottom: 16, overflowX: 'auto' }}>
         {[['', 'Thảo luận'], ['CONFESSION', 'Confession mới'], ['popular', 'Xem nhiều'], ['FLASHCARD', 'Flashcard']].map(([value, label]) => {
           const active = value === 'popular' ? filters.sort === 'popular' : filters.type === value && filters.sort === 'latest';
           return <button key={label} type="button" onClick={() => setFilters((prev) => ({ ...prev, type: value === 'popular' ? '' : value, sort: value === 'popular' ? 'popular' : 'latest', page: 1 }))} style={{ border: 0, borderBottom: active ? '3px solid #f27024' : '3px solid transparent', background: 'transparent', padding: '12px 18px', fontWeight: 800, color: active ? '#202938' : '#68738a', cursor: 'pointer', whiteSpace: 'nowrap' }}>{label}</button>;
         })}
+      </div>
+      <div style={filterBar}>
+        <div style={filterSearch}><Search size={17} color="var(--color-ink-muted)" /><input value={filters.q} onChange={(e) => setFilters((prev) => ({ ...prev, q: e.target.value, page: 1 }))} placeholder="Tìm kiếm tiêu đề, nội dung, giảng viên, môn học..." aria-label="Tìm kiếm diễn đàn" /></div>
+        <div style={filterControls}>
+          <select value={filters.author} onChange={(e) => setFilters((prev) => ({ ...prev, author: e.target.value, page: 1 }))} style={filterSelect}><option value="">Tác giả: Tất cả</option><option value="lecturer">Giảng viên</option><option value="student">Sinh viên</option><option value="anonymous">Ẩn danh</option></select>
+          <select value={filters.classId} onChange={(e) => setFilters((prev) => ({ ...prev, classId: e.target.value, page: 1 }))} style={filterSelect}><option value="">Lớp học: Tất cả</option>{classes.map((item) => <option key={item.id} value={item.id}>{item.class_code || item.code || item.name}</option>)}</select>
+          <select value={filters.sort} onChange={(e) => setFilters((prev) => ({ ...prev, sort: e.target.value, page: 1 }))} style={filterSelect}><option value="latest">Mới nhất</option><option value="popular">Xem nhiều</option></select>
+          <SlidersHorizontal size={18} color="var(--color-ink-muted)" />
+        </div>
       </div>
       {error && <div style={{ color: '#b42318', background: '#fff1f0', borderRadius: 10, padding: '10px 14px', marginBottom: 16 }}>{error}</div>}
       {showComposer && canPost && !composerType && <div style={modalBackdrop} onClick={() => setShowComposer(false)}><div style={categoryModal} onClick={(event) => event.stopPropagation()}><div style={modalTitle}><h2 style={{ margin: 0 }}>Đăng bài trong...</h2><button type="button" style={modalClose} onClick={() => setShowComposer(false)}><X size={24} /></button></div><p style={modalHint}>Chọn loại bài đăng bạn muốn chia sẻ với cộng đồng EDUX.</p><button type="button" style={categoryOption} onClick={() => navigate(`/${user?.role || 'student'}/forum/new?type=DISCUSSION`)}><span style={typeBadge}>Hỏi đáp</span><span><strong>Hỏi đáp / Thảo luận</strong><small style={categoryDescription}>Đặt câu hỏi và trao đổi về học tập</small></span></button><button type="button" style={categoryOption} onClick={() => navigate(`/${user?.role || 'student'}/forum/new?type=CONFESSION`)}><span style={{ ...typeBadge, background: '#fce8f1', color: '#b42363' }}>Confession</span><span><strong>Confession</strong><small style={categoryDescription}>Chia sẻ suy nghĩ hoặc câu chuyện của bạn</small></span></button>{user?.role === 'lecturer' && <button type="button" style={categoryOption} onClick={() => navigate('/lecturer/forum/new?type=DISCUSSION&attach=flashcard')}><span style={{ ...typeBadge, background: '#e5f7f4', color: '#087f73' }}>Flashcard</span><span><strong>Bài đăng kèm Flashcard</strong><small style={categoryDescription}>Đăng bài trao đổi và gắn bộ Flashcard cho sinh viên</small></span></button>}</div></div>}
@@ -167,9 +176,6 @@ export default function ForumPage() {
         <select value={form.flashcardDeckId} onChange={(e) => setForm({ ...form, flashcardDeckId: e.target.value })} style={inputStyle}><option value="">Không gắn FlashCard</option>{decks.map((d) => <option key={d.id} value={d.id}>{d.title}{d.subject_name ? ` — ${d.subject_name}` : ''}</option>)}</select>
         <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}><button type="button" className="btn" onClick={() => { setShowComposer(false); setComposerType(null); }}>Hủy</button><button className="btn btn-primary" disabled={saving}>{saving ? 'Đang đăng...' : 'Đăng bài'}</button></div>
       </form>}
-      <form onSubmit={(event) => { event.preventDefault(); setFilters((prev) => ({ ...prev, page: 1 })); }} style={quickSearchStyle}>
-        <input value={filters.q} onChange={(e) => setFilters((prev) => ({ ...prev, q: e.target.value, page: 1 }))} placeholder="Tìm kiếm nhanh theo từ khóa..." aria-label="Tìm kiếm nhanh theo từ khóa" style={quickSearchInputStyle} />
-      </form>
       {loading ? <div style={{ padding: 32, textAlign: 'center', color: '#aeb9c8' }}>Đang tải bài đăng...</div> : posts.length === 0 ? <div style={emptyStyle}>Chưa có bài đăng nào.</div> : <div style={forumTableStyle}>
         <div style={forumTableHeader}><span>Chủ đề</span><span>Forum</span><span>Reply</span><span>View</span><span>Ngày</span><span>Author</span></div>
         {posts.map((post, index) => <article key={post.id} style={cardStyle}>
@@ -206,12 +212,19 @@ const forumHero = { display: 'flex', justifyContent: 'space-between', alignItems
 const heroPill = { display: 'inline-block', border: '1px solid rgba(255,255,255,.28)', borderRadius: 999, padding: '7px 13px', color: '#f7eee7', background: 'rgba(255,255,255,.1)', fontSize: 13, fontWeight: 700 };
 const heroTitle = { margin: '14px 0 4px', fontSize: '2rem', color: '#fff' };
 const heroSubtitle = { margin: 0, color: 'rgba(255,255,255,.82)' };
+const heroActions = { display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'flex-end', gap: 10 };
+const flashcardHeroButton = { display: 'inline-flex', alignItems: 'center', gap: 7, background: 'rgba(0, 97, 148, .22)', color: '#cce5ff', border: '1px solid rgba(204,229,255,.28)', borderRadius: 10 };
+const lecturerPill = { fontSize: 10, borderRadius: 999, padding: '2px 6px', background: 'rgba(204,229,255,.2)', color: '#cce5ff', fontWeight: 800 };
 const forumLayout = { display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 270px', gap: 18, alignItems: 'start' };
 const profileCard = { background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 14, padding: 18, boxShadow: 'var(--shadow-md)', position: 'sticky', top: 92, alignSelf: 'start', zIndex: 3 };
 const profileTop = { display: 'flex', alignItems: 'center', gap: 12, paddingBottom: 16, marginBottom: 12, borderBottom: '1px solid var(--color-border)' };
 const profileAvatar = { width: 52, height: 52, borderRadius: '50%', background: 'var(--color-primary)', color: '#fff', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 800, flexShrink: 0 };
 const statRow = { display: 'flex', justifyContent: 'space-between', padding: '9px 0', color: 'var(--color-ink-muted)' };
 const typeBadge = { background: 'var(--color-primary-card)', color: 'var(--color-primary-dark)', borderRadius: 999, padding: '4px 9px', fontSize: 12 };
+const filterBar = { display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 10, background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 14, padding: 12, marginBottom: 14, boxShadow: 'var(--shadow-sm)' };
+const filterSearch = { display: 'flex', alignItems: 'center', gap: 8, flex: '1 1 280px', minWidth: 220, height: 40, padding: '0 12px', borderRadius: 10, background: 'var(--color-primary-card)' };
+const filterControls = { display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8 };
+const filterSelect = { height: 40, minWidth: 130, border: '1px solid var(--color-border)', borderRadius: 10, padding: '0 10px', background: 'var(--color-surface)', color: 'var(--color-ink)', font: 'inherit' };
 const quickSearchStyle = { width: 'min(100%, 375px)', boxSizing: 'border-box', background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 12, padding: 8, margin: '0 0 14px' };
 const quickSearchInputStyle = { width: '100%', boxSizing: 'border-box', border: 0, outline: 0, borderRadius: 9, padding: '11px 14px', font: 'inherit', background: 'var(--color-primary-card)', color: 'var(--color-ink)' };
 const loungeStyle = { marginTop: 22, background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 14, overflow: 'hidden', boxShadow: 'var(--shadow-md)' };
