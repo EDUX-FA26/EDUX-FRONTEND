@@ -6,7 +6,7 @@ import ForumService from '../../services/forum.service';
 import FlashcardService from '../../services/flashcard.service';
 import ClassService from '../../services/class.service';
 
-const initialForm = { title: '', content: '', flashcardDeckId: '', visibility: 'PUBLIC', classIds: [], isAnonymous: false };
+const initialForm = { title: '', content: '', flashcardDeckId: '', visibility: 'PUBLIC', classIds: [], isAnonymous: false, postType: 'DISCUSSION' };
 
 export default function ForumPage() {
   const { user } = useAuth();
@@ -26,6 +26,7 @@ export default function ForumPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [profileStats, setProfileStats] = useState(null);
 
   const loadPosts = async () => {
     try {
@@ -46,6 +47,7 @@ export default function ForumPage() {
       }).catch(() => {});
     }
     ClassService.getMyClasses().then((result) => setClasses(result.data?.data || result.data || [])).catch(() => {});
+    ForumService.getMyStats().then((result) => setProfileStats(result.data || result)).catch(() => {});
   }, [canPost, filters.page, filters.q, filters.author, filters.classId, filters.type, filters.sort]);
 
   const submitPost = async (event) => {
@@ -58,7 +60,7 @@ export default function ForumPage() {
         flashcardDeckId: form.flashcardDeckId || null,
         visibility: form.visibility,
         classIds: form.visibility === 'CLASS_ONLY' ? form.classIds : [],
-        postType: user?.role === 'student' ? 'CONFESSION' : 'DISCUSSION',
+        postType: form.postType,
         isAnonymous: user?.role === 'student' ? form.isAnonymous : false,
       });
       setForm(initialForm); setShowComposer(false); setFilters((prev) => ({ ...prev, page: 1 })); await loadPosts();
@@ -125,7 +127,9 @@ export default function ForumPage() {
   };
 
   return (
-    <main style={{ maxWidth: 1180, margin: '0 auto', padding: '28px 24px 80px', color: '#f2f5f8' }}>
+    <main style={{ maxWidth: 1280, margin: '0 auto', padding: '28px 24px 80px', color: '#f2f5f8' }}>
+      <div style={forumLayout}>
+      <section style={{ minWidth: 0 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, marginBottom: 24 }}>
         <div><p style={{ color: 'var(--color-primary-dark)', fontWeight: 800, letterSpacing: 1, margin: 0 }}>EDUX COMMUNITY</p><h1 style={{ margin: '6px 0', fontSize: '2rem', color: 'var(--color-ink)' }}>Diễn đàn học tập</h1><p style={{ color: 'var(--color-ink-muted)', margin: 0 }}>Trao đổi bài học, FlashCard và kinh nghiệm học tập cùng cộng đồng EDUX.</p></div>
         {canPost && <button className="btn btn-primary" onClick={() => setShowComposer((v) => !v)}><Plus size={17} /> Đăng bài</button>}
@@ -148,9 +152,11 @@ export default function ForumPage() {
       {error && <div style={{ color: '#b42318', background: '#fff1f0', borderRadius: 10, padding: '10px 14px', marginBottom: 16 }}>{error}</div>}
       {showComposer && canPost && <form onSubmit={submitPost} style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 16, padding: 20, marginBottom: 20 }}>
         <h3 style={{ marginTop: 0 }}>Tạo bài đăng</h3>
-        <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Tiêu đề bài đăng" required style={inputStyle} />
+        <select value={form.postType} onChange={(e) => setForm({ ...form, postType: e.target.value })} style={inputStyle}><option value="DISCUSSION">Hỏi đáp / Thảo luận</option><option value="CONFESSION">Confession</option></select>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '-2px 0 12px', color: 'var(--color-primary-dark)', fontSize: 13, fontWeight: 700 }}><span style={typeBadge}>{form.postType === 'CONFESSION' ? 'Confession' : 'Hỏi đáp'}</span><span>Về chủ đề bạn muốn chia sẻ</span></div>
+        <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Tiêu đề / chủ đề bài đăng" required style={inputStyle} />
         <textarea value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} placeholder="Nội dung trao đổi..." required rows={4} style={{ ...inputStyle, resize: 'vertical' }} />
-        {user?.role === 'student' ? <><div style={{ background: '#fff8f2', borderRadius: 10, padding: 10, marginBottom: 12, color: '#8c7166', fontSize: 13 }}>Bài confession sẽ được đăng công khai trong cộng đồng.</div><label style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 12 }}><input type="checkbox" checked={form.isAnonymous} onChange={(e) => setForm({ ...form, isAnonymous: e.target.checked })} />Đăng ẩn danh</label></> : <select value={form.visibility} onChange={(e) => setForm({ ...form, visibility: e.target.value, classIds: [] })} style={inputStyle}><option value="PUBLIC">Công khai toàn hệ thống</option><option value="CLASS_ONLY">Chỉ chia sẻ cho lớp tôi dạy</option></select>}
+        {user?.role === 'student' ? <><div style={{ background: '#fff8f2', borderRadius: 10, padding: 10, marginBottom: 12, color: '#8c7166', fontSize: 13 }}>Bài đăng của sinh viên được hiển thị công khai trong cộng đồng.</div><label style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 12 }}><input type="checkbox" checked={form.isAnonymous} onChange={(e) => setForm({ ...form, isAnonymous: e.target.checked })} />Đăng ẩn danh</label></> : <select value={form.visibility} onChange={(e) => setForm({ ...form, visibility: e.target.value, classIds: [] })} style={inputStyle}><option value="PUBLIC">Công khai toàn hệ thống</option><option value="CLASS_ONLY">Chỉ chia sẻ cho lớp tôi dạy</option></select>}
         {form.visibility === 'CLASS_ONLY' && <div style={{ border: '1px solid #e8d8cc', borderRadius: 10, padding: 12, marginBottom: 12 }}><strong style={{ display: 'block', marginBottom: 8 }}>Chọn lớp nhận bài đăng</strong>{classes.length === 0 ? <small>Chưa có lớp được phân công.</small> : classes.map((item) => <label key={item.id} style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6 }}><input type="checkbox" checked={form.classIds.includes(item.id)} onChange={(e) => setForm((prev) => ({ ...prev, classIds: e.target.checked ? [...prev.classIds, item.id] : prev.classIds.filter((id) => id !== item.id) }))} />{item.class_code || item.code || item.name}</label>)}</div>}
         <select value={form.flashcardDeckId} onChange={(e) => setForm({ ...form, flashcardDeckId: e.target.value })} style={inputStyle}><option value="">Không gắn FlashCard</option>{decks.map((d) => <option key={d.id} value={d.id}>{d.title}{d.subject_name ? ` — ${d.subject_name}` : ''}</option>)}</select>
         <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}><button type="button" className="btn" onClick={() => setShowComposer(false)}>Hủy</button><button className="btn btn-primary" disabled={saving}>{saving ? 'Đang đăng...' : 'Đăng bài'}</button></div>
@@ -158,7 +164,7 @@ export default function ForumPage() {
       {loading ? <div style={{ padding: 32, textAlign: 'center', color: '#aeb9c8' }}>Đang tải bài đăng...</div> : posts.length === 0 ? <div style={emptyStyle}>Chưa có bài đăng nào.</div> : <div style={forumTableStyle}>
         <div style={forumTableHeader}><span>Chủ đề</span><span>Forum</span><span>Reply</span><span>View</span><span>Ngày</span><span>Author</span></div>
         {posts.map((post, index) => <article key={post.id} style={cardStyle}>
-        <div style={topicCell}><span style={rowNumber}>{(filters.page - 1) * 10 + index + 1}</span><div style={avatarStyle}>{(post.is_anonymous ? '?' : (post.author_name || 'E')[0]).toUpperCase()}</div><div style={{ minWidth: 0, overflow: 'hidden' }}><strong style={{ color: 'var(--color-ink)', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{post.title}</strong><span style={topicMeta}>{post.post_type === 'CONFESSION' ? 'Confession' : 'Thảo luận'}{post.subject_code ? ` · ${post.subject_code}` : ''}</span></div></div>
+        <div style={{ ...topicCell, cursor: 'pointer' }} onClick={() => navigate(`/${user?.role || 'student'}/forum/${post.id}`)}><span style={rowNumber}>{(filters.page - 1) * 10 + index + 1}</span><div style={avatarStyle}>{(post.is_anonymous ? '?' : (post.author_name || 'E')[0]).toUpperCase()}</div><div style={{ minWidth: 0, overflow: 'hidden' }}><strong style={{ color: 'var(--color-ink)', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{post.title}</strong><span style={topicMeta}>{post.post_type === 'CONFESSION' ? 'Confession' : 'Hỏi đáp'}{post.subject_code ? ` · ${post.subject_code}` : ''}</span></div></div>
         <span style={tableCell}><span style={forumBadge}>?&nbsp; {post.post_type === 'CONFESSION' ? 'Confession' : 'Thảo luận'}</span></span>
         <span style={tableCell}>{post.comment_count || 0}</span>
         <span style={tableCell}>{post.view_count || 0}</span>
@@ -174,11 +180,24 @@ export default function ForumPage() {
       </article>)}
       </div>}
       {!loading && totalPages > 1 && <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 10, marginTop: 20 }}><button type="button" className="btn" disabled={filters.page <= 1} onClick={() => setFilters((prev) => ({ ...prev, page: prev.page - 1 }))}>Trước</button><span>Trang {filters.page} / {totalPages}</span><button type="button" className="btn" disabled={filters.page >= totalPages} onClick={() => setFilters((prev) => ({ ...prev, page: prev.page + 1 }))}>Sau</button></div>}
+      </section>
+      <aside style={profileCard}>
+        <div style={profileTop}><div style={profileAvatar}>{(user?.full_name || user?.email || 'E')[0].toUpperCase()}</div><div style={{ minWidth: 0 }}><strong style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{profileStats?.display_name || user?.full_name || user?.email || 'EDUX User'}</strong><span style={{ color: 'var(--color-ink-muted)', fontSize: 13 }}>{user?.role === 'lecturer' ? 'Giảng viên' : user?.role === 'admin' ? 'Quản trị viên' : 'Sinh viên'}</span></div></div>
+        <div style={statRow}><span>Bài viết</span><strong>{profileStats?.post_count ?? 0}</strong></div>
+        <div style={statRow}><span>Điểm reaction</span><strong>{profileStats?.reaction_score ?? 0}</strong></div>
+      </aside>
+      </div>
     </main>
   );
 }
 
 const inputStyle = { width: '100%', boxSizing: 'border-box', border: '1px solid var(--color-border-medium)', borderRadius: 8, padding: '11px 13px', marginBottom: 12, font: 'inherit', background: 'var(--color-surface)', color: 'var(--color-ink)' };
+const forumLayout = { display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 270px', gap: 18, alignItems: 'start' };
+const profileCard = { background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 14, padding: 18, boxShadow: 'var(--shadow-md)', position: 'sticky', top: 18 };
+const profileTop = { display: 'flex', alignItems: 'center', gap: 12, paddingBottom: 16, marginBottom: 12, borderBottom: '1px solid var(--color-border)' };
+const profileAvatar = { width: 52, height: 52, borderRadius: '50%', background: 'var(--color-primary)', color: '#fff', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 800, flexShrink: 0 };
+const statRow = { display: 'flex', justifyContent: 'space-between', padding: '9px 0', color: 'var(--color-ink-muted)' };
+const typeBadge = { background: 'var(--color-primary-card)', color: 'var(--color-primary-dark)', borderRadius: 999, padding: '4px 9px', fontSize: 12 };
 const forumTableStyle = { background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 14, maxHeight: 560, overflowY: 'auto', overflowX: 'auto', boxShadow: 'var(--shadow-md)' };
 const forumTableHeader = { position: 'sticky', top: 0, zIndex: 2, display: 'grid', gridTemplateColumns: 'minmax(300px, 1fr) 110px 80px 80px 100px 150px', gap: 10, alignItems: 'center', padding: '12px 16px', background: 'var(--color-primary-card)', color: 'var(--color-primary-dark)', fontSize: 13, fontWeight: 700 };
 const cardStyle = { display: 'grid', gridTemplateColumns: 'minmax(300px, 1fr) 110px 80px 80px 100px 150px', gap: 10, alignItems: 'center', background: 'var(--color-surface)', borderTop: '1px solid var(--color-border)', padding: '13px 16px', margin: 0, color: 'var(--color-ink)' };

@@ -1,6 +1,10 @@
 import api from '../config/axios.config.js';
 
 const ForumService = {
+  async getMyStats() {
+    const response = await api.get('/forum/stats/me');
+    return response.data;
+  },
   async listPosts(params = {}) {
     const response = await api.get('/forum/posts', { params });
     return response.data;
