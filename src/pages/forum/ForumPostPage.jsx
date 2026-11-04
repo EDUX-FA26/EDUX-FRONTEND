@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { ArrowLeft, Heart, MessageCircle, Reply, Send, Image, Link, Smile } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { ArrowLeft, Heart, MessageCircle, Reply, Send, Image, Link, Smile, Paperclip } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import ForumService from '../../services/forum.service';
@@ -13,6 +13,8 @@ export default function ForumPostPage() {
   const [replyTo, setReplyTo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [commentAttachments, setCommentAttachments] = useState([]);
+  const commentFileRef = useRef(null);
 
   const load = async () => {
     try { const result = await ForumService.getPost(postId); setPost(result.data || result); }
@@ -24,10 +26,15 @@ export default function ForumPostPage() {
   const sendComment = async () => {
     if (!comment.trim()) return;
     try {
-      const result = await ForumService.addComment(postId, { content: comment.trim(), parentId: replyTo });
-      setPost((prev) => ({ ...prev, comments: [...(prev.comments || []), { ...(result.data || result), author_name: user?.full_name || 'Bạn', author_role: user?.role }] }));
-      setComment(''); setReplyTo(null);
+      const result = await ForumService.addComment(postId, { content: comment.trim(), parentId: replyTo, attachments: commentAttachments });
+      setPost((prev) => ({ ...prev, comments: [...(prev.comments || []), { ...(result.data || result), author_id: user?.id, author_name: user?.full_name || 'Bạn', author_role: user?.role }] }));
+      setComment(''); setReplyTo(null); setCommentAttachments([]);
     } catch (err) { setError(err.response?.data?.message || 'Không thể gửi bình luận.'); }
+  };
+  const chooseCommentFiles = async (event) => {
+    const files = Array.from(event.target.files || []).slice(0, 5 - commentAttachments.length).filter((file) => file.size <= 2 * 1024 * 1024);
+    const encoded = await Promise.all(files.map((file) => new Promise((resolve) => { const reader = new FileReader(); reader.onload = () => resolve({ name: file.name, type: file.type || 'application/octet-stream', size: file.size, dataUrl: reader.result }); reader.readAsDataURL(file); })));
+    setCommentAttachments((prev) => [...prev, ...encoded].slice(0, 5)); event.target.value = '';
   };
 
   if (loading) return <main style={pageStyle}>Đang tải bài đăng...</main>;
@@ -42,7 +49,7 @@ export default function ForumPostPage() {
       {Array.isArray(post.attachments) && post.attachments.length > 0 && <div style={attachmentsStyle}><strong>Tệp đính kèm</strong>{post.attachments.map((file) => <a key={`${file.name}-${file.size}`} href={file.dataUrl} download={file.name} target="_blank" rel="noreferrer" style={attachmentLink}>{file.name} <span>↓</span></a>)}</div>}
       <div style={postActions}><button type="button" style={replyStyle}><Heart size={16} /> Like</button><button type="button" style={replyStyle} onClick={() => document.querySelector('textarea')?.focus()}><Reply size={16} /> Trả lời</button></div></div>
     </article>
-    <section style={detailCard}><h2 style={{ marginTop: 0 }}>Bình luận ({post.comments?.length || 0})</h2>{(post.comments || []).map((item) => <div key={item.id} style={{ ...commentItem, marginLeft: item.parent_id ? 28 : 0 }}><div style={commentAvatar}>{(item.author_name || 'E')[0].toUpperCase()}</div><div style={{ minWidth: 0, flex: 1 }}><strong style={{ color: 'var(--color-ink)' }}>{item.author_name || 'EDUX User'}</strong><p style={{ margin: '6px 0', color: 'var(--color-ink-muted)', whiteSpace: 'pre-wrap' }}>{item.content}</p><button type="button" style={replyStyle} onClick={() => setReplyTo(item.id)}><Reply size={14} /> Trả lời</button></div></div>)}<div style={replyComposer}><div style={replyAvatar}>{(user?.full_name || user?.email || 'E')[0].toUpperCase()}</div><div style={replyEditor}><div style={replyToolbar}><button type="button" style={toolButton}><strong>B</strong></button><button type="button" style={toolButton}><em>I</em></button><button type="button" style={toolButton}><span>Tᵀ</span></button><button type="button" style={toolButton}><Link size={17} /></button><button type="button" style={toolButton}><Image size={17} /></button><button type="button" style={toolButton}><Smile size={17} /></button></div><textarea value={comment} onChange={(e) => setComment(e.target.value)} placeholder={replyTo ? 'Viết câu trả lời...' : 'Viết bình luận...'} style={replyTextarea} /><div style={{ display: 'flex', justifyContent: 'flex-end', padding: '0 12px 12px' }}><button type="button" className="btn btn-primary" onClick={sendComment}><Reply size={16} /> Trả lời</button></div></div></div></section>
+    <section style={detailCard}><h2 style={{ marginTop: 0 }}>Bình luận ({post.comments?.length || 0})</h2>{(post.comments || []).map((item) => <div key={item.id} style={{ ...commentItem, marginLeft: item.parent_id ? 28 : 0 }}><div style={commentAvatar}>{(item.author_name || 'E')[0].toUpperCase()}</div><div style={{ minWidth: 0, flex: 1 }}><strong style={{ color: 'var(--color-ink)' }}>{item.author_id === user?.id ? 'Bạn' : (item.author_name || 'EDUX User')}</strong><p style={{ margin: '6px 0', color: 'var(--color-ink-muted)', whiteSpace: 'pre-wrap' }}>{item.content}</p>{Array.isArray(item.attachments) && item.attachments.map((file) => <a key={file.name} href={file.dataUrl} download={file.name} style={commentAttachment}>{file.name} ↓</a>)}<button type="button" style={replyStyle} onClick={() => setReplyTo(item.id)}><Reply size={14} /> Trả lời</button></div></div>)}<div style={replyComposer}><div style={replyAvatar}>{(user?.full_name || user?.email || 'E')[0].toUpperCase()}</div><div style={replyEditor}><div style={replyToolbar}><button type="button" style={toolButton}><strong>B</strong></button><button type="button" style={toolButton}><em>I</em></button><button type="button" style={toolButton}><span>Tᵀ</span></button><button type="button" style={toolButton}><Link size={17} /></button><button type="button" style={toolButton} onClick={() => commentFileRef.current?.click()}><Image size={17} /></button><button type="button" style={toolButton} onClick={() => commentFileRef.current?.click()}><Paperclip size={17} /></button><button type="button" style={toolButton}><Smile size={17} /></button><input ref={commentFileRef} type="file" multiple accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt" onChange={chooseCommentFiles} style={{ display: 'none' }} /></div><textarea value={comment} onChange={(e) => setComment(e.target.value)} placeholder={replyTo ? 'Viết câu trả lời...' : 'Viết bình luận...'} style={replyTextarea} />{commentAttachments.length > 0 && <div style={commentFiles}>{commentAttachments.map((file, index) => <span key={file.name}>{file.name}<button type="button" onClick={() => setCommentAttachments((prev) => prev.filter((_, i) => i !== index))}>×</button></span>)}</div>}<div style={{ display: 'flex', justifyContent: 'flex-end', padding: '0 12px 12px' }}><button type="button" className="btn btn-primary" onClick={sendComment}><Reply size={16} /> Trả lời</button></div></div></div></section>
   </main>;
 }
 
@@ -74,5 +81,7 @@ const replyToolbar = { display: 'flex', gap: 18, alignItems: 'center', padding: 
 const replyEditor = { flex: 1, minWidth: 0, border: '1px solid var(--color-border)', borderRadius: 10, overflow: 'hidden', background: 'var(--color-surface)' };
 const replyTextarea = { width: '100%', minHeight: 108, boxSizing: 'border-box', resize: 'vertical', border: 0, background: 'var(--color-surface)', color: 'var(--color-ink)', padding: 14, font: 'inherit', outline: 0 };
 const toolButton = { border: 0, background: 'transparent', color: 'inherit', cursor: 'pointer', display: 'inline-flex', padding: 0, font: 'inherit' };
+const commentFiles = { display: 'flex', gap: 6, flexWrap: 'wrap', padding: '0 12px 8px' };
+const commentAttachment = { display: 'block', color: 'var(--color-primary-dark)', background: 'var(--color-primary-card)', borderRadius: 6, padding: '4px 8px', textDecoration: 'none', width: 'fit-content', fontSize: 13 };
 const attachmentsStyle = { marginTop: 20, display: 'flex', flexDirection: 'column', gap: 8, color: 'var(--color-ink)' };
 const attachmentLink = { color: 'var(--color-primary-dark)', background: 'var(--color-primary-card)', borderRadius: 8, padding: '9px 12px', textDecoration: 'none', display: 'flex', justifyContent: 'space-between' };
