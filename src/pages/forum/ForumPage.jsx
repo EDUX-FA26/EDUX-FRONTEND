@@ -23,6 +23,7 @@ export default function ForumPage() {
   const [commentsByPost, setCommentsByPost] = useState({});
   const [replyTo, setReplyTo] = useState({});
   const [showComposer, setShowComposer] = useState(false);
+  const [composerType, setComposerType] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -68,7 +69,7 @@ export default function ForumPage() {
         postType: form.postType,
         isAnonymous: user?.role === 'student' ? form.isAnonymous : false,
       });
-      setForm(initialForm); setShowComposer(false); setFilters((prev) => ({ ...prev, page: 1 })); await loadPosts();
+      setForm(initialForm); setShowComposer(false); setComposerType(null); setFilters((prev) => ({ ...prev, page: 1 })); await loadPosts();
     } catch (err) { setError(err.response?.data?.message || 'Không thể đăng bài.'); }
     finally { setSaving(false); }
   };
@@ -145,7 +146,7 @@ export default function ForumPage() {
       <section style={{ minWidth: 0 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, marginBottom: 24 }}>
         <div><p style={{ color: 'var(--color-primary-dark)', fontWeight: 800, letterSpacing: 1, margin: 0 }}>EDUX COMMUNITY</p><h1 style={{ margin: '6px 0', fontSize: '2rem', color: 'var(--color-ink)' }}>Diễn đàn học tập</h1><p style={{ color: 'var(--color-ink-muted)', margin: 0 }}>Trao đổi bài học, FlashCard và kinh nghiệm học tập cùng cộng đồng EDUX.</p></div>
-        {canPost && <button className="btn btn-primary" onClick={() => setShowComposer((v) => !v)}><Plus size={17} /> Đăng bài</button>}
+        {canPost && <button className="btn btn-primary" onClick={() => { setShowComposer(true); setComposerType(null); }}><Plus size={17} /> Đăng bài</button>}
       </div>
       <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid #eadbd2', marginBottom: 16, overflowX: 'auto' }}>
         {[['', 'Thảo luận'], ['CONFESSION', 'Confession mới'], ['popular', 'Xem nhiều']].map(([value, label]) => {
@@ -154,7 +155,8 @@ export default function ForumPage() {
         })}
       </div>
       {error && <div style={{ color: '#b42318', background: '#fff1f0', borderRadius: 10, padding: '10px 14px', marginBottom: 16 }}>{error}</div>}
-      {showComposer && canPost && <form onSubmit={submitPost} style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 16, padding: 20, marginBottom: 20 }}>
+      {showComposer && canPost && !composerType && <div style={modalBackdrop} onClick={() => setShowComposer(false)}><div style={categoryModal} onClick={(event) => event.stopPropagation()}><div style={modalTitle}><h2 style={{ margin: 0 }}>Đăng bài trong...</h2><button type="button" style={modalClose} onClick={() => setShowComposer(false)}><X size={24} /></button></div><p style={modalHint}>Chọn loại bài đăng bạn muốn chia sẻ với cộng đồng EDUX.</p><button type="button" style={categoryOption} onClick={() => { setComposerType('DISCUSSION'); setForm((prev) => ({ ...prev, postType: 'DISCUSSION' })); }}><span style={typeBadge}>Hỏi đáp</span><span><strong>Hỏi đáp / Thảo luận</strong><small style={categoryDescription}>Đặt câu hỏi và trao đổi về học tập</small></span></button><button type="button" style={categoryOption} onClick={() => { setComposerType('CONFESSION'); setForm((prev) => ({ ...prev, postType: 'CONFESSION' })); }}><span style={{ ...typeBadge, background: '#fce8f1', color: '#b42363' }}>Confession</span><span><strong>Confession</strong><small style={categoryDescription}>Chia sẻ suy nghĩ hoặc câu chuyện của bạn</small></span></button></div></div>}
+      {showComposer && canPost && composerType && <form onSubmit={submitPost} style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 16, padding: 20, marginBottom: 20 }}>
         <h3 style={{ marginTop: 0 }}>Tạo bài đăng</h3>
         <select value={form.postType} onChange={(e) => setForm({ ...form, postType: e.target.value })} style={inputStyle}><option value="DISCUSSION">Hỏi đáp / Thảo luận</option><option value="CONFESSION">Confession</option></select>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '-2px 0 12px', color: 'var(--color-primary-dark)', fontSize: 13, fontWeight: 700 }}><span style={typeBadge}>{form.postType === 'CONFESSION' ? 'Confession' : 'Hỏi đáp'}</span><span>Về chủ đề bạn muốn chia sẻ</span></div>
@@ -163,7 +165,7 @@ export default function ForumPage() {
         {user?.role === 'student' ? <><div style={{ background: '#fff8f2', borderRadius: 10, padding: 10, marginBottom: 12, color: '#8c7166', fontSize: 13 }}>Bài đăng của sinh viên được hiển thị công khai trong cộng đồng.</div><label style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 12 }}><input type="checkbox" checked={form.isAnonymous} onChange={(e) => setForm({ ...form, isAnonymous: e.target.checked })} />Đăng ẩn danh</label></> : <select value={form.visibility} onChange={(e) => setForm({ ...form, visibility: e.target.value, classIds: [] })} style={inputStyle}><option value="PUBLIC">Công khai toàn hệ thống</option><option value="CLASS_ONLY">Chỉ chia sẻ cho lớp tôi dạy</option></select>}
         {form.visibility === 'CLASS_ONLY' && <div style={{ border: '1px solid #e8d8cc', borderRadius: 10, padding: 12, marginBottom: 12 }}><strong style={{ display: 'block', marginBottom: 8 }}>Chọn lớp nhận bài đăng</strong>{classes.length === 0 ? <small>Chưa có lớp được phân công.</small> : classes.map((item) => <label key={item.id} style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6 }}><input type="checkbox" checked={form.classIds.includes(item.id)} onChange={(e) => setForm((prev) => ({ ...prev, classIds: e.target.checked ? [...prev.classIds, item.id] : prev.classIds.filter((id) => id !== item.id) }))} />{item.class_code || item.code || item.name}</label>)}</div>}
         <select value={form.flashcardDeckId} onChange={(e) => setForm({ ...form, flashcardDeckId: e.target.value })} style={inputStyle}><option value="">Không gắn FlashCard</option>{decks.map((d) => <option key={d.id} value={d.id}>{d.title}{d.subject_name ? ` — ${d.subject_name}` : ''}</option>)}</select>
-        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}><button type="button" className="btn" onClick={() => setShowComposer(false)}>Hủy</button><button className="btn btn-primary" disabled={saving}>{saving ? 'Đang đăng...' : 'Đăng bài'}</button></div>
+        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}><button type="button" className="btn" onClick={() => { setShowComposer(false); setComposerType(null); }}>Hủy</button><button className="btn btn-primary" disabled={saving}>{saving ? 'Đang đăng...' : 'Đăng bài'}</button></div>
       </form>}
       <form onSubmit={(event) => { event.preventDefault(); setFilters((prev) => ({ ...prev, page: 1 })); }} style={quickSearchStyle}>
         <input value={filters.q} onChange={(e) => setFilters((prev) => ({ ...prev, q: e.target.value, page: 1 }))} placeholder="Tìm kiếm nhanh theo từ khóa..." aria-label="Tìm kiếm nhanh theo từ khóa" style={quickSearchInputStyle} />
@@ -221,6 +223,13 @@ const loungeAvatar = { width: 30, height: 30, borderRadius: '50%', background: '
 const loungeComposer = { display: 'flex', alignItems: 'center', gap: 12, padding: '12px 18px', borderTop: '1px solid var(--color-border)' };
 const loungeInput = { flex: 1, minWidth: 0, border: 0, outline: 0, background: 'transparent', color: 'var(--color-ink)', font: 'inherit', padding: '8px 0' };
 const loungeSend = { border: 0, background: 'var(--color-primary)', color: '#fff', borderRadius: 8, width: 34, height: 34, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' };
+const modalBackdrop = { position: 'fixed', inset: 0, zIndex: 20, background: 'rgba(24, 31, 42, .48)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '9vh 20px 30px' };
+const categoryModal = { width: 'min(100%, 680px)', maxHeight: '80vh', overflowY: 'auto', background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 14, boxShadow: '0 20px 60px rgba(20, 30, 44, .25)' };
+const modalTitle = { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 22px', borderBottom: '1px solid var(--color-border)', color: 'var(--color-ink)' };
+const modalClose = { border: 0, background: 'transparent', color: 'var(--color-ink-muted)', cursor: 'pointer', display: 'inline-flex' };
+const modalHint = { color: 'var(--color-ink-muted)', margin: '16px 22px 8px' };
+const categoryOption = { width: 'calc(100% - 44px)', margin: '0 22px 10px', padding: '14px 12px', display: 'flex', alignItems: 'center', gap: 12, textAlign: 'left', border: '1px solid var(--color-border)', borderRadius: 10, background: 'var(--color-surface)', color: 'var(--color-ink)', cursor: 'pointer' };
+const categoryDescription = { display: 'block', color: 'var(--color-ink-muted)', fontSize: 13, marginTop: 3 };
 const forumTableStyle = { background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 14, maxHeight: 560, overflowY: 'auto', overflowX: 'auto', boxShadow: 'var(--shadow-md)' };
 const forumTableHeader = { position: 'sticky', top: 0, zIndex: 2, display: 'grid', gridTemplateColumns: 'minmax(300px, 1fr) 110px 80px 80px 100px 150px', gap: 10, alignItems: 'center', padding: '12px 16px', background: 'var(--color-primary-card)', color: 'var(--color-primary-dark)', fontSize: 13, fontWeight: 700 };
 const cardStyle = { display: 'grid', gridTemplateColumns: 'minmax(300px, 1fr) 110px 80px 80px 100px 150px', gap: 10, alignItems: 'center', background: 'var(--color-surface)', borderTop: '1px solid var(--color-border)', padding: '13px 16px', margin: 0, color: 'var(--color-ink)' };
