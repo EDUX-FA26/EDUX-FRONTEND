@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import {
   Check, X, Plus, ChevronDown, ChevronRight, Sparkles,
   BookmarkCheck
@@ -62,6 +62,8 @@ function TreeBranchLIcon({ className = 'text-white/35' }) {
   );
 }
 
+const isUuid = (id) => typeof id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+
 /** Tách nhóm/cha từ description: [group:Tên Nhóm] Nội dung */
 function parseTodoItem(item) {
   let group = null;
@@ -90,7 +92,7 @@ const SAMPLE_STUDY_TASKS = [
   { id: 'sample-6', title: 'Journal', status: 'TODO', group: 'Study Mode', priority: 'MEDIUM' },
 ];
 
-export default function FocusTodoListWidget({
+function FocusTodoListWidget({
   activeTodoId,
   onSelectTodo,
   onSessionTodoChange,
@@ -218,9 +220,19 @@ export default function FocusTodoListWidget({
     };
   }, [todos, extraGroups]);
 
-  // Đổi trạng thái Todo (TODO <-> COMPLETED)
+  const handleSelectTask = (taskId) => {
+    if (!taskId) return;
+    if (!isUuid(taskId)) {
+      console.warn('Nhiệm vụ chưa đồng bộ UUID lên máy chủ:', taskId);
+      return;
+    }
+    onSelectTodo?.(taskId);
+  };
+
+  // Đổi trạng thái Todo (TODO <-> COMPLETED) có Rollback khi lỗi
   const handleToggleStatus = async (task, e) => {
     e?.stopPropagation();
+    const previousTodos = [...todos];
     const nextStatus = task.status === 'COMPLETED' ? 'TODO' : 'COMPLETED';
     const updated = todos.map((t) =>
       t.id === task.id
@@ -231,15 +243,20 @@ export default function FocusTodoListWidget({
     syncLocalTodos(updated);
 
     try {
-      await TodoService.changeStatus(task.id, nextStatus);
+      if (isUuid(task.id)) {
+        await TodoService.changeStatus(task.id, nextStatus);
+      }
     } catch (err) {
-      console.warn('Change status offline:', err.message);
+      console.warn('Change status error, rolling back:', err.message);
+      setTodos(previousTodos);
+      syncLocalTodos(previousTodos);
     }
   };
 
-  // Xoá Todo
+  // Xoá Todo có Rollback khi lỗi
   const handleDeleteTask = async (taskId, e) => {
     e?.stopPropagation();
+    const previousTodos = [...todos];
     const updated = todos.filter((t) => t.id !== taskId);
     setTodos(updated);
     syncLocalTodos(updated);
@@ -248,9 +265,13 @@ export default function FocusTodoListWidget({
     }
 
     try {
-      await TodoService.remove(taskId);
+      if (isUuid(taskId)) {
+        await TodoService.remove(taskId);
+      }
     } catch (err) {
-      console.warn('Remove todo offline:', err.message);
+      console.warn('Remove todo error, rolling back:', err.message);
+      setTodos(previousTodos);
+      syncLocalTodos(previousTodos);
     }
   };
 
@@ -318,9 +339,11 @@ export default function FocusTodoListWidget({
         priority: 'MEDIUM',
       });
       if (res.data?.id) {
-        setTodos((prev) =>
-          prev.map((t) => (t.id === tempId ? parseTodoItem(res.data) : t))
-        );
+        setTodos((prev) => {
+          const fresh = prev.map((t) => (t.id === tempId ? parseTodoItem(res.data) : t));
+          syncLocalTodos(fresh);
+          return fresh;
+        });
       }
     } catch (err) {
       console.warn('Tạo Todo offline:', err.response?.data || err.message);
@@ -480,7 +503,7 @@ export default function FocusTodoListWidget({
                 return (
                   <div
                     key={task.id}
-                    onClick={() => onSelectTodo && onSelectTodo(task.id)}
+                    onClick={() => handleSelectTask(task.id)}
                     className={`
                       group relative flex items-center justify-between gap-2 py-1.5 px-1 rounded-lg
                       transition-colors cursor-pointer
@@ -625,7 +648,7 @@ export default function FocusTodoListWidget({
                             return (
                               <div
                                 key={task.id}
-                                onClick={() => onSelectTodo && onSelectTodo(task.id)}
+                                onClick={() => handleSelectTask(task.id)}
                                 className={`
                                   group relative flex items-center justify-between gap-2 py-1 pl-4 pr-1 rounded-lg
                                   transition-colors cursor-pointer
@@ -1012,3 +1035,5 @@ export default function FocusTodoListWidget({
     </div>
   );
 }
+
+export default memo(FocusTodoListWidget);

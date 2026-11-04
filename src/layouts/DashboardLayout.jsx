@@ -17,7 +17,6 @@ import {
   BookMarked,
   Sparkles,
   Headphones,
-  CheckSquare,
 } from 'lucide-react';
 import AIChatBox from '../components/student/AIChatBox';
 
@@ -31,13 +30,6 @@ const NAV_BY_ROLE = {
       path: '/student/focus',
       key: 'focusRoom',
       label: 'Phòng học tập trung',
-    },
-    {
-      id: 'smart-todo',
-      icon: CheckSquare,
-      path: '/student/todos',
-      key: 'smartTodo',
-      label: 'Smart Todo',
     },
     {
       id: 'study-plan',

@@ -282,6 +282,7 @@ const CHANNELS = {
 export class AmbientMixer {
   constructor() {
     this.active = new Map(); // id → { gain, stop }
+    this.stopping = new Map(); // id → { gain, stop, timer }
     this.master = null;
     this.masterVolume = 0.8;
   }
@@ -305,38 +306,59 @@ export class AmbientMixer {
   }
 
   setMasterVolume(volume) {
-    this.masterVolume = volume;
-    if (this.master) this.master.gain.setTargetAtTime(volume, sharedCtx.currentTime, 0.1);
+    this.masterVolume = Math.max(0, Math.min(1, Number(volume) || 0));
+    if (this.master && sharedCtx) {
+      this.master.gain.cancelScheduledValues(sharedCtx.currentTime);
+      this.master.gain.setTargetAtTime(this.masterVolume, sharedCtx.currentTime, 0.08);
+    }
   }
 
   setChannel(id, { enabled, volume }) {
     const factory = CHANNELS[id];
     if (!factory || !this.master) return;
     const ctx = sharedCtx;
+    const safeVolume = Math.max(0, Math.min(1, Number(volume) || 0));
+
+    // Huỷ bỏ tiến trình dọn dẹp nếu kênh vừa được bật lại nhanh
+    if (this.stopping.has(id)) {
+      const pending = this.stopping.get(id);
+      clearTimeout(pending.timer);
+      try {
+        pending.stop();
+        pending.gain.disconnect();
+      } catch {}
+      this.stopping.delete(id);
+    }
 
     const current = this.active.get(id);
 
     if (!enabled) {
       if (!current) return;
       this.active.delete(id);
-      current.gain.gain.setTargetAtTime(0, ctx.currentTime, 0.15);
-      setTimeout(() => {
-        current.stop();
-        current.gain.disconnect();
-      }, 900);
+      current.gain.gain.cancelScheduledValues(ctx.currentTime);
+      current.gain.gain.setTargetAtTime(0, ctx.currentTime, 0.1);
+      const timer = setTimeout(() => {
+        try {
+          current.stop();
+          current.gain.disconnect();
+        } catch {}
+        this.stopping.delete(id);
+      }, 300);
+      this.stopping.set(id, { ...current, timer });
       return;
     }
 
     if (current) {
-      current.gain.gain.setTargetAtTime(volume, ctx.currentTime, 0.1);
+      current.gain.gain.cancelScheduledValues(ctx.currentTime);
+      current.gain.gain.setTargetAtTime(safeVolume, ctx.currentTime, 0.08);
       return;
     }
 
     const gain = ctx.createGain();
-    gain.gain.value = 0;
+    gain.gain.setValueAtTime(0.0001, ctx.currentTime);
     gain.connect(this.master);
     const stop = factory(ctx, gain);
-    gain.gain.setTargetAtTime(volume, ctx.currentTime, 0.4); // fade in
+    gain.gain.setTargetAtTime(safeVolume, ctx.currentTime, 0.25); // fade in mượt
     this.active.set(id, { gain, stop });
   }
 
@@ -363,9 +385,20 @@ export class AmbientMixer {
   }
 
   stopAll() {
+    this.stopping.forEach(({ stop, gain, timer }) => {
+      clearTimeout(timer);
+      try {
+        stop();
+        gain.disconnect();
+      } catch {}
+    });
+    this.stopping.clear();
+
     this.active.forEach(({ stop, gain }) => {
-      stop();
-      gain.disconnect();
+      try {
+        stop();
+        gain.disconnect();
+      } catch {}
     });
     this.active.clear();
   }
@@ -373,7 +406,9 @@ export class AmbientMixer {
   dispose() {
     this.stopAll();
     if (this.master) {
-      this.master.disconnect();
+      try {
+        this.master.disconnect();
+      } catch {}
       this.master = null;
     }
   }

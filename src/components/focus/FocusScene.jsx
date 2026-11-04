@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 
 /**
  * Các cảnh phòng học dựng bằng CSS/SVG (không cần file ảnh, tải tức thì, nhẹ).
@@ -12,6 +12,7 @@ const KEYFRAMES = `
 @keyframes fr-twinkle { 0%,100% { opacity: .25; } 50% { opacity: 1; } }
 @keyframes fr-flicker { 0%,100% { opacity: .9; } 45% { opacity: .75; } 60% { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .fr-anim { animation: none !important; } }
+.fr-paused .fr-anim { animation-play-state: paused !important; }
 `;
 
 const abs = 'absolute pointer-events-none';
@@ -182,11 +183,11 @@ const SCENES = {
   'night-desk': NightDesk,
 };
 
-export default function FocusScene({ id = 'cottage', className = '', children }) {
+function FocusScene({ id = 'cottage', className = '', isPaused = false, children }) {
   const Scene = SCENES[id] || Cottage;
 
   return (
-    <div className={`relative isolate overflow-hidden ${className}`}>
+    <div className={`relative isolate overflow-hidden ${isPaused ? 'fr-paused' : ''} ${className}`}>
       <style>{KEYFRAMES}</style>
       <Scene />
       <div className="relative z-10 h-full w-full flex flex-col justify-between">{children}</div>
@@ -194,3 +195,4 @@ export default function FocusScene({ id = 'cottage', className = '', children })
   );
 }
 
+export default memo(FocusScene);
