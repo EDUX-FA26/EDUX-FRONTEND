@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Heart, MessageCircle, Send, ExternalLink, Plus, Search, Reply, X } from 'lucide-react';
+import { Heart, MessageCircle, Send, ExternalLink, Plus, Search, Reply, X, Smile, Image, MoreHorizontal } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import ForumService from '../../services/forum.service';
@@ -27,6 +27,11 @@ export default function ForumPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [profileStats, setProfileStats] = useState(null);
+  const [loungeText, setLoungeText] = useState('');
+  const [loungeMessages, setLoungeMessages] = useState([
+    { id: 'welcome-1', name: 'EDUX Community', text: 'Chào mừng mọi người đến khu vực tán gẫu linh tinh!', time: 'Vừa xong' },
+    { id: 'welcome-2', name: 'EDUX Community', text: 'Hãy giữ cuộc trò chuyện văn minh và hỗ trợ nhau nhé.', time: 'Vừa xong' },
+  ]);
 
   const loadPosts = async () => {
     try {
@@ -126,6 +131,14 @@ export default function ForumPage() {
     else navigate('/lecturer/flashcards');
   };
 
+  const sendLoungeMessage = (event) => {
+    event.preventDefault();
+    const text = loungeText.trim();
+    if (!text) return;
+    setLoungeMessages((items) => [...items, { id: `local-${Date.now()}`, name: user?.full_name || 'Bạn', text, time: 'Vừa xong' }]);
+    setLoungeText('');
+  };
+
   return (
     <main style={{ maxWidth: 1280, margin: '0 auto', padding: '28px 24px 80px', color: '#f2f5f8' }}>
       <div style={forumLayout}>
@@ -174,6 +187,11 @@ export default function ForumPage() {
       </article>)}
       </div>}
       {!loading && totalPages > 1 && <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 10, marginTop: 20 }}><button type="button" className="btn" disabled={filters.page <= 1} onClick={() => setFilters((prev) => ({ ...prev, page: prev.page - 1 }))}>Trước</button><span>Trang {filters.page} / {totalPages}</span><button type="button" className="btn" disabled={filters.page >= totalPages} onClick={() => setFilters((prev) => ({ ...prev, page: prev.page + 1 }))}>Sau</button></div>}
+      <section style={loungeStyle}>
+        <div style={loungeHeader}><div><h2 style={{ margin: 0, fontSize: 22, color: 'var(--color-ink)' }}><MessageCircle size={24} /> Tán gẫu linh tinh</h2><div style={{ color: 'var(--color-ink-muted)', fontSize: 13, marginTop: 8 }}><strong style={{ color: 'var(--color-ink)' }}>Tán gẫu linh tinh</strong> <span style={onlineBadge}>●</span> {loungeMessages.length} tin nhắn</div></div><MoreHorizontal size={22} color="var(--color-ink-muted)" /></div>
+        <div style={loungeMessagesStyle}>{loungeMessages.map((item) => <div key={item.id} style={loungeMessageStyle}><span style={loungeAvatar}>{(item.name || 'E')[0].toUpperCase()}</span><div style={{ minWidth: 0, flex: 1 }}><div><strong style={{ color: 'var(--color-primary-dark)' }}>{item.name}</strong><span style={{ color: 'var(--color-ink-muted)', marginLeft: 8, fontSize: 12 }}>{item.time}</span></div><div style={{ color: 'var(--color-ink)', lineHeight: 1.45 }}>{item.text}</div></div></div>)}</div>
+        <form onSubmit={sendLoungeMessage} style={loungeComposer}><div style={{ display: 'flex', gap: 12, color: 'var(--color-primary-dark)' }}><Smile size={19} /><strong>B</strong><em>I</em><Image size={19} /></div><input value={loungeText} onChange={(e) => setLoungeText(e.target.value)} placeholder="Viết tin nhắn công khai..." aria-label="Viết tin nhắn công khai" style={loungeInput} /><button type="submit" style={loungeSend}><Send size={17} /></button></form>
+      </section>
       </section>
       <aside style={profileCard}>
         <div style={profileTop}><div style={profileAvatar}>{(user?.full_name || user?.email || 'E')[0].toUpperCase()}</div><div style={{ minWidth: 0 }}><strong style={{ color: 'var(--color-ink)', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{profileStats?.display_name || user?.full_name || user?.email || 'EDUX User'}</strong><span style={{ color: 'var(--color-ink-muted)', fontSize: 13 }}>{user?.role === 'lecturer' ? 'Giảng viên' : user?.role === 'admin' ? 'Quản trị viên' : 'Sinh viên'}</span></div></div>
@@ -194,6 +212,15 @@ const statRow = { display: 'flex', justifyContent: 'space-between', padding: '9p
 const typeBadge = { background: 'var(--color-primary-card)', color: 'var(--color-primary-dark)', borderRadius: 999, padding: '4px 9px', fontSize: 12 };
 const quickSearchStyle = { width: 'min(100%, 375px)', boxSizing: 'border-box', background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 12, padding: 8, margin: '0 0 14px' };
 const quickSearchInputStyle = { width: '100%', boxSizing: 'border-box', border: 0, outline: 0, borderRadius: 9, padding: '11px 14px', font: 'inherit', background: 'var(--color-primary-card)', color: 'var(--color-ink)' };
+const loungeStyle = { marginTop: 22, background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 14, overflow: 'hidden', boxShadow: 'var(--shadow-md)' };
+const loungeHeader = { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '18px 20px 14px', borderBottom: '1px solid var(--color-border)' };
+const onlineBadge = { color: '#76b82a', margin: '0 4px 0 8px' };
+const loungeMessagesStyle = { height: 250, overflowY: 'auto', padding: '8px 20px' };
+const loungeMessageStyle = { display: 'flex', gap: 10, padding: '10px 0', borderBottom: '1px solid var(--color-border)' };
+const loungeAvatar = { width: 30, height: 30, borderRadius: '50%', background: 'var(--color-primary-card)', color: 'var(--color-primary-dark)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, flexShrink: 0 };
+const loungeComposer = { display: 'flex', alignItems: 'center', gap: 12, padding: '12px 18px', borderTop: '1px solid var(--color-border)' };
+const loungeInput = { flex: 1, minWidth: 0, border: 0, outline: 0, background: 'transparent', color: 'var(--color-ink)', font: 'inherit', padding: '8px 0' };
+const loungeSend = { border: 0, background: 'var(--color-primary)', color: '#fff', borderRadius: 8, width: 34, height: 34, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' };
 const forumTableStyle = { background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 14, maxHeight: 560, overflowY: 'auto', overflowX: 'auto', boxShadow: 'var(--shadow-md)' };
 const forumTableHeader = { position: 'sticky', top: 0, zIndex: 2, display: 'grid', gridTemplateColumns: 'minmax(300px, 1fr) 110px 80px 80px 100px 150px', gap: 10, alignItems: 'center', padding: '12px 16px', background: 'var(--color-primary-card)', color: 'var(--color-primary-dark)', fontSize: 13, fontWeight: 700 };
 const cardStyle = { display: 'grid', gridTemplateColumns: 'minmax(300px, 1fr) 110px 80px 80px 100px 150px', gap: 10, alignItems: 'center', background: 'var(--color-surface)', borderTop: '1px solid var(--color-border)', padding: '13px 16px', margin: 0, color: 'var(--color-ink)' };
