@@ -149,9 +149,9 @@ export default function ForumPage() {
       <section style={{ minWidth: 0 }}>
       <div style={forumHero}><div><span style={heroPill}>● EDUX Community • FALL 2025</span><h1 style={heroTitle}>Diễn đàn học tập</h1><p style={heroSubtitle}>Trao đổi bài học, FlashCard và kinh nghiệm học tập cùng cộng đồng EDUX.</p></div>{canPost && <div style={heroActions}><button className="btn btn-primary" onClick={() => { setShowComposer(true); setComposerType(null); }}><Plus size={17} /> Đăng bài</button>{user?.role === 'lecturer' && <button type="button" className="btn" style={flashcardHeroButton} onClick={() => navigate('/lecturer/forum/new?type=DISCUSSION&attach=flashcard')}><ExternalLink size={16} /> Đăng kèm FlashCard <span style={lecturerPill}>GV</span></button>}</div>}</div>
       <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid #eadbd2', marginBottom: 16, overflowX: 'auto' }}>
-        {[['', 'Thảo luận'], ['CONFESSION', 'Confession mới'], ['popular', 'Xem nhiều'], ['FLASHCARD', 'Flashcard']].map(([value, label]) => {
+        {[['', 'Thảo luận', posts.length], ['CONFESSION', 'Confession mới', 'Mới'], ['popular', 'Xem nhiều', 'Hot 🔥'], ['FLASHCARD', 'Flashcard', '⚡']].map(([value, label, count]) => {
           const active = value === 'popular' ? filters.sort === 'popular' : filters.type === value && filters.sort === 'latest';
-          return <button key={label} type="button" onClick={() => setFilters((prev) => ({ ...prev, type: value === 'popular' ? '' : value, sort: value === 'popular' ? 'popular' : 'latest', page: 1 }))} style={{ border: 0, borderBottom: active ? '3px solid #f27024' : '3px solid transparent', background: 'transparent', padding: '12px 18px', fontWeight: 800, color: active ? '#202938' : '#68738a', cursor: 'pointer', whiteSpace: 'nowrap' }}>{label}</button>;
+          return <button key={label} type="button" onClick={() => setFilters((prev) => ({ ...prev, type: value === 'popular' ? '' : value, sort: value === 'popular' ? 'popular' : 'latest', page: 1 }))} style={{ border: 0, borderBottom: active ? '3px solid #f27024' : '3px solid transparent', background: active ? 'var(--color-primary)' : 'transparent', borderRadius: active ? 9 : 0, padding: '10px 16px', fontWeight: 800, color: active ? '#fff' : '#68738a', cursor: 'pointer', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 8 }}>{label}<span style={{ ...tabCount, ...(active ? { background: 'rgba(255,255,255,.22)', color: '#fff' } : {}) }}>{count}</span></button>;
         })}
       </div>
       <div style={filterBar}>
@@ -190,7 +190,7 @@ export default function ForumPage() {
         </div>
       </article>)}
       </div>}
-      {!loading && totalPages > 1 && <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 10, marginTop: 20 }}><button type="button" className="btn" disabled={filters.page <= 1} onClick={() => setFilters((prev) => ({ ...prev, page: prev.page - 1 }))}>Trước</button><span>Trang {filters.page} / {totalPages}</span><button type="button" className="btn" disabled={filters.page >= totalPages} onClick={() => setFilters((prev) => ({ ...prev, page: prev.page + 1 }))}>Sau</button></div>}
+      {!loading && totalPages > 1 && <div style={paginationStyle}><span>Hiển thị trang {filters.page} / {totalPages}</span><div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><button type="button" className="btn" disabled={filters.page <= 1} onClick={() => setFilters((prev) => ({ ...prev, page: prev.page - 1 }))}>Trước</button>{Array.from({ length: Math.min(totalPages, 5) }, (_, index) => index + 1).map((page) => <button key={page} type="button" className="btn" style={page === filters.page ? activePageButton : {}} onClick={() => setFilters((prev) => ({ ...prev, page }))}>{page}</button>)}<button type="button" className="btn" disabled={filters.page >= totalPages} onClick={() => setFilters((prev) => ({ ...prev, page: prev.page + 1 }))}>Sau</button></div></div>}
       <section style={loungeStyle}>
         <div style={loungeHeader}><div><h2 style={{ margin: 0, fontSize: 22, color: 'var(--color-ink)' }}><MessageCircle size={24} /> Tán gẫu linh tinh</h2><div style={{ color: 'var(--color-ink-muted)', fontSize: 13, marginTop: 8 }}><strong style={{ color: 'var(--color-ink)' }}>Tán gẫu linh tinh</strong> <span style={onlineBadge}>●</span> {loungeMessages.length} tin nhắn</div></div><MoreHorizontal size={22} color="var(--color-ink-muted)" /></div>
         <div style={loungeMessagesStyle}>{loungeMessages.map((item) => <div key={item.id} style={loungeMessageStyle}><span style={loungeAvatar}>{(item.name || 'E')[0].toUpperCase()}</span><div style={{ minWidth: 0, flex: 1 }}><div><strong style={{ color: 'var(--color-primary-dark)' }}>{item.name}</strong><span style={{ color: 'var(--color-ink-muted)', marginLeft: 8, fontSize: 12 }}>{item.time}</span></div><div style={{ color: 'var(--color-ink)', lineHeight: 1.45 }}>{item.text}</div></div></div>)}</div>
@@ -201,6 +201,8 @@ export default function ForumPage() {
         <div style={profileTop}><div style={profileAvatar}>{(user?.full_name || user?.email || 'E')[0].toUpperCase()}</div><div style={{ minWidth: 0 }}><strong style={{ color: 'var(--color-ink)', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{profileStats?.display_name || user?.full_name || user?.email || 'EDUX User'}</strong><span style={{ color: 'var(--color-ink-muted)', fontSize: 13 }}>{user?.role === 'lecturer' ? 'Giảng viên' : user?.role === 'admin' ? 'Quản trị viên' : 'Sinh viên'}</span></div></div>
         <div style={statRow}><span>Bài viết</span><strong>{profileStats?.post_count ?? 0}</strong></div>
         <div style={statRow}><span>Điểm reaction</span><strong>{profileStats?.reaction_score ?? 0}</strong></div>
+        <div style={sidebarSection}><h3 style={sidebarHeading}>Chủ đề nổi bật 🔥</h3><p style={sidebarItem}>Ôn tập PRN231 <span>›</span></p><p style={sidebarItem}>Đồ án tốt nghiệp <span>›</span></p><p style={sidebarItem}>Tìm thành viên nhóm <span>›</span></p></div>
+        <div style={sidebarSection}><h3 style={sidebarHeading}>Quy định cộng đồng</h3><ul style={rulesList}><li>Tôn trọng giảng viên và sinh viên.</li><li>Không chia sẻ nội dung vi phạm.</li><li>Giữ thảo luận đúng chủ đề.</li></ul></div>
       </aside>
       </div>
     </main>
@@ -221,10 +223,17 @@ const profileTop = { display: 'flex', alignItems: 'center', gap: 12, paddingBott
 const profileAvatar = { width: 52, height: 52, borderRadius: '50%', background: 'var(--color-primary)', color: '#fff', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 800, flexShrink: 0 };
 const statRow = { display: 'flex', justifyContent: 'space-between', padding: '9px 0', color: 'var(--color-ink-muted)' };
 const typeBadge = { background: 'var(--color-primary-card)', color: 'var(--color-primary-dark)', borderRadius: 999, padding: '4px 9px', fontSize: 12 };
+const tabCount = { borderRadius: 999, padding: '2px 7px', background: 'var(--color-primary-card)', color: 'var(--color-primary-dark)', fontSize: 11, fontWeight: 800 };
 const filterBar = { display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 10, background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 14, padding: 12, marginBottom: 14, boxShadow: 'var(--shadow-sm)' };
 const filterSearch = { display: 'flex', alignItems: 'center', gap: 8, flex: '1 1 280px', minWidth: 220, height: 40, padding: '0 12px', borderRadius: 10, background: 'var(--color-primary-card)' };
 const filterControls = { display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8 };
 const filterSelect = { height: 40, minWidth: 130, border: '1px solid var(--color-border)', borderRadius: 10, padding: '0 10px', background: 'var(--color-surface)', color: 'var(--color-ink)', font: 'inherit' };
+const paginationStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, padding: '14px 4px', color: 'var(--color-ink-muted)', fontSize: 13 };
+const activePageButton = { background: 'var(--color-primary)', color: '#fff', borderColor: 'var(--color-primary)' };
+const sidebarSection = { borderTop: '1px solid var(--color-border)', marginTop: 16, paddingTop: 16 };
+const sidebarHeading = { margin: '0 0 10px', color: 'var(--color-ink)', fontSize: 15 };
+const sidebarItem = { display: 'flex', justifyContent: 'space-between', gap: 8, margin: '8px 0', color: 'var(--color-ink-muted)', fontSize: 13 };
+const rulesList = { margin: 0, paddingLeft: 18, color: 'var(--color-ink-muted)', fontSize: 12, lineHeight: 1.65 };
 const quickSearchStyle = { width: 'min(100%, 375px)', boxSizing: 'border-box', background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 12, padding: 8, margin: '0 0 14px' };
 const quickSearchInputStyle = { width: '100%', boxSizing: 'border-box', border: 0, outline: 0, borderRadius: 9, padding: '11px 14px', font: 'inherit', background: 'var(--color-primary-card)', color: 'var(--color-ink)' };
 const loungeStyle = { marginTop: 22, background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 14, overflow: 'hidden', boxShadow: 'var(--shadow-md)' };
