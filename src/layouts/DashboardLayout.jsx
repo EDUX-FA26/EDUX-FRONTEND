@@ -718,7 +718,7 @@ export default function DashboardLayout() {
           )}
 
         {/* Click outside overlay */}
-        {user?.role === ROLES.STUDENT && <AIChatBox />}
+        {user?.role === ROLES.STUDENT && !isFocusRoom && <AIChatBox />}
 
         {showUserMenu && (
           <div
