@@ -6,17 +6,17 @@ import ForumService from '../../services/forum.service';
 import FlashcardService from '../../services/flashcard.service';
 import ClassService from '../../services/class.service';
 
-const initialForm = { title: '', content: '', flashcardDeckId: '', visibility: 'PUBLIC', classIds: [] };
+const initialForm = { title: '', content: '', flashcardDeckId: '', visibility: 'PUBLIC', classIds: [], isAnonymous: false };
 
 export default function ForumPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const canPost = ['lecturer', 'admin'].includes(user?.role);
+  const canPost = ['student', 'lecturer', 'admin'].includes(user?.role);
   const [posts, setPosts] = useState([]);
   const [decks, setDecks] = useState([]);
   const [classes, setClasses] = useState([]);
   const [form, setForm] = useState(initialForm);
-  const [filters, setFilters] = useState({ q: '', author: '', classId: '', page: 1 });
+  const [filters, setFilters] = useState({ q: '', author: '', classId: '', page: 1, type: '', sort: 'latest' });
   const [totalPages, setTotalPages] = useState(1);
   const [commentText, setCommentText] = useState({});
   const [expandedComments, setExpandedComments] = useState({});
@@ -46,7 +46,7 @@ export default function ForumPage() {
       }).catch(() => {});
     }
     ClassService.getMyClasses().then((result) => setClasses(result.data?.data || result.data || [])).catch(() => {});
-  }, [canPost, filters.page, filters.q, filters.author, filters.classId]);
+  }, [canPost, filters.page, filters.q, filters.author, filters.classId, filters.type, filters.sort]);
 
   const submitPost = async (event) => {
     event.preventDefault();
@@ -58,6 +58,8 @@ export default function ForumPage() {
         flashcardDeckId: form.flashcardDeckId || null,
         visibility: form.visibility,
         classIds: form.visibility === 'CLASS_ONLY' ? form.classIds : [],
+        postType: user?.role === 'student' ? 'CONFESSION' : 'DISCUSSION',
+        isAnonymous: user?.role === 'student' ? form.isAnonymous : false,
       });
       setForm(initialForm); setShowComposer(false); setFilters((prev) => ({ ...prev, page: 1 })); await loadPosts();
     } catch (err) { setError(err.response?.data?.message || 'Không thể đăng bài.'); }
@@ -128,11 +130,18 @@ export default function ForumPage() {
         <div><p style={{ color: '#bd4b0a', fontWeight: 800, letterSpacing: 1, margin: 0 }}>EDUX COMMUNITY</p><h1 style={{ margin: '6px 0', fontSize: '2rem' }}>Diễn đàn học tập</h1><p style={{ color: '#68738a', margin: 0 }}>Trao đổi bài học, FlashCard và kinh nghiệm học tập cùng cộng đồng EDUX.</p></div>
         {canPost && <button className="btn btn-primary" onClick={() => setShowComposer((v) => !v)}><Plus size={17} /> Đăng bài</button>}
       </div>
+      <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid #eadbd2', marginBottom: 16, overflowX: 'auto' }}>
+        {[['', 'Thảo luận'], ['CONFESSION', 'Confession mới'], ['popular', 'Xem nhiều']].map(([value, label]) => {
+          const active = value === 'popular' ? filters.sort === 'popular' : filters.type === value && filters.sort === 'latest';
+          return <button key={label} type="button" onClick={() => setFilters((prev) => ({ ...prev, type: value === 'popular' ? '' : value, sort: value === 'popular' ? 'popular' : 'latest', page: 1 }))} style={{ border: 0, borderBottom: active ? '3px solid #f27024' : '3px solid transparent', background: 'transparent', padding: '12px 18px', fontWeight: 800, color: active ? '#202938' : '#68738a', cursor: 'pointer', whiteSpace: 'nowrap' }}>{label}</button>;
+        })}
+      </div>
       <form onSubmit={(event) => { event.preventDefault(); setFilters((prev) => ({ ...prev, page: 1 })); }} style={{ background: '#fff', border: '1px solid #f1dfd4', borderRadius: 16, padding: 14, marginBottom: 18 }}>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <div style={{ flex: '2 1 260px', position: 'relative' }}><Search size={17} style={{ position: 'absolute', left: 12, top: 12, color: '#8c7166' }} /><input value={filters.q} onChange={(e) => setFilters((prev) => ({ ...prev, q: e.target.value }))} placeholder="Tìm theo tiêu đề hoặc nội dung..." style={{ ...inputStyle, paddingLeft: 36, margin: 0 }} /></div>
           <input value={filters.author} onChange={(e) => setFilters((prev) => ({ ...prev, author: e.target.value }))} placeholder="Tìm theo giảng viên..." style={{ ...inputStyle, flex: '1 1 190px', margin: 0 }} />
           <select value={filters.classId} onChange={(e) => setFilters((prev) => ({ ...prev, classId: e.target.value, page: 1 }))} style={{ ...inputStyle, flex: '1 1 160px', margin: 0 }}><option value="">Tất cả lớp</option>{classes.map((item) => <option key={item.id} value={item.id}>{item.class_code || item.code || item.name}</option>)}</select>
+          <select value={filters.sort} onChange={(e) => setFilters((prev) => ({ ...prev, sort: e.target.value, page: 1 }))} style={{ ...inputStyle, flex: '1 1 140px', margin: 0 }}><option value="latest">Mới nhất</option><option value="popular">Nhiều lượt xem</option><option value="comments">Nhiều bình luận</option></select>
           <button className="btn btn-primary" type="submit"><Search size={16} /> Tìm</button>
         </div>
       </form>
@@ -141,16 +150,16 @@ export default function ForumPage() {
         <h3 style={{ marginTop: 0 }}>Tạo bài đăng</h3>
         <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Tiêu đề bài đăng" required style={inputStyle} />
         <textarea value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} placeholder="Nội dung trao đổi..." required rows={4} style={{ ...inputStyle, resize: 'vertical' }} />
-        <select value={form.visibility} onChange={(e) => setForm({ ...form, visibility: e.target.value, classIds: [] })} style={inputStyle}><option value="PUBLIC">Công khai toàn hệ thống</option><option value="CLASS_ONLY">Chỉ chia sẻ cho lớp tôi dạy</option></select>
+        {user?.role === 'student' ? <><div style={{ background: '#fff8f2', borderRadius: 10, padding: 10, marginBottom: 12, color: '#8c7166', fontSize: 13 }}>Bài confession sẽ được đăng công khai trong cộng đồng.</div><label style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 12 }}><input type="checkbox" checked={form.isAnonymous} onChange={(e) => setForm({ ...form, isAnonymous: e.target.checked })} />Đăng ẩn danh</label></> : <select value={form.visibility} onChange={(e) => setForm({ ...form, visibility: e.target.value, classIds: [] })} style={inputStyle}><option value="PUBLIC">Công khai toàn hệ thống</option><option value="CLASS_ONLY">Chỉ chia sẻ cho lớp tôi dạy</option></select>}
         {form.visibility === 'CLASS_ONLY' && <div style={{ border: '1px solid #e8d8cc', borderRadius: 10, padding: 12, marginBottom: 12 }}><strong style={{ display: 'block', marginBottom: 8 }}>Chọn lớp nhận bài đăng</strong>{classes.length === 0 ? <small>Chưa có lớp được phân công.</small> : classes.map((item) => <label key={item.id} style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6 }}><input type="checkbox" checked={form.classIds.includes(item.id)} onChange={(e) => setForm((prev) => ({ ...prev, classIds: e.target.checked ? [...prev.classIds, item.id] : prev.classIds.filter((id) => id !== item.id) }))} />{item.class_code || item.code || item.name}</label>)}</div>}
         <select value={form.flashcardDeckId} onChange={(e) => setForm({ ...form, flashcardDeckId: e.target.value })} style={inputStyle}><option value="">Không gắn FlashCard</option>{decks.map((d) => <option key={d.id} value={d.id}>{d.title}{d.subject_name ? ` — ${d.subject_name}` : ''}</option>)}</select>
         <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}><button type="button" className="btn" onClick={() => setShowComposer(false)}>Hủy</button><button className="btn btn-primary" disabled={saving}>{saving ? 'Đang đăng...' : 'Đăng bài'}</button></div>
       </form>}
       {loading ? <div style={{ padding: 32, textAlign: 'center' }}>Đang tải bài đăng...</div> : posts.length === 0 ? <div style={emptyStyle}>Chưa có bài đăng nào.</div> : posts.map((post) => <article key={post.id} style={cardStyle}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}><div><strong>{post.author_name || 'EDUX User'}</strong><span style={{ color: '#8c7166', marginLeft: 8, fontSize: 13 }}>{post.author_role}</span><h2 style={{ margin: '8px 0 5px', fontSize: '1.15rem' }}>{post.title}</h2></div><time style={{ color: '#8c7166', fontSize: 12 }}>{new Date(post.created_at).toLocaleDateString('vi-VN')}</time></div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}><div><strong>{post.is_anonymous ? 'Ẩn danh' : (post.author_name || 'EDUX User')}</strong><span style={{ color: '#8c7166', marginLeft: 8, fontSize: 13 }}>{post.post_type === 'CONFESSION' ? 'Confession' : post.author_role}</span><h2 style={{ margin: '8px 0 5px', fontSize: '1.15rem' }}>{post.title}</h2></div><time style={{ color: '#8c7166', fontSize: 12 }}>{new Date(post.created_at).toLocaleDateString('vi-VN')}</time></div>
         <p style={{ whiteSpace: 'pre-wrap', color: '#4e596b', lineHeight: 1.6 }}>{post.content}</p>
         {(post.subject_name || post.flashcard_deck_id) && <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>{post.subject_name && <span style={tagStyle}>{post.subject_code || 'Môn học'} · {post.subject_name}</span>}{post.flashcard_deck_id && <button type="button" style={linkStyle} onClick={() => openFlashcard(post)}><ExternalLink size={14} /> Mở FlashCard{post.flashcard_title ? `: ${post.flashcard_title}` : ''}</button>}</div>}
-        <div style={{ display: 'flex', gap: 18, borderTop: '1px solid #f1e7df', paddingTop: 12 }}><button type="button" style={actionStyle} onClick={() => toggleLike(post.id)}><Heart size={17} fill={post.liked_by_me ? '#ef6820' : 'none'} color={post.liked_by_me ? '#ef6820' : 'currentColor'} /> {post.like_count || 0}</button><button type="button" style={actionStyle} onClick={() => toggleComments(post.id)} aria-expanded={Boolean(expandedComments[post.id])}><MessageCircle size={17} /> {post.comment_count || 0} Bình luận</button></div>
+        <div style={{ display: 'flex', gap: 18, borderTop: '1px solid #f1e7df', paddingTop: 12 }}><button type="button" style={actionStyle} onClick={() => toggleLike(post.id)}><Heart size={17} fill={post.liked_by_me ? '#ef6820' : 'none'} color={post.liked_by_me ? '#ef6820' : 'currentColor'} /> {post.like_count || 0}</button><button type="button" style={actionStyle} onClick={() => toggleComments(post.id)} aria-expanded={Boolean(expandedComments[post.id])}><MessageCircle size={17} /> {post.comment_count || 0} Bình luận</button><span style={actionStyle}>◉ {post.view_count || 0} lượt xem</span></div>
         {expandedComments[post.id] && <div style={{ marginTop: 14, borderTop: '1px solid #f1e7df', paddingTop: 12 }}>
           {(commentsByPost[post.id] || []).length === 0 ? <p style={{ color: '#8c7166', fontSize: 13 }}>Chưa có bình luận. Hãy bắt đầu trao đổi.</p> : (commentsByPost[post.id] || []).map((comment) => <div key={comment.id} style={{ background: '#fff8f5', borderRadius: 10, padding: '9px 12px', marginBottom: 8, marginLeft: comment.parent_id ? 28 : 0 }}><strong style={{ fontSize: 13 }}>{comment.author_name || 'EDUX User'}</strong><p style={{ margin: '4px 0 6px', whiteSpace: 'pre-wrap', color: '#4e596b' }}>{comment.content}</p><button type="button" style={{ ...actionStyle, fontSize: 12 }} onClick={() => setReplyTo((prev) => ({ ...prev, [post.id]: comment.id }))}><Reply size={14} /> Trả lời</button>{replyTo[post.id] === comment.id && <div style={{ display: 'flex', gap: 8, marginTop: 8 }}><input autoFocus value={commentText[post.id] || ''} onChange={(e) => setCommentText({ ...commentText, [post.id]: e.target.value })} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitComment(post.id, comment.id); } }} placeholder="Viết câu trả lời..." style={{ ...inputStyle, margin: 0 }} /><button type="button" className="btn btn-primary" onClick={() => submitComment(post.id, comment.id)}><Send size={16} /></button><button type="button" className="btn" onClick={() => setReplyTo((prev) => ({ ...prev, [post.id]: null }))}><X size={16} /></button></div>}</div>)}
           <div style={{ display: 'flex', gap: 8 }}><input value={commentText[post.id] || ''} onChange={(e) => setCommentText({ ...commentText, [post.id]: e.target.value })} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitComment(post.id, replyTo[post.id] || null); } }} placeholder={replyTo[post.id] ? 'Viết câu trả lời...' : 'Viết bình luận...'} style={{ ...inputStyle, margin: 0 }} /><button type="button" className="btn btn-primary" onClick={() => submitComment(post.id, replyTo[post.id] || null)}><Send size={16} /></button></div>
