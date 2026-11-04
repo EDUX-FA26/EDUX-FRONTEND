@@ -177,15 +177,13 @@ export default function ForumPage() {
         <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}><button type="button" className="btn" onClick={() => { setShowComposer(false); setComposerType(null); }}>Hủy</button><button className="btn btn-primary" disabled={saving}>{saving ? 'Đang đăng...' : 'Đăng bài'}</button></div>
       </form>}
       {loading ? <div style={{ padding: 32, textAlign: 'center', color: '#aeb9c8' }}>Đang tải bài đăng...</div> : posts.length === 0 ? <div style={emptyStyle}>Chưa có bài đăng nào.</div> : <div style={forumTableStyle}>
-        <div style={forumTableHeader}><span>Chủ đề</span><span>Forum</span><span>Reply</span><span>View</span><span>Ngày</span><span>Author</span></div>
+        <div style={forumTableHeader}><span>CHỦ ĐỀ &amp; MÔN HỌC</span><span>THỂ LOẠI</span><span>TƯƠNG TÁC</span><span>TÁC GIẢ &amp; GIỜ</span></div>
         {posts.map((post, index) => <article key={post.id} style={cardStyle}>
-        <div style={{ ...topicCell, cursor: 'pointer' }} onClick={() => navigate(`/${user?.role || 'student'}/forum/${post.id}`)}><span style={rowNumber}>{(filters.page - 1) * 10 + index + 1}</span><div style={avatarStyle}>{(post.is_anonymous ? '?' : (post.author_name || 'E')[0]).toUpperCase()}</div><div style={{ minWidth: 0, overflow: 'hidden' }}><strong style={{ color: 'var(--color-ink)', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{post.title}</strong><span style={topicMeta}>{post.flashcard_deck_id ? 'Flashcard' : (post.post_type === 'CONFESSION' ? 'Confession' : 'Hỏi đáp')}{post.subject_code ? ` · ${post.subject_code}` : ''}</span></div></div>
-        <span style={tableCell}><span style={forumBadge}>?&nbsp; {post.flashcard_deck_id ? 'Flashcard' : (post.post_type === 'CONFESSION' ? 'Confession' : 'Thảo luận')}</span></span>
-        <span style={tableCell}>{post.comment_count ?? post.comments_count ?? post.reply_count ?? 0}</span>
-        <span style={tableCell}>{post.view_count || 0}</span>
-        <time style={tableCell}>{new Date(post.created_at).toLocaleDateString('vi-VN')}</time>
-        <span style={{ ...tableCell, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}><span style={avatarSmall}>{(post.is_anonymous ? '?' : (post.author_name || 'E')[0]).toUpperCase()}</span> {post.is_anonymous ? 'Ẩn danh' : (post.author_name || 'EDUX User')}</span>
-        <div style={postBody}><p style={{ whiteSpace: 'pre-wrap', color: 'var(--color-ink-muted)', lineHeight: 1.6, margin: 0 }}>{post.content}</p>
+        <div style={{ ...topicCell, cursor: 'pointer' }} onClick={() => navigate(`/${user?.role || 'student'}/forum/${post.id}`)}><span style={rowNumber}>{(filters.page - 1) * 10 + index + 1}</span><div style={avatarStyle}>{(post.is_anonymous ? '?' : (post.author_name || 'E')[0]).toUpperCase()}</div><div style={{ minWidth: 0, overflow: 'hidden' }}><div style={subjectLine}>{post.subject_code || 'EDUX'} <span>{post.subject_name || 'Cộng đồng học tập'}</span></div><strong style={topicTitle}>{post.title}</strong><p style={topicExcerpt}>{post.content}</p></div></div>
+        <span style={tableCell}><span style={forumBadge}>{post.flashcard_deck_id ? 'Flashcard' : (post.post_type === 'CONFESSION' ? 'Confession' : 'Thảo luận')}</span></span>
+        <span style={{ ...tableCell, flexDirection: 'column', alignItems: 'flex-start', gap: 2 }}><span>💬 {post.comment_count ?? post.comments_count ?? post.reply_count ?? 0}</span><small>{post.view_count || 0} lượt xem</small></span>
+        <span style={{ ...tableCell, flexDirection: 'column', alignItems: 'flex-start', gap: 2, overflow: 'hidden' }}><span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%' }}><span style={avatarSmall}>{(post.is_anonymous ? '?' : (post.author_name || 'E')[0]).toUpperCase()}</span> {post.is_anonymous ? 'Ẩn danh' : (post.author_name || 'EDUX User')}</span><small>{new Date(post.created_at).toLocaleDateString('vi-VN')}</small></span>
+        <div style={postBody}><p style={{ display: 'none' }}>{post.content}</p>
         {(post.subject_name || post.flashcard_deck_id) && <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>{post.subject_name && <span style={tagStyle}>{post.subject_code || 'Môn học'} · {post.subject_name}</span>}{post.flashcard_deck_id && <button type="button" style={linkStyle} onClick={() => openFlashcard(post)}><ExternalLink size={14} /> Mở FlashCard{post.flashcard_title ? `: ${post.flashcard_title}` : ''}</button>}</div>}
         </div>
       </article>)}
@@ -253,8 +251,8 @@ const modalHint = { color: 'var(--color-ink-muted)', margin: '16px 22px 8px' };
 const categoryOption = { width: 'calc(100% - 44px)', margin: '0 22px 10px', padding: '14px 12px', display: 'flex', alignItems: 'center', gap: 12, textAlign: 'left', border: '1px solid var(--color-border)', borderRadius: 10, background: 'var(--color-surface)', color: 'var(--color-ink)', cursor: 'pointer' };
 const categoryDescription = { display: 'block', color: 'var(--color-ink-muted)', fontSize: 13, marginTop: 3 };
 const forumTableStyle = { background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 14, maxHeight: 560, overflowY: 'auto', overflowX: 'auto', boxShadow: 'var(--shadow-md)' };
-const forumTableHeader = { position: 'sticky', top: 0, zIndex: 2, display: 'grid', gridTemplateColumns: 'minmax(300px, 1fr) 110px 80px 80px 100px 150px', gap: 10, alignItems: 'center', padding: '12px 16px', background: 'var(--color-primary-card)', color: 'var(--color-primary-dark)', fontSize: 13, fontWeight: 700 };
-const cardStyle = { display: 'grid', gridTemplateColumns: 'minmax(300px, 1fr) 110px 80px 80px 100px 150px', gap: 10, alignItems: 'center', background: 'var(--color-surface)', borderTop: '1px solid var(--color-border)', padding: '13px 16px', margin: 0, color: 'var(--color-ink)' };
+const forumTableHeader = { position: 'sticky', top: 0, zIndex: 2, display: 'grid', gridTemplateColumns: 'minmax(300px, 2.5fr) minmax(95px, .8fr) minmax(100px, .8fr) minmax(145px, 1fr)', gap: 10, alignItems: 'center', padding: '12px 16px', background: 'var(--color-primary-card)', color: 'var(--color-primary-dark)', fontSize: 11, fontWeight: 800 };
+const cardStyle = { display: 'grid', gridTemplateColumns: 'minmax(300px, 2.5fr) minmax(95px, .8fr) minmax(100px, .8fr) minmax(145px, 1fr)', gap: 10, alignItems: 'center', background: 'var(--color-surface)', borderTop: '1px solid var(--color-border)', padding: '13px 16px', margin: 0, color: 'var(--color-ink)' };
 const topicCell = { display: 'flex', alignItems: 'center', gap: 10, minWidth: 0, paddingBottom: 10 };
 const tableCell = { color: 'var(--color-primary-dark)', fontSize: 13, display: 'flex', alignItems: 'center', gap: 5, minWidth: 0 };
 const forumBadge = { color: 'var(--color-primary-dark)', whiteSpace: 'nowrap' };
@@ -263,6 +261,9 @@ const postBody = { gridColumn: '1 / -1', minWidth: 0 };
 const rowNumber = { color: 'var(--color-ink-muted)', width: 22, textAlign: 'center', fontSize: 13 };
 const avatarStyle = { width: 30, height: 30, borderRadius: '50%', background: 'var(--color-primary)', color: '#fff', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, flexShrink: 0 };
 const topicMeta = { display: 'block', color: 'var(--color-primary-dark)', fontSize: 12, marginTop: 4 };
+const subjectLine = { fontSize: 11, color: 'var(--color-ink-muted)', marginBottom: 4 };
+const topicTitle = { display: 'block', color: 'var(--color-ink)', fontSize: 15, lineHeight: 1.35, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' };
+const topicExcerpt = { margin: '3px 0 0', color: 'var(--color-ink-muted)', fontSize: 11, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' };
 const emptyStyle = { background: 'var(--color-surface)', borderRadius: 14, padding: 48, textAlign: 'center', color: 'var(--color-ink-muted)' };
 const tagStyle = { background: '#203147', color: '#72b3ff', borderRadius: 999, padding: '5px 10px', fontSize: 12, fontWeight: 700 };
 const linkStyle = { border: 0, background: '#163a42', color: '#5fe1d3', borderRadius: 999, padding: '5px 10px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 5, cursor: 'pointer' };
