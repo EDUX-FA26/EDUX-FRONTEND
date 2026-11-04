@@ -152,6 +152,9 @@ export default function ForumPage() {
         <select value={form.flashcardDeckId} onChange={(e) => setForm({ ...form, flashcardDeckId: e.target.value })} style={inputStyle}><option value="">Không gắn FlashCard</option>{decks.map((d) => <option key={d.id} value={d.id}>{d.title}{d.subject_name ? ` — ${d.subject_name}` : ''}</option>)}</select>
         <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}><button type="button" className="btn" onClick={() => setShowComposer(false)}>Hủy</button><button className="btn btn-primary" disabled={saving}>{saving ? 'Đang đăng...' : 'Đăng bài'}</button></div>
       </form>}
+      <form onSubmit={(event) => { event.preventDefault(); setFilters((prev) => ({ ...prev, page: 1 })); }} style={quickSearchStyle}>
+        <input value={filters.q} onChange={(e) => setFilters((prev) => ({ ...prev, q: e.target.value, page: 1 }))} placeholder="Tìm kiếm nhanh theo từ khóa..." aria-label="Tìm kiếm nhanh theo từ khóa" style={quickSearchInputStyle} />
+      </form>
       {loading ? <div style={{ padding: 32, textAlign: 'center', color: '#aeb9c8' }}>Đang tải bài đăng...</div> : posts.length === 0 ? <div style={emptyStyle}>Chưa có bài đăng nào.</div> : <div style={forumTableStyle}>
         <div style={forumTableHeader}><span>Chủ đề</span><span>Forum</span><span>Reply</span><span>View</span><span>Ngày</span><span>Author</span></div>
         {posts.map((post, index) => <article key={post.id} style={cardStyle}>
@@ -171,10 +174,6 @@ export default function ForumPage() {
       </article>)}
       </div>}
       {!loading && totalPages > 1 && <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 10, marginTop: 20 }}><button type="button" className="btn" disabled={filters.page <= 1} onClick={() => setFilters((prev) => ({ ...prev, page: prev.page - 1 }))}>Trước</button><span>Trang {filters.page} / {totalPages}</span><button type="button" className="btn" disabled={filters.page >= totalPages} onClick={() => setFilters((prev) => ({ ...prev, page: prev.page + 1 }))}>Sau</button></div>}
-      <form onSubmit={(event) => { event.preventDefault(); setFilters((prev) => ({ ...prev, page: 1 })); }} style={quickSearchStyle}>
-        <div style={{ position: 'relative', flex: 1 }}><Search size={17} style={{ position: 'absolute', left: 12, top: 12, color: 'var(--color-primary-dark)' }} /><input value={filters.q} onChange={(e) => setFilters((prev) => ({ ...prev, q: e.target.value }))} placeholder="Tìm kiếm nhanh theo từ khóa..." aria-label="Tìm kiếm nhanh theo từ khóa" style={{ ...inputStyle, paddingLeft: 36, margin: 0 }} /></div>
-        <button className="btn btn-primary" type="submit"><Search size={16} /> Tìm kiếm</button>
-      </form>
       </section>
       <aside style={profileCard}>
         <div style={profileTop}><div style={profileAvatar}>{(user?.full_name || user?.email || 'E')[0].toUpperCase()}</div><div style={{ minWidth: 0 }}><strong style={{ color: 'var(--color-ink)', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{profileStats?.display_name || user?.full_name || user?.email || 'EDUX User'}</strong><span style={{ color: 'var(--color-ink-muted)', fontSize: 13 }}>{user?.role === 'lecturer' ? 'Giảng viên' : user?.role === 'admin' ? 'Quản trị viên' : 'Sinh viên'}</span></div></div>
@@ -193,7 +192,8 @@ const profileTop = { display: 'flex', alignItems: 'center', gap: 12, paddingBott
 const profileAvatar = { width: 52, height: 52, borderRadius: '50%', background: 'var(--color-primary)', color: '#fff', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 800, flexShrink: 0 };
 const statRow = { display: 'flex', justifyContent: 'space-between', padding: '9px 0', color: 'var(--color-ink-muted)' };
 const typeBadge = { background: 'var(--color-primary-card)', color: 'var(--color-primary-dark)', borderRadius: 999, padding: '4px 9px', fontSize: 12 };
-const quickSearchStyle = { display: 'flex', gap: 8, alignItems: 'center', background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 14, padding: 12, marginTop: 18 };
+const quickSearchStyle = { width: 'min(100%, 375px)', boxSizing: 'border-box', background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 12, padding: 8, margin: '0 0 14px' };
+const quickSearchInputStyle = { width: '100%', boxSizing: 'border-box', border: 0, outline: 0, borderRadius: 9, padding: '11px 14px', font: 'inherit', background: 'var(--color-primary-card)', color: 'var(--color-ink)' };
 const forumTableStyle = { background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 14, maxHeight: 560, overflowY: 'auto', overflowX: 'auto', boxShadow: 'var(--shadow-md)' };
 const forumTableHeader = { position: 'sticky', top: 0, zIndex: 2, display: 'grid', gridTemplateColumns: 'minmax(300px, 1fr) 110px 80px 80px 100px 150px', gap: 10, alignItems: 'center', padding: '12px 16px', background: 'var(--color-primary-card)', color: 'var(--color-primary-dark)', fontSize: 13, fontWeight: 700 };
 const cardStyle = { display: 'grid', gridTemplateColumns: 'minmax(300px, 1fr) 110px 80px 80px 100px 150px', gap: 10, alignItems: 'center', background: 'var(--color-surface)', borderTop: '1px solid var(--color-border)', padding: '13px 16px', margin: 0, color: 'var(--color-ink)' };
