@@ -15,6 +15,7 @@ import LecturerAcademicEvaluation, {
 import SubmissionService from '../../services/submission.service';
 import AssignmentService from '../../services/assignment.service';
 import GradingService from '../../services/grading.service';
+import TopicService from '../../services/topic.service';
 import MockSubmissionService, { parseZipFileToTree, MOCK_ZIP_TREE_CASE_1 } from '../../services/mockSubmissionService';
 import { SubmissionFile } from '../../types/submission';
 import { normalizeAuditData } from '../../helper/aiAuditHelper';
@@ -26,6 +27,8 @@ export default function LecturerGradingPage() {
 
   const [loading, setLoading] = useState<boolean>(true);
   const [studentInfo, setStudentInfo] = useState<StudentInfo>(DEFAULT_STUDENT);
+  const [topics, setTopics] = useState<any[]>([]);
+  const [isLoadingTopics, setIsLoadingTopics] = useState<boolean>(false);
   const stateData = location.state as any;
   const initialCourseName =
     stateData?.courseTitle ||
@@ -42,6 +45,7 @@ export default function LecturerGradingPage() {
     assignmentTitle: stateData?.assignmentTitle || DEFAULT_COURSE_INFO.assignmentTitle,
     classId: stateData?.class_id || stateData?.classId,
     assignmentId: assignmentId || stateData?.assignmentId,
+    subjectId: stateData?.subject_id || stateData?.subjectId,
   });
   const [submissionFile, setSubmissionFile] = useState<SubmissionCodeFile>({
     name: 'SE18D01_TranThiB_BackendArchitecture.ts',
@@ -78,6 +82,8 @@ export default function LecturerGradingPage() {
           setResolvedAssignmentId(stateData.assignment_id || stateData.assignmentId);
         }
 
+        let resolvedSubjectId: string | undefined = stateData?.subject_id || stateData?.subjectId;
+
         // 1. Load Assignment info
         if (assignmentId && !assignmentId.startsWith('asm-')) {
           try {
@@ -95,6 +101,14 @@ export default function LecturerGradingPage() {
                 stateData?.subjectName ||
                 'Software Architecture and Design';
 
+              resolvedSubjectId =
+                assign.subject_id ||
+                assign.subjectId ||
+                assign.subject?.id ||
+                assign.class?.subject_id ||
+                assign.class?.subjectId ||
+                resolvedSubjectId;
+
               setCourseInfo({
                 courseCode: assign.subject_code || assign.class_code || assign.course_code || stateData?.subjectCode || stateData?.classCode || 'SE1801',
                 courseTitle: resolvedCourseName,
@@ -104,7 +118,21 @@ export default function LecturerGradingPage() {
                 assignmentTitle: assign.title || stateData?.assignmentTitle || 'Backend Architecture C4 Model',
                 classId: assign.class_id || assign.classId || stateData?.class_id || stateData?.classId,
                 assignmentId: assignmentId || assign.id,
+                subjectId: resolvedSubjectId,
               });
+
+              if (resolvedSubjectId) {
+                setIsLoadingTopics(true);
+                try {
+                  const tRes = await TopicService.getTopics(resolvedSubjectId);
+                  const list = tRes?.data || tRes || [];
+                  setTopics(Array.isArray(list) ? list : []);
+                } catch (tErr) {
+                  console.warn('[ART-AI] Failed to load topics for subject:', tErr);
+                } finally {
+                  setIsLoadingTopics(false);
+                }
+              }
             }
           } catch (e) {
             console.warn('Assignment load failed, using fallback/state', e);
@@ -123,6 +151,30 @@ export default function LecturerGradingPage() {
               if (subData.assignment_id || subData.assignmentId) {
                 setResolvedAssignmentId(subData.assignment_id || subData.assignmentId);
               }
+
+              if (!resolvedSubjectId) {
+                const fallbackSubjectId =
+                  subData.subject_id ||
+                  subData.subjectId ||
+                  subData.assignment?.subject_id ||
+                  subData.assignment?.subjectId ||
+                  subData.assignment?.class?.subject_id;
+                if (fallbackSubjectId) {
+                  resolvedSubjectId = fallbackSubjectId;
+                  setCourseInfo((prev) => ({ ...prev, subjectId: fallbackSubjectId }));
+                  setIsLoadingTopics(true);
+                  try {
+                    const tRes = await TopicService.getTopics(fallbackSubjectId);
+                    const list = tRes?.data || tRes || [];
+                    setTopics(Array.isArray(list) ? list : []);
+                  } catch (e) {
+                    console.warn('[ART-AI] Failed to load topics from subData fallback:', e);
+                  } finally {
+                    setIsLoadingTopics(false);
+                  }
+                }
+              }
+
               // Student Info
               setStudentInfo({
                 name: subData.student_name || stateData?.student_name || 'Tran Thi B',
@@ -680,6 +732,8 @@ export default function LecturerGradingPage() {
         file={currentFile}
         aiDeclarations={aiDeclarations}
         auditData={auditRawData}
+        topics={topics}
+        isLoadingTopics={isLoadingTopics}
         initialRubrics={initialScores}
         initialFeedback={initialFeedback}
         onBack={handleBack}
