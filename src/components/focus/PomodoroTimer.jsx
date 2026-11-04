@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, memo } from 'react';
 import { Play, Pause, X, Check, WifiOff } from 'lucide-react';
 import { PHASE_LABEL, formatClock } from '../../helper/focusFormat';
-export default function PomodoroTimer({
+
+function PomodoroTimer({
   session,
   idleConfig,
   remainingMs,
+  elapsedMs = 0,
   progress,
   busy,
   online,
@@ -13,13 +15,13 @@ export default function PomodoroTimer({
   onStart,
   onPause,
   onResume,
+  onAdjust,
   onResetPhase,
   onFinish,
   onCancel,
-  timerMode = 'pomodoro', // 'classic' | 'pomodoro' | 'stopwatch'
+  timerMode = 'pomodoro', // 'pomodoro' | 'stopwatch'
   customGoalTitle = '',
 }) {
-  const [adjustMs, setAdjustMs] = useState(0);
   const [confirming, setConfirming] = useState(null); // 'cancel' | 'finish' | null
 
   const active = Boolean(session);
@@ -29,30 +31,29 @@ export default function PomodoroTimer({
 
   // Tính thời gian hiển thị:
   // - Nếu là Stopwatch: đếm tiến (count-up) từ 0
-  // - Nếu là Pomodoro / Classic: đếm lùi (countdown)
-  const isStopwatch = timerMode === 'stopwatch';
+  // - Nếu là Pomodoro: đếm lùi (countdown)
+  const isStopwatch = (session?.timerMode || timerMode) === 'stopwatch';
   const baseMs = active ? remainingMs : (idleConfig?.focusMinutes || 25) * 60_000;
-  const elapsedMs = session?.phaseElapsedMs || 0;
+  const currentElapsed = elapsedMs || session?.phaseElapsedMs || 0;
 
   const displayMs = isStopwatch
-    ? Math.max(0, elapsedMs + adjustMs)
-    : Math.max(0, baseMs + adjustMs);
+    ? Math.max(0, currentElapsed)
+    : Math.max(0, baseMs);
 
-  const title = customGoalTitle || session?.todoTitle || (
+  const title = customGoalTitle || session?.note || session?.todoTitle || (
     isStopwatch
       ? 'Stopwatch'
       : !active
       ? 'Focus Session'
       : waitingNextPhase
       ? `Sẵn sàng: ${PHASE_LABEL[phase]}`
-      : PHASE_LABEL[phase] || 'Tutorial'
+      : PHASE_LABEL[phase] || 'Focus'
   );
 
   const handleTogglePlay = () => {
     if (!active) {
       const minutes = Math.max(1, Math.round(displayMs / 60_000));
-      onStart?.({ focusMinutes: minutes });
-      setAdjustMs(0);
+      onStart?.({ focusMinutes: minutes, timerMode: isStopwatch ? 'stopwatch' : 'pomodoro' });
     } else if (running) {
       onPause?.();
     } else {
@@ -61,19 +62,20 @@ export default function PomodoroTimer({
   };
 
   const handleMinusMinute = () => {
-    if (displayMs > 60_000) {
-      setAdjustMs((prev) => prev - 60_000);
+    if (active) {
+      onAdjust?.(-1);
     }
   };
 
   const handleAddMinute = () => {
-    setAdjustMs((prev) => prev + 60_000);
+    if (active) {
+      onAdjust?.(1);
+    }
   };
 
   const handleCancel = () => {
     if (confirming === 'cancel') {
       setConfirming(null);
-      setAdjustMs(0);
       if (active) onCancel?.();
     } else {
       setConfirming('cancel');
@@ -84,7 +86,6 @@ export default function PomodoroTimer({
   const handleFinish = () => {
     if (confirming === 'finish') {
       setConfirming(null);
-      setAdjustMs(0);
       if (active) onFinish?.();
     } else {
       setConfirming('finish');
@@ -94,7 +95,7 @@ export default function PomodoroTimer({
 
   return (
     <div className="flex flex-col items-center select-none animate-fade-in">
-      {/* Tiêu đề Focus / Tutorial / Goal (chuẩn theo ảnh 1 & 2) */}
+      {/* Tiêu đề Focus / Stopwatch / Goal */}
       <div className="text-sm font-semibold text-white/80 tracking-wide mb-1.5 truncate max-w-[240px] text-center drop-shadow-sm">
         {title}
       </div>
@@ -121,20 +122,20 @@ export default function PomodoroTimer({
           {formatClock(displayMs)}
         </div>
 
-        {/* Hàng điều khiển 5 nút: 1:00  ✕  ❚❚  ✓  +1:00 */}
+        {/* Hàng điều khiển 5 nút: -1:00  ✕  ❚❚/▶  ✓  +1:00 */}
         <div className="w-full flex items-center justify-between text-white/50 px-1 pt-1.5">
           {/* -1:00 */}
           <button
             type="button"
             onClick={handleMinusMinute}
-            disabled={busy || displayMs <= 60_000}
+            disabled={busy || !active || (!isStopwatch && displayMs <= 60_000)}
             title="Giảm 1 phút"
             className="text-xs font-medium text-white/40 hover:text-white transition disabled:opacity-20 cursor-pointer select-none tabular-nums"
           >
             -1:00
           </button>
 
-          {/* ✕ (Huỷ / Bỏ phiên / Đặt lại) */}
+          {/* ✕ (Huỷ / Bỏ phiên) */}
           <button
             type="button"
             onClick={handleCancel}
@@ -164,7 +165,7 @@ export default function PomodoroTimer({
             )}
           </button>
 
-          {/* ✓ (Hoàn thành pha) */}
+          {/* ✓ (Hoàn thành pha / phiên) */}
           <button
             type="button"
             onClick={handleFinish}
@@ -183,7 +184,7 @@ export default function PomodoroTimer({
           <button
             type="button"
             onClick={handleAddMinute}
-            disabled={busy}
+            disabled={busy || !active}
             title="Thêm 1 phút"
             className="text-xs font-medium text-white/40 hover:text-white transition disabled:opacity-20 cursor-pointer select-none tabular-nums"
           >
@@ -212,3 +213,5 @@ export default function PomodoroTimer({
     </div>
   );
 }
+
+export default memo(PomodoroTimer);

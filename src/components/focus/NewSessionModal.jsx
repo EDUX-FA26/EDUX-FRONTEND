@@ -2,9 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   Clock,
   Volume2,
-  Play,
   X,
-  ChevronDown,
 } from 'lucide-react';
 
 /**
@@ -12,7 +10,7 @@ import {
  * Tự động zoom (scale) thông minh theo kích thước màn hình / chiều cao phòng học:
  * - Khi màn hình laptop nhỏ hoặc chiều cao thấp: Tự động co tỉ lệ zoom (0.6x - 1.0x) để hiển thị trọn vẹn 100%
  * - Không bao giờ bị tràn hay bị cắt nút Cancel / Confirm ở đáy
- * - Đầy đủ 3 chế độ: Pomodoro | Classic | Stopwatch
+ * - 2 chế độ: Pomodoro | Stopwatch
  */
 export default function NewSessionModal({
   isOpen,
@@ -24,7 +22,7 @@ export default function NewSessionModal({
 }) {
   if (!isOpen) return null;
 
-  // 3 Chế độ: 'pomodoro' | 'classic' | 'stopwatch'
+  // 2 Chế độ: 'pomodoro' | 'stopwatch'
   const [timerMode, setTimerMode] = useState('pomodoro');
   const [focusGoal, setFocusGoal] = useState(currentTodoTitle || 'Focus');
 
@@ -34,10 +32,6 @@ export default function NewSessionModal({
   const [longBreak, setLongBreak] = useState(idleConfig?.longBreakMinutes || 15);
   const [longBreakEvery, setLongBreakEvery] = useState(idleConfig?.longBreakEvery || 4);
   const [autoStart, setAutoStart] = useState(idleConfig?.autoStartNext || false);
-
-  // Cấu hình Classic / Âm thanh
-  const [alarmType, setAlarmType] = useState('Digital Clock');
-  const [alarmVolume, setAlarmVolume] = useState(80);
 
   // Tự động tính toán scale zoom theo kích thước khung phòng học
   const containerRef = useRef(null);
@@ -51,8 +45,8 @@ export default function NewSessionModal({
       const vh = container ? container.clientHeight : window.innerHeight;
       const vw = container ? container.clientWidth : window.innerWidth;
 
-      // Chiều cao thiết kế chuẩn của NewSessionModal là ~495px, chiều rộng ~420px
-      const targetHeight = 495;
+      // Chiều cao thiết kế chuẩn gọn gàng của NewSessionModal là ~425px, chiều rộng ~420px
+      const targetHeight = 425;
       const targetWidth = 420;
 
       // Chừa đệm an toàn 24px để modal luôn lọt thỏm đẹp mắt
@@ -65,7 +59,7 @@ export default function NewSessionModal({
 
       if (factor < 1) {
         // Tự động zoom nhỏ lại mượt mà khi màn hình thấp
-        setScale(Math.max(0.55, Number(factor.toFixed(3))));
+        setScale(Math.max(0.6, Number(factor.toFixed(3))));
       } else {
         setScale(1);
       }
@@ -89,7 +83,6 @@ export default function NewSessionModal({
   // Tooltip mô tả chế độ (theo nguyên bản Virtual Cottage)
   const MODE_DESCRIPTIONS = {
     pomodoro: 'Helps boost focus by breaking work into intervals, typically 25 minutes of focused work followed by 5-minute break',
-    classic: 'Counts down from a set time, great for staying focused within a limit',
     stopwatch: 'Counts up until stopped, great for tracking how long a task takes',
   };
 
@@ -102,7 +95,6 @@ export default function NewSessionModal({
       longBreakMinutes: Number(longBreak),
       longBreakEvery: Number(longBreakEvery),
       autoStartNext: autoStart,
-      alarmVolume: alarmVolume / 100,
     });
     onClose();
   };
@@ -154,8 +146,8 @@ export default function NewSessionModal({
             <button
               type="button"
               onClick={onPlayChime}
-              title="Nghe thử âm báo"
-              className="flex h-8.5 w-8.5 items-center justify-center rounded-xl text-[#6d584c] transition-colors hover:bg-[#ecdfd0] hover:text-[#45362e] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#bd8055]"
+              title="Nghe thử chuông báo"
+              className="flex h-8.5 w-8.5 items-center justify-center rounded-xl text-[#6d584c] transition-colors hover:bg-[#ecdfd0] hover:text-[#45362e] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#bd8055] cursor-pointer"
             >
               <Volume2 size={18} />
             </button>
@@ -164,7 +156,7 @@ export default function NewSessionModal({
               type="button"
               onClick={onClose}
               title="Đóng bảng cài đặt"
-              className="flex h-8.5 w-8.5 shrink-0 items-center justify-center rounded-xl bg-transparent text-[#8b7565] transition-colors hover:bg-[#ecdfd0] hover:text-[#45362e] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#bd8055]"
+              className="flex h-8.5 w-8.5 shrink-0 items-center justify-center rounded-xl bg-transparent text-[#8b7565] transition-colors hover:bg-[#ecdfd0] hover:text-[#45362e] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#bd8055] cursor-pointer"
             >
               <X size={18} strokeWidth={2} />
             </button>
@@ -200,14 +192,13 @@ export default function NewSessionModal({
               Choose Timer
             </h4>
             <span className="text-[11px] text-[#ad9886]">
-              3 modes
+              2 modes
             </span>
           </div>
 
-          {/* 3 nút Mode: Classic | Pomodoro | Stopwatch */}
-          <div className="grid grid-cols-3 gap-2">
+          {/* 2 nút Mode: Pomodoro | Stopwatch */}
+          <div className="grid grid-cols-2 gap-2.5">
             {[
-              { id: 'classic', label: 'Classic' },
               { id: 'pomodoro', label: 'Pomodoro' },
               { id: 'stopwatch', label: 'Stopwatch' },
             ].map((m) => {
@@ -218,7 +209,7 @@ export default function NewSessionModal({
                   type="button"
                   onClick={() => setTimerMode(m.id)}
                   className={`
-                    h-9.5 rounded-2xl text-xs sm:text-[13px] font-bold transition-all text-center cursor-pointer shadow-2xs flex items-center justify-center
+                    h-10 rounded-2xl text-xs sm:text-[13px] font-bold transition-all text-center cursor-pointer shadow-2xs flex items-center justify-center
                     ${active
                       ? 'bg-[#74b9be] text-white shadow-sm ring-1 ring-[#74b9be]'
                       : 'bg-[#ede0d0] text-[#5c493c] hover:bg-[#e4d4bf] hover:text-[#45362e]'
@@ -253,7 +244,7 @@ export default function NewSessionModal({
           >
             {/* 1. CHẾ ĐỘ POMODORO */}
             {timerMode === 'pomodoro' && (
-              <div className="space-y-2.5">
+              <div className="space-y-3">
                 {/* Hàng 1: 3 cột Focus Time | Short Break | Long Break */}
                 <div className="grid grid-cols-3 gap-2 text-center">
                   <div>
@@ -335,108 +326,13 @@ export default function NewSessionModal({
                     <option value={6}>6</option>
                   </select>
                 </div>
-
-                {/* Hàng 4: Alarm Dropdown + Nút nghe thử (▶) */}
-                <div className="flex items-center justify-between text-xs font-semibold text-[#514137]">
-                  <span>Alarm</span>
-                  <div className="flex items-center gap-1.5">
-                    <div className="relative">
-                      <select
-                        value={alarmType}
-                        onChange={(e) => setAlarmType(e.target.value)}
-                        className="h-8.5 py-1 pl-3 pr-7 rounded-xl bg-[#ff9f24] hover:bg-[#f09218] text-white font-bold text-xs outline-none cursor-pointer appearance-none transition shadow-xs"
-                      >
-                        <option value="Digital Clock">Digital Clock</option>
-                        <option value="Chime Bell">Chime Bell</option>
-                        <option value="Lofi Beat">Lofi Beat</option>
-                      </select>
-                      <ChevronDown size={13} className="absolute right-2 top-1/2 -translate-y-1/2 text-white pointer-events-none" />
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={onPlayChime}
-                      title="Nghe thử âm báo"
-                      className="w-8.5 h-8.5 rounded-full bg-[#ff9f24] hover:bg-[#f09218] text-white flex items-center justify-center hover:scale-105 active:scale-95 transition shadow-xs cursor-pointer"
-                    >
-                      <Play size={12} fill="currentColor" className="ml-0.5" />
-                    </button>
-                  </div>
-                </div>
               </div>
             )}
 
-            {/* 2. CHẾ ĐỘ CLASSIC */}
-            {timerMode === 'classic' && (
-              <div className="space-y-3">
-                {/* Hàng 1: Focus Time */}
-                <div className="flex items-center justify-between text-xs font-semibold text-[#514137]">
-                  <span>Focus Time</span>
-                  <select
-                    value={focusTime}
-                    onChange={(e) => setFocusTime(Number(e.target.value))}
-                    className="w-28 h-8.5 px-3 rounded-xl bg-[#ede0d0] hover:bg-[#e4d4bf] border border-[#decaba] text-[#45362e] font-bold text-xs text-center outline-none cursor-pointer appearance-none transition shadow-2xs"
-                  >
-                    <option value={15}>15m</option>
-                    <option value={20}>20m</option>
-                    <option value={25}>25m</option>
-                    <option value={30}>30m</option>
-                    <option value={45}>45m</option>
-                    <option value={60}>60m</option>
-                    <option value={90}>90m</option>
-                  </select>
-                </div>
-
-                {/* Hàng 2: Alarm Dropdown + Nút nghe thử (▶) */}
-                <div className="flex items-center justify-between text-xs font-semibold text-[#514137]">
-                  <span>Alarm</span>
-                  <div className="flex items-center gap-1.5">
-                    <div className="relative">
-                      <select
-                        value={alarmType}
-                        onChange={(e) => setAlarmType(e.target.value)}
-                        className="h-8.5 py-1 pl-3 pr-7 rounded-xl bg-[#ff9f24] hover:bg-[#f09218] text-white font-bold text-xs outline-none cursor-pointer appearance-none transition shadow-xs"
-                      >
-                        <option value="Digital Clock">Digital Clock</option>
-                        <option value="Chime Bell">Chime Bell</option>
-                        <option value="Lofi Beat">Lofi Beat</option>
-                      </select>
-                      <ChevronDown size={13} className="absolute right-2 top-1/2 -translate-y-1/2 text-white pointer-events-none" />
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={onPlayChime}
-                      title="Nghe thử âm báo"
-                      className="w-8.5 h-8.5 rounded-full bg-[#ff9f24] hover:bg-[#f09218] text-white flex items-center justify-center hover:scale-105 active:scale-95 transition shadow-xs cursor-pointer"
-                    >
-                      <Play size={12} fill="currentColor" className="ml-0.5" />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Hàng 3: Alarm Volume Slider */}
-                <div className="flex items-center justify-between text-xs font-semibold text-[#514137]">
-                  <span>Alarm Volume</span>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="range"
-                      min="0"
-                      max="100"
-                      value={alarmVolume}
-                      onChange={(e) => setAlarmVolume(Number(e.target.value))}
-                      className="w-32 h-1.5 bg-[#dfd2c4] accent-[#765542] rounded-lg cursor-pointer"
-                    />
-                    <span className="text-xs font-mono text-[#786150] w-7 text-right font-bold">{alarmVolume}%</span>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* 3. CHẾ ĐỘ STOPWATCH */}
+            {/* 2. CHẾ ĐỘ STOPWATCH */}
             {timerMode === 'stopwatch' && (
-              <div className="py-5 px-3 text-center text-xs text-[#6e5848] leading-relaxed animate-fade-in italic">
-                "Just a simple stopwatch, which does not need any settings. But nevertheless an effective tool for time measurement!"
+              <div className="py-6 px-3 text-center text-xs text-[#6e5848] leading-relaxed animate-fade-in italic">
+                "Just a simple stopwatch, which does not need any settings. An effective tool for tracking focused work time!"
               </div>
             )}
           </div>

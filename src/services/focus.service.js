@@ -34,6 +34,10 @@ const FocusService = {
     const response = await api.post(`/focus/sessions/${id}/resume`, {});
     return response.data;
   },
+  async adjustSession(id, deltaMinutes) {
+    const response = await api.post(`/focus/sessions/${id}/adjust`, { deltaMinutes });
+    return response.data;
+  },
   async finishSession(id, payload = {}) {
     const response = await api.post(`/focus/sessions/${id}/finish`, payload);
     return response.data;

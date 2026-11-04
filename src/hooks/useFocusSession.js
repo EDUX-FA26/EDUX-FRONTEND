@@ -142,9 +142,21 @@ export function useFocusSession({ onPhaseChange } = {}) {
 
   const computeRemaining = (s) => {
     if (!s) return 0;
+    if (s.timerMode === 'stopwatch') return 0;
     if (s.status !== 'IN_PROGRESS') return s.phaseRemainingMs;
     const serverNow = Date.now() + offsetRef.current;
     return Math.max(0, s.phaseRemainingMs - (serverNow - Date.parse(s.serverNow)));
+  };
+
+  const computeElapsed = (s) => {
+    if (!s) return 0;
+    let elapsed = Number(s.phaseElapsedMs || 0);
+    if (s.status === 'IN_PROGRESS' && s.resumedAt) {
+      const serverNow = Date.now() + offsetRef.current;
+      const resumedMs = Date.parse(s.resumedAt);
+      elapsed += Math.max(0, serverNow - resumedMs);
+    }
+    return elapsed;
   };
 
   // Vòng lặp VẼ lại UI + phát hiện hết pha → hỏi server (không tự chốt ở client)
@@ -157,9 +169,17 @@ export function useFocusSession({ onPhaseChange } = {}) {
 
     const id = setInterval(() => {
       const s = sessionRef.current;
-      const remaining = computeRemaining(s);
       setTick((t) => t + 1);
 
+      if (s?.timerMode === 'stopwatch') {
+        const elapsed = computeElapsed(s);
+        const mm = String(Math.floor(elapsed / 60000)).padStart(2, '0');
+        const ss = String(Math.floor((elapsed % 60000) / 1000)).padStart(2, '0');
+        document.title = `${mm}:${ss} • Stopwatch`;
+        return;
+      }
+
+      const remaining = computeRemaining(s);
       const mm = String(Math.floor(remaining / 60000)).padStart(2, '0');
       const ss = String(Math.floor((remaining % 60000) / 1000)).padStart(2, '0');
       document.title = `${mm}:${ss} • Focus`;
@@ -245,6 +265,10 @@ export function useFocusSession({ onPhaseChange } = {}) {
     (todoId) => id && run(() => FocusService.patchSession(id, { todoId: todoId || null }), { onError: resyncOnConflict }),
     [id, run, resyncOnConflict]
   );
+  const adjust = useCallback(
+    (deltaMinutes) => id && run(() => FocusService.adjustSession(id, deltaMinutes), { onError: resyncOnConflict }),
+    [id, run, resyncOnConflict]
+  );
 
   const remainingMs = computeRemaining(session);
   const durationMs = session?.phaseDurationMs || 0;
@@ -265,6 +289,7 @@ export function useFocusSession({ onPhaseChange } = {}) {
     error,
     online,
     remainingMs,
+    elapsedMs: computeElapsed(session),
     progress,
     liveFocusSeconds,
     clearError: () => setError(null),
@@ -272,6 +297,7 @@ export function useFocusSession({ onPhaseChange } = {}) {
     start,
     pause,
     resume,
+    adjust,
     finish,
     cancel,
     resetPhase,

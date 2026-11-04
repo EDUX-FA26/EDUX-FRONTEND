@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { memo } from 'react';
 import {
   CloudRain,
   Wind,
@@ -43,7 +43,7 @@ const SCENE_ICON = {
   'night-desk': Moon,
 };
 
-export default function SoundMixerPanel({
+function SoundMixerPanel({
   prefs,
   catalog,
   audioReady,
@@ -332,3 +332,5 @@ export default function SoundMixerPanel({
     </div>
   );
 }
+
+export default memo(SoundMixerPanel);
