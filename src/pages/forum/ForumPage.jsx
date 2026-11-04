@@ -140,15 +140,6 @@ export default function ForumPage() {
           return <button key={label} type="button" onClick={() => setFilters((prev) => ({ ...prev, type: value === 'popular' ? '' : value, sort: value === 'popular' ? 'popular' : 'latest', page: 1 }))} style={{ border: 0, borderBottom: active ? '3px solid #f27024' : '3px solid transparent', background: 'transparent', padding: '12px 18px', fontWeight: 800, color: active ? '#202938' : '#68738a', cursor: 'pointer', whiteSpace: 'nowrap' }}>{label}</button>;
         })}
       </div>
-      <form onSubmit={(event) => { event.preventDefault(); setFilters((prev) => ({ ...prev, page: 1 })); }} style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 16, padding: 14, marginBottom: 18 }}>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <div style={{ flex: '2 1 260px', position: 'relative' }}><Search size={17} style={{ position: 'absolute', left: 12, top: 12, color: '#8c7166' }} /><input value={filters.q} onChange={(e) => setFilters((prev) => ({ ...prev, q: e.target.value }))} placeholder="Tìm theo tiêu đề hoặc nội dung..." style={{ ...inputStyle, paddingLeft: 36, margin: 0 }} /></div>
-          <input value={filters.author} onChange={(e) => setFilters((prev) => ({ ...prev, author: e.target.value }))} placeholder="Tìm theo giảng viên..." style={{ ...inputStyle, flex: '1 1 190px', margin: 0 }} />
-          <select value={filters.classId} onChange={(e) => setFilters((prev) => ({ ...prev, classId: e.target.value, page: 1 }))} style={{ ...inputStyle, flex: '1 1 160px', margin: 0 }}><option value="">Tất cả lớp</option>{classes.map((item) => <option key={item.id} value={item.id}>{item.class_code || item.code || item.name}</option>)}</select>
-          <select value={filters.sort} onChange={(e) => setFilters((prev) => ({ ...prev, sort: e.target.value, page: 1 }))} style={{ ...inputStyle, flex: '1 1 140px', margin: 0 }}><option value="latest">Mới nhất</option><option value="popular">Nhiều lượt xem</option><option value="comments">Nhiều bình luận</option></select>
-          <button className="btn btn-primary" type="submit"><Search size={16} /> Tìm</button>
-        </div>
-      </form>
       {error && <div style={{ color: '#b42318', background: '#fff1f0', borderRadius: 10, padding: '10px 14px', marginBottom: 16 }}>{error}</div>}
       {showComposer && canPost && <form onSubmit={submitPost} style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 16, padding: 20, marginBottom: 20 }}>
         <h3 style={{ marginTop: 0 }}>Tạo bài đăng</h3>
@@ -180,6 +171,10 @@ export default function ForumPage() {
       </article>)}
       </div>}
       {!loading && totalPages > 1 && <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 10, marginTop: 20 }}><button type="button" className="btn" disabled={filters.page <= 1} onClick={() => setFilters((prev) => ({ ...prev, page: prev.page - 1 }))}>Trước</button><span>Trang {filters.page} / {totalPages}</span><button type="button" className="btn" disabled={filters.page >= totalPages} onClick={() => setFilters((prev) => ({ ...prev, page: prev.page + 1 }))}>Sau</button></div>}
+      <form onSubmit={(event) => { event.preventDefault(); setFilters((prev) => ({ ...prev, page: 1 })); }} style={quickSearchStyle}>
+        <div style={{ position: 'relative', flex: 1 }}><Search size={17} style={{ position: 'absolute', left: 12, top: 12, color: 'var(--color-primary-dark)' }} /><input value={filters.q} onChange={(e) => setFilters((prev) => ({ ...prev, q: e.target.value }))} placeholder="Tìm kiếm nhanh theo từ khóa..." aria-label="Tìm kiếm nhanh theo từ khóa" style={{ ...inputStyle, paddingLeft: 36, margin: 0 }} /></div>
+        <button className="btn btn-primary" type="submit"><Search size={16} /> Tìm kiếm</button>
+      </form>
       </section>
       <aside style={profileCard}>
         <div style={profileTop}><div style={profileAvatar}>{(user?.full_name || user?.email || 'E')[0].toUpperCase()}</div><div style={{ minWidth: 0 }}><strong style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{profileStats?.display_name || user?.full_name || user?.email || 'EDUX User'}</strong><span style={{ color: 'var(--color-ink-muted)', fontSize: 13 }}>{user?.role === 'lecturer' ? 'Giảng viên' : user?.role === 'admin' ? 'Quản trị viên' : 'Sinh viên'}</span></div></div>
@@ -198,6 +193,7 @@ const profileTop = { display: 'flex', alignItems: 'center', gap: 12, paddingBott
 const profileAvatar = { width: 52, height: 52, borderRadius: '50%', background: 'var(--color-primary)', color: '#fff', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 800, flexShrink: 0 };
 const statRow = { display: 'flex', justifyContent: 'space-between', padding: '9px 0', color: 'var(--color-ink-muted)' };
 const typeBadge = { background: 'var(--color-primary-card)', color: 'var(--color-primary-dark)', borderRadius: 999, padding: '4px 9px', fontSize: 12 };
+const quickSearchStyle = { display: 'flex', gap: 8, alignItems: 'center', background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 14, padding: 12, marginTop: 18 };
 const forumTableStyle = { background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 14, maxHeight: 560, overflowY: 'auto', overflowX: 'auto', boxShadow: 'var(--shadow-md)' };
 const forumTableHeader = { position: 'sticky', top: 0, zIndex: 2, display: 'grid', gridTemplateColumns: 'minmax(300px, 1fr) 110px 80px 80px 100px 150px', gap: 10, alignItems: 'center', padding: '12px 16px', background: 'var(--color-primary-card)', color: 'var(--color-primary-dark)', fontSize: 13, fontWeight: 700 };
 const cardStyle = { display: 'grid', gridTemplateColumns: 'minmax(300px, 1fr) 110px 80px 80px 100px 150px', gap: 10, alignItems: 'center', background: 'var(--color-surface)', borderTop: '1px solid var(--color-border)', padding: '13px 16px', margin: 0, color: 'var(--color-ink)' };
