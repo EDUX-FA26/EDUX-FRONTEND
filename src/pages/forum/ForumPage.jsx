@@ -175,7 +175,7 @@ export default function ForumPage() {
         {posts.map((post, index) => <article key={post.id} style={cardStyle}>
         <div style={{ ...topicCell, cursor: 'pointer' }} onClick={() => navigate(`/${user?.role || 'student'}/forum/${post.id}`)}><span style={rowNumber}>{(filters.page - 1) * 10 + index + 1}</span><div style={avatarStyle}>{(post.is_anonymous ? '?' : (post.author_name || 'E')[0]).toUpperCase()}</div><div style={{ minWidth: 0, overflow: 'hidden' }}><strong style={{ color: 'var(--color-ink)', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{post.title}</strong><span style={topicMeta}>{post.post_type === 'CONFESSION' ? 'Confession' : 'Hỏi đáp'}{post.subject_code ? ` · ${post.subject_code}` : ''}</span></div></div>
         <span style={tableCell}><span style={forumBadge}>?&nbsp; {post.post_type === 'CONFESSION' ? 'Confession' : 'Thảo luận'}</span></span>
-        <span style={tableCell}>{post.comment_count || 0}</span>
+        <span style={tableCell}>{post.comment_count ?? post.comments_count ?? post.reply_count ?? 0}</span>
         <span style={tableCell}>{post.view_count || 0}</span>
         <time style={tableCell}>{new Date(post.created_at).toLocaleDateString('vi-VN')}</time>
         <span style={{ ...tableCell, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}><span style={avatarSmall}>{(post.is_anonymous ? '?' : (post.author_name || 'E')[0]).toUpperCase()}</span> {post.is_anonymous ? 'Ẩn danh' : (post.author_name || 'EDUX User')}</span>
