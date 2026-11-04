@@ -440,7 +440,18 @@ export function normalizeAuditData(rawData) {
 export function formatCleanVietnamese(text) {
   if (!text || typeof text !== 'string') return text || '';
 
+  const trimmed = text.trim();
+  if (trimmed === 'Khong dat (Fail)' || trimmed === 'Khong dat' || trimmed === 'Chua dat (Fail)' || trimmed === 'Fail') {
+    return 'Kết luận thanh tra: Chưa đạt (Fail / Flagged) - Mức độ rủi ro liêm chính: Trung bình. Quá trình đối soát chéo phát hiện sự sai lệch hoặc thiếu minh bạch giữa mã nguồn thực tế bài nộp và nội dung sinh viên đã kê khai trong nhật ký AI Audit. Khuyến nghị Giảng viên tập trung phỏng vấn sinh viên về các đoạn mã nguồn then chốt và các quyết định kiến trúc được chỉ định trong danh sách câu hỏi vấn đáp Viva bên dưới để kiểm chứng quyền tác giả mã nguồn.';
+  }
+  if (trimmed === 'Dat (Pass)' || trimmed === 'Dat' || trimmed === 'Pass') {
+    return 'Kết luận thanh tra: Đạt (Pass) - Mức độ rủi ro liêm chính: Thấp. Mã nguồn thực tế có cấu trúc phân tầng và giải thuật tương đồng cao với nội dung sinh viên đã giải trình trong nhật ký AI Audit. Giảng viên nên tiến hành vấn đáp sinh viên theo các câu hỏi kỹ thuật bên dưới để củng cố đánh giá về mức độ làm chủ mã nguồn.';
+  }
+
   const viqrMap = [
+    { pattern: /Khong dat \(Fail\)/gi, replace: 'Chưa đạt (Fail / Flagged)' },
+    { pattern: /Khong dat/gi, replace: 'Chưa đạt' },
+    { pattern: /Dat \(Pass\)/gi, replace: 'Đạt (Pass)' },
     { pattern: /B"ai/g, replace: 'Bài' },
     { pattern: /b"ai/g, replace: 'bài' },
     { pattern: /n"op/g, replace: 'nộp' },
