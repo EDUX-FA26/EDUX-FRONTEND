@@ -36,8 +36,6 @@ export default function ForumPostPage() {
     <button type="button" className="btn" onClick={() => navigate(-1)}><ArrowLeft size={16} /> Quay lại diễn đàn</button>
     {error && <div style={errorStyle}>{error}</div>}
     <div style={followRow}><span style={topicBadge}>{post.post_type === 'CONFESSION' ? 'Confession' : 'Hỏi Đáp'}</span><strong style={topicTitle}>{post.subject_code || post.title}</strong><span style={topicMeta}>{post.is_anonymous ? 'Ẩn danh' : (post.author_name || 'EDUX User')} · {new Date(post.created_at).toLocaleDateString('vi-VN')}</span></div>
-    <div style={breadcrumb}>⌂ &nbsp; CỘNG ĐỒNG &nbsp;›&nbsp; <strong>{post.post_type === 'CONFESSION' ? 'Confession' : 'Hỏi đáp'}</strong></div>
-    <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}><button type="button" className="btn">Theo dõi</button></div>
     <article style={postShell}>
       <aside style={authorCard}><div style={authorAvatar}>{(post.is_anonymous ? '?' : (post.author_name || 'E')[0]).toUpperCase()}</div><strong style={authorName}>{post.is_anonymous ? 'Ẩn danh' : (post.author_name || 'EDUX User')}</strong><span style={authorRole}>{post.author_role === 'lecturer' ? 'Giảng viên' : 'Thành viên'}</span><div style={authorStats}><span>Tham gia</span><b>EDUX</b><span>Bài viết</span><b>—</b><span>Reaction</span><b>{post.like_count || 0}</b></div></aside>
       <div style={postContent}><div style={postMetaRow}><span>{new Date(post.created_at).toLocaleDateString('vi-VN')}</span><span>#1</span></div><h1 style={{ margin: '14px 0 8px', fontSize: 20, color: 'var(--color-ink)' }}>{post.title}</h1><p style={{ whiteSpace: 'pre-wrap', lineHeight: 1.8, color: 'var(--color-ink)', margin: 0 }}>{post.content}</p>
