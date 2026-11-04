@@ -32,6 +32,7 @@ import {
   FileCheck2,
   Undo2
 } from 'lucide-react';
+import AssignmentService from '../../services/assignment.service';
 import './StudentAssignmentFlow.css';
 
 /* ==========================================================================
@@ -516,6 +517,33 @@ export const AssignmentOverview: React.FC<AssignmentOverviewProps> = ({
 
   return (
     <div className="space-y-5">
+      {/* Requirements Card: AI Declaration Requirement */}
+      {assignment.aiDeclarationRequired !== false ? (
+        <div className="saf-overview-card bg-amber-50/80 border border-amber-200/90 rounded-2xl p-4 shadow-xs space-y-2">
+          <div className="flex items-center gap-2 text-amber-800 font-bold text-xs uppercase tracking-wide">
+            <Sparkles size={15} className="text-amber-600 shrink-0" />
+            <span>Yêu cầu khai báo AI</span>
+          </div>
+          <p className="text-xs text-amber-900 leading-relaxed font-medium">
+            ⚠️ Bài tập này bắt buộc khai báo minh bạch AI Audit Log (các công cụ và prompt AI sử dụng khi làm bài).
+          </p>
+          <div className="pt-2 border-t border-amber-200/60 flex items-center gap-1.5 text-[11px] text-amber-700">
+            <CheckCircle2 size={13} className="text-amber-600 shrink-0" />
+            <span>Phải hoàn tất ít nhất 1 mục khai báo tương tác AI tại Bước 2</span>
+          </div>
+        </div>
+      ) : (
+        <div className="saf-overview-card bg-slate-50 border border-slate-200 rounded-2xl p-4 shadow-xs space-y-1.5">
+          <div className="flex items-center gap-2 text-slate-700 font-bold text-xs uppercase tracking-wide">
+            <ShieldCheck size={15} className="text-emerald-500 shrink-0" />
+            <span>Không yêu cầu khai báo AI</span>
+          </div>
+          <p className="text-xs text-slate-600 leading-relaxed font-medium">
+            ℹ️ Bài tập nộp thông thường (Không bắt buộc khai báo tương tác AI).
+          </p>
+        </div>
+      )}
+
       {/* Card 1: Table of contents */}
       <div className="saf-overview-card bg-white border border-slate-200 rounded-2xl p-5 shadow-xs">
         <button
@@ -633,9 +661,25 @@ export const AssignmentOverview: React.FC<AssignmentOverviewProps> = ({
               <a
                 key={file.id}
                 href={file.url || '#'}
-                onClick={(e) => {
+                onClick={async (e) => {
                   e.preventDefault();
-                  alert(`Downloading ${file.name}`);
+                  if (file.materialId && file.assignmentId) {
+                    try {
+                      const res = await AssignmentService.getMaterialDownloadUrl(file.assignmentId, file.materialId);
+                      const downloadUrl = res?.data?.download_url || res?.download_url;
+                      if (downloadUrl) {
+                        window.open(downloadUrl, '_blank');
+                        return;
+                      }
+                    } catch (err) {
+                      console.error('Download material failed:', err);
+                    }
+                  }
+                  if (file.url && file.url !== '#') {
+                    window.open(file.url, '_blank');
+                  } else {
+                    alert(`Tải file tài liệu: ${file.name}`);
+                  }
                 }}
                 className="flex items-center justify-between bg-slate-50 hover:bg-blue-50/60 p-2.5 rounded-xl border border-slate-200/80 transition group"
               >
@@ -1553,24 +1597,50 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
           {isEditMode ? 'Discard Changes / Back' : 'Cancel / Back to Status'}
         </button>
 
-        <button
-          type="button"
-          onClick={() => {
-            if (!isEditMode && !selectedFile) {
-              alert('Vui lòng chọn hoặc tải lên tệp bài nộp trước khi tiếp tục!');
-              return;
-            }
-            if (isEditMode && fileMode === 'replace' && !selectedFile) {
-              alert('Bạn đang chọn thay thế tệp, vui lòng chọn tệp mới hoặc chuyển sang "Keep Existing File"!');
-              return;
-            }
-            onNext();
-          }}
-          className="saf-btn-primary"
-        >
-          <span>{isEditMode ? 'Next: Edit AI Declaration' : 'Next: AI Declaration'}</span>
-          <ArrowRight size={14} />
-        </button>
+        {aiDeclarationRequired === false ? (
+          <button
+            type="button"
+            disabled={isSubmittingPayload}
+            onClick={() => {
+              if (!isEditMode && !selectedFile) {
+                alert('Vui lòng chọn hoặc tải lên tệp bài nộp trước khi nộp!');
+                return;
+              }
+              if (isEditMode && fileMode === 'replace' && !selectedFile) {
+                alert('Bạn đang chọn thay thế tệp, vui lòng chọn tệp mới hoặc chuyển sang "Keep Existing File"!');
+                return;
+              }
+              if (onSubmitDirect) onSubmitDirect();
+            }}
+            className="saf-btn-primary flex items-center gap-1.5"
+          >
+            <CheckCircle2 size={15} />
+            <span>
+              {isSubmittingPayload
+                ? 'Submitting...'
+                : (isEditMode ? 'Update Assignment' : 'Submit Assignment')}
+            </span>
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => {
+              if (!isEditMode && !selectedFile) {
+                alert('Vui lòng chọn hoặc tải lên tệp bài nộp trước khi tiếp tục!');
+                return;
+              }
+              if (isEditMode && fileMode === 'replace' && !selectedFile) {
+                alert('Bạn đang chọn thay thế tệp, vui lòng chọn tệp mới hoặc chuyển sang "Keep Existing File"!');
+                return;
+              }
+              onNext();
+            }}
+            className="saf-btn-primary"
+          >
+            <span>{isEditMode ? 'Next: Edit AI Declaration' : 'Next: AI Declaration'}</span>
+            <ArrowRight size={14} />
+          </button>
+        )}
       </div>
     </div>
   );
@@ -1848,7 +1918,7 @@ export const AiRubricForm: React.FC<AiRubricFormProps> = ({
               className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold text-indigo-600 bg-indigo-50/80 hover:bg-indigo-100 border border-dashed border-indigo-300 transition cursor-pointer whitespace-nowrap shrink-0 select-none"
             >
               <Plus size={13} />
-              <span>+ Thêm khai báo</span>
+              <span>+ Thêm mục khai báo</span>
             </button>
           </div>
 
@@ -2514,7 +2584,7 @@ export default function StudentAssignmentFlow({
                     <div className="flex items-center gap-2">
                       <h2 className="text-lg font-bold text-slate-900 tracking-tight">
                         {isEditMode
-                          ? 'Edit Submission & AI Declaration'
+                          ? (assignment.aiDeclarationRequired !== false ? 'Edit Submission & AI Declaration' : 'Edit Submission File')
                           : 'Submit Assignment'}
                       </h2>
                       {isEditMode && (
@@ -2524,58 +2594,66 @@ export default function StudentAssignmentFlow({
                       )}
                     </div>
                     <p className="text-xs text-slate-500">
-                      Step {formStep} of 2 •{' '}
-                      {formStep === 1
-                        ? isEditMode ? 'File Management' : 'File Upload'
-                        : 'Computational Thinking Rubrics'}
+                      {assignment.aiDeclarationRequired !== false ? (
+                        <>
+                          Step {formStep} of 2 •{' '}
+                          {formStep === 1
+                            ? isEditMode ? 'File Management' : 'File Upload'
+                            : 'Computational Thinking Rubrics'}
+                        </>
+                      ) : (
+                        'Upload your assignment submission file to complete'
+                      )}
                     </p>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    {/* Step 1 Indicator */}
-                    <button
-                      type="button"
-                      onClick={() => setFormStep(1)}
-                      className={`w-7 h-7 rounded-full font-bold text-xs flex items-center justify-center transition cursor-pointer ${
-                        formStep === 1
-                          ? 'bg-blue-600 text-white shadow-xs'
-                          : 'bg-emerald-500 text-white'
-                      }`}
-                    >
-                      {formStep > 1 ? <Check size={14} /> : 1}
-                    </button>
-
-                    {/* Step Connector */}
-                    <div
-                      className={`w-8 h-0.5 transition ${
-                        formStep === 2 ? 'bg-emerald-500' : 'bg-slate-200'
-                      }`}
-                    />
-
-                    {/* Step 2 Indicator */}
-                    <button
-                      type="button"
-                      onClick={() => setFormStep(2)}
-                      className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-bold text-xs transition cursor-pointer ${
-                        formStep === 2
-                          ? 'bg-blue-50 text-blue-600 border border-blue-200'
-                          : 'text-slate-400'
-                      }`}
-                    >
-                      <span
-                        className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${
-                          formStep === 2
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-slate-100 text-slate-400'
+                  {assignment.aiDeclarationRequired !== false && (
+                    <div className="flex items-center gap-2">
+                      {/* Step 1 Indicator */}
+                      <button
+                        type="button"
+                        onClick={() => setFormStep(1)}
+                        className={`w-7 h-7 rounded-full font-bold text-xs flex items-center justify-center transition cursor-pointer ${
+                          formStep === 1
+                            ? 'bg-blue-600 text-white shadow-xs'
+                            : 'bg-emerald-500 text-white'
                         }`}
                       >
-                        2
-                      </span>
-                      <span className="text-[10px] tracking-wider uppercase">
-                        AI_DECLARATION
-                      </span>
-                    </button>
-                  </div>
+                        {formStep > 1 ? <Check size={14} /> : 1}
+                      </button>
+
+                      {/* Step Connector */}
+                      <div
+                        className={`w-8 h-0.5 transition ${
+                          formStep === 2 ? 'bg-emerald-500' : 'bg-slate-200'
+                        }`}
+                      />
+
+                      {/* Step 2 Indicator */}
+                      <button
+                        type="button"
+                        onClick={() => setFormStep(2)}
+                        className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-bold text-xs transition cursor-pointer ${
+                          formStep === 2
+                            ? 'bg-blue-50 text-blue-600 border border-blue-200'
+                            : 'text-slate-400'
+                        }`}
+                      >
+                        <span
+                          className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${
+                            formStep === 2
+                              ? 'bg-blue-600 text-white'
+                              : 'bg-slate-100 text-slate-400'
+                          }`}
+                        >
+                          2
+                        </span>
+                        <span className="text-[10px] tracking-wider uppercase">
+                          AI_DECLARATION
+                        </span>
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {/* Form Step Body */}

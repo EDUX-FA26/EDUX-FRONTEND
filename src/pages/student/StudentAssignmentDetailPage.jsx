@@ -138,11 +138,25 @@ export default function StudentAssignmentDetailPage() {
             name: assignment?.lecturer_name || 'Dr. Alan Smith',
             role: 'Lecturer in Software Engineering'
         },
-        additionalFiles: [
-            { id: 'f1', name: 'Project_Specification_v2.pdf', size: '1.8 MB', url: '#' },
-            { id: 'f2', name: 'C4_Model_Template.drawio', size: '640 KB', url: '#' }
-        ],
-        score: effectiveScore
+        additionalFiles: (assignment?.materials && assignment.materials.length > 0)
+            ? assignment.materials.map(m => ({
+                id: m.id,
+                name: m.file_name,
+                size: typeof m.file_size === 'number'
+                    ? (m.file_size > 1048576 ? `${(m.file_size / 1048576).toFixed(1)} MB` : `${(m.file_size / 1024).toFixed(1)} KB`)
+                    : (m.file_size || 'N/A'),
+                url: '#',
+                materialId: m.id,
+                assignmentId: assignment?.id || id
+            }))
+            : (!id || id.startsWith('asm-') ? [
+                { id: 'f1', name: 'Project_Specification_v2.pdf', size: '1.8 MB', url: '#' },
+                { id: 'f2', name: 'C4_Model_Template.drawio', size: '640 KB', url: '#' }
+            ] : []),
+        score: effectiveScore,
+        aiDeclarationRequired: assignment?.ai_declaration_required !== false,
+        minAiInteractions: assignment?.min_ai_interactions != null ? Number(assignment.min_ai_interactions) : 1,
+        maxAiInteractions: assignment?.max_ai_interactions != null ? Number(assignment.max_ai_interactions) : 20,
     };
 
     // Format Submission data from backend if present, else fallback
