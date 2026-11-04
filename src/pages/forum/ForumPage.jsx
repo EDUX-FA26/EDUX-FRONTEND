@@ -125,9 +125,9 @@ export default function ForumPage() {
   };
 
   return (
-    <main style={{ maxWidth: 980, margin: '0 auto', padding: '32px 24px 80px' }}>
+    <main style={{ maxWidth: 1180, margin: '0 auto', padding: '28px 24px 80px', color: '#f2f5f8' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, marginBottom: 24 }}>
-        <div><p style={{ color: '#bd4b0a', fontWeight: 800, letterSpacing: 1, margin: 0 }}>EDUX COMMUNITY</p><h1 style={{ margin: '6px 0', fontSize: '2rem' }}>Diễn đàn học tập</h1><p style={{ color: '#68738a', margin: 0 }}>Trao đổi bài học, FlashCard và kinh nghiệm học tập cùng cộng đồng EDUX.</p></div>
+        <div><p style={{ color: '#f27024', fontWeight: 800, letterSpacing: 1, margin: 0 }}>EDUX COMMUNITY</p><h1 style={{ margin: '6px 0', fontSize: '2rem', color: '#f5f7fa' }}>Diễn đàn học tập</h1><p style={{ color: '#9ca9ba', margin: 0 }}>Trao đổi bài học, FlashCard và kinh nghiệm học tập cùng cộng đồng EDUX.</p></div>
         {canPost && <button className="btn btn-primary" onClick={() => setShowComposer((v) => !v)}><Plus size={17} /> Đăng bài</button>}
       </div>
       <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid #eadbd2', marginBottom: 16, overflowX: 'auto' }}>
@@ -155,8 +155,11 @@ export default function ForumPage() {
         <select value={form.flashcardDeckId} onChange={(e) => setForm({ ...form, flashcardDeckId: e.target.value })} style={inputStyle}><option value="">Không gắn FlashCard</option>{decks.map((d) => <option key={d.id} value={d.id}>{d.title}{d.subject_name ? ` — ${d.subject_name}` : ''}</option>)}</select>
         <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}><button type="button" className="btn" onClick={() => setShowComposer(false)}>Hủy</button><button className="btn btn-primary" disabled={saving}>{saving ? 'Đang đăng...' : 'Đăng bài'}</button></div>
       </form>}
-      {loading ? <div style={{ padding: 32, textAlign: 'center' }}>Đang tải bài đăng...</div> : posts.length === 0 ? <div style={emptyStyle}>Chưa có bài đăng nào.</div> : posts.map((post) => <article key={post.id} style={cardStyle}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}><div><strong>{post.is_anonymous ? 'Ẩn danh' : (post.author_name || 'EDUX User')}</strong><span style={{ color: '#8c7166', marginLeft: 8, fontSize: 13 }}>{post.post_type === 'CONFESSION' ? 'Confession' : post.author_role}</span><h2 style={{ margin: '8px 0 5px', fontSize: '1.15rem' }}>{post.title}</h2></div><time style={{ color: '#8c7166', fontSize: 12 }}>{new Date(post.created_at).toLocaleDateString('vi-VN')}</time></div>
+      {loading ? <div style={{ padding: 32, textAlign: 'center', color: '#aeb9c8' }}>Đang tải bài đăng...</div> : posts.length === 0 ? <div style={emptyStyle}>Chưa có bài đăng nào.</div> : <div style={forumTableStyle}>
+        <div style={forumTableHeader}><span>#</span><span>Chủ đề</span><span>Forum</span><span>Reply</span><span>View</span><span>Ngày</span><span>Author</span></div>
+        {posts.map((post, index) => <article key={post.id} style={cardStyle}>
+        <div style={topicCell}><span style={rowNumber}>{(filters.page - 1) * 10 + index + 1}</span><div style={avatarStyle}>{(post.is_anonymous ? '?' : (post.author_name || 'E')[0]).toUpperCase()}</div><div style={{ minWidth: 0 }}><strong style={{ color: '#e9eef5' }}>{post.title}</strong><span style={topicMeta}>{post.post_type === 'CONFESSION' ? 'Confession' : 'Thảo luận'}{post.subject_code ? ` · ${post.subject_code}` : ''}</span></div></div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, color: '#9ca9ba', fontSize: 12 }}><span>{post.is_anonymous ? 'Ẩn danh' : (post.author_name || 'EDUX User')}</span><time>{new Date(post.created_at).toLocaleDateString('vi-VN')}</time></div>
         <p style={{ whiteSpace: 'pre-wrap', color: '#4e596b', lineHeight: 1.6 }}>{post.content}</p>
         {(post.subject_name || post.flashcard_deck_id) && <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>{post.subject_name && <span style={tagStyle}>{post.subject_code || 'Môn học'} · {post.subject_name}</span>}{post.flashcard_deck_id && <button type="button" style={linkStyle} onClick={() => openFlashcard(post)}><ExternalLink size={14} /> Mở FlashCard{post.flashcard_title ? `: ${post.flashcard_title}` : ''}</button>}</div>}
         <div style={{ display: 'flex', gap: 18, borderTop: '1px solid #f1e7df', paddingTop: 12 }}><button type="button" style={actionStyle} onClick={() => toggleLike(post.id)}><Heart size={17} fill={post.liked_by_me ? '#ef6820' : 'none'} color={post.liked_by_me ? '#ef6820' : 'currentColor'} /> {post.like_count || 0}</button><button type="button" style={actionStyle} onClick={() => toggleComments(post.id)} aria-expanded={Boolean(expandedComments[post.id])}><MessageCircle size={17} /> {post.comment_count || 0} Bình luận</button><span style={actionStyle}>◉ {post.view_count || 0} lượt xem</span></div>
@@ -165,14 +168,21 @@ export default function ForumPage() {
           <div style={{ display: 'flex', gap: 8 }}><input value={commentText[post.id] || ''} onChange={(e) => setCommentText({ ...commentText, [post.id]: e.target.value })} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitComment(post.id, replyTo[post.id] || null); } }} placeholder={replyTo[post.id] ? 'Viết câu trả lời...' : 'Viết bình luận...'} style={{ ...inputStyle, margin: 0 }} /><button type="button" className="btn btn-primary" onClick={() => submitComment(post.id, replyTo[post.id] || null)}><Send size={16} /></button></div>
         </div>}
       </article>)}
+      </div>}
       {!loading && totalPages > 1 && <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 10, marginTop: 20 }}><button type="button" className="btn" disabled={filters.page <= 1} onClick={() => setFilters((prev) => ({ ...prev, page: prev.page - 1 }))}>Trước</button><span>Trang {filters.page} / {totalPages}</span><button type="button" className="btn" disabled={filters.page >= totalPages} onClick={() => setFilters((prev) => ({ ...prev, page: prev.page + 1 }))}>Sau</button></div>}
     </main>
   );
 }
 
-const inputStyle = { width: '100%', boxSizing: 'border-box', border: '1px solid #e8d8cc', borderRadius: 10, padding: '11px 13px', marginBottom: 12, font: 'inherit' };
-const cardStyle = { background: '#fff', border: '1px solid #f1dfd4', borderRadius: 16, padding: 20, marginBottom: 16, boxShadow: '0 4px 16px rgba(104,58,36,.04)' };
-const emptyStyle = { background: '#fff', borderRadius: 16, padding: 48, textAlign: 'center', color: '#68738a' };
-const tagStyle = { background: '#fff2e9', color: '#b64d12', borderRadius: 999, padding: '5px 10px', fontSize: 12, fontWeight: 700 };
-const linkStyle = { border: 0, background: '#e5f7f4', color: '#087d73', borderRadius: 999, padding: '5px 10px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 5, cursor: 'pointer' };
-const actionStyle = { border: 0, background: 'transparent', color: '#68738a', display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer', padding: 0 };
+const inputStyle = { width: '100%', boxSizing: 'border-box', border: '1px solid #344253', borderRadius: 8, padding: '11px 13px', marginBottom: 12, font: 'inherit', background: '#18212c', color: '#f2f5f8' };
+const forumTableStyle = { background: '#111923', border: '1px solid #293545', borderRadius: 14, overflow: 'hidden', boxShadow: '0 8px 24px rgba(0,0,0,.18)' };
+const forumTableHeader = { display: 'grid', gridTemplateColumns: '32px minmax(220px, 1fr) 110px 80px 80px 100px 150px', gap: 10, alignItems: 'center', padding: '12px 16px', background: '#1d2733', color: '#56a5ff', fontSize: 13, fontWeight: 700 };
+const cardStyle = { display: 'grid', gridTemplateColumns: 'minmax(300px, 1fr)', background: '#151e29', borderTop: '1px solid #222f3d', padding: '13px 16px', margin: 0, color: '#e9eef5' };
+const topicCell = { display: 'flex', alignItems: 'center', gap: 10, minWidth: 0, paddingBottom: 10 };
+const rowNumber = { color: '#d8e1ec', width: 22, textAlign: 'center', fontSize: 13 };
+const avatarStyle = { width: 30, height: 30, borderRadius: '50%', background: '#2675c9', color: '#fff', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, flexShrink: 0 };
+const topicMeta = { display: 'block', color: '#6faeff', fontSize: 12, marginTop: 4 };
+const emptyStyle = { background: '#151e29', borderRadius: 14, padding: 48, textAlign: 'center', color: '#aeb9c8' };
+const tagStyle = { background: '#203147', color: '#72b3ff', borderRadius: 999, padding: '5px 10px', fontSize: 12, fontWeight: 700 };
+const linkStyle = { border: 0, background: '#163a42', color: '#5fe1d3', borderRadius: 999, padding: '5px 10px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 5, cursor: 'pointer' };
+const actionStyle = { border: 0, background: 'transparent', color: '#69aaff', display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer', padding: 0 };
