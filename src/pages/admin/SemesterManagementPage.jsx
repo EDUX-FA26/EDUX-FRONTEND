@@ -63,7 +63,6 @@ function SemesterModal({ semester, saving, error, onClose, onSubmit }) {
       <section className="module-modal__panel card" role="dialog" aria-modal="true" aria-labelledby="semester-modal-title">
         <div className="module-modal__header">
           <div>
-            <p className="module-page__eyebrow">Module 18</p>
             <h2 id="semester-modal-title">{semester ? 'Cập nhật học kỳ' : 'Tạo học kỳ mới'}</h2>
           </div>
           <button className="module-icon-button" type="button" onClick={onClose} aria-label="Đóng biểu mẫu">
@@ -201,7 +200,6 @@ export default function SemesterManagementPage() {
     <div className="module-page">
       <header className="module-page__header">
         <div>
-          <p className="module-page__eyebrow">Module 18 · Academic Operations</p>
           <h1 className="module-page__title">Quản lý học kỳ</h1>
           <p className="module-page__subtitle">Tạo lịch học kỳ, chọn học kỳ hiện tại, đóng và khóa dữ liệu theo vòng đời đào tạo.</p>
         </div>

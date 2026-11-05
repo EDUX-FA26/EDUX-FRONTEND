@@ -164,7 +164,6 @@ export default function SubjectManagementPage() {
     <div className="module-page">
       <header className="module-page__header">
         <div>
-          <p className="module-page__eyebrow">Module 19 · Academic Catalog</p>
           <h1 className="module-page__title">Quản lý môn học</h1>
           <p className="module-page__subtitle">Quản lý danh mục môn, tín chỉ, khoa phụ trách và trạng thái sử dụng trong hệ thống.</p>
         </div>
