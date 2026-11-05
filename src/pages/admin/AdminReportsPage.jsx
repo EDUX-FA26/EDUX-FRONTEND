@@ -6,6 +6,7 @@ import {
   exportLearningActivity,
   exportAiTransparency,
 } from "../../services/report.service";
+import ExcelJS from "exceljs";
 
 const numberFormat = new Intl.NumberFormat("vi-VN");
 const dateFormat = (value) => {
@@ -261,7 +262,6 @@ export default function AdminReportsPage() {
     } finally {
       setExporting("");
     }
-  };
 
   const tabs = [
     { id: "overview", label: "Tổng quan hệ thống" },
