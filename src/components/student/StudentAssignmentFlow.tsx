@@ -2392,136 +2392,99 @@ export const AiRubricForm: React.FC<AiRubricFormProps> = ({
 
 interface PreSubmissionSanityPanelProps {
   result: SanityCheckResult;
-  isSanityChecking: boolean;
-  onReRun: () => void;
+  isSanityChecking?: boolean;
+  onReRun?: () => void;
   onClose: () => void;
 }
 
 export const PreSubmissionSanityPanel: React.FC<PreSubmissionSanityPanelProps> = ({
   result,
-  isSanityChecking,
+  isSanityChecking = false,
   onReRun,
   onClose,
 }) => {
-  const isMatch = result.relevance_status === 'MATCH';
-
   return (
-    <div className="bg-gradient-to-br from-purple-50/70 via-white to-indigo-50/60 border border-purple-200/80 rounded-2xl p-5 mb-5 shadow-xs transition-all space-y-4">
-      {/* 1. Header Card */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-purple-100">
-        <div className="flex items-center gap-2.5 flex-wrap">
-          <div className="w-8 h-8 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center shrink-0">
-            <Sparkles size={16} />
-          </div>
-          <div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="text-sm font-bold text-slate-900 tracking-tight">
-                Kết quả chẩn đoán nhanh (Pre-submission Sanity Feedback)
-              </h3>
-              <span className="bg-purple-100/80 text-purple-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-purple-200/60">
-                Formative Feedback • Không tính điểm
-              </span>
-            </div>
-            <p className="text-[11px] text-slate-500 mt-0.5">
-              Gợi ý định hướng và rà soát bài nháp trước khi chốt nộp bài chính thức
-            </p>
-          </div>
+    <div className="mt-4 p-4 rounded-xl border border-purple-200 bg-purple-50/40 text-sm transition-all duration-200">
+      {/* Header */}
+      <div className="flex items-center justify-between pb-3 border-b border-purple-100 mb-3 gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-base">🔍</span>
+          <h4 className="font-semibold text-gray-800">Kết quả Pre-Check Sanity</h4>
+          <span className="px-2 py-0.5 text-xs font-medium bg-purple-100 text-purple-700 rounded-full">
+            Formative Feedback • Không tính điểm
+          </span>
         </div>
-
-        <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
-          <button
+        <div className="flex items-center gap-1.5 shrink-0">
+          {onReRun && (
+            <button
+              type="button"
+              onClick={onReRun}
+              disabled={isSanityChecking}
+              className="text-xs text-purple-700 hover:text-purple-900 bg-white hover:bg-purple-50 border border-purple-200 px-2 py-1 rounded-md transition flex items-center gap-1 disabled:opacity-50 cursor-pointer"
+              title="Kiểm tra lại sau khi bạn đã chỉnh sửa file hoặc nội dung khai báo"
+            >
+              <RefreshCw size={11} className={isSanityChecking ? 'animate-spin' : ''} />
+              <span>{isSanityChecking ? 'Đang kiểm tra...' : 'Kiểm tra lại'}</span>
+            </button>
+          )}
+          <button 
             type="button"
-            onClick={onReRun}
-            disabled={isSanityChecking}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-purple-700 bg-white hover:bg-purple-50 border border-purple-200 rounded-xl transition cursor-pointer shadow-2xs disabled:opacity-50"
-            title="Kiểm tra lại sau khi bạn đã chỉnh sửa file hoặc nội dung khai báo"
+            onClick={onClose} 
+            className="text-gray-400 hover:text-gray-600 p-1 rounded-md transition cursor-pointer"
+            title="Đóng nhận xét"
           >
-            <RefreshCw size={12} className={isSanityChecking ? 'animate-spin text-purple-600' : ''} />
-            <span>{isSanityChecking ? 'Đang kiểm tra...' : 'Kiểm tra lại'}</span>
-          </button>
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition cursor-pointer"
-            title="Đóng khung nhận xét"
-          >
-            <X size={16} />
+            ✕
           </button>
         </div>
       </div>
 
-      {/* 2. Relevance Check (Độ khớp yêu cầu đề bài) */}
-      <div className="space-y-2">
-        <div className="flex items-center gap-2">
-          {isMatch ? (
-            <span className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-800 border border-emerald-300 text-xs font-bold px-3 py-1 rounded-xl">
-              <CheckCircle2 size={14} className="text-emerald-600" />
-              <span>✓ Phù hợp với yêu cầu đề bài</span>
-            </span>
-          ) : (
-            <span className="inline-flex items-center gap-1.5 bg-amber-50 text-amber-900 border border-amber-300 text-xs font-bold px-3 py-1 rounded-xl">
-              <AlertTriangle size={14} className="text-amber-600" />
-              <span>⚠️ Cảnh báo: Có dấu hiệu lệch đề bài hoặc nhầm tệp</span>
-            </span>
-          )}
+      {/* Body Content */}
+      <div className="space-y-3">
+        {/* 1. Độ khớp đề bài */}
+        <div className="flex items-start gap-2">
+          <span className="shrink-0 text-base leading-none">
+            {result.relevance_status === 'MATCH' ? '✅' : '⚠️'}
+          </span>
+          <p className="text-gray-700 leading-relaxed">
+            <strong className="font-medium text-gray-900">Độ khớp đề bài: </strong>
+            {result.relevance_status === 'MATCH' ? 'Đạt yêu cầu' : 'Cần kiểm tra lại'}
+            {result.relevance_reason && ` (${result.relevance_reason})`}
+          </p>
         </div>
 
-        {result.relevance_reason && (
-          <div className="text-xs text-slate-700 leading-relaxed bg-white/80 rounded-xl p-3 border border-purple-100/70">
-            <span className="font-semibold text-slate-900">Chi tiết đánh giá độ khớp: </span>
-            {result.relevance_reason}
+        {/* 2. Điểm cần lưu ý trước khi chốt nộp */}
+        {result.diagnostic_warnings && result.diagnostic_warnings.length > 0 && (
+          <div>
+            <div className="flex items-center gap-2 mb-1.5">
+              <span className="text-base leading-none">⚠️</span>
+              <strong className="font-medium text-amber-900">Điểm cần lưu ý trước khi chốt nộp:</strong>
+            </div>
+            <ul className="pl-6 space-y-1 list-disc text-gray-700 marker:text-amber-500">
+              {result.diagnostic_warnings.map((warn: string, index: number) => (
+                <li key={index} className="leading-relaxed">{warn}</li>
+              ))}
+            </ul>
           </div>
         )}
-      </div>
 
-      {/* 3. Diagnostic Warnings (Các cảnh báo cần chú ý) */}
-      {result.diagnostic_warnings && result.diagnostic_warnings.length > 0 && (
-        <div className="space-y-1.5">
-          <div className="flex items-center gap-1.5 text-xs font-bold text-amber-900">
-            <AlertCircle size={14} className="text-amber-600 shrink-0" />
-            <span>Các điểm cần lưu ý rà soát:</span>
+        {/* 3. Gợi ý nhanh */}
+        {result.micro_suggestions && result.micro_suggestions.length > 0 && (
+          <div className="flex items-start gap-2 bg-white/70 p-2.5 rounded-lg border border-purple-100">
+            <span className="shrink-0 text-base leading-none">💡</span>
+            <div className="text-gray-700 leading-relaxed">
+              <strong className="font-medium text-gray-900">Gợi ý nhanh: </strong>
+              {Array.isArray(result.micro_suggestions) 
+                ? result.micro_suggestions.join(' ') 
+                : result.micro_suggestions}
+            </div>
           </div>
-          <div className="bg-amber-50/70 border border-amber-200/80 rounded-xl p-3 space-y-1.5">
-            {result.diagnostic_warnings.map((warn, idx) => (
-              <div key={idx} className="flex items-start gap-2 text-xs text-amber-950">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5 shrink-0" />
-                <span className="leading-relaxed">{warn}</span>
-              </div>
-            ))}
-          </div>
+        )}
+
+        {/* 4. Footer chú thích */}
+        <div className="pt-2 text-xs text-gray-500 flex items-center gap-1.5 border-t border-purple-100/60">
+          <span>ℹ️</span>
+          <span>Đây là nhận xét tham khảo từ AI, không ảnh hưởng điểm số và không chặn quyền nộp bài của bạn.</span>
         </div>
-      )}
-
-      {/* 4. Micro-Suggestions (Gợi ý cải thiện nhanh) */}
-      {result.micro_suggestions && result.micro_suggestions.length > 0 && (
-        <div className="space-y-1.5">
-          <div className="flex items-center gap-1.5 text-xs font-bold text-indigo-900">
-            <Lightbulb size={14} className="text-indigo-600 shrink-0" />
-            <span>Gợi ý hoàn thiện bài làm:</span>
-          </div>
-          <div className="bg-indigo-50/60 border border-indigo-200/70 rounded-xl p-3 space-y-1.5">
-            {result.micro_suggestions.map((sug, idx) => (
-              <div key={idx} className="flex items-start gap-2 text-xs text-slate-800">
-                <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 mt-1.5 shrink-0" />
-                <span className="leading-relaxed">{sug}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* 5. Footer Actions & Disclaimer */}
-      <div className="pt-2 border-t border-purple-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-[11px] text-slate-400">
-        <span className="italic">
-          * Nhận xét mang tính chất tham khảo học tập, không ảnh hưởng đến điểm số và không chặn quyền nộp bài của bạn.
-        </span>
-        <button
-          type="button"
-          onClick={onClose}
-          className="px-3.5 py-1.5 text-xs font-semibold text-purple-700 bg-purple-100/70 hover:bg-purple-200/80 rounded-xl transition cursor-pointer shrink-0"
-        >
-          Tôi đã hiểu & Tiếp tục làm bài
-        </button>
       </div>
     </div>
   );
@@ -3271,7 +3234,10 @@ export default function StudentAssignmentFlow({
                     result={sanityCheckResult}
                     isSanityChecking={isSanityChecking}
                     onReRun={handleRunSanityCheck}
-                    onClose={() => setShowSanityPanel(false)}
+                    onClose={() => {
+                      setShowSanityPanel(false);
+                      setSanityCheckResult(null);
+                    }}
                   />
                 )}
 
