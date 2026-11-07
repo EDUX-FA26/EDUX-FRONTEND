@@ -159,17 +159,25 @@ export default function StudentAssignmentDetailPage() {
             }
         } catch (e) {}
 
+        const isDraft = submission.status === 'draft';
         const submissionTime = submission.submitted_at || latestVer?.submitted_at;
-        const editedTime = submission.updated_at || latestVer?.updated_at;
+        const editedTime = submission.updated_at || latestVer?.updated_at || submission.last_submitted_at;
+
+        let statusText = 'Submitted';
+        if (isGraded) {
+            statusText = 'Graded';
+        } else if (isDraft) {
+            statusText = 'Draft';
+        }
 
         formattedSubmission = {
             id: submission.id,
-            status: isGraded ? 'Graded' : 'Submitted',
-            submittedAt: submissionTime ? formatDateDMY(submissionTime) : 'N/A',
+            status: statusText,
+            submittedAt: isDraft ? null : (submissionTime ? formatDateDMY(submissionTime) : 'N/A'),
             lastEditedAt: editedTime ? formatDateDMY(editedTime) : null,
             version: latestVer?.version_no || detailedSubmission?.versions?.length || submission.version || 1,
             file: submittedFile,
-            feedback: effectiveFeedback || (isGraded ? 'Bài nộp đã được chấm điểm hoàn tất.' : 'Chưa có nhận xét. Bài nộp đang chờ giảng viên chấm điểm.'),
+            feedback: effectiveFeedback || (isGraded ? 'Bài nộp đã được chấm điểm hoàn tất.' : isDraft ? 'Bản nháp đang được lưu an toàn. Hãy bấm "Nộp bài chính thức" khi hoàn tất.' : 'Chưa có nhận xét. Bài nộp đang chờ giảng viên chấm điểm.'),
             transparencyScore: submission.transparencyScore || (parsedScopes ? 95 : null),
             declarations: parsedDeclarations,
             scopes: parsedScopes || submission.scopes,
@@ -182,8 +190,8 @@ export default function StudentAssignmentDetailPage() {
         };
     }
 
-    // Handle API Submit & Update
-    const handleApiSubmit = async ({ assignmentId, file, declarations, scopes, isEdit }) => {
+    // Handle API Submit (Lưu nháp hoặc Nộp chính thức)
+    const handleApiSubmit = async ({ assignmentId, file, declarations, scopes, isEdit, isDraft }) => {
         const rawFile = file instanceof File ? file : null;
         const notePayload = JSON.stringify({
             version: "2.0",
@@ -197,16 +205,39 @@ export default function StudentAssignmentDetailPage() {
             ],
             declarations: declarations || scopes?.[0]?.declarations,
             isEdit,
-            submittedAt: new Date().toISOString()
+            isDraft: Boolean(isDraft),
+            savedAt: new Date().toISOString()
         });
 
         if (id) {
-            await SubmissionService.submitAssignment(id, rawFile, notePayload);
+            if (isDraft) {
+                await SubmissionService.saveDraft(id, rawFile, notePayload);
+            } else {
+                await SubmissionService.submitFinal(id, rawFile, notePayload);
+            }
         }
 
         // Refresh submission data
         await fetchDetail();
         return true;
+    };
+
+    // Handle Silent Auto-Save Draft File
+    const handleSaveDraftFile = async (file, onUploadProgress) => {
+        if (!id) return null;
+        return await SubmissionService.saveDraftFile(id, file, onUploadProgress);
+    };
+
+    // Handle Remove Draft File
+    const handleRemoveDraftFile = async () => {
+        if (!id) return null;
+        return await SubmissionService.removeDraftFile(id);
+    };
+
+    // Handle Silent Auto-Save Draft Declarations
+    const handleSaveDraftDeclarations = async ({ scopes, declarations, note }) => {
+        if (!id) return null;
+        return await SubmissionService.saveDraftDeclarations(id, { scopes, ai_declarations: declarations, note });
     };
 
     if (loading) {
@@ -228,6 +259,9 @@ export default function StudentAssignmentDetailPage() {
             initialSubmission={formattedSubmission}
             onBackToCourse={() => navigate('/student/classes')}
             onSubmitApiHandler={handleApiSubmit}
+            onSaveDraftFile={handleSaveDraftFile}
+            onRemoveDraftFile={handleRemoveDraftFile}
+            onSaveDraftDeclarations={handleSaveDraftDeclarations}
         />
     );
 }

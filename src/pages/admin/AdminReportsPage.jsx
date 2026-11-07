@@ -263,159 +263,160 @@ export default function AdminReportsPage() {
       setExporting("");
     }
 
-  const tabs = [
-    { id: "overview", label: "Tổng quan hệ thống" },
-    { id: "ai-usage", label: "AI & minh bạch" },
-    { id: "audit", label: "Audit Logs" },
-  ];
+    const tabs = [
+      { id: "overview", label: "Tổng quan hệ thống" },
+      { id: "ai-usage", label: "AI & minh bạch" },
+      { id: "audit", label: "Audit Logs" },
+    ];
 
-  return (
-    <div className="admin-reports">
-      <style>{styles}</style>
-      <header className="reports-header">
-        <div className="reports-title-wrap">
-          <h1>Báo cáo &amp; Thống kê</h1>
-          <p>Theo dõi dữ liệu vận hành, hoạt động AI và nhật ký cảnh báo của EduTrack.</p>
-        </div>
-        <div className="reports-header-actions">
-          <button type="button" onClick={() => handleExport("learning")} disabled={!!exporting}>
-            {exporting === "learning" ? "Đang xuất..." : "↓ Xuất dữ liệu học tập"}
-          </button>
-          <button type="button" className="primary" onClick={() => handleExport("ai")} disabled={!!exporting}>
-            {exporting === "ai" ? "Đang xuất..." : "↓ Xuất dữ liệu AI"}
-          </button>
-        </div>
-      </header>
+    return (
+      <div className="admin-reports">
+        <style>{styles}</style>
+        <header className="reports-header">
+          <div className="reports-title-wrap">
+            <h1>Báo cáo &amp; Thống kê</h1>
+            <p>Theo dõi dữ liệu vận hành, hoạt động AI và nhật ký cảnh báo của EduTrack.</p>
+          </div>
+          <div className="reports-header-actions">
+            <button type="button" onClick={() => handleExport("learning")} disabled={!!exporting}>
+              {exporting === "learning" ? "Đang xuất..." : "↓ Xuất dữ liệu học tập"}
+            </button>
+            <button type="button" className="primary" onClick={() => handleExport("ai")} disabled={!!exporting}>
+              {exporting === "ai" ? "Đang xuất..." : "↓ Xuất dữ liệu AI"}
+            </button>
+          </div>
+        </header>
 
-      <nav className="reports-tabs" aria-label="Các nhóm báo cáo">
-        {tabs.map((tab) => (
-          <button key={tab.id} type="button" className="reports-tab" aria-selected={activeTab === tab.id}
-            onClick={() => setActiveTab(tab.id)}>{tab.label}</button>
-        ))}
-      </nav>
+        <nav className="reports-tabs" aria-label="Các nhóm báo cáo">
+          {tabs.map((tab) => (
+            <button key={tab.id} type="button" className="reports-tab" aria-selected={activeTab === tab.id}
+              onClick={() => setActiveTab(tab.id)}>{tab.label}</button>
+          ))}
+        </nav>
 
-      {error && <div className="reports-error" role="alert">{error}<button type="button" onClick={loadReports}>Thử lại</button></div>}
-      {loading ? <div className="reports-state">Đang tải dữ liệu báo cáo từ hệ thống...</div> : (
-        <>
-          {activeTab === "overview" && (
-            <>
-              <SectionHeading title="Tình hình hệ thống" description="Số liệu tổng hợp trực tiếp từ các bảng dữ liệu hiện có." />
-              {!systemStats ? <Card><div className="reports-state">Không có dữ liệu tổng quan.</div></Card> : (
-                <>
-                  <div className="reports-grid">
-                    <MetricCard label="Tổng người dùng" value={systemStats.totalUsers} icon="◎" tone="" helper="Tất cả tài khoản trong hệ thống" />
-                    <MetricCard label="Người dùng hoạt động" value={systemStats.activeUsers} icon="✓" tone="teal" helper={activeRate == null ? "Chưa đủ dữ liệu tính tỷ lệ" : `${activeRate.toFixed(1)}% tổng người dùng`} />
-                    <MetricCard label="Tổng lớp học" value={systemStats.totalClasses} icon="▦" tone="blue" helper="Số lớp hiện có" />
-                    <MetricCard label="Tổng bài nộp" value={systemStats.totalSubmissions} icon="▤" tone="orange" helper="Số submission đã ghi nhận" />
-                  </div>
-                  <div className="reports-panels">
-                    <Card className="reports-panel">
-                      <SectionHeading title="Quy mô dữ liệu" description="So sánh số lượng bản ghi theo từng nhóm dữ liệu." />
-                      <BarChart nameKey="label" valueKey="value" items={[
-                        { label: "Người dùng", value: asNumber(systemStats.totalUsers) },
-                        { label: "Đang hoạt động", value: asNumber(systemStats.activeUsers) },
-                        { label: "Lớp học", value: asNumber(systemStats.totalClasses) },
-                        { label: "Bài nộp", value: asNumber(systemStats.totalSubmissions) },
-                      ]} />
-                    </Card>
-                    <Card className="reports-panel">
-                      <SectionHeading title="Tỷ lệ hoạt động tài khoản" description="Tính từ tổng người dùng và người dùng có is_active = true." />
-                      {activeRate == null ? <div className="reports-empty-chart">Chưa có dữ liệu người dùng.</div> : (
-                        <div className="reports-donut-layout">
-                          <div className="reports-donut" style={{ background: `conic-gradient(${palette.teal} 0% ${Math.min(activeRate, 100)}%, #edf0f4 ${Math.min(activeRate, 100)}% 100%)` }}>
-                            <div><strong>{activeRate.toFixed(1)}%</strong><span>Đang hoạt động</span></div>
+        {error && <div className="reports-error" role="alert">{error}<button type="button" onClick={loadReports}>Thử lại</button></div>}
+        {loading ? <div className="reports-state">Đang tải dữ liệu báo cáo từ hệ thống...</div> : (
+          <>
+            {activeTab === "overview" && (
+              <>
+                <SectionHeading title="Tình hình hệ thống" description="Số liệu tổng hợp trực tiếp từ các bảng dữ liệu hiện có." />
+                {!systemStats ? <Card><div className="reports-state">Không có dữ liệu tổng quan.</div></Card> : (
+                  <>
+                    <div className="reports-grid">
+                      <MetricCard label="Tổng người dùng" value={systemStats.totalUsers} icon="◎" tone="" helper="Tất cả tài khoản trong hệ thống" />
+                      <MetricCard label="Người dùng hoạt động" value={systemStats.activeUsers} icon="✓" tone="teal" helper={activeRate == null ? "Chưa đủ dữ liệu tính tỷ lệ" : `${activeRate.toFixed(1)}% tổng người dùng`} />
+                      <MetricCard label="Tổng lớp học" value={systemStats.totalClasses} icon="▦" tone="blue" helper="Số lớp hiện có" />
+                      <MetricCard label="Tổng bài nộp" value={systemStats.totalSubmissions} icon="▤" tone="orange" helper="Số submission đã ghi nhận" />
+                    </div>
+                    <div className="reports-panels">
+                      <Card className="reports-panel">
+                        <SectionHeading title="Quy mô dữ liệu" description="So sánh số lượng bản ghi theo từng nhóm dữ liệu." />
+                        <BarChart nameKey="label" valueKey="value" items={[
+                          { label: "Người dùng", value: asNumber(systemStats.totalUsers) },
+                          { label: "Đang hoạt động", value: asNumber(systemStats.activeUsers) },
+                          { label: "Lớp học", value: asNumber(systemStats.totalClasses) },
+                          { label: "Bài nộp", value: asNumber(systemStats.totalSubmissions) },
+                        ]} />
+                      </Card>
+                      <Card className="reports-panel">
+                        <SectionHeading title="Tỷ lệ hoạt động tài khoản" description="Tính từ tổng người dùng và người dùng có is_active = true." />
+                        {activeRate == null ? <div className="reports-empty-chart">Chưa có dữ liệu người dùng.</div> : (
+                          <div className="reports-donut-layout">
+                            <div className="reports-donut" style={{ background: `conic-gradient(${palette.teal} 0% ${Math.min(activeRate, 100)}%, #edf0f4 ${Math.min(activeRate, 100)}% 100%)` }}>
+                              <div><strong>{activeRate.toFixed(1)}%</strong><span>Đang hoạt động</span></div>
+                            </div>
+                            <div className="reports-legend">
+                              <div className="reports-legend-item"><span className="reports-legend-dot" style={{ background: palette.teal }} /><span>Đang hoạt động</span><strong>{numberFormat.format(asNumber(systemStats.activeUsers))}</strong></div>
+                              <div className="reports-legend-item"><span className="reports-legend-dot" style={{ background: "#dfe3ea" }} /><span>Còn lại</span><strong>{numberFormat.format(Math.max(0, asNumber(systemStats.totalUsers) - asNumber(systemStats.activeUsers)))}</strong></div>
+                            </div>
                           </div>
-                          <div className="reports-legend">
-                            <div className="reports-legend-item"><span className="reports-legend-dot" style={{ background: palette.teal }} /><span>Đang hoạt động</span><strong>{numberFormat.format(asNumber(systemStats.activeUsers))}</strong></div>
-                            <div className="reports-legend-item"><span className="reports-legend-dot" style={{ background: "#dfe3ea" }} /><span>Còn lại</span><strong>{numberFormat.format(Math.max(0, asNumber(systemStats.totalUsers) - asNumber(systemStats.activeUsers)))}</strong></div>
-                          </div>
-                        </div>
-                      )}
-                    </Card>
-                  </div>
-                  <p className="reports-note">Lưu ý: API hiện tại trả về số liệu tổng hợp toàn hệ thống, chưa cung cấp chuỗi dữ liệu theo ngày/tháng. Vì vậy biểu đồ đang thể hiện quy mô và tỷ lệ thực, không dựng xu hướng giả.</p>
-                </>
-              )}
-            </>
-          )}
+                        )}
+                      </Card>
+                    </div>
+                    <p className="reports-note">Lưu ý: API hiện tại trả về số liệu tổng hợp toàn hệ thống, chưa cung cấp chuỗi dữ liệu theo ngày/tháng. Vì vậy biểu đồ đang thể hiện quy mô và tỷ lệ thực, không dựng xu hướng giả.</p>
+                  </>
+                )}
+              </>
+            )}
 
-          {activeTab === "ai-usage" && (
-            <>
-              <SectionHeading title="Sử dụng AI & minh bạch" description="Phân tích lượt tương tác, công cụ AI và quyết định do sinh viên khai báo." />
-              {!aiStats ? <Card><div className="reports-state">Không có dữ liệu thống kê AI.</div></Card> : (
-                <>
-                  <div className="reports-grid">
-                    <MetricCard label="Tổng lượt tương tác AI" value={totalAi} icon="✧" tone="" helper="Từ bảng ai_interactions" />
-                    <MetricCard label="Nhóm công cụ AI" value={toolItems.length} icon="⌘" tone="blue" helper="Số công cụ có dữ liệu" />
-                    <MetricCard label="Lượt có quyết định" value={totalDecisions} icon="✓" tone="teal" helper="Tổng các nhóm student_decision" />
-                    <MetricCard label="Nhóm quyết định" value={decisionItems.length} icon="◷" tone="orange" helper="Các lựa chọn được ghi nhận" />
-                  </div>
-                  <div className="reports-panels">
-                    <Card className="reports-panel">
-                      <SectionHeading title="Lượt dùng theo công cụ" description="Số bản ghi ai_interactions được nhóm theo ai_tool." />
-                      <BarChart items={toolItems} nameKey="ai_tool" valueKey="count" />
-                    </Card>
-                    <Card className="reports-panel">
-                      <SectionHeading title="Quyết định của sinh viên" description="Phân bố student_decision theo dữ liệu đã khai báo." />
-                      <DonutChart items={decisionItems} nameKey="student_decision" valueKey="count" />
-                    </Card>
-                  </div>
-                  <p className="reports-note">Các chỉ số phản ánh dữ liệu khai báo/lưu trữ trong hệ thống; không phải kết quả phát hiện gian lận hoặc kết luận mức độ phụ thuộc AI.</p>
-                </>
-              )}
-            </>
-          )}
+            {activeTab === "ai-usage" && (
+              <>
+                <SectionHeading title="Sử dụng AI & minh bạch" description="Phân tích lượt tương tác, công cụ AI và quyết định do sinh viên khai báo." />
+                {!aiStats ? <Card><div className="reports-state">Không có dữ liệu thống kê AI.</div></Card> : (
+                  <>
+                    <div className="reports-grid">
+                      <MetricCard label="Tổng lượt tương tác AI" value={totalAi} icon="✧" tone="" helper="Từ bảng ai_interactions" />
+                      <MetricCard label="Nhóm công cụ AI" value={toolItems.length} icon="⌘" tone="blue" helper="Số công cụ có dữ liệu" />
+                      <MetricCard label="Lượt có quyết định" value={totalDecisions} icon="✓" tone="teal" helper="Tổng các nhóm student_decision" />
+                      <MetricCard label="Nhóm quyết định" value={decisionItems.length} icon="◷" tone="orange" helper="Các lựa chọn được ghi nhận" />
+                    </div>
+                    <div className="reports-panels">
+                      <Card className="reports-panel">
+                        <SectionHeading title="Lượt dùng theo công cụ" description="Số bản ghi ai_interactions được nhóm theo ai_tool." />
+                        <BarChart items={toolItems} nameKey="ai_tool" valueKey="count" />
+                      </Card>
+                      <Card className="reports-panel">
+                        <SectionHeading title="Quyết định của sinh viên" description="Phân bố student_decision theo dữ liệu đã khai báo." />
+                        <DonutChart items={decisionItems} nameKey="student_decision" valueKey="count" />
+                      </Card>
+                    </div>
+                    <p className="reports-note">Các chỉ số phản ánh dữ liệu khai báo/lưu trữ trong hệ thống; không phải kết quả phát hiện gian lận hoặc kết luận mức độ phụ thuộc AI.</p>
+                  </>
+                )}
+              </>
+            )}
 
-          {activeTab === "audit" && (
-            <>
-              <SectionHeading title="Nhật ký cảnh báo" description={`Hiển thị ${auditLogs.length} bản ghi gần nhất do API hiện tại trả về.`} />
-              <div className="reports-grid">
-                <MetricCard label="Tổng bản ghi tải về" value={auditLogs.length} icon="▤" tone="" helper="API giới hạn 50 bản ghi mới nhất" />
-                <MetricCard label="Đang mở / chờ xử lý" value={auditLogs.filter((log) => ["open", "pending"].includes(String(log.status).toLowerCase())).length} icon="!" tone="orange" helper="Theo trạng thái trong submission_flags" />
-                <MetricCard label="Đã xử lý / đóng" value={auditLogs.filter((log) => ["resolved", "reviewed", "closed"].includes(String(log.status).toLowerCase())).length} icon="✓" tone="teal" helper="Theo trạng thái trong submission_flags" />
-                <MetricCard label="Loại cảnh báo" value={uniqueTypes.length} icon="⚑" tone="blue" helper="Số flag_type khác nhau" />
-              </div>
-              <Card className="reports-panel">
-                <div className="reports-filter">
-                  <input aria-label="Tìm kiếm audit log" placeholder="Tìm theo ID, loại flag, người tạo..." value={auditSearch} onChange={(event) => setAuditSearch(event.target.value)} />
-                  <select aria-label="Lọc trạng thái" value={auditStatus} onChange={(event) => setAuditStatus(event.target.value)}>
-                    <option value="all">Tất cả trạng thái</option>
-                    {[...new Set(auditLogs.map((log) => log.status).filter(Boolean))].map((status) => <option key={status} value={status}>{String(status).replaceAll("_", " ")}</option>)}
-                  </select>
-                  <select aria-label="Lọc loại cảnh báo" value={auditType} onChange={(event) => setAuditType(event.target.value)}>
-                    <option value="all">Tất cả loại flag</option>
-                    {uniqueTypes.map((type) => <option key={type} value={type}>{String(type).replaceAll("_", " ")}</option>)}
-                  </select>
-                  <select aria-label="Lọc khoảng thời gian" value={auditRange} onChange={(event) => setAuditRange(event.target.value)}>
-                    <option value="all">Mọi thời gian trong dữ liệu tải về</option>
-                    <option value="7d">7 ngày gần đây</option>
-                    <option value="30d">30 ngày gần đây</option>
-                    <option value="90d">90 ngày gần đây</option>
-                  </select>
+            {activeTab === "audit" && (
+              <>
+                <SectionHeading title="Nhật ký cảnh báo" description={`Hiển thị ${auditLogs.length} bản ghi gần nhất do API hiện tại trả về.`} />
+                <div className="reports-grid">
+                  <MetricCard label="Tổng bản ghi tải về" value={auditLogs.length} icon="▤" tone="" helper="API giới hạn 50 bản ghi mới nhất" />
+                  <MetricCard label="Đang mở / chờ xử lý" value={auditLogs.filter((log) => ["open", "pending"].includes(String(log.status).toLowerCase())).length} icon="!" tone="orange" helper="Theo trạng thái trong submission_flags" />
+                  <MetricCard label="Đã xử lý / đóng" value={auditLogs.filter((log) => ["resolved", "reviewed", "closed"].includes(String(log.status).toLowerCase())).length} icon="✓" tone="teal" helper="Theo trạng thái trong submission_flags" />
+                  <MetricCard label="Loại cảnh báo" value={uniqueTypes.length} icon="⚑" tone="blue" helper="Số flag_type khác nhau" />
                 </div>
-                <div className="reports-table-wrap">
-                  <table className="reports-table">
-                    <thead><tr><th>ID</th><th>Loại flag</th><th>Người tạo</th><th>Trạng thái</th><th>Thời gian</th></tr></thead>
-                    <tbody>
-                      {filteredLogs.map((log, index) => (
-                        <tr key={log.id ?? index}>
-                          <td className="reports-id">{String(log.id ?? "—").slice(0, 12)}</td>
-                          <td>{String(log.flag_type ?? "Chưa phân loại").replaceAll("_", " ")}</td>
-                          <td>{log.flagged_by ?? "—"}</td>
-                          <td><StatusPill status={log.status} /></td>
-                          <td>{dateFormat(log.created_at)}</td>
-                        </tr>
-                      ))}
-                      {!filteredLogs.length && <tr><td colSpan="5"><div className="reports-state">Không tìm thấy bản ghi phù hợp với bộ lọc.</div></td></tr>}
-                    </tbody>
-                  </table>
-                </div>
-                <p className="reports-note" style={{ margin: "12px 0 0" }}>Bộ lọc được áp dụng trên 50 bản ghi gần nhất do endpoint hiện tại cung cấp; chưa phải truy vấn phân trang toàn bộ lịch sử.</p>
-              </Card>
-            </>
-          )}
-        </>
-      )}
-    </div>
-  );
+                <Card className="reports-panel">
+                  <div className="reports-filter">
+                    <input aria-label="Tìm kiếm audit log" placeholder="Tìm theo ID, loại flag, người tạo..." value={auditSearch} onChange={(event) => setAuditSearch(event.target.value)} />
+                    <select aria-label="Lọc trạng thái" value={auditStatus} onChange={(event) => setAuditStatus(event.target.value)}>
+                      <option value="all">Tất cả trạng thái</option>
+                      {[...new Set(auditLogs.map((log) => log.status).filter(Boolean))].map((status) => <option key={status} value={status}>{String(status).replaceAll("_", " ")}</option>)}
+                    </select>
+                    <select aria-label="Lọc loại cảnh báo" value={auditType} onChange={(event) => setAuditType(event.target.value)}>
+                      <option value="all">Tất cả loại flag</option>
+                      {uniqueTypes.map((type) => <option key={type} value={type}>{String(type).replaceAll("_", " ")}</option>)}
+                    </select>
+                    <select aria-label="Lọc khoảng thời gian" value={auditRange} onChange={(event) => setAuditRange(event.target.value)}>
+                      <option value="all">Mọi thời gian trong dữ liệu tải về</option>
+                      <option value="7d">7 ngày gần đây</option>
+                      <option value="30d">30 ngày gần đây</option>
+                      <option value="90d">90 ngày gần đây</option>
+                    </select>
+                  </div>
+                  <div className="reports-table-wrap">
+                    <table className="reports-table">
+                      <thead><tr><th>ID</th><th>Loại flag</th><th>Người tạo</th><th>Trạng thái</th><th>Thời gian</th></tr></thead>
+                      <tbody>
+                        {filteredLogs.map((log, index) => (
+                          <tr key={log.id ?? index}>
+                            <td className="reports-id">{String(log.id ?? "—").slice(0, 12)}</td>
+                            <td>{String(log.flag_type ?? "Chưa phân loại").replaceAll("_", " ")}</td>
+                            <td>{log.flagged_by ?? "—"}</td>
+                            <td><StatusPill status={log.status} /></td>
+                            <td>{dateFormat(log.created_at)}</td>
+                          </tr>
+                        ))}
+                        {!filteredLogs.length && <tr><td colSpan="5"><div className="reports-state">Không tìm thấy bản ghi phù hợp với bộ lọc.</div></td></tr>}
+                      </tbody>
+                    </table>
+                  </div>
+                  <p className="reports-note" style={{ margin: "12px 0 0" }}>Bộ lọc được áp dụng trên 50 bản ghi gần nhất do endpoint hiện tại cung cấp; chưa phải truy vấn phân trang toàn bộ lịch sử.</p>
+                </Card>
+              </>
+            )}
+          </>
+        )}
+      </div>
+    );
+  }
 }

@@ -164,17 +164,21 @@ export default function LecturerAssignmentDetailPage() {
                 let submissionsData = [];
 
                 if (subData && subData.data) {
-                    submissionsData = subData.data;
+                    submissionsData = Array.isArray(subData.data)
+                        ? subData.data.filter(sub => sub.status !== 'draft' && sub.status !== 'Draft')
+                        : [];
                 }
 
-                console.log('📋 SUBMISSIONS DATA:', submissionsData);
+                console.log('📋 SUBMISSIONS DATA (EXCLUDING DRAFTS):', submissionsData);
 
                 // ========================================
                 // MERGE CLASS MEMBERS + SUBMISSIONS
                 // ========================================
 
                 const submissionMap = new Map(
-                    submissionsData.map(sub => [sub.student_id, sub])
+                    submissionsData
+                        .filter(sub => sub.status !== 'draft' && sub.status !== 'Draft')
+                        .map(sub => [sub.student_id, sub])
                 );
 
                 const classMemberIds = new Set(
@@ -190,7 +194,7 @@ export default function LecturerAssignmentDetailPage() {
 
                     const submission = submissionMap.get(studentId);
 
-                    if (submission) {
+                    if (submission && submission.status !== 'draft' && submission.status !== 'Draft') {
                         const isThisStudent = (submission.student_code && submission.student_code === 'DE181802') || (member.studentCode && member.studentCode === 'DE181802') || submission.student_id === 'std-01';
                         const localGraded = db[submission.id] || (submission.student_code && db[submission.student_code]) || (member.studentCode && db[member.studentCode]) || (isThisStudent ? db['sub-de181802'] : null);
                         const rawScore = localGraded?.grade?.score ?? localGraded?.score ?? submission.score ?? null;
