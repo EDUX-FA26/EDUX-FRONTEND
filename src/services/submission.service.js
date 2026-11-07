@@ -12,7 +12,7 @@ const SubmissionService = {
     },
 
     /**
-     * 1. Lưu bản nháp bài nộp (Save Draft)
+     * 1. Lưu bản nháp bài nộp (Save Draft - legacy)
      */
     async saveDraft(assignmentId, file, note) {
         const formData = new FormData();
@@ -25,6 +25,38 @@ const SubmissionService = {
                 'Content-Type': 'multipart/form-data'
             }
         });
+        return response.data;
+    },
+
+    /**
+     * 1a. Silent Auto-Save Draft File (Upload ngầm)
+     */
+    async saveDraftFile(assignmentId, file, onUploadProgress) {
+        const formData = new FormData();
+        if (file) formData.append('file', file);
+
+        const response = await api.post(`/submissions/${assignmentId}/draft-file`, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            },
+            onUploadProgress
+        });
+        return response.data;
+    },
+
+    /**
+     * 1b. Xóa file trong bản nháp ngầm
+     */
+    async removeDraftFile(assignmentId) {
+        const response = await api.delete(`/submissions/${assignmentId}/draft-file`);
+        return response.data;
+    },
+
+    /**
+     * 1c. Silent Auto-Save Draft Declarations (Debounce text khai báo AI)
+     */
+    async saveDraftDeclarations(assignmentId, payload = {}) {
+        const response = await api.patch(`/submissions/${assignmentId}/draft-declarations`, payload);
         return response.data;
     },
 

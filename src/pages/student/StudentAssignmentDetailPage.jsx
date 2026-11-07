@@ -222,6 +222,24 @@ export default function StudentAssignmentDetailPage() {
         return true;
     };
 
+    // Handle Silent Auto-Save Draft File
+    const handleSaveDraftFile = async (file, onUploadProgress) => {
+        if (!id) return null;
+        return await SubmissionService.saveDraftFile(id, file, onUploadProgress);
+    };
+
+    // Handle Remove Draft File
+    const handleRemoveDraftFile = async () => {
+        if (!id) return null;
+        return await SubmissionService.removeDraftFile(id);
+    };
+
+    // Handle Silent Auto-Save Draft Declarations
+    const handleSaveDraftDeclarations = async ({ scopes, declarations, note }) => {
+        if (!id) return null;
+        return await SubmissionService.saveDraftDeclarations(id, { scopes, ai_declarations: declarations, note });
+    };
+
     if (loading) {
         return (
             <div className="max-w-6xl mx-auto p-8 space-y-6 animate-pulse">
@@ -241,6 +259,9 @@ export default function StudentAssignmentDetailPage() {
             initialSubmission={formattedSubmission}
             onBackToCourse={() => navigate('/student/classes')}
             onSubmitApiHandler={handleApiSubmit}
+            onSaveDraftFile={handleSaveDraftFile}
+            onRemoveDraftFile={handleRemoveDraftFile}
+            onSaveDraftDeclarations={handleSaveDraftDeclarations}
         />
     );
 }
