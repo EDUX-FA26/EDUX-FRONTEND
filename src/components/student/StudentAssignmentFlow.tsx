@@ -163,7 +163,7 @@ export interface SanityCheckResult {
   relevance_reason: string;
   diagnostic_warnings: string[];
   micro_suggestions: string[];
-  tone_message: string;
+  tone_message?: string;
 }
 
 /* ==========================================================================
@@ -2510,15 +2510,7 @@ export const PreSubmissionSanityPanel: React.FC<PreSubmissionSanityPanelProps> =
         </div>
       )}
 
-      {/* 5. Tone Message (Lời nhắn sư phạm từ AI) */}
-      {result.tone_message && (
-        <div className="bg-purple-50/80 border border-purple-200/80 rounded-xl p-3 flex items-start gap-2.5 text-xs text-purple-950">
-          <Sparkles size={14} className="text-purple-600 shrink-0 mt-0.5" />
-          <div className="italic leading-relaxed">{result.tone_message}</div>
-        </div>
-      )}
-
-      {/* 6. Footer Actions & Disclaimer */}
+      {/* 5. Footer Actions & Disclaimer */}
       <div className="pt-2 border-t border-purple-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-[11px] text-slate-400">
         <span className="italic">
           * Nhận xét mang tính chất tham khảo học tập, không ảnh hưởng đến điểm số và không chặn quyền nộp bài của bạn.
