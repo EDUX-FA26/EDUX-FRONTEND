@@ -10,6 +10,7 @@ import {
   FileText,
   CheckCircle2,
   AlertCircle,
+  Bookmark,
   Clock,
   ArrowLeft,
   ArrowRight,
@@ -64,7 +65,7 @@ export type AiDecision =
   | 'Heavily Adapted'
   | 'Rejected';
 
-export type SubmissionStatus = 'No submission' | 'Submitted' | 'Graded';
+export type SubmissionStatus = 'No submission' | 'Draft' | 'Submitted' | 'Graded';
 
 export type RubricFormField =
   | 'aiTool'
@@ -1016,6 +1017,7 @@ export const SubmissionStatusView: React.FC<SubmissionStatusViewProps> = ({
   isLateBlocked = false,
   dueDate = 'N/A',
 }) => {
+  const isDraft = submission.status === 'Draft';
   const isGraded = submission.status === 'Graded' || submission.score != null || submission.grade?.score != null;
   const isSubmitted = submission.status === 'Submitted' || isGraded;
   const finalScore = submission.score ?? submission.grade?.score;
@@ -1071,6 +1073,12 @@ export const SubmissionStatusView: React.FC<SubmissionStatusViewProps> = ({
                 v{submission.version}.0
               </span>
             )}
+            {isDraft && (
+              <span className="text-[10px] font-bold bg-amber-50 text-amber-700 px-2.5 py-0.5 rounded-md border border-amber-300 flex items-center gap-1">
+                <Bookmark size={11} className="text-amber-600" />
+                <span>Bản nháp (Draft - Chưa nộp chính thức)</span>
+              </span>
+            )}
             {isGraded && (
               <span className="text-[10px] font-bold bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-md border border-indigo-200">
                 Score: {Number(finalScore).toFixed(2)} / 10
@@ -1094,6 +1102,8 @@ export const SubmissionStatusView: React.FC<SubmissionStatusViewProps> = ({
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold tracking-wide uppercase transition shadow-xs cursor-pointer ${
               isSubmitted
                 ? 'bg-white border border-blue-600 text-blue-600 hover:bg-blue-50'
+                : isDraft
+                ? 'bg-gradient-to-r from-amber-500 to-orange-500 hover:opacity-95 text-white shadow-amber-500/20'
                 : 'bg-gradient-to-r from-orange-500 to-amber-500 hover:opacity-95 text-white shadow-orange-500/20'
             }`}
           >
@@ -1101,6 +1111,11 @@ export const SubmissionStatusView: React.FC<SubmissionStatusViewProps> = ({
               <>
                 <Edit3 size={15} />
                 <span>{isGraded ? 'EDIT SUBMISSION (GRADED)' : 'EDIT SUBMISSION'}</span>
+              </>
+            ) : isDraft ? (
+              <>
+                <Edit3 size={15} />
+                <span>TIẾP TỤC CHỈNH SỬA BẢN NHÁP</span>
               </>
             ) : (
               <>
@@ -1134,6 +1149,11 @@ export const SubmissionStatusView: React.FC<SubmissionStatusViewProps> = ({
                 <CheckCircle2 size={13} className="text-indigo-600" />
                 <span>Graded (Đã chấm điểm)</span>
               </span>
+            ) : isDraft ? (
+              <span className="inline-flex items-center gap-1.5 bg-amber-50 text-amber-800 border border-amber-300 text-xs font-bold px-3 py-1 rounded-full">
+                <Bookmark size={13} className="text-amber-600" />
+                <span>Bản nháp (Draft - Chưa nộp chính thức)</span>
+              </span>
             ) : isSubmitted ? (
               <span className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold px-3 py-1 rounded-full">
                 <CheckCircle2 size={13} className="text-emerald-600" />
@@ -1152,15 +1172,30 @@ export const SubmissionStatusView: React.FC<SubmissionStatusViewProps> = ({
               SUBMISSION TIME
             </div>
             <div className="space-y-0.5">
-              <span className="text-xs text-slate-700 font-mono font-medium block">
-                {submission.submittedAt
-                  ? `${submission.submittedAt} (GMT+07)`
-                  : '—'}
-              </span>
-              {submission.lastEditedAt && submission.lastEditedAt !== submission.submittedAt && (
-                <span className="text-[10px] text-slate-400 italic block">
-                  (Edited: {submission.lastEditedAt})
-                </span>
+              {isDraft ? (
+                <>
+                  <span className="text-xs text-amber-700 font-semibold block">
+                    Chưa nộp chính thức (Bản nháp)
+                  </span>
+                  {submission.lastEditedAt && (
+                    <span className="text-[11px] text-slate-500 block">
+                      Lưu gần nhất: {submission.lastEditedAt}
+                    </span>
+                  )}
+                </>
+              ) : (
+                <>
+                  <span className="text-xs text-slate-700 font-mono font-medium block">
+                    {submission.submittedAt
+                      ? `${submission.submittedAt} (GMT+07)`
+                      : '—'}
+                  </span>
+                  {submission.lastEditedAt && submission.lastEditedAt !== submission.submittedAt && (
+                    <span className="text-[10px] text-slate-400 italic block">
+                      (Edited: {submission.lastEditedAt})
+                    </span>
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -1223,7 +1258,7 @@ export const SubmissionStatusView: React.FC<SubmissionStatusViewProps> = ({
                     {submission.file.name}
                   </p>
                   <p className="text-[11px] text-slate-400 font-mono">
-                    {formatFileSize(submission.file.size)} • Active submission file
+                    {formatFileSize(submission.file.size)} • {isDraft ? 'Bản nháp (Draft file - Chưa nộp)' : 'Active submission file'}
                   </p>
                 </div>
               </div>
@@ -1253,7 +1288,9 @@ export const SubmissionStatusView: React.FC<SubmissionStatusViewProps> = ({
             FEEDBACK
           </div>
           <div className="text-xs text-slate-700 leading-relaxed bg-slate-50/70 p-3 rounded-xl border border-slate-100">
-            {isSubmitted
+            {isDraft
+              ? (submission.feedback || 'Bản nháp đang được lưu an toàn. Nhấn "Tiếp tục chỉnh sửa bản nháp" để hoàn tất và nộp chính thức.')
+              : isSubmitted
               ? submission.feedback ||
                 'No feedback yet. Submitted successfully. Waiting for grading.'
               : '—'}
@@ -1263,7 +1300,7 @@ export const SubmissionStatusView: React.FC<SubmissionStatusViewProps> = ({
 
         {/* Hàng 4: AI AUDIT LOG STATUS */}
         <div className="pt-2 border-t border-slate-100">
-          {isSubmitted ? (
+          {isSubmitted || (isDraft && (submission.scopes?.length || Object.values(submission.declarations || {}).some(d => d?.prompt || d?.isCompleted))) ? (
             <AiAuditLogCard
               declarations={submission.declarations}
               scopes={submission.scopes}
@@ -1305,6 +1342,8 @@ interface FileUploaderProps {
   aiDeclarationRequired?: boolean;
   onSubmitDirect?: () => void;
   isSubmittingPayload?: boolean;
+  onSaveDraft?: () => void;
+  isSavingDraft?: boolean;
 }
 
 const ALLOWED_FILE_EXTENSIONS = [
@@ -1324,6 +1363,8 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
   aiDeclarationRequired = true,
   onSubmitDirect,
   isSubmittingPayload = false,
+  onSaveDraft,
+  isSavingDraft = false,
 }) => {
   const isAiRequired = Boolean(aiDeclarationRequired ?? false);
   const [isDragging, setIsDragging] = useState(false);
@@ -1486,51 +1527,74 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
       )}
 
       {/* Buttons Step 1 */}
-      <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-slate-100">
         <button
           type="button"
           onClick={onCancel}
-          className="saf-btn-outline"
+          className="saf-btn-outline w-full sm:w-auto"
         >
           {isEditMode ? 'Discard Changes / Back' : 'Cancel / Back to Status'}
         </button>
 
-        {!isAiRequired ? (
-          <button
-            type="button"
-            disabled={isSubmittingPayload}
-            onClick={() => {
-              if (!currentFile) {
-                alert('Vui lòng chọn hoặc tải lên tệp bài nộp trước khi nộp!');
-                return;
-              }
-              if (onSubmitDirect) onSubmitDirect();
-            }}
-            className="saf-btn-primary flex items-center gap-1.5"
-          >
-            <CheckCircle2 size={15} />
-            <span>
-              {isSubmittingPayload
-                ? 'Submitting...'
-                : (isEditMode ? 'Update Assignment' : 'Submit Assignment')}
-            </span>
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={() => {
-              if (!currentFile) {
-                alert('Vui lòng chọn hoặc tải lên tệp bài nộp trước khi tiếp tục!');
-                return;
-              }
-              onNext();
-            }}
-            className="saf-btn-primary"
-          >
-            <span>{isEditMode ? 'Next: Edit AI Declaration' : 'Next: AI Declaration'}</span>
-            <ArrowRight size={14} />
-          </button>
-        )}
+        <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+          {onSaveDraft && (
+            <button
+              type="button"
+              disabled={isSubmittingPayload || isSavingDraft}
+              onClick={onSaveDraft}
+              className="px-4 py-2.5 rounded-xl text-xs font-bold border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 transition flex items-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50"
+            >
+              {isSavingDraft ? (
+                <>
+                  <RefreshCw size={14} className="animate-spin text-amber-600" />
+                  <span>Đang lưu nháp...</span>
+                </>
+              ) : (
+                <>
+                  <Bookmark size={14} className="text-amber-600" />
+                  <span>Lưu bản nháp (Save Draft)</span>
+                </>
+              )}
+            </button>
+          )}
+
+          {!isAiRequired ? (
+            <button
+              type="button"
+              disabled={isSubmittingPayload || isSavingDraft}
+              onClick={() => {
+                if (!currentFile) {
+                  alert('Vui lòng chọn hoặc tải lên tệp bài nộp trước khi nộp!');
+                  return;
+                }
+                if (onSubmitDirect) onSubmitDirect();
+              }}
+              className="saf-btn-primary flex items-center gap-1.5"
+            >
+              <CheckCircle2 size={15} />
+              <span>
+                {isSubmittingPayload
+                  ? 'Submitting...'
+                  : (isEditMode ? 'Update Assignment' : 'Submit Assignment')}
+              </span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                if (!currentFile) {
+                  alert('Vui lòng chọn hoặc tải lên tệp bài nộp trước khi tiếp tục!');
+                  return;
+                }
+                onNext();
+              }}
+              className="saf-btn-primary flex items-center gap-1.5"
+            >
+              <span>{isEditMode ? 'Next: Edit AI Declaration' : 'Next: AI Declaration'}</span>
+              <ArrowRight size={14} />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* MODAL CONFIRM DELETE FILE */}
@@ -1626,6 +1690,8 @@ interface AiRubricFormProps {
   onCancel: () => void;
   onSubmit: () => void;
   isSubmittingPayload: boolean;
+  onSaveDraft?: () => void;
+  isSavingDraft?: boolean;
 }
 
 export const AiRubricForm: React.FC<AiRubricFormProps> = ({
@@ -1636,6 +1702,8 @@ export const AiRubricForm: React.FC<AiRubricFormProps> = ({
   onCancel,
   onSubmit,
   isSubmittingPayload,
+  onSaveDraft,
+  isSavingDraft = false,
 }) => {
   const [activeScopeIdx, setActiveScopeIdx] = useState(0);
   const [activeKey, setActiveKey] = useState<RubricKey>('decomposition');
@@ -2161,7 +2229,7 @@ export const AiRubricForm: React.FC<AiRubricFormProps> = ({
             className="saf-btn-outline"
           >
             <ArrowLeft size={14} />
-            <span>Back to File</span>
+            <span>Quay lại tệp</span>
           </button>
 
           <button
@@ -2169,28 +2237,51 @@ export const AiRubricForm: React.FC<AiRubricFormProps> = ({
             onClick={onCancel}
             className="saf-btn-outline"
           >
-            Cancel
+            Hủy
           </button>
         </div>
 
-        <button
-          type="button"
-          disabled={isSubmittingPayload}
-          onClick={onSubmit}
-          className="saf-btn-dark"
-        >
-          {isSubmittingPayload ? (
-            <>
-              <RefreshCw size={14} className="animate-spin" />
-              <span>{isEditMode ? 'Updating Submission...' : 'Submitting Assignment...'}</span>
-            </>
-          ) : (
-            <>
-              <span>{isEditMode ? 'Update Submission & Audit Log' : 'Submit Assignment'}</span>
-              <CheckCircle2 size={14} className="text-emerald-400" />
-            </>
+        <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+          {onSaveDraft && (
+            <button
+              type="button"
+              disabled={isSubmittingPayload || isSavingDraft}
+              onClick={onSaveDraft}
+              className="px-4 py-2.5 rounded-xl text-xs font-bold border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 transition flex items-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50"
+            >
+              {isSavingDraft ? (
+                <>
+                  <RefreshCw size={14} className="animate-spin text-amber-600" />
+                  <span>Đang lưu nháp...</span>
+                </>
+              ) : (
+                <>
+                  <Bookmark size={14} className="text-amber-600" />
+                  <span>Lưu bản nháp (Save Draft)</span>
+                </>
+              )}
+            </button>
           )}
-        </button>
+
+          <button
+            type="button"
+            disabled={isSubmittingPayload || isSavingDraft}
+            onClick={onSubmit}
+            className="saf-btn-dark"
+          >
+            {isSubmittingPayload ? (
+              <>
+                <RefreshCw size={14} className="animate-spin" />
+                <span>{isEditMode ? 'Đang cập nhật bài nộp...' : 'Đang nộp bài...'}</span>
+              </>
+            ) : (
+              <>
+                <span>{isEditMode ? 'Cập nhật bài nộp & Khai báo AI' : 'Nộp bài chính thức (Submit Final)'}</span>
+                <CheckCircle2 size={14} className="text-emerald-400" />
+              </>
+            )}
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -2210,6 +2301,15 @@ interface StudentAssignmentFlowProps {
     declarations: Record<RubricKey, AiDeclarationRubric>;
     scopes?: AiScope[];
     isEdit: boolean;
+    isDraft?: boolean;
+  }) => Promise<boolean>;
+  onSaveDraftApiHandler?: (payload: {
+    assignmentId: string;
+    file: File | SubmissionFile;
+    declarations: Record<RubricKey, AiDeclarationRubric>;
+    scopes?: AiScope[];
+    isEdit: boolean;
+    isDraft?: boolean;
   }) => Promise<boolean>;
 }
 
@@ -2225,6 +2325,7 @@ export default function StudentAssignmentFlow({
   initialSubmission = null,
   onBackToCourse,
   onSubmitApiHandler,
+  onSaveDraftApiHandler,
 }: StudentAssignmentFlowProps) {
   // State Machine Quản lý 2 Chế độ chính
   const [viewMode, setViewMode] = useState<ViewMode>('VIEW_STATUS');
@@ -2248,10 +2349,14 @@ export default function StudentAssignmentFlow({
       if (initialSubmission.declarations) {
         setDraftDeclarations(initialSubmission.declarations);
       }
+      if (initialSubmission.scopes && initialSubmission.scopes.length > 0) {
+        setDraftScopes(initialSubmission.scopes);
+      }
     } else {
       setSubmission(EMPTY_SUBMISSION_STATE);
       setDraftFile(null);
       setDraftDeclarations(INITIAL_DECLARATIONS);
+      setDraftScopes(getInitialScopes(EMPTY_SUBMISSION_STATE));
     }
   }, [initialSubmission]);
 
@@ -2261,8 +2366,6 @@ export default function StudentAssignmentFlow({
   // Kiểm tra hạn nộp bài
   const isDeadlinePassed = Boolean(assignment.deadlineRaw && new Date() > new Date(assignment.deadlineRaw));
   const isLateBlocked = isDeadlinePassed && assignment.allowLateSubmission === false;
-
-
 
   // Draft States trong Form
   const [draftFile, setDraftFile] = useState<SubmissionFile | null>(submission.file);
@@ -2287,8 +2390,10 @@ export default function StudentAssignmentFlow({
 
   const [draftScopes, setDraftScopes] = useState<AiScope[]>(getInitialScopes(submission));
 
-  // Loading & Toast States
+  // Loading, Toast, Confirmation Modal States
   const [isSubmittingPayload, setIsSubmittingPayload] = useState(false);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
+  const [showSubmitConfirmModal, setShowSubmitConfirmModal] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const showToast = (msg: string) => {
@@ -2354,7 +2459,100 @@ export default function StudentAssignmentFlow({
     });
   };
 
-  // Logic khi bấm "Submit Assignment" hoặc "Update Submission"
+  // 1. Logic khi bấm "Lưu bản nháp" (Save Draft)
+  const handleSaveDraft = async () => {
+    const effectiveFile = draftRawFile || draftFile;
+
+    try {
+      setIsSavingDraft(true);
+
+      const handler = onSaveDraftApiHandler || onSubmitApiHandler;
+      if (handler) {
+        await handler({
+          assignmentId: assignment.id,
+          file: draftRawFile || effectiveFile,
+          declarations: draftDeclarations,
+          scopes: draftScopes,
+          isEdit: false,
+          isDraft: true,
+        });
+      } else {
+        await new Promise((resolve) => setTimeout(resolve, 500));
+      }
+
+      const now = new Date();
+      const formattedTimestamp = now
+        .toISOString()
+        .replace('T', ' ')
+        .substring(0, 19);
+
+      // Cập nhật state nội bộ sang Draft
+      const newSubmissionData: SubmissionData = {
+        ...submission,
+        status: 'Draft',
+        lastEditedAt: formattedTimestamp,
+        file: effectiveFile,
+        declarations: draftDeclarations,
+        scopes: draftScopes,
+      };
+
+      setSubmission(newSubmissionData);
+      showToast(`Đã lưu bản nháp bài nộp thành công (${now.toLocaleTimeString('vi-VN')})!`);
+    } catch (err: any) {
+      console.error('Save draft error:', err);
+      const serverMessage = err.response?.data?.message || err.message || '';
+      alert('Có lỗi khi lưu bản nháp: ' + (serverMessage || 'Vui lòng thử lại!'));
+    } finally {
+      setIsSavingDraft(false);
+    }
+  };
+
+  // 2. Kích hoạt Modal xác nhận nộp bài chính thức
+  const handleTriggerSubmitFinal = () => {
+    if (isLateBlocked) {
+      alert('Hạn nộp bài đã kết thúc và bài tập này không cho phép nộp muộn!');
+      return;
+    }
+
+    const effectiveFile = draftRawFile || draftFile;
+    if (!effectiveFile) {
+      alert('Vui lòng chọn hoặc tải lên tệp bài nộp tại Bước 1 trước khi nộp chính thức!');
+      setFormStep(1);
+      return;
+    }
+
+    // Kiểm tra khai báo AI bắt buộc
+    if (assignment.aiDeclarationRequired !== false) {
+      let completedCount = 0;
+      if (draftScopes && draftScopes.length > 0) {
+        draftScopes.forEach(s => {
+          Object.values(s.declarations || {}).forEach(d => {
+            if (isRubricDeclaredComplete(d)) completedCount++;
+          });
+        });
+      } else {
+        const rubricKeys: RubricKey[] = ['decomposition', 'pattern', 'abstraction', 'algorithmic', 'reflection'];
+        completedCount = rubricKeys.filter(k => isRubricDeclaredComplete(draftDeclarations[k])).length;
+      }
+
+      const minRequired = assignment.minAiInteractions || 1;
+      if (completedCount < minRequired) {
+        alert(`Bài tập yêu cầu hoàn thiện tối thiểu ${minRequired} tiêu chí khai báo AI tương tác trước khi nộp chính thức! (Hiện có: ${completedCount})`);
+        setFormStep(2);
+        return;
+      }
+    }
+
+    setShowSubmitConfirmModal(true);
+  };
+
+  // 3. Thực thi nộp bài chính thức (sau khi sinh viên bấm Xác nhận trong modal)
+  const executeFinalSubmit = async () => {
+    setShowSubmitConfirmModal(false);
+    await handleSubmitAssignment();
+  };
+
+  // Logic nộp bài chính thức (Submit Final / Update)
   const handleSubmitAssignment = async () => {
     if (isLateBlocked) {
       alert('Hạn nộp bài đã kết thúc và bài tập này không cho phép nộp muộn!');
@@ -2381,6 +2579,7 @@ export default function StudentAssignmentFlow({
           declarations: draftDeclarations,
           scopes: draftScopes,
           isEdit: isEditMode,
+          isDraft: false,
         });
       } else {
         // Giả lập network latency 800ms
@@ -2417,7 +2616,7 @@ export default function StudentAssignmentFlow({
         lastEditedAt: formattedTimestamp,
         version: isEditMode ? currentVer + 1 : 1,
         file: effectiveFile,
-        feedback: submission.feedback || 'No feedback yet. Submitted successfully. Waiting for grading.',
+        feedback: submission.feedback || 'Chưa có nhận xét. Bài nộp đã nộp chính thức thành công và đang chờ giảng viên chấm điểm.',
         transparencyScore: calculatedScore,
         declarations: draftDeclarations,
         scopes: draftScopes,
@@ -2432,7 +2631,7 @@ export default function StudentAssignmentFlow({
       showToast(
         isEditMode
           ? `Cập nhật bài nộp và khai báo AI thành công (Phiên bản v${newSubmissionData.version}.0)!`
-          : 'Nộp bài và khai báo AI thành công!'
+          : 'Nộp bài chính thức và gửi đến giảng viên thành công!'
       );
     } catch (err: any) {
       console.error('Submission error:', err);
@@ -2520,6 +2719,11 @@ export default function StudentAssignmentFlow({
                   <Check size={12} />
                   <span>Submitted</span>
                 </span>
+              ) : submission.status === 'Draft' ? (
+                <span className="bg-amber-50 text-amber-700 text-xs font-bold px-2.5 py-0.5 rounded-full border border-amber-300 flex items-center gap-1">
+                  <Bookmark size={12} />
+                  <span>Bản nháp (Draft - Chưa nộp chính thức)</span>
+                </span>
               ) : null}
             </div>
             <p className="text-xs text-slate-500 mt-0.5">
@@ -2533,10 +2737,12 @@ export default function StudentAssignmentFlow({
                 ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
                 : submission.status === 'Submitted'
                 ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                : submission.status === 'Draft'
+                ? 'bg-amber-50 text-amber-800 border-amber-300'
                 : 'bg-slate-100 text-slate-600 border-slate-200'
             }`}
           >
-            {submission.status}
+            {submission.status === 'Draft' ? 'Bản nháp (Draft)' : submission.status}
           </span>
         </div>
 
@@ -2572,20 +2778,26 @@ export default function StudentAssignmentFlow({
                       <h2 className="text-lg font-bold text-slate-900 tracking-tight">
                         {isEditMode
                           ? (assignment.aiDeclarationRequired !== false ? 'Edit Submission & AI Declaration' : 'Edit Submission File')
+                          : submission.status === 'Draft'
+                          ? 'Tiếp tục chỉnh sửa bản nháp'
                           : 'Submit Assignment'}
                       </h2>
-                      {isEditMode && (
+                      {isEditMode ? (
                         <span className="text-[10px] font-bold bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full border border-amber-200">
                           Editing Mode
                         </span>
-                      )}
+                      ) : submission.status === 'Draft' ? (
+                        <span className="text-[10px] font-bold bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full border border-amber-300">
+                          Draft Mode
+                        </span>
+                      ) : null}
                     </div>
                     <p className="text-xs text-slate-500">
                       {assignment.aiDeclarationRequired !== false ? (
                         <>
                           Step {formStep} of 2 •{' '}
                           {formStep === 1
-                            ? isEditMode ? 'File Management' : 'File Upload'
+                            ? isEditMode || submission.status === 'Draft' ? 'File Management' : 'File Upload'
                             : 'Computational Thinking Rubrics'}
                         </>
                       ) : (
@@ -2664,8 +2876,10 @@ export default function StudentAssignmentFlow({
                     onCancel={handleCancelForm}
                     onNext={() => setFormStep(2)}
                     aiDeclarationRequired={assignment.aiDeclarationRequired !== false}
-                    onSubmitDirect={handleSubmitAssignment}
+                    onSubmitDirect={handleTriggerSubmitFinal}
                     isSubmittingPayload={isSubmittingPayload}
+                    onSaveDraft={handleSaveDraft}
+                    isSavingDraft={isSavingDraft}
                   />
                 ) : (
                   <AiRubricForm
@@ -2674,8 +2888,10 @@ export default function StudentAssignmentFlow({
                     onScopesChange={setDraftScopes}
                     onPreviousStep={() => setFormStep(1)}
                     onCancel={handleCancelForm}
-                    onSubmit={handleSubmitAssignment}
+                    onSubmit={handleTriggerSubmitFinal}
                     isSubmittingPayload={isSubmittingPayload}
+                    onSaveDraft={handleSaveDraft}
+                    isSavingDraft={isSavingDraft}
                   />
                 )}
               </div>
@@ -2683,6 +2899,85 @@ export default function StudentAssignmentFlow({
           </div>
         </div>
       </div>
+
+      {/* Modal xác nhận nộp bài chính thức */}
+      {showSubmitConfirmModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl border border-slate-100 space-y-5 animate-in zoom-in-95 duration-200">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600 shrink-0">
+                <CheckCircle2 size={24} />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 tracking-tight">
+                  Xác nhận nộp bài chính thức
+                </h3>
+                <p className="text-xs text-slate-500 mt-1">
+                  Chuyển trạng thái từ bản nháp sang nộp bài hoàn tất
+                </p>
+              </div>
+            </div>
+
+            <div className="p-4 bg-amber-50/80 border border-amber-200 rounded-2xl space-y-2 text-xs text-amber-900">
+              <div className="flex items-center gap-2 font-bold text-amber-800">
+                <AlertTriangle size={15} className="text-amber-600 shrink-0" />
+                <span>Thông báo quan trọng:</span>
+              </div>
+              <p className="leading-relaxed">
+                Bạn có chắc chắn muốn nộp bài chính thức? Sau khi nộp, bài làm sẽ được chuyển đến giảng viên để chấm điểm.
+              </p>
+            </div>
+
+            {/* Chi tiết tệp & AI declaration sẽ nộp */}
+            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-2 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500">Tệp bài nộp:</span>
+                <span className="font-semibold text-slate-800 truncate max-w-[220px]">
+                  {(draftRawFile || draftFile)?.name || 'Chưa có tệp'}
+                </span>
+              </div>
+              {assignment.aiDeclarationRequired !== false && (
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500">Khai báo AI Audit:</span>
+                  <span className="font-semibold text-emerald-600 flex items-center gap-1">
+                    <Check size={13} />
+                    Đã hoàn thiện các tiêu chí khai báo AI
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                disabled={isSubmittingPayload}
+                onClick={() => setShowSubmitConfirmModal(false)}
+                className="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+              >
+                Hủy / Kiểm tra lại
+              </button>
+              <button
+                type="button"
+                disabled={isSubmittingPayload}
+                onClick={executeFinalSubmit}
+                className="px-5 py-2.5 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white transition flex items-center gap-2 shadow-sm cursor-pointer disabled:opacity-50"
+              >
+                {isSubmittingPayload ? (
+                  <>
+                    <RefreshCw size={14} className="animate-spin" />
+                    <span>Đang nộp bài...</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 size={15} />
+                    <span>Xác nhận nộp bài</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

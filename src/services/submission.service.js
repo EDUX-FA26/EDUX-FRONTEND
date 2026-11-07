@@ -1,17 +1,54 @@
 import api from '../config/axios.config';
 
 const SubmissionService = {
-    async submitAssignment(assignmentId, file, note) {
+    /**
+     * Nộp bài hoặc lưu nháp bài tập (tương thích ngược)
+     */
+    async submitAssignment(assignmentId, file, note, isDraft = false) {
+        if (isDraft) {
+            return this.saveDraft(assignmentId, file, note);
+        }
+        return this.submitFinal(assignmentId, file, note);
+    },
+
+    /**
+     * 1. Lưu bản nháp bài nộp (Save Draft)
+     */
+    async saveDraft(assignmentId, file, note) {
         const formData = new FormData();
         if (file) formData.append('files', file);
         if (note) formData.append('note', note);
-        // Assuming link is passed as note or not fully supported yet in DB, we'll put link in note for now
+        formData.append('is_draft', 'true');
 
-        const response = await api.post(`/submissions/${assignmentId}/files`, formData, {
+        const response = await api.post(`/submissions/${assignmentId}/draft`, formData, {
             headers: {
                 'Content-Type': 'multipart/form-data'
             }
         });
+        return response.data;
+    },
+
+    /**
+     * 2. Nộp bài chính thức (Submit Final)
+     */
+    async submitFinal(assignmentId, file, note) {
+        const formData = new FormData();
+        if (file) formData.append('files', file);
+        if (note) formData.append('note', note);
+
+        const response = await api.post(`/submissions/${assignmentId}/submit-final`, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        });
+        return response.data;
+    },
+
+    /**
+     * Lấy bài nộp của chính sinh viên cho 1 bài tập cụ thể
+     */
+    async getMySubmissionByAssignment(assignmentId) {
+        const response = await api.get(`/submissions/assignments/${assignmentId}/my-submission`);
         return response.data;
     },
 

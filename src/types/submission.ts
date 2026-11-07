@@ -20,7 +20,17 @@ export type AiDecision =
   | 'Heavily Adapted'
   | 'Rejected';
 
-export type SubmissionStatus = 'NOT_SUBMITTED' | 'SUBMITTED' | 'GRADED';
+export type SubmissionStatus =
+  | 'NOT_SUBMITTED'
+  | 'DRAFT'
+  | 'SUBMITTED'
+  | 'GRADED'
+  | 'draft'
+  | 'submitted'
+  | 'late'
+  | 'reviewed'
+  | 'graded'
+  | 'flagged';
 
 export type FileType = 'pdf' | 'zip' | 'docx' | 'code' | 'other';
 
