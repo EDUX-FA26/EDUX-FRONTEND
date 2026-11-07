@@ -36,7 +36,9 @@ import {
   Undo2,
   Cloud,
   CheckCheck,
-  Loader2
+  Loader2,
+  Info,
+  RotateCcw
 } from 'lucide-react';
 import AssignmentService from '../../services/assignment.service';
 import SubmissionService from '../../services/submission.service';
@@ -156,6 +158,14 @@ export interface SubmissionData {
   score?: number | null;
   grade?: any;
   rubrics?: any;
+}
+
+export interface SanityCheckResult {
+  relevance_status: 'MATCH' | 'MISMATCH_OR_SUSPICIOUS';
+  relevance_reason: string;
+  diagnostic_warnings: string[];
+  micro_suggestions: string[];
+  tone_message?: string;
 }
 
 /* ==========================================================================
@@ -1353,6 +1363,8 @@ interface FileUploaderProps {
   isUploadingFile?: boolean;
   uploadProgress?: number | null;
   autoSaveStatus?: 'idle' | 'saving' | 'saved' | 'error';
+  onRunSanityCheck?: () => void;
+  isSanityChecking?: boolean;
 }
 
 const ALLOWED_FILE_EXTENSIONS = [
@@ -1375,6 +1387,8 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
   isUploadingFile = false,
   uploadProgress = null,
   autoSaveStatus = 'idle',
+  onRunSanityCheck,
+  isSanityChecking = false,
 }) => {
   const isAiRequired = Boolean(aiDeclarationRequired ?? false);
   const [isDragging, setIsDragging] = useState(false);
@@ -1590,6 +1604,29 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
             )}
           </div>
 
+          {/* Quick AI Sanity Check Button */}
+          {currentFile && onRunSanityCheck && (
+            <button
+              type="button"
+              disabled={isUploadingFile || isSanityChecking}
+              onClick={onRunSanityCheck}
+              title="Chẩn đoán nhanh lỗi logic, độ lệch đề và khai báo AI trước khi nộp chính thức (Không ảnh hưởng đến điểm số)."
+              className="bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-xl px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50"
+            >
+              {isSanityChecking ? (
+                <>
+                  <Loader2 size={13} className="animate-spin text-purple-600" />
+                  <span>Đang kiểm tra AI...</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles size={13} className="text-purple-600" />
+                  <span>Kiểm tra nhanh bằng AI</span>
+                </>
+              )}
+            </button>
+          )}
+
           {!isAiRequired ? (
             <button
               type="button"
@@ -1726,6 +1763,8 @@ interface AiRubricFormProps {
   onSaveDraft?: () => void;
   isSavingDraft?: boolean;
   autoSaveStatus?: 'idle' | 'saving' | 'saved' | 'error';
+  onRunSanityCheck?: () => void;
+  isSanityChecking?: boolean;
 }
 
 export const AiRubricForm: React.FC<AiRubricFormProps> = ({
@@ -1737,6 +1776,8 @@ export const AiRubricForm: React.FC<AiRubricFormProps> = ({
   onSubmit,
   isSubmittingPayload,
   autoSaveStatus = 'idle',
+  onRunSanityCheck,
+  isSanityChecking = false,
 }) => {
   const [activeScopeIdx, setActiveScopeIdx] = useState(0);
   const [activeKey, setActiveKey] = useState<RubricKey>('decomposition');
@@ -2300,6 +2341,29 @@ export const AiRubricForm: React.FC<AiRubricFormProps> = ({
             )}
           </div>
 
+          {/* Quick AI Sanity Check Button */}
+          {onRunSanityCheck && (
+            <button
+              type="button"
+              disabled={isSubmittingPayload || isSanityChecking}
+              onClick={onRunSanityCheck}
+              title="Chẩn đoán nhanh lỗi logic, độ lệch đề và khai báo AI trước khi nộp chính thức (Không ảnh hưởng đến điểm số)."
+              className="bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-xl px-3 py-2 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50"
+            >
+              {isSanityChecking ? (
+                <>
+                  <Loader2 size={13} className="animate-spin text-purple-600" />
+                  <span>Đang kiểm tra AI...</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles size={13} className="text-purple-600" />
+                  <span>Kiểm tra nhanh bằng AI</span>
+                </>
+              )}
+            </button>
+          )}
+
           <button
             type="button"
             disabled={isSubmittingPayload}
@@ -2318,6 +2382,132 @@ export const AiRubricForm: React.FC<AiRubricFormProps> = ({
               </>
             )}
           </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* ==========================================================================
+   8b. SUB-COMPONENT: PRE-SUBMISSION AI SANITY FEEDBACK PANEL
+   ========================================================================== */
+
+interface PreSubmissionSanityPanelProps {
+  result: SanityCheckResult;
+  isSanityChecking?: boolean;
+  onReRun?: () => void;
+  onClose: () => void;
+}
+
+export const PreSubmissionSanityPanel: React.FC<PreSubmissionSanityPanelProps> = ({
+  result: sanityData,
+  isSanityChecking: isLoadingSanity = false,
+  onReRun: handleReRunSanityCheck,
+  onClose,
+}) => {
+  return (
+    <div className="mb-6 rounded-2xl border border-indigo-100/80 bg-gradient-to-b from-white to-slate-50/40 shadow-xs p-5 transition-all">
+      {/* Card Header */}
+      <div className="flex items-center justify-between pb-3.5 border-b border-slate-100 gap-2">
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <div className="w-7 h-7 rounded-lg bg-purple-50 border border-purple-100 flex items-center justify-center shrink-0">
+            <Sparkles className="w-4 h-4 text-purple-600"/>
+          </div>
+          <h4 className="text-sm font-semibold text-slate-800 tracking-tight">
+            Kết quả Pre-Check Sanity
+          </h4>
+          <span className="inline-flex items-center text-[11px] font-medium text-purple-700 bg-purple-50 border border-purple-200/60 px-2.5 py-0.5 rounded-full">
+            Formative Feedback • Không tính điểm
+          </span>
+        </div>
+
+        <div className="flex items-center gap-1.5 shrink-0">
+          {handleReRunSanityCheck && (
+            <button
+              type="button"
+              onClick={handleReRunSanityCheck}
+              disabled={isLoadingSanity}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-slate-600 hover:text-purple-700 hover:bg-purple-50/60 border border-slate-200 rounded-lg transition cursor-pointer disabled:opacity-50"
+              title="Kiểm tra lại sau khi bạn đã chỉnh sửa file hoặc nội dung khai báo"
+            >
+              <RotateCcw className={`w-3 h-3 ${isLoadingSanity ? 'animate-spin' : ''}`} />
+              <span>{isLoadingSanity ? 'Đang kiểm tra...' : 'Kiểm tra lại'}</span>
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-md transition cursor-pointer"
+            title="Đóng nhận xét"
+          >
+            <X className="w-4 h-4"/>
+          </button>
+        </div>
+      </div>
+
+      {/* Content Sections */}
+      <div className="mt-3.5 space-y-3">
+        {/* 1. Trạng thái độ khớp đề bài */}
+        <div className={`p-3 rounded-xl border flex items-start gap-2.5 ${
+          sanityData.relevance_status === 'MATCH'
+            ? 'bg-emerald-50/60 border-emerald-100 text-emerald-950'
+            : 'bg-amber-50/60 border-amber-100 text-amber-950'
+        }`}>
+          {sanityData.relevance_status === 'MATCH' ? (
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5"/>
+          ) : (
+            <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5"/>
+          )}
+          <div className="text-xs leading-relaxed">
+            <span className="font-semibold">
+              {sanityData.relevance_status === 'MATCH' ? 'Độ khớp đề bài: Đạt yêu cầu' : 'Độ khớp đề bài: Cần đối soát lại'}
+            </span>
+            {sanityData.relevance_reason && (
+              <span className="text-slate-600 ml-1">({sanityData.relevance_reason})</span>
+            )}
+          </div>
+        </div>
+
+        {/* 2. Điểm cần lưu ý */}
+        {sanityData.diagnostic_warnings && sanityData.diagnostic_warnings.length > 0 && (
+          <div className="bg-white rounded-xl border border-slate-100 p-3.5 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+            <div className="flex items-center gap-1.5 mb-2">
+              <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0"/>
+              <span className="text-xs font-semibold text-slate-800">
+                Điểm cần lưu ý trước khi chốt nộp:
+              </span>
+            </div>
+            <div className="space-y-1.5 pl-5">
+              {sanityData.diagnostic_warnings.map((warn: string, idx: number) => (
+                <div key={idx} className="relative text-xs text-slate-600 leading-relaxed before:content-['•'] before:absolute before:-left-3 before:text-amber-500 before:font-bold">
+                  {warn}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 3. Gợi ý nhanh */}
+        {sanityData.micro_suggestions && sanityData.micro_suggestions.length > 0 && (
+          <div className="p-3.5 rounded-xl border border-amber-200/70 bg-gradient-to-r from-amber-50/50 via-white to-amber-50/20 text-xs">
+            <div className="flex items-start gap-2.5">
+              <div className="w-5 h-5 rounded-md bg-amber-100/80 flex items-center justify-center shrink-0 mt-0.5">
+                <Lightbulb className="w-3.5 h-3.5 text-amber-700"/>
+              </div>
+              <div className="text-slate-700 leading-relaxed">
+                <span className="font-semibold text-slate-900 mr-1">Gợi ý nhanh:</span>
+                {Array.isArray(sanityData.micro_suggestions)
+                  ? sanityData.micro_suggestions.join(' ')
+                  : sanityData.micro_suggestions}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Footer Chú thích */}
+        <div className="pt-2 flex items-center gap-1.5 text-[11px] text-slate-400">
+          <Info className="w-3.5 h-3.5 shrink-0"/>
+          <span>Đây là nhận xét tham khảo từ AI, không ảnh hưởng điểm số và không chặn quyền nộp bài của bạn.</span>
         </div>
       </div>
     </div>
@@ -2351,6 +2541,7 @@ interface StudentAssignmentFlowProps {
   onSaveDraftFile?: (file: File, onUploadProgress?: (progressEvent: any) => void) => Promise<any>;
   onRemoveDraftFile?: () => Promise<any>;
   onSaveDraftDeclarations?: (payload: { scopes?: any[]; declarations?: any; note?: string }) => Promise<any>;
+  onRunSanityCheck?: (payload: { scopes?: any[]; ai_declarations?: any }) => Promise<any>;
 }
 
 export const EMPTY_SUBMISSION_STATE: SubmissionData = {
@@ -2369,6 +2560,7 @@ export default function StudentAssignmentFlow({
   onSaveDraftFile,
   onRemoveDraftFile,
   onSaveDraftDeclarations,
+  onRunSanityCheck,
 }: StudentAssignmentFlowProps) {
   // State Machine Quản lý 2 Chế độ chính
   const [viewMode, setViewMode] = useState<ViewMode>('VIEW_STATUS');
@@ -2383,6 +2575,11 @@ export default function StudentAssignmentFlow({
   const [isUploadingFile, setIsUploadingFile] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const debounceTimerRef = useRef<any>(null);
+
+  // Pre-Submission AI Sanity Check States
+  const [isSanityChecking, setIsSanityChecking] = useState(false);
+  const [sanityCheckResult, setSanityCheckResult] = useState<SanityCheckResult | null>(null);
+  const [showSanityPanel, setShowSanityPanel] = useState(false);
 
   // Dọn dẹp debounce timer khi unmount
   useEffect(() => {
@@ -2496,6 +2693,45 @@ export default function StudentAssignmentFlow({
   const handleCancelForm = () => {
     setViewMode('VIEW_STATUS');
     setFormStep(1);
+  };
+
+  // Pre-Submission AI Sanity Check (Chẩn đoán nhanh bài làm bằng AI)
+  const handleRunSanityCheck = async () => {
+    // 1. Kiểm tra đã có file bài làm chưa
+    if (!draftFile && !draftRawFile && !submission.file) {
+      showToast('⚠️ Vui lòng tải lên tệp bài làm trước khi kiểm tra nhanh bằng AI.');
+      return;
+    }
+
+    try {
+      setIsSanityChecking(true);
+      const payload = {
+        scopes: draftScopes,
+        ai_declarations: draftDeclarations,
+      };
+
+      let resData: any;
+      if (onRunSanityCheck) {
+        resData = await onRunSanityCheck(payload);
+      } else {
+        const response = await SubmissionService.runSanityCheck(assignment.id, payload);
+        resData = response?.data || response;
+      }
+
+      const result: SanityCheckResult = resData?.data || resData;
+      setSanityCheckResult(result);
+      setShowSanityPanel(true);
+      showToast('✨ Đã hoàn thành chẩn đoán bài làm bằng AI.');
+    } catch (error: any) {
+      console.error('Error during pre-submission sanity check:', error);
+      const errorMsg =
+        error?.response?.data?.message ||
+        error?.message ||
+        'Không thể kiểm tra bài làm bằng AI lúc này. Vui lòng thử lại sau.';
+      alert(errorMsg);
+    } finally {
+      setIsSanityChecking(false);
+    }
   };
 
   // Tự động tải file và Silent Auto-Save lên server ngay khi chọn/kéo thả file
@@ -2931,6 +3167,27 @@ export default function StudentAssignmentFlow({
                           </>
                         )}
                       </div>
+
+                      {/* Pre-Submission AI Sanity Check Trigger Button */}
+                      <button
+                        type="button"
+                        onClick={handleRunSanityCheck}
+                        disabled={isSanityChecking || isUploadingFile}
+                        title="Chẩn đoán nhanh lỗi logic, độ lệch đề và khai báo AI trước khi nộp chính thức (Không ảnh hưởng đến điểm số)."
+                        className="bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-xl px-2.5 py-1 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-2xs disabled:opacity-50"
+                      >
+                        {isSanityChecking ? (
+                          <>
+                            <Loader2 size={13} className="animate-spin text-purple-600" />
+                            <span>Đang kiểm tra AI...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles size={13} className="text-purple-600" />
+                            <span>Kiểm tra nhanh bằng AI</span>
+                          </>
+                        )}
+                      </button>
                     </div>
                     <p className="text-xs text-slate-500 mt-0.5">
                       {assignment.aiDeclarationRequired !== false ? (
@@ -2995,6 +3252,19 @@ export default function StudentAssignmentFlow({
                   )}
                 </div>
 
+                {/* Pre-submission AI Sanity Feedback Panel */}
+                {showSanityPanel && sanityCheckResult && (
+                  <PreSubmissionSanityPanel
+                    result={sanityCheckResult}
+                    isSanityChecking={isSanityChecking}
+                    onReRun={handleRunSanityCheck}
+                    onClose={() => {
+                      setShowSanityPanel(false);
+                      setSanityCheckResult(null);
+                    }}
+                  />
+                )}
+
                 {/* Form Step Body */}
                 {formStep === 1 ? (
                   <FileUploader
@@ -3010,6 +3280,8 @@ export default function StudentAssignmentFlow({
                     isUploadingFile={isUploadingFile}
                     uploadProgress={uploadProgress}
                     autoSaveStatus={autoSaveStatus}
+                    onRunSanityCheck={handleRunSanityCheck}
+                    isSanityChecking={isSanityChecking}
                   />
                 ) : (
                   <AiRubricForm
@@ -3021,6 +3293,8 @@ export default function StudentAssignmentFlow({
                     onSubmit={handleTriggerSubmitFinal}
                     isSubmittingPayload={isSubmittingPayload}
                     autoSaveStatus={autoSaveStatus}
+                    onRunSanityCheck={handleRunSanityCheck}
+                    isSanityChecking={isSanityChecking}
                   />
                 )}
               </div>
