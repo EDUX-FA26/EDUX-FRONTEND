@@ -106,6 +106,14 @@ const SubmissionService = {
         return response.data;
     },
 
+    /**
+     * 3. AI Pre-submission Sanity Check (Chẩn đoán nhanh bài nháp)
+     */
+    async runSanityCheck(assignmentId, payload = {}) {
+        const response = await api.post(`/submissions/${assignmentId}/sanity-check`, payload);
+        return response.data;
+    },
+
     async getMySubmissions(query = {}) {
         const params = new URLSearchParams(query).toString();
         const url = params ? `/submissions/my-submissions?${params}` : '/submissions/my-submissions';

@@ -240,6 +240,12 @@ export default function StudentAssignmentDetailPage() {
         return await SubmissionService.saveDraftDeclarations(id, { scopes, ai_declarations: declarations, note });
     };
 
+    // Handle AI Pre-submission Sanity Check
+    const handleRunSanityCheck = async (payload) => {
+        if (!id) return null;
+        return await SubmissionService.runSanityCheck(id, payload);
+    };
+
     if (loading) {
         return (
             <div className="max-w-6xl mx-auto p-8 space-y-6 animate-pulse">
@@ -262,6 +268,7 @@ export default function StudentAssignmentDetailPage() {
             onSaveDraftFile={handleSaveDraftFile}
             onRemoveDraftFile={handleRemoveDraftFile}
             onSaveDraftDeclarations={handleSaveDraftDeclarations}
+            onRunSanityCheck={handleRunSanityCheck}
         />
     );
 }
