@@ -67,10 +67,37 @@ export const importExcel = async (file) => {
   return response.data;
 };
 
+export const importAutoAssignClasses = async (file) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  const response = await axiosInstance.post('/classes/auto-assign', formData);
+  return response.data;
+};
+
 export const importUsers = async (file) => {
   const formData = new FormData();
   formData.append('file', file);
   const response = await axiosInstance.post('/users/import-list', formData);
+  return response.data;
+};
+
+export const getDepartments = async () => {
+  const response = await axiosInstance.get('/departments');
+  return response.data;
+};
+
+export const createDepartment = async (payload) => {
+  const response = await axiosInstance.post('/departments', payload);
+  return response.data;
+};
+
+export const updateDepartment = async (id, payload) => {
+  const response = await axiosInstance.patch(`/departments/${id}`, payload);
+  return response.data;
+};
+
+export const deleteDepartment = async (id) => {
+  const response = await axiosInstance.delete(`/departments/${id}`);
   return response.data;
 };
 
@@ -79,8 +106,18 @@ export const getAllClasses = async () => {
   return response.data;
 };
 
+export const createAdminClass = async (payload) => {
+  const response = await axiosInstance.post('/classes', payload);
+  return response.data;
+};
+
 export const getClassStudents = async (id) => {
   const response = await axiosInstance.get(`/classes/${id}/students`);
+  return response.data;
+};
+
+export const addClassStudent = async (classId, payload) => {
+  const response = await axiosInstance.post(`/classes/${classId}/students`, payload);
   return response.data;
 };
 

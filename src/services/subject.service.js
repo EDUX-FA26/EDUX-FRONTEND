@@ -19,3 +19,8 @@ export const deleteSubject = async (id) => {
   const response = await api.delete(`/subjects/${id}`);
   return response.data;
 };
+
+export const restoreSubject = async (id) => {
+  const response = await api.post(`/subjects/${id}/restore`);
+  return response.data;
+};

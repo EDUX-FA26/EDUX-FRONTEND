@@ -3,6 +3,7 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { ROLES, SEMESTER_LABEL } from '../config/constants';
+import { getSemesters } from '../services/semester.service';
 import SettingsToggle from '../components/common/SettingsToggle';
 import {
   FiChevronDown,
@@ -96,6 +97,27 @@ export default function DashboardLayout() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [headerSearch, setHeaderSearch] = useState('');
+  const [currentSemesterLabel, setCurrentSemesterLabel] = useState('');
+
+  useEffect(() => {
+    const fetchCurrentSemester = () => {
+      if (!user) return;
+      getSemesters({ is_current: 'true', limit: 1 })
+        .then((res) => {
+          const current = res?.data?.[0];
+          if (current) {
+            setCurrentSemesterLabel(`${current.name} (${current.code})`);
+          } else {
+            setCurrentSemesterLabel('');
+          }
+        })
+        .catch(() => {});
+    };
+
+    fetchCurrentSemester();
+    window.addEventListener('edux:semester-updated', fetchCurrentSemester);
+    return () => window.removeEventListener('edux:semester-updated', fetchCurrentSemester);
+  }, [user]);
 
   const navItems = NAV_BY_ROLE[user?.role] || [];
   const activeId = navItems.find((item) =>
@@ -335,7 +357,7 @@ export default function DashboardLayout() {
                         animation: 'pulse-ring 1.5s ease-in-out infinite',
                       }}
                     />
-                    {t?.layout?.semester || SEMESTER_LABEL}
+                    {currentSemesterLabel || t?.layout?.semester || SEMESTER_LABEL}
                   </div>
                 </div>
 

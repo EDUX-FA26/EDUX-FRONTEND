@@ -5,7 +5,8 @@ import {
   createUser,
   updateUser,
   toggleUserStatus,
-  importUsers
+  importUsers,
+  getDepartments,
 } from '../../services/admin.service';
 
 function UserRow({ user: u, onEdit, onToggleStatus }) {
@@ -21,7 +22,7 @@ function UserRow({ user: u, onEdit, onToggleStatus }) {
         </div>
         <div>
           <p style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--color-ink)', margin: '0 0 2px' }}>
-            {u.full_name || '—'} {u.student_code && <span style={{ fontSize: '0.75rem', color: 'var(--color-ink-muted)', fontWeight: 500 }}>({u.student_code})</span>} {isSuspended && <span style={{ color: '#ef4444', fontSize: '0.75rem', fontWeight: 600 }}>• Bị tạm khóa</span>}
+            {u.full_name || '—'} {u.student_code && <span style={{ fontSize: '0.75rem', color: 'var(--color-ink-muted)', fontWeight: 500 }}>({u.student_code})</span>} {u.department_name && <span style={{ fontSize: '0.72rem', padding: '2px 7px', borderRadius: '10px', background: 'var(--color-surface-hover)', color: 'var(--color-ink-muted)', fontWeight: 600, marginLeft: '4px' }}>{u.department_code ? `${u.department_code} • ` : ''}{u.department_name}</span>} {isSuspended && <span style={{ color: '#ef4444', fontSize: '0.75rem', fontWeight: 600 }}>• Bị tạm khóa</span>}
           </p>
           <p style={{ fontSize: '0.75rem', color: 'var(--color-ink-muted)', margin: 0, fontFamily: 'var(--font-mono)' }}>{u.email}</p>
         </div>
@@ -80,6 +81,7 @@ function UserRow({ user: u, onEdit, onToggleStatus }) {
 export default function UserManagementPage() {
   const { t } = useLanguage();
   const [users, setUsers] = useState([]);
+  const [departments, setDepartments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [roleFilter, setRoleFilter] = useState("all");
@@ -97,6 +99,7 @@ export default function UserManagementPage() {
     password: '',
     role: 'student',
     student_code: '',
+    department_id: '',
   });
   const [createLoading, setCreateLoading] = useState(false);
 
@@ -107,6 +110,7 @@ export default function UserManagementPage() {
     full_name: '',
     role: 'student',
     student_code: '',
+    department_id: '',
   });
   const [editLoading, setEditLoading] = useState(false);
 
@@ -129,6 +133,9 @@ export default function UserManagementPage() {
 
   useEffect(() => {
     fetchUsers();
+    getDepartments()
+      .then((res) => setDepartments(res.data || []))
+      .catch(() => {});
   }, []);
 
   // Suspend / Activate User (SRS 3.7.6)
@@ -155,11 +162,12 @@ export default function UserManagementPage() {
         password: createFormData.password,
         role: createFormData.role,
         student_code: createFormData.role === 'student' && createFormData.student_code ? createFormData.student_code.trim() : undefined,
+        department_id: createFormData.role !== 'admin' && createFormData.department_id ? createFormData.department_id : null,
       };
       await createUser(payload);
       alert("Tạo người dùng thành công!");
       setShowCreateModal(false);
-      setCreateFormData({ email: '', full_name: '', password: '', role: 'student', student_code: '' });
+      setCreateFormData({ email: '', full_name: '', password: '', role: 'student', student_code: '', department_id: '' });
       fetchUsers();
     } catch (err) {
       alert(err.response?.data?.message || "Lỗi khi tạo người dùng");
@@ -176,6 +184,7 @@ export default function UserManagementPage() {
       full_name: user.full_name || '',
       role: user.role || 'student',
       student_code: user.student_code || '',
+      department_id: user.department_id || '',
     });
   };
 
@@ -190,6 +199,7 @@ export default function UserManagementPage() {
         full_name: editFormData.full_name.trim(),
         role: editFormData.role,
         student_code: editFormData.role === 'student' && editFormData.student_code ? editFormData.student_code.trim() : null,
+        department_id: editFormData.role !== 'admin' && editFormData.department_id ? editFormData.department_id : null,
       };
       const res = await updateUser(editingUser.id, payload);
       const updated = res.data || { ...editingUser, ...payload };
@@ -506,6 +516,17 @@ export default function UserManagementPage() {
                   <input value={createFormData.student_code} onChange={e => setCreateFormData({...createFormData, student_code: e.target.value})} type="text" placeholder="SE170001" style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-ink)' }} />
                 </div>
               )}
+              {createFormData.role !== 'admin' && (
+                <div>
+                  <label style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--color-ink-muted)', marginBottom: '6px', display: 'block' }}>Khoa / Bộ môn</label>
+                  <select value={createFormData.department_id} onChange={e => setCreateFormData({...createFormData, department_id: e.target.value})} style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-ink)' }}>
+                    <option value="">-- Chưa chọn khoa --</option>
+                    {departments.map(dept => (
+                      <option key={dept.id} value={dept.id}>{dept.code} — {dept.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '12px' }}>
                 <button type="button" onClick={() => setShowCreateModal(false)} className="btn btn-outline" disabled={createLoading}>Hủy</button>
                 <button type="submit" disabled={createLoading} className="btn btn-primary">{createLoading ? 'Đang tạo...' : 'Tạo Tài Khoản'}</button>
@@ -553,6 +574,17 @@ export default function UserManagementPage() {
                 <div>
                   <label style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--color-ink-muted)', marginBottom: '6px', display: 'block' }}>Mã số sinh viên (MSSV)</label>
                   <input value={editFormData.student_code} onChange={e => setEditFormData({...editFormData, student_code: e.target.value})} type="text" style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-ink)' }} />
+                </div>
+              )}
+              {editFormData.role !== 'admin' && (
+                <div>
+                  <label style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--color-ink-muted)', marginBottom: '6px', display: 'block' }}>Khoa / Bộ môn</label>
+                  <select value={editFormData.department_id} onChange={e => setEditFormData({...editFormData, department_id: e.target.value})} style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-ink)' }}>
+                    <option value="">-- Chưa chọn khoa --</option>
+                    {departments.map(dept => (
+                      <option key={dept.id} value={dept.id}>{dept.code} — {dept.name}</option>
+                    ))}
+                  </select>
                 </div>
               )}
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '12px' }}>
