@@ -25,6 +25,11 @@ export const closeSemester = async (id) => {
   return response.data;
 };
 
+export const reopenSemester = async (id) => {
+  const response = await api.post(`/semesters/${id}/reopen`);
+  return response.data;
+};
+
 export const lockSemester = async (id) => {
   const response = await api.post(`/semesters/${id}/lock`);
   return response.data;
