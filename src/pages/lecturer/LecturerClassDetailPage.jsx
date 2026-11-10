@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import ClassService from '../../services/class.service';
@@ -6,7 +6,8 @@ import {
     ChevronRight, Clock, Folder, FilePenLine, RotateCw, Calendar, Code, AlertCircle, Users,
     Flame,
     Download,
-    Sparkles
+    Sparkles,
+    Bot
 } from 'lucide-react';
 import { PlusCircle, FileText, Upload } from 'lucide-react';
 import AssignmentSubwindowModal from '../../components/student/AssignmentSubwindowModal';
@@ -30,46 +31,26 @@ export default function LecturerClassDetailPage() {
     const [advisorData, setAdvisorData] = useState(null);
     const [isAdvisorModalOpen, setIsAdvisorModalOpen] = useState(false);
     const [isRefreshingAdvisor, setIsRefreshingAdvisor] = useState(false);
-    const [hasUnreadAdvisor, setHasUnreadAdvisor] = useState(false);
 
-    // Fetch dữ liệu AI Class Advisor và xử lý tự động mở (Auto-open)
-    const fetchAdvisorData = useCallback(async (autoOpenIfUnviewed = false) => {
+    // Fetch dữ liệu AI Class Advisor
+    const fetchAdvisorData = useCallback(async () => {
         if (!classId) return;
         try {
             const res = await ClassService.getClassAiAdvisor(classId);
             const payload = res?.data || res;
             if (payload && payload.has_data && payload.advisories?.length) {
                 setAdvisorData(payload);
-                const latestId = payload.latest_advisory_id || payload.advisories[0]?.id;
-                const storageKey = `advisor_viewed_${classId}_${latestId}`;
-                const hasViewed = sessionStorage.getItem(storageKey);
-
-                if (!hasViewed) {
-                    setHasUnreadAdvisor(true);
-                    if (autoOpenIfUnviewed) {
-                        setIsAdvisorModalOpen(true);
-                        sessionStorage.setItem(storageKey, 'true');
-                        setHasUnreadAdvisor(false);
-                    }
-                } else {
-                    setHasUnreadAdvisor(false);
-                }
             } else {
                 setAdvisorData(null);
-                setHasUnreadAdvisor(false);
             }
         } catch (err) {
             console.warn('Could not fetch AI Advisor data:', err);
+            setAdvisorData(null);
         }
     }, [classId]);
 
     const handleOpenAdvisorModal = () => {
         setIsAdvisorModalOpen(true);
-        if (advisorData?.advisories?.length) {
-            const latestId = advisorData.latest_advisory_id || advisorData.advisories[0]?.id;
-            sessionStorage.setItem(`advisor_viewed_${classId}_${latestId}`, 'true');
-            setHasUnreadAdvisor(false);
-        }
     };
 
     const handleRefreshAdvisor = async () => {
@@ -80,9 +61,6 @@ export default function LecturerClassDetailPage() {
             const payload = res?.data || res;
             if (payload && payload.has_data && payload.advisories?.length) {
                 setAdvisorData(payload);
-                const latestId = payload.latest_advisory_id || payload.advisories[0]?.id;
-                sessionStorage.setItem(`advisor_viewed_${classId}_${latestId}`, 'true');
-                setHasUnreadAdvisor(false);
             }
         } catch (err) {
             console.error('Failed to refresh AI advisor:', err);
@@ -178,12 +156,19 @@ export default function LecturerClassDetailPage() {
 
     useEffect(() => {
         fetchData();
-        fetchAdvisorData(true);
+        fetchAdvisorData();
     }, [fetchData, fetchAdvisorData]);
+
+    // Khi lấy được dữ liệu advisorData và has_data === true, tự động mở popup
+    useEffect(() => {
+        if (advisorData?.has_data && advisorData?.advisories?.length > 0) {
+            setIsAdvisorModalOpen(true);
+        }
+    }, [classId, advisorData]);
 
     const handleFullRefresh = () => {
         fetchData();
-        fetchAdvisorData(false);
+        fetchAdvisorData();
     };
 
     const handleSlotClick = (slotId) => {
@@ -239,22 +224,17 @@ export default function LecturerClassDetailPage() {
                             {classData.subject_name || classData.name || 'Unnamed Class'}
                         </h1>
 
-                        {/* Trigger Button AI Class Advisor */}
-                        {advisorData && advisorData.has_data && (
+                        {/* Trigger Button Advisor: Hover hoặc Click mở thẳng Modal */}
+                        {advisorData && advisorData.has_data && advisorData.advisories?.length > 0 && (
                             <button
                                 type="button"
-                                onClick={handleOpenAdvisorModal}
-                                className="relative inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200/80 shadow-xs hover:shadow-sm transition-all duration-200 cursor-pointer group"
-                                title="Xem khuyến nghị giảng dạy AI cho buổi học (AI Class Advisor)"
+                                onMouseEnter={() => setIsAdvisorModalOpen(true)}
+                                onClick={() => setIsAdvisorModalOpen(true)}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200/80 rounded-lg transition shadow-xs hover:shadow-sm cursor-pointer group"
+                                title="Xem khuyến nghị giảng dạy AI cho buổi học (Advisor)"
                             >
-                                <Sparkles className="w-3.5 h-3.5 text-purple-600 transition-transform group-hover:scale-110" />
-                                <span>AI Advisor</span>
-                                {hasUnreadAdvisor && (
-                                    <span className="relative flex h-2 w-2 ml-0.5">
-                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"></span>
-                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-purple-600"></span>
-                                    </span>
-                                )}
+                                <Bot className="w-4 h-4 text-purple-600 transition-transform group-hover:scale-110" />
+                                <span>Advisor</span>
                             </button>
                         )}
                     </div>
