@@ -5,11 +5,13 @@ import ClassService from '../../services/class.service';
 import {
     ChevronRight, Clock, Folder, FilePenLine, RotateCw, Calendar, Code, AlertCircle, Users,
     Flame,
-    Download
+    Download,
+    Sparkles
 } from 'lucide-react';
 import { PlusCircle, FileText, Upload } from 'lucide-react';
 import AssignmentSubwindowModal from '../../components/student/AssignmentSubwindowModal';
 import ClassMembersModal from "../../components/lecturer/ClassMembersModal";
+import { ClassAiAdvisorModal } from '../../components/lecturer/ClassAiAdvisorModal';
 export default function LecturerClassDetailPage() {
     const { classId } = useParams();
     const navigate = useNavigate();
@@ -23,6 +25,71 @@ export default function LecturerClassDetailPage() {
     const [viewAll, setViewAll] = useState(false);
     const [isAssignmentModalOpen, setIsAssignmentModalOpen] = useState(false);
     const [isMembersModalOpen, setIsMembersModalOpen] = useState(false);
+
+    // States cho AI Class Advisor Subwindow
+    const [advisorData, setAdvisorData] = useState(null);
+    const [isAdvisorModalOpen, setIsAdvisorModalOpen] = useState(false);
+    const [isRefreshingAdvisor, setIsRefreshingAdvisor] = useState(false);
+    const [hasUnreadAdvisor, setHasUnreadAdvisor] = useState(false);
+
+    // Fetch dữ liệu AI Class Advisor và xử lý tự động mở (Auto-open)
+    const fetchAdvisorData = useCallback(async (autoOpenIfUnviewed = false) => {
+        if (!classId) return;
+        try {
+            const res = await ClassService.getClassAiAdvisor(classId);
+            const payload = res?.data || res;
+            if (payload && payload.has_data && payload.advisories?.length) {
+                setAdvisorData(payload);
+                const latestId = payload.latest_advisory_id || payload.advisories[0]?.id;
+                const storageKey = `advisor_viewed_${classId}_${latestId}`;
+                const hasViewed = sessionStorage.getItem(storageKey);
+
+                if (!hasViewed) {
+                    setHasUnreadAdvisor(true);
+                    if (autoOpenIfUnviewed) {
+                        setIsAdvisorModalOpen(true);
+                        sessionStorage.setItem(storageKey, 'true');
+                        setHasUnreadAdvisor(false);
+                    }
+                } else {
+                    setHasUnreadAdvisor(false);
+                }
+            } else {
+                setAdvisorData(null);
+                setHasUnreadAdvisor(false);
+            }
+        } catch (err) {
+            console.warn('Could not fetch AI Advisor data:', err);
+        }
+    }, [classId]);
+
+    const handleOpenAdvisorModal = () => {
+        setIsAdvisorModalOpen(true);
+        if (advisorData?.advisories?.length) {
+            const latestId = advisorData.latest_advisory_id || advisorData.advisories[0]?.id;
+            sessionStorage.setItem(`advisor_viewed_${classId}_${latestId}`, 'true');
+            setHasUnreadAdvisor(false);
+        }
+    };
+
+    const handleRefreshAdvisor = async () => {
+        if (isRefreshingAdvisor || !classId) return;
+        try {
+            setIsRefreshingAdvisor(true);
+            const res = await ClassService.refreshClassAiAdvisor(classId);
+            const payload = res?.data || res;
+            if (payload && payload.has_data && payload.advisories?.length) {
+                setAdvisorData(payload);
+                const latestId = payload.latest_advisory_id || payload.advisories[0]?.id;
+                sessionStorage.setItem(`advisor_viewed_${classId}_${latestId}`, 'true');
+                setHasUnreadAdvisor(false);
+            }
+        } catch (err) {
+            console.error('Failed to refresh AI advisor:', err);
+        } finally {
+            setIsRefreshingAdvisor(false);
+        }
+    };
 
     // Hàm gọi API lấy danh sách học viên
     const handleOpenMembersModal = async () => {
@@ -111,7 +178,13 @@ export default function LecturerClassDetailPage() {
 
     useEffect(() => {
         fetchData();
-    }, [fetchData]);
+        fetchAdvisorData(true);
+    }, [fetchData, fetchAdvisorData]);
+
+    const handleFullRefresh = () => {
+        fetchData();
+        fetchAdvisorData(false);
+    };
 
     const handleSlotClick = (slotId) => {
         setSelectedSlotId(slotId);
@@ -161,9 +234,30 @@ export default function LecturerClassDetailPage() {
             {/* Tiêu đề khóa học & Owner */}
             <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px' }}>
                 <div>
-                    <h1 style={{ fontSize: '20px', fontWeight: 'bold', color: 'var(--color-ink)', margin: '0 0 4px 0' }}>
-                        {classData.subject_name || classData.name || 'Unnamed Class'}
-                    </h1>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '4px' }}>
+                        <h1 style={{ fontSize: '20px', fontWeight: 'bold', color: 'var(--color-ink)', margin: 0 }}>
+                            {classData.subject_name || classData.name || 'Unnamed Class'}
+                        </h1>
+
+                        {/* Trigger Button AI Class Advisor */}
+                        {advisorData && advisorData.has_data && (
+                            <button
+                                type="button"
+                                onClick={handleOpenAdvisorModal}
+                                className="relative inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200/80 shadow-xs hover:shadow-sm transition-all duration-200 cursor-pointer group"
+                                title="Xem khuyến nghị giảng dạy AI cho buổi học (AI Class Advisor)"
+                            >
+                                <Sparkles className="w-3.5 h-3.5 text-purple-600 transition-transform group-hover:scale-110" />
+                                <span>AI Advisor</span>
+                                {hasUnreadAdvisor && (
+                                    <span className="relative flex h-2 w-2 ml-0.5">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-purple-600"></span>
+                                    </span>
+                                )}
+                            </button>
+                        )}
+                    </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px' }}>
                         <span style={{ color: 'var(--color-primary-dark)', fontWeight: 'bold' }}>{classData.subject_code || 'CODE'}</span>
                         <span style={{ color: 'var(--color-ink-muted)' }}>• {classData.class_code || classData.class_name || 'N/A'}</span>
@@ -204,7 +298,7 @@ export default function LecturerClassDetailPage() {
                 <button className="btn btn-primary" onClick={() => setIsAssignmentModalOpen(true)} style={{ padding: '0 12px', height: '32px', fontSize: '12px', borderRadius: 'var(--radius-sm)' }}>
                     <FilePenLine size={14} /> Assignments
                 </button>
-                <button className="btn btn-secondary" onClick={fetchData} style={{ padding: '0 12px', height: '32px', fontSize: '12px', borderRadius: 'var(--radius-sm)' }}>
+                <button className="btn btn-secondary" onClick={handleFullRefresh} style={{ padding: '0 12px', height: '32px', fontSize: '12px', borderRadius: 'var(--radius-sm)' }}>
                     <RotateCw size={14} /> Refresh
                 </button>
             </div>
@@ -384,6 +478,19 @@ export default function LecturerClassDetailPage() {
                 classId={classId}
                 classData={classData}
             />
+
+            {/* AI Class Advisor Subwindow Modal */}
+            {isAdvisorModalOpen && createPortal(
+                <ClassAiAdvisorModal
+                    classId={classId}
+                    isOpen={isAdvisorModalOpen}
+                    onClose={() => setIsAdvisorModalOpen(false)}
+                    advisorData={advisorData}
+                    onRefresh={handleRefreshAdvisor}
+                    isRefreshing={isRefreshingAdvisor}
+                />,
+                document.body
+            )}
         </div>
     );
 }
