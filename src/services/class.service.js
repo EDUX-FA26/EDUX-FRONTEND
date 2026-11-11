@@ -87,6 +87,24 @@ const ClassService = {
     const response = await api.get(`/classes/${classId}/slots`);
     return response.data;
   },
+
+  /**
+   * GET /api/classes/:classId/ai-advisor
+   * Lấy dữ liệu trợ lý sư phạm AI & lịch sử
+   */
+  async getClassAiAdvisor(classId) {
+    const response = await api.get(`/classes/${classId}/ai-advisor`);
+    return response.data;
+  },
+
+  /**
+   * POST /api/classes/:classId/ai-advisor/refresh
+   * Buộc phân tích lại bài tập mới nhất
+   */
+  async refreshClassAiAdvisor(classId) {
+    const response = await api.post(`/classes/${classId}/ai-advisor/refresh`);
+    return response.data;
+  },
 };
 
 export default ClassService;

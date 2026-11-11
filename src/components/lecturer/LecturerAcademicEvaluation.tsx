@@ -19,12 +19,16 @@ import {
   X,
   FileText,
   HelpCircle,
-  Check
+  Check,
+  BookOpen,
+  Compass,
+  RefreshCw
 } from 'lucide-react';
 import './LecturerAcademicEvaluation.css';
 import SubmissionFileViewer from './SubmissionFileViewer';
 import { SubmissionFile, AuditIntegrity, VivaQuestion } from '../../types/submission';
-import { normalizeAuditData } from '../../helper/aiAuditHelper';
+import { normalizeAuditData, formatCleanVietnamese } from '../../helper/aiAuditHelper';
+import TopicService from '../../services/topic.service';
 
 /* ==========================================================================
    1. TYPESCRIPT INTERFACES
@@ -47,6 +51,7 @@ export interface CourseClassInfo {
   assignmentTitle: string;
   classId?: string;
   assignmentId?: string;
+  subjectId?: string;
 }
 
 export interface SubmissionCodeFile {
@@ -183,6 +188,9 @@ export interface LecturerAcademicEvaluationProps {
   initialRubrics?: RubricScores;
   initialFeedback?: string;
   initialAiCompliance?: AiComplianceStatus;
+  savedEvaluation?: any;
+  topics?: any[];
+  isLoadingTopics?: boolean;
   onBack?: () => void;
   onRequestResubmit?: (reason: string) => Promise<void | boolean>;
   onSaveDraft?: (payload: GradePayload) => Promise<void | boolean>;
@@ -340,6 +348,9 @@ export default function LecturerAcademicEvaluation({
   initialRubrics = DEFAULT_RUBRIC_SCORES,
   initialFeedback = '',
   initialAiCompliance = 'compliant',
+  savedEvaluation,
+  topics,
+  isLoadingTopics,
   onBack,
   onRequestResubmit,
   onSaveDraft,
@@ -388,6 +399,46 @@ export default function LecturerAcademicEvaluation({
     courseInfo.assignmentTitle || 'Assignment';
 
   const [aiVerdict, setAiVerdict] = useState<string>('');
+
+  // Topics to Improve State (Fetched from Topic Module via subjectId)
+  const [internalTopics, setInternalTopics] = useState<any[]>(topics || []);
+  const [isFetchingTopics, setIsFetchingTopics] = useState<boolean>(false);
+
+  React.useEffect(() => {
+    if (topics !== undefined) {
+      setInternalTopics(topics);
+      return;
+    }
+
+    const targetSubjectId = courseInfo?.subjectId;
+    if (!targetSubjectId) {
+      setInternalTopics([]);
+      return;
+    }
+
+    let isMounted = true;
+    setIsFetchingTopics(true);
+    TopicService.getTopics(targetSubjectId)
+      .then((res: any) => {
+        if (!isMounted) return;
+        const list = res?.data || res || [];
+        setInternalTopics(Array.isArray(list) ? list : []);
+      })
+      .catch((err: any) => {
+        console.warn('[Topics] Failed to load topics for subject:', err);
+        if (isMounted) setInternalTopics([]);
+      })
+      .finally(() => {
+        if (isMounted) setIsFetchingTopics(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [courseInfo?.subjectId, topics]);
+
+  const displayTopics = topics !== undefined ? topics : internalTopics;
+  const loadingTopics = isLoadingTopics ?? isFetchingTopics;
 
   // Tab Navigation State
   const [activeTab, setActiveTab] = useState<'ai' | 'grading'>('ai');
@@ -603,6 +654,8 @@ export default function LecturerAcademicEvaluation({
 
   // Modals & Popups
   const [showResubmitModal, setShowResubmitModal] = useState(false);
+  const [showRegenerateModal, setShowRegenerateModal] = useState(false);
+  const [showReloadAuditModal, setShowReloadAuditModal] = useState(false);
   const [resubmitReason, setResubmitReason] = useState('Vui lòng bổ sung thêm giải trình chi tiết về Redis Token Blacklist trong phase AI Reflection.');
   const [showVivaModal, setShowVivaModal] = useState(false);
   const [showAnnotateToast, setShowAnnotateToast] = useState(false);
@@ -647,10 +700,30 @@ export default function LecturerAcademicEvaluation({
     if (!feedback) {
       setFeedback('Code có kiến trúc tốt, phân tách service layer rõ ràng. Khai báo AI minh bạch và có tự phản chiếu xác đáng.');
     }
-    showToastNotification('Đã áp dụng gợi ý AI', 'Đã điền điểm gợi ý 8.50/10 vào 5 tiêu chí rubric chuẩn SE/IT.');
   };
 
-  const handleAuditWithAi = async () => {
+  // Hydrate saved snapshot evaluation from DB if available
+  React.useEffect(() => {
+    if (savedEvaluation) {
+      if (Array.isArray(savedEvaluation.viva_questions) && savedEvaluation.viva_questions.length > 0) {
+        setVivaQuestions(savedEvaluation.viva_questions);
+      }
+      if (savedEvaluation.audit_integrity) {
+        setAuditIntegrity(savedEvaluation.audit_integrity);
+      }
+      if (savedEvaluation.overall_verdict || savedEvaluation.ai_verdict) {
+        const text = savedEvaluation.overall_verdict || savedEvaluation.ai_verdict;
+        setOverallAiFeedback(text);
+        setAiVerdict(text);
+      }
+      if (savedEvaluation.rubric_reasonings) {
+        setRubricReasonings(savedEvaluation.rubric_reasonings);
+      }
+    }
+  }, [savedEvaluation]);
+
+  const handleAuditWithAi = async (options: { force?: boolean; applyScores?: boolean } = {}) => {
+    const { force = false, applyScores = false } = options;
     if (!activeSubmissionId) {
       showToastNotification('Lỗi thẩm định', 'Không xác định được mã bài nộp (submissionId).', 'error');
       return;
@@ -660,6 +733,7 @@ export default function LecturerAcademicEvaluation({
       setIsAuditingAi(true);
 
       const payload = {
+        force,
         aiAuditSummary: {
           declarationAlignment: '96.4%',
           transparencyIndex: 'A+',
@@ -676,30 +750,36 @@ export default function LecturerAcademicEvaluation({
       const res = await SubmissionService.auditRubric(activeSubmissionId, payload);
       const aiData = res?.data || res;
 
-      if (!aiData || (!aiData.rubrics && !aiData.rubric_scores)) {
-        throw new Error('Dữ liệu thẩm định AI không đúng định dạng JSON.');
+      if (!aiData) {
+        throw new Error('Dữ liệu thẩm định AI không tồn tại.');
       }
 
-      isUserModifiedRef.current = true;
-      const newScores: RubricScores = { ...scores };
-      const newReasons: Record<string, string> = {};
+      // CHỈ CẬP NHẬT ĐIỂM SỐ NẾU applyScores = true (khi Giảng viên chủ động bấm Khớp điểm hoặc Chấm lại bằng AI)
+      // Thao tác Thanh tra/Vấn đáp TUYỆT ĐỐI KHÔNG ĐƯỢC THAY ĐỔI ĐIỂM SỐ
+      if (applyScores && (aiData.rubrics || aiData.rubric_scores)) {
+        isUserModifiedRef.current = true;
+        const newScores: RubricScores = { ...scores };
+        const newReasons: Record<string, string> = {};
 
-      if (Array.isArray(aiData.rubrics)) {
-        aiData.rubrics.forEach((item: any) => {
-          if (item.criterion_id) {
-            newScores[item.criterion_id] = typeof item.score === 'number' ? item.score : parseFloat(item.score);
-            newReasons[item.criterion_id] = item.short_reason || '';
+        if (Array.isArray(aiData.rubrics)) {
+          aiData.rubrics.forEach((item: any) => {
+            if (item.criterion_id) {
+              newScores[item.criterion_id] = typeof item.score === 'number' ? item.score : parseFloat(item.score);
+              newReasons[item.criterion_id] = item.short_reason || '';
+            }
+          });
+        } else if (aiData.rubric_scores) {
+          Object.assign(newScores, aiData.rubric_scores);
+          if (aiData.rubric_reasonings) {
+            Object.assign(newReasons, aiData.rubric_reasonings);
           }
-        });
-      } else if (aiData.rubric_scores) {
-        Object.assign(newScores, aiData.rubric_scores);
-        if (aiData.rubric_reasonings) {
-          Object.assign(newReasons, aiData.rubric_reasonings);
         }
-      }
 
-      setScores(newScores);
-      setRubricReasonings(newReasons);
+        setScores(newScores);
+        setRubricReasonings(newReasons);
+      } else if (aiData.rubric_reasonings) {
+        setRubricReasonings(aiData.rubric_reasonings);
+      }
 
       if (Array.isArray(aiData.viva_questions) && aiData.viva_questions.length > 0) {
         setVivaQuestions(aiData.viva_questions);
@@ -714,25 +794,10 @@ export default function LecturerAcademicEvaluation({
       const verdict = aiData.overall_verdict || aiData.ai_verdict || aiData.overall_feedback || '';
       if (verdict) {
         setAiVerdict(verdict);
-        if (!feedback) {
+        if (!feedback && applyScores) {
           setFeedback(verdict);
         }
       }
-
-      const calculatedTotal = aiData.total_score != null
-        ? Number(aiData.total_score).toFixed(2)
-        : (
-            (newScores.abstraction || 0) +
-            (newScores.implementation || 0) +
-            (newScores.verification || 0) +
-            (newScores.ai_interaction || 0) +
-            (newScores.reflection || 0)
-          ).toFixed(2);
-
-      showToastNotification(
-        'Thẩm định AI thành công',
-        `Đã khớp điểm từ Gemini: Tổng điểm ${calculatedTotal}/10.`
-      );
     } catch (err: any) {
       console.error('[ART-AI] AI Audit error:', err);
       const errMsg = err?.response?.data?.message || err?.message || 'Không thể thẩm định qua Gemini API.';
@@ -973,8 +1038,8 @@ export default function LecturerAcademicEvaluation({
           />
         </div>
 
-        {/* CỘT PHẢI: TAB AI DECLARATION & AUDIT / ACADEMIC GRADING (420px - 460px) */}
-        <aside className="w-[420px] lg:w-[460px] flex flex-col overflow-hidden bg-white shrink-0">
+        {/* CỘT PHẢI: TAB AI DECLARATION & AUDIT / ACADEMIC GRADING */}
+        <aside className="w-[440px] lg:w-[480px] xl:w-[520px] flex flex-col overflow-hidden bg-white shrink-0">
           {/* TAB NAVIGATION CỐ ĐỊNH */}
           <div className="h-11 border-b border-gray-200 flex items-center px-2 shrink-0 bg-white select-none">
             <button
@@ -1021,9 +1086,20 @@ export default function LecturerAcademicEvaluation({
                   <Layers size={14} className="text-orange-500" />
                   <span>STUDENT AI DECLARATION ({scopes.length > 1 ? `${scopes.length} PHẠM VI / SCOPES` : '5 PHASES'})</span>
                 </div>
-                <span className="text-[10px] bg-slate-100 text-slate-500 font-semibold px-2 py-0.5 rounded border border-slate-200">
-                  Self-Reported
-                </span>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    disabled={isAuditingAi}
+                    onClick={() => setShowReloadAuditModal(true)}
+                    className="p-1.5 text-gray-500 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                    title="Chạy lại thanh tra & cập nhật câu hỏi vấn đáp"
+                  >
+                    <RefreshCw size={14} className={isAuditingAi ? "animate-spin text-purple-600" : ""} />
+                  </button>
+                  <span className="text-[10px] bg-slate-100 text-slate-500 font-semibold px-2 py-0.5 rounded border border-slate-200">
+                    Self-Reported
+                  </span>
+                </div>
               </div>
 
               {/* Thanh điều hướng Scope / Phase Selector (Đặt ngay dưới tiêu đề tab) */}
@@ -1105,55 +1181,94 @@ export default function LecturerAcademicEvaluation({
                 </div>
               ) : (
                 <div className="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-xs shrink-0">
-                  <div className="max-h-[360px] overflow-x-auto overflow-y-auto custom-scroll">
-                    <table className="w-full min-w-[700px] border-collapse text-left text-xs">
+                  <div className="max-h-[460px] overflow-x-auto overflow-y-auto custom-scroll">
+                    <table className="w-full min-w-[960px] border-collapse text-left text-xs table-fixed">
+                      <colgroup>
+                        <col className="w-[130px]" />
+                        <col className="w-[130px]" />
+                        <col className="w-[233px]" />
+                        <col className="w-[233px]" />
+                        <col className="w-[234px]" />
+                      </colgroup>
                       <thead className="sticky top-0 bg-slate-50 border-b border-slate-200 text-[10px] font-bold text-slate-500 uppercase tracking-wider z-10">
                         <tr>
-                          <th className="py-2.5 px-3 w-[150px]">Phase / Rubric</th>
-                          <th className="py-2.5 px-3 w-[130px]">Tool & Decision</th>
-                          <th className="py-2.5 px-3 w-[160px]">Prompt / Input Used</th>
-                          <th className="py-2.5 px-3 w-[160px]">AI Response Summary</th>
-                          <th className="py-2.5 px-3 w-[180px]">Student's Reflection</th>
+                          <th className="py-3 px-3 w-[130px] border-b border-slate-200 bg-slate-50">
+                            Phase / Rubric
+                          </th>
+                          <th className="py-3 px-3 w-[130px] border-b border-slate-200 bg-slate-50">
+                            Tool & Decision
+                          </th>
+                          <th className="py-3 px-3 w-[233px] border-b border-slate-200 bg-slate-50">
+                            Prompt Input
+                          </th>
+                          <th className="py-3 px-3 w-[233px] border-b border-slate-200 bg-slate-50">
+                            AI Response
+                          </th>
+                          <th className="py-3 px-3 w-[234px] border-b border-slate-200 bg-slate-50">
+                            Student Reflection / Self-Evaluation
+                          </th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 text-[11px] text-slate-600">
                         {currentScopeDeclarations.map((item) => (
-                          <tr key={item.phaseKey} className="hover:bg-slate-50/70 transition">
+                          <tr key={item.phaseKey} className="hover:bg-slate-50/60 transition">
+                            {/* CỘT 1: PHASE / RUBRIC */}
                             <td className="p-3 align-top">
-                              <span
-                                className={`inline-block px-2 py-1 ${item.badgeBg} ${item.badgeText} font-bold rounded text-[10px] whitespace-nowrap`}
-                              >
-                                {item.phaseName}
-                              </span>
+                              <div className="min-h-[100px] flex flex-col justify-start">
+                                <span
+                                  className={`inline-block px-2.5 py-1.5 ${item.badgeBg} ${item.badgeText} font-bold rounded-lg text-[10px] leading-tight text-center`}
+                                >
+                                  {item.phaseName}
+                                </span>
+                              </div>
                             </td>
-                            <td className="p-3 align-top space-y-1">
-                              <div className="font-bold text-slate-800">{item.aiTool}</div>
-                              <span
-                                className={`inline-block px-1.5 py-0.5 ${item.decisionBg} ${item.decisionText} rounded text-[9px] font-semibold`}
-                              >
-                                {item.decision}
-                              </span>
+
+                            {/* CỘT 2: TOOL & DECISION */}
+                            <td className="p-3 align-top">
+                              <div className="min-h-[100px] flex flex-col justify-start space-y-1.5">
+                                <div className="font-bold text-slate-800 text-xs truncate" title={item.aiTool}>
+                                  {item.aiTool}
+                                </div>
+                                <span
+                                  className={`inline-block px-2 py-0.5 ${item.decisionBg} ${item.decisionText} rounded-md text-[9.5px] font-semibold border truncate`}
+                                  title={item.decision}
+                                >
+                                  {item.decision}
+                                </span>
+                              </div>
                             </td>
-                            <td className="p-3 align-top leading-relaxed text-slate-600">
-                              {item.prompt ? (
-                                item.prompt
-                              ) : (
-                                <span className="italic text-slate-400">Không có câu lệnh</span>
-                              )}
+
+                            {/* CỘT 3: PROMPT INPUT (EQUAL WIDTH & UNIFORM SCROLL) */}
+                            <td className="p-3 align-top">
+                              <div className="min-h-[100px] max-h-48 overflow-y-auto custom-scroll p-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 font-mono text-[11px] leading-relaxed whitespace-pre-wrap break-words">
+                                {item.prompt ? (
+                                  item.prompt
+                                ) : (
+                                  <span className="italic text-slate-400 font-sans">Không có câu lệnh (Prompt)</span>
+                                )}
+                              </div>
                             </td>
-                            <td className="p-3 align-top leading-relaxed text-slate-500">
-                              {item.aiResponseSummary ? (
-                                item.aiResponseSummary
-                              ) : (
-                                <span className="italic text-slate-400">Không có tóm tắt</span>
-                              )}
+
+                            {/* CỘT 4: AI RESPONSE (EQUAL WIDTH & UNIFORM SCROLL) */}
+                            <td className="p-3 align-top">
+                              <div className="min-h-[100px] max-h-48 overflow-y-auto custom-scroll p-3 rounded-xl bg-blue-50/50 border border-blue-100 text-slate-700 text-[11px] leading-relaxed whitespace-pre-wrap break-words">
+                                {item.aiResponseSummary ? (
+                                  item.aiResponseSummary
+                                ) : (
+                                  <span className="italic text-slate-400">Không có phản hồi từ AI</span>
+                                )}
+                              </div>
                             </td>
-                            <td className="p-3 align-top leading-relaxed text-slate-700 font-medium">
-                              {item.studentReflection ? (
-                                item.studentReflection
-                              ) : (
-                                <span className="italic text-slate-400">Không có phản tư</span>
-                              )}
+
+                            {/* CỘT 5: STUDENT REFLECTION (EQUAL WIDTH & UNIFORM SCROLL) */}
+                            <td className="p-3 align-top">
+                              <div className="min-h-[100px] max-h-48 overflow-y-auto custom-scroll p-3 rounded-xl bg-amber-50/40 border border-amber-100 text-slate-800 text-[11px] font-medium leading-relaxed whitespace-pre-wrap break-words">
+                                {item.studentReflection ? (
+                                  item.studentReflection
+                                ) : (
+                                  <span className="italic text-slate-400 font-normal">Không có tự phản chiếu</span>
+                                )}
+                              </div>
                             </td>
                           </tr>
                         ))}
@@ -1165,14 +1280,25 @@ export default function LecturerAcademicEvaluation({
 
               {/* Bottom Action Box: Thanh tra trung thực AI */}
               <div className="pt-2 space-y-3 shrink-0">
-                <div>
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800">
-                    <Sparkles size={14} className="text-indigo-600" />
-                    <span>THANH TRA TRUNG THỰC AI & VẤN ĐÁP VIVA</span>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800">
+                      <Sparkles size={14} className="text-indigo-600" />
+                      <span>THANH TRA TRUNG THỰC AI & VẤN ĐÁP VIVA</span>
+                    </div>
+                    <p className="text-[11px] text-slate-400 mt-0.5">
+                      Kiểm định tự động độ khớp giữa lời khai và mã nguồn thực tế
+                    </p>
                   </div>
-                  <p className="text-[11px] text-slate-400 mt-0.5">
-                    Kiểm định tự động độ khớp giữa lời khai và mã nguồn thực tế
-                  </p>
+                  <button
+                    type="button"
+                    disabled={isAuditingAi}
+                    onClick={() => setShowReloadAuditModal(true)}
+                    className="p-1.5 text-gray-500 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                    title="Chạy lại thanh tra & cập nhật câu hỏi vấn đáp"
+                  >
+                    <RefreshCw size={14} className={isAuditingAi ? "animate-spin text-purple-600" : ""} />
+                  </button>
                 </div>
 
                 <button
@@ -1180,7 +1306,7 @@ export default function LecturerAcademicEvaluation({
                   onClick={() => {
                     setShowVivaModal(true);
                     if (vivaQuestions.length === 0 && !isAuditingAi) {
-                      handleAuditWithAi();
+                      handleAuditWithAi({ force: false, applyScores: false });
                     }
                     if (onRunAuditViva) onRunAuditViva();
                   }}
@@ -1212,12 +1338,12 @@ export default function LecturerAcademicEvaluation({
                   <span className="text-slate-400 font-semibold text-sm ml-1.5">/ 10</span>
                 </div>
 
-                <div>
+                <div className="flex items-center justify-center gap-2 flex-wrap">
                   <button
                     type="button"
                     disabled={isAuditingAi}
-                    onClick={handleAuditWithAi}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-500/20 transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                    onClick={() => handleAuditWithAi({ force: false, applyScores: true })}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-500/20 transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     {isAuditingAi ? (
                       <>
@@ -1231,6 +1357,26 @@ export default function LecturerAcademicEvaluation({
                       </>
                     )}
                   </button>
+
+                  <button
+                    type="button"
+                    disabled={isAuditingAi}
+                    onClick={() => setShowRegenerateModal(true)}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-xs font-bold transition shadow-2xs cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                    title="Chấm lại bằng AI (Regenerate AI Evaluation)"
+                  >
+                    {isAuditingAi ? (
+                      <>
+                        <div className="w-3 h-3 border-2 border-slate-500 border-t-transparent rounded-full animate-spin" />
+                        <span>Đang phân tích lại...</span>
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw size={13} className="text-slate-500" />
+                        <span>Chấm lại bằng AI</span>
+                      </>
+                    )}
+                  </button>
                 </div>
 
                 <p className="text-[11px] text-slate-400 leading-snug max-w-xs mx-auto">
@@ -1238,27 +1384,157 @@ export default function LecturerAcademicEvaluation({
                 </p>
               </div>
 
-              {/* AI Verdict Banner */}
-              {aiVerdict && (
-                <div className="p-3.5 bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-2xl text-xs text-purple-950 flex items-start gap-2.5 shadow-xs shrink-0 animate-in fade-in">
-                  <div className="w-6 h-6 rounded-lg bg-purple-600 text-white flex items-center justify-center shrink-0 mt-0.5">
-                    <ShieldCheck size={14} />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-purple-900 text-xs uppercase tracking-wide">
-                        Kết Luận Thanh Tra & Vấn Đáp (AI Verdict)
-                      </span>
-                      <span className="text-[10px] font-semibold text-purple-600 bg-purple-100 px-2 py-0.5 rounded-full">
-                        Đối soát chéo Gemini
-                      </span>
+              {/* Khối tích hợp: Kết luận Thanh tra & Nhận xét Tổng quan từ AI */}
+              {(aiVerdict || overallAiFeedback) && (
+                <div className="p-4 bg-gradient-to-r from-purple-50/90 via-indigo-50/70 to-blue-50/50 border border-purple-200/90 rounded-2xl text-xs text-purple-950 shadow-xs shrink-0 animate-in fade-in space-y-2.5">
+                  <div className="flex items-start justify-between gap-2 pb-2 border-b border-purple-100">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-lg bg-purple-600 text-white flex items-center justify-center shrink-0 shadow-2xs">
+                        <ShieldCheck size={14} />
+                      </div>
+                      <div>
+                        <span className="font-bold text-purple-900 text-xs uppercase tracking-wide block">
+                          Kết Luận Thanh Tra & Vấn Đáp (AI Verdict)
+                        </span>
+                        <span className="text-[10px] text-purple-600/80 font-medium">
+                          Đối soát chéo & Thẩm định tự động Gemini
+                        </span>
+                      </div>
                     </div>
-                    <p className="text-slate-700 text-xs mt-1 leading-relaxed font-medium">
-                      {aiVerdict}
-                    </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const textToUse = formatCleanVietnamese(aiVerdict || overallAiFeedback);
+                        isUserModifiedRef.current = true;
+                        setFeedback(textToUse);
+                      }}
+                      className="inline-flex items-center gap-1 text-[10px] font-semibold text-purple-700 bg-white hover:bg-purple-100/70 border border-purple-200 px-2.5 py-1 rounded-lg transition cursor-pointer shadow-2xs shrink-0"
+                      title="Sao chép toàn bộ nhận xét này vào ô nhận xét học thuật của Giảng viên"
+                    >
+                      <Sparkles size={11} className="text-purple-600" />
+                      <span>Dùng làm nhận xét</span>
+                    </button>
                   </div>
+
+                  <p className="text-slate-700 text-xs leading-relaxed whitespace-pre-wrap break-words font-medium">
+                    {formatCleanVietnamese(aiVerdict || overallAiFeedback)}
+                  </p>
                 </div>
               )}
+
+              {/* KHỐI CHỦ ĐỀ TRỌNG TÂM CẦN ÔN TẬP (RECOMMENDED TOPICS TO IMPROVE) */}
+              <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs shrink-0 space-y-3.5 transition-all">
+                <div className="flex items-start justify-between gap-2.5 pb-2.5 border-b border-slate-100">
+                  <div className="flex items-start gap-2.5 min-w-0 flex-1">
+                    <div className="w-7 h-7 rounded-lg bg-orange-50 text-orange-600 border border-orange-200/80 flex items-center justify-center shrink-0 shadow-2xs mt-0.5">
+                      <BookOpen size={15} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wide leading-snug">
+                        Chủ đề trọng tâm cần ôn tập
+                      </h3>
+                      <div className="text-[10px] text-slate-400 font-medium mt-0.5">
+                        Recommended Topics to Improve
+                      </div>
+                      <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
+                        Các chủ đề kiến thức thuộc môn học mà sinh viên cần củng cố thêm dựa trên bài làm này.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 shrink-0 self-start pt-0.5">
+                    {displayTopics.length > 0 && (
+                      <span className="text-[10px] font-bold text-slate-600 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full shrink-0">
+                        {displayTopics.length} chủ đề
+                      </span>
+                    )}
+                    {displayTopics.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const topicNames = displayTopics.map((t: any) => t.name).join(', ');
+                          const note = `\n\n📌 Chủ đề trọng tâm cần củng cố thêm: ${topicNames}.`;
+                          isUserModifiedRef.current = true;
+                          setFeedback((prev) => (prev ? `${prev.trim()}${note}` : note.trim()));
+                        }}
+                        className="inline-flex items-center gap-1 text-[10px] font-semibold text-orange-700 bg-orange-50 hover:bg-orange-100/80 border border-orange-200 px-2.5 py-1 rounded-lg transition cursor-pointer shrink-0 shadow-2xs"
+                        title="Thêm danh sách các chủ đề này vào ô Nhận xét học thuật"
+                      >
+                        <Sparkles size={11} className="text-orange-600" />
+                        <span>Thêm vào nhận xét</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Danh sách Topics / Loading / Empty State */}
+                {loadingTopics ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 animate-pulse">
+                    <div className="h-20 bg-slate-100 rounded-xl"></div>
+                    <div className="h-20 bg-slate-100 rounded-xl"></div>
+                  </div>
+                ) : displayTopics && displayTopics.length > 0 ? (
+                  <div className="max-h-[300px] overflow-y-auto custom-scroll pr-1">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      {displayTopics.map((topic: any, idx: number) => {
+                        const isHighPriority =
+                          topic.priority === 'high' ||
+                          topic.priority === 'urgent' ||
+                          topic.level === 'high' ||
+                          idx < 2;
+
+                        const priorityLabel =
+                          topic.priority_label ||
+                          (isHighPriority ? 'Ưu tiên cao' : 'Khuyến nghị');
+
+                        return (
+                          <div
+                            key={topic.id || idx}
+                            className="p-3 bg-slate-50/70 border border-slate-200/80 rounded-xl hover:border-orange-300 hover:bg-orange-50/15 transition-all shadow-2xs flex flex-col justify-between gap-2"
+                          >
+                            <div>
+                              <div className="flex items-start justify-between gap-2 mb-1.5">
+                                <h4
+                                  className="font-semibold text-xs sm:text-sm text-gray-800 leading-snug break-words flex-1 min-w-0 pr-1"
+                                  title={topic.name}
+                                >
+                                  {topic.name}
+                                </h4>
+                                <span
+                                  className={`shrink-0 px-2 py-0.5 text-[10px] font-semibold rounded-full border whitespace-nowrap self-start ${
+                                    isHighPriority
+                                      ? 'bg-rose-50 text-rose-700 border-rose-200'
+                                      : 'bg-amber-50 text-amber-700 border-amber-200'
+                                  }`}
+                                >
+                                  {priorityLabel}
+                                </span>
+                              </div>
+                              <p
+                                className="text-[11px] text-slate-500 leading-relaxed break-words"
+                                title={topic.description}
+                              >
+                                {topic.description ||
+                                  'Chủ đề kiến thức cốt lõi thuộc môn học cần sinh viên củng cố và rèn luyện thêm.'}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-4 border border-dashed border-slate-200 rounded-xl bg-slate-50/50 text-center space-y-1.5">
+                    <div className="w-8 h-8 rounded-xl bg-slate-100 text-slate-400 mx-auto flex items-center justify-center">
+                      <Compass size={16} />
+                    </div>
+                    <p className="text-xs font-semibold text-slate-700">Chưa có chủ đề trọng tâm nào</p>
+                    <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
+                      Môn học này hiện chưa có chủ đề gắn cờ cần cải thiện hoặc sinh viên đã đáp ứng tốt các yêu cầu học thuật.
+                    </p>
+                  </div>
+                )}
+              </div>
 
               {/* Điều chỉnh Rubric 5 Tiêu chí Chuẩn thang 10 */}
               <div className="space-y-3.5 pt-2 border-t border-slate-100 shrink-0">
@@ -1402,29 +1678,6 @@ export default function LecturerAcademicEvaluation({
                   </button>
                 </div>
               </div>
-
-              {/* Nhận xét học thuật */}
-              {overallAiFeedback && (
-                <div className="p-3 bg-indigo-50/70 border border-indigo-200 rounded-xl text-xs text-indigo-900 shrink-0">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="font-bold flex items-center gap-1.5 text-indigo-800">
-                      <Sparkles size={13} className="text-indigo-600" />
-                      Nhận xét tổng quan từ AI:
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        isUserModifiedRef.current = true;
-                        setFeedback(overallAiFeedback);
-                      }}
-                      className="text-[10px] text-indigo-600 hover:underline font-semibold cursor-pointer"
-                    >
-                      Dùng nhận xét này
-                    </button>
-                  </div>
-                  <p className="text-[11px] text-slate-600 leading-relaxed">{overallAiFeedback}</p>
-                </div>
-              )}
               
               <div className="space-y-2 pt-2 border-t border-slate-100 pb-2 shrink-0">
                 <label className="block text-xs font-bold text-slate-800 uppercase tracking-wide">
@@ -1520,6 +1773,138 @@ export default function LecturerAcademicEvaluation({
                 className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 shadow-md shadow-rose-600/20 transition cursor-pointer"
               >
                 Xác nhận yêu cầu nộp lại
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ==================== MODAL: CONFIRM RELOAD AI AUDIT & VIVA ==================== */}
+      {showReloadAuditModal && (
+        <div className="fixed inset-0 z-[999] bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-sm w-full p-5 space-y-4 animate-in zoom-in-95 duration-150">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 border border-purple-200/80 flex items-center justify-center shrink-0 shadow-2xs">
+                <RefreshCw size={20} className={`text-purple-600 ${isAuditingAi ? 'animate-spin' : ''}`} />
+              </div>
+              <div className="space-y-1 min-w-0 flex-1">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-bold text-slate-800 leading-snug">
+                    Xác nhận chạy lại thanh tra AI?
+                  </h3>
+                  <button
+                    type="button"
+                    disabled={isAuditingAi}
+                    onClick={() => setShowReloadAuditModal(false)}
+                    className="text-slate-400 hover:text-slate-600 transition -mr-1 -mt-1 p-1 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                  >
+                    <X size={15} />
+                  </button>
+                </div>
+                <p className="text-xs text-slate-600 leading-relaxed pt-0.5">
+                  Thao tác này sẽ phân tích lại toàn bộ lịch sử khai báo AI và cập nhật bộ câu hỏi vấn đáp mới. Điểm số của bài nộp sẽ được giữ nguyên.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                disabled={isAuditingAi}
+                onClick={() => setShowReloadAuditModal(false)}
+                className="px-3.5 py-2 border border-slate-200 text-slate-600 hover:bg-slate-50 rounded-xl text-xs font-semibold transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                type="button"
+                disabled={isAuditingAi}
+                onClick={async () => {
+                  try {
+                    await handleAuditWithAi({ force: true, applyScores: false });
+                  } finally {
+                    setShowReloadAuditModal(false);
+                  }
+                }}
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold transition shadow-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isAuditingAi ? (
+                  <>
+                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Đang phân tích...</span>
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw size={13} />
+                    <span>Xác nhận</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ==================== MODAL: CONFIRM REGENERATE AI EVALUATION ==================== */}
+      {showRegenerateModal && (
+        <div className="fixed inset-0 z-[999] bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-sm w-full p-5 space-y-4 animate-in zoom-in-95 duration-150">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 border border-purple-200/80 flex items-center justify-center shrink-0 shadow-2xs">
+                <Sparkles size={20} className="text-purple-600" />
+              </div>
+              <div className="space-y-1 min-w-0 flex-1">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-bold text-slate-800 leading-snug">
+                    Xác nhận phân tích lại bằng AI?
+                  </h3>
+                  <button
+                    type="button"
+                    disabled={isAuditingAi}
+                    onClick={() => setShowRegenerateModal(false)}
+                    className="text-slate-400 hover:text-slate-600 transition -mr-1 -mt-1 p-1 disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
+                    <X size={15} />
+                  </button>
+                </div>
+                <p className="text-xs text-slate-600 leading-relaxed pt-0.5">
+                  Thao tác này sẽ gọi AI tạo điểm gợi ý và nhận xét mới, đồng thời ghi đè lên kết quả đánh giá hiện tại.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                disabled={isAuditingAi}
+                onClick={() => setShowRegenerateModal(false)}
+                className="px-3.5 py-2 border border-slate-200 text-slate-600 hover:bg-slate-50 rounded-xl text-xs font-semibold transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                type="button"
+                disabled={isAuditingAi}
+                onClick={async () => {
+                  try {
+                    await handleAuditWithAi({ force: true, applyScores: true });
+                  } finally {
+                    setShowRegenerateModal(false);
+                  }
+                }}
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold transition shadow-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isAuditingAi ? (
+                  <>
+                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Đang phân tích...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles size={13} />
+                    <span>Xác nhận phân tích</span>
+                  </>
+                )}
               </button>
             </div>
           </div>
@@ -1726,7 +2111,7 @@ export default function LecturerAcademicEvaluation({
                               <span>Nội dung câu hỏi vấn đáp cho giảng viên:</span>
                             </div>
                             <p className="text-xs sm:text-[13px] text-slate-800 leading-relaxed font-semibold">
-                              {q.question}
+                              {formatCleanVietnamese(q.question)}
                             </p>
                           </div>
 
@@ -1738,7 +2123,7 @@ export default function LecturerAcademicEvaluation({
                                 <span>Gợi ý câu trả lời kỳ vọng (Expected Answer Criteria):</span>
                               </div>
                               <p className="text-xs text-slate-700 leading-relaxed font-normal">
-                                {answerCriteria}
+                                {formatCleanVietnamese(answerCriteria)}
                               </p>
                             </div>
                           )}
@@ -1756,7 +2141,7 @@ export default function LecturerAcademicEvaluation({
                     {!isAuditingAi && (
                       <button
                         type="button"
-                        onClick={handleAuditWithAi}
+                        onClick={() => handleAuditWithAi({ force: false, applyScores: false })}
                         className="px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl text-xs font-bold transition shadow-md shadow-indigo-500/20 cursor-pointer"
                       >
                         Phân Tích Code & Tạo Câu Hỏi Viva

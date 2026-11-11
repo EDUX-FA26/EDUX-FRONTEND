@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { createPortal } from 'react-dom';
-import { ChevronRight, FileText, ChevronDown, Briefcase, UploadCloud, X as XIcon, File as FileIcon, CheckCircle, AlertCircle } from 'lucide-react';
+import { ChevronRight, FileText, ChevronDown, Briefcase, UploadCloud, X as XIcon, File as FileIcon, CheckCircle, AlertCircle, Sparkles, Settings, ShieldAlert, Edit3, Download, Trash2, Plus, Paperclip } from 'lucide-react';
 import AssignmentService from '../../services/assignment.service';
 import SubmissionService from '../../services/submission.service';
 import ClassService from '../../services/class.service';
@@ -9,6 +9,7 @@ import GradingService from '../../services/grading.service';
 import MockSubmissionService from '../../services/mockSubmissionService';
 import { formatDateDMY } from '../../helper/dateFormat';
 import AIAuditQuickViewHover from '../../components/lecturer/AIAuditQuickViewHover';
+import AssignmentFormModal from '../../components/lecturer/AssignmentFormModal';
 
 export default function LecturerAssignmentDetailPage() {
     const { id } = useParams();
@@ -23,6 +24,82 @@ export default function LecturerAssignmentDetailPage() {
     const [selectedSubmission, setSelectedSubmission] = useState(null);
     const [gradeForm, setGradeForm] = useState({ score: '', feedback: '' });
     const [isSavingGrade, setIsSavingGrade] = useState(false);
+
+    // --- STATE DÀNH CHO MODAL CHỈNH SỬA BÀI TẬP ---
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [isSavingEdit, setIsSavingEdit] = useState(false);
+
+    const formatFileSize = (bytes) => {
+        if (!bytes || bytes === 0) return '0 B';
+        if (typeof bytes === 'string' && isNaN(bytes)) return bytes;
+        const num = Number(bytes);
+        if (num < 1024) return `${num} B`;
+        if (num < 1048576) return `${(num / 1024).toFixed(1)} KB`;
+        return `${(num / 1048576).toFixed(1)} MB`;
+    };
+
+    const handleOpenEditModal = () => {
+        setIsEditModalOpen(true);
+    };
+
+    const handleSaveEdit = async (formData) => {
+        setIsSavingEdit(true);
+        try {
+            if (id && !id.startsWith('asm-')) {
+                await AssignmentService.updateAssignment(id, formData);
+                await fetchDetail();
+            } else {
+                setAssignment(prev => ({
+                    ...prev,
+                    title: formData.get('title') || prev?.title,
+                    description: formData.get('description') || prev?.description,
+                                        deadline: formData.get('deadline') || prev?.deadline,
+                    max_score: Number(formData.get('max_score')) || prev?.max_score,
+                    weight: Number(formData.get('weight')) || prev?.weight,
+                    publish_status: formData.get('publish_status') || prev?.publish_status,
+                    ai_declaration_required: formData.get('ai_declaration_required') === 'true',
+                }));
+            }
+
+            showToast('Cập nhật bài tập thành công!', 'success');
+            setIsEditModalOpen(false);
+        } catch (err) {
+            console.error('Failed to update assignment:', err);
+            showToast(err.response?.data?.message || 'Có lỗi khi cập nhật bài tập', 'error');
+        } finally {
+            setIsSavingEdit(false);
+        }
+    };
+
+    const handleDownloadMaterial = async (materialId, fileName) => {
+        try {
+            const res = await AssignmentService.getMaterialDownloadUrl(id, materialId);
+            const downloadUrl = res?.data?.download_url || res?.download_url;
+            if (downloadUrl) {
+                window.open(downloadUrl, '_blank');
+            } else {
+                showToast(`Không tìm thấy link tải cho ${fileName}`, 'error');
+            }
+        } catch (err) {
+            console.error('Download material failed:', err);
+            showToast('Lỗi khi lấy link tải tài liệu', 'error');
+        }
+    };
+
+    const handleDeleteMaterial = async (materialId, fileName) => {
+        if (!window.confirm(`Bạn có chắc chắn muốn xóa tài liệu "${fileName}"?`)) return;
+        try {
+            await AssignmentService.deleteMaterial(id, materialId);
+            setAssignment(prev => ({
+                ...prev,
+                materials: (prev?.materials || []).filter(m => m.id !== materialId)
+            }));
+            showToast(`Đã xóa tài liệu "${fileName}"`, 'success');
+        } catch (err) {
+            console.error('Delete material failed:', err);
+            showToast('Lỗi khi xóa tài liệu', 'error');
+        }
+    };
 
     // --- STATE DÀNH CHO TOAST NOTIFICATION (ALERT NHỎ) ---
     const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
@@ -87,17 +164,21 @@ export default function LecturerAssignmentDetailPage() {
                 let submissionsData = [];
 
                 if (subData && subData.data) {
-                    submissionsData = subData.data;
+                    submissionsData = Array.isArray(subData.data)
+                        ? subData.data.filter(sub => sub.status !== 'draft' && sub.status !== 'Draft')
+                        : [];
                 }
 
-                console.log('📋 SUBMISSIONS DATA:', submissionsData);
+                console.log('📋 SUBMISSIONS DATA (EXCLUDING DRAFTS):', submissionsData);
 
                 // ========================================
                 // MERGE CLASS MEMBERS + SUBMISSIONS
                 // ========================================
 
                 const submissionMap = new Map(
-                    submissionsData.map(sub => [sub.student_id, sub])
+                    submissionsData
+                        .filter(sub => sub.status !== 'draft' && sub.status !== 'Draft')
+                        .map(sub => [sub.student_id, sub])
                 );
 
                 const classMemberIds = new Set(
@@ -113,7 +194,7 @@ export default function LecturerAssignmentDetailPage() {
 
                     const submission = submissionMap.get(studentId);
 
-                    if (submission) {
+                    if (submission && submission.status !== 'draft' && submission.status !== 'Draft') {
                         const isThisStudent = (submission.student_code && submission.student_code === 'DE181802') || (member.studentCode && member.studentCode === 'DE181802') || submission.student_id === 'std-01';
                         const localGraded = db[submission.id] || (submission.student_code && db[submission.student_code]) || (member.studentCode && db[member.studentCode]) || (isThisStudent ? db['sub-de181802'] : null);
                         const rawScore = localGraded?.grade?.score ?? localGraded?.score ?? submission.score ?? null;
@@ -501,7 +582,46 @@ export default function LecturerAssignmentDetailPage() {
             })()}
 
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
-                <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--color-ink)', margin: 0, letterSpacing: '-0.5px' }}>{title}</h1>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                    <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--color-ink)', margin: 0, letterSpacing: '-0.5px' }}>{title}</h1>
+                    {assignment?.ai_declaration_required !== false ? (
+                        <span style={{
+                            display: 'inline-flex', alignItems: 'center', gap: '5px',
+                            fontSize: '11px', fontWeight: '600',
+                            padding: '3px 10px', borderRadius: '16px',
+                            backgroundColor: 'rgba(79, 70, 229, 0.1)', color: '#4f46e5',
+                            border: '1px solid rgba(79, 70, 229, 0.2)'
+                        }}>
+                            <Sparkles size={12} /> AI Tracking: Enabled
+                        </span>
+                    ) : (
+                        <span style={{
+                            display: 'inline-flex', alignItems: 'center', gap: '5px',
+                            fontSize: '11px', fontWeight: '600',
+                            padding: '3px 10px', borderRadius: '16px',
+                            backgroundColor: 'var(--color-surface, #f1f5f9)', color: 'var(--color-ink-muted, #64748b)',
+                            border: '1px solid var(--color-border, #e2e8f0)'
+                        }}>
+                            AI Tracking: Disabled
+                        </span>
+                    )}
+                </div>
+                <button
+                    className="btn btn-secondary"
+                    onClick={handleOpenEditModal}
+                    style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '8px 14px',
+                        borderRadius: 'var(--radius-md)',
+                        fontSize: '12px',
+                        fontWeight: '600',
+                        cursor: 'pointer'
+                    }}
+                >
+                    <Edit3 size={14} /> Chỉnh sửa bài tập
+                </button>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', alignItems: 'start' }}>
@@ -534,20 +654,105 @@ export default function LecturerAssignmentDetailPage() {
                         </div>
 
                         <div className="card" style={{ padding: '20px' }}>
-                            <h3 style={{ fontWeight: 'bold', color: 'var(--color-ink)', fontSize: '14px', margin: '0 0 12px 0' }}>Content</h3>
-                            <p style={{ fontSize: '12px', color: 'var(--color-ink-soft)', margin: 0 }}>{title}</p>
+                            <h3 style={{ fontWeight: 'bold', color: 'var(--color-ink)', fontSize: '14px', margin: '0 0 10px 0' }}>Mô tả bài tập (Description)</h3>
+                            <p style={{ fontSize: '12px', color: 'var(--color-ink-soft)', margin: 0, whiteSpace: 'pre-line', lineHeight: '1.6' }}>
+                                {assignment?.description || 'N/A'}
+                            </p>
+
+                            
                         </div>
 
                         <div className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                            <div style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--color-ink)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                                ADDITIONAL FILES
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <div style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--color-ink)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                    ADDITIONAL FILES & MATERIALS
+                                </div>
+                                <span style={{ fontSize: '11px', color: 'var(--color-ink-muted)' }}>
+                                    {assignment?.materials?.length || 0} tài liệu
+                                </span>
                             </div>
+
                             <div style={{ fontSize: '12px', color: 'var(--color-ink-soft)' }}>
-                                <span style={{ fontWeight: 'bold', color: 'var(--color-ink)' }}>DUE DATE:</span> {assignment?.deadline ? formatDateDMY(assignment.deadline) : '2026-03-25 12:50:00'}
+                                <span style={{ fontWeight: 'bold', color: 'var(--color-ink)' }}>DUE DATE:</span> {assignment?.deadline ? formatDateDMY(assignment.deadline) : 'N/A'}
                             </div>
                             <div style={{ fontSize: '12px', fontWeight: 'bold' }}>
                                 <span style={{ color: 'var(--color-ink-soft)', fontWeight: 'normal' }}>(GMT+07)</span>
-                                <span style={{ color: 'var(--color-danger)' }}> - MAX SCORE: {assignment?.max_score || 10}</span>
+                                <span style={{ color: 'var(--color-danger)' }}> - MAX SCORE: {assignment?.max_score != null ? assignment.max_score : 'N/A'}</span>
+                                <span style={{ color: 'var(--color-primary, #4f46e5)' }}> - WEIGHT: {assignment?.weight != null ? `${assignment.weight}%` : 'N/A'}</span>
+                            </div>
+
+                            {/* Render materials */}
+                            <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                <span style={{ fontSize: '11px', fontWeight: '700', color: 'var(--color-ink-muted)', textTransform: 'uppercase' }}>
+                                    Tài liệu đề bài đính kèm
+                                </span>
+                                {assignment?.materials && assignment.materials.length > 0 ? (
+                                    assignment.materials.map((mat) => (
+                                        <div
+                                            key={mat.id}
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'space-between',
+                                                padding: '8px 10px',
+                                                borderRadius: '8px',
+                                                backgroundColor: 'var(--color-surface, #f8fafc)',
+                                                border: '1px solid var(--color-border, #e2e8f0)',
+                                                fontSize: '12px'
+                                            }}
+                                        >
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, flex: 1, paddingRight: '8px' }}>
+                                                <FileText size={15} style={{ color: 'var(--color-primary, #4f46e5)', shrink: 0 }} />
+                                                <span style={{ fontWeight: '600', color: 'var(--color-ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={mat.file_name}>
+                                                    {mat.file_name}
+                                                </span>
+                                                <span style={{ fontSize: '10px', color: 'var(--color-ink-muted)', fontFamily: 'monospace', shrink: 0 }}>
+                                                    ({formatFileSize(mat.file_size)})
+                                                </span>
+                                            </div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', shrink: 0 }}>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleDownloadMaterial(mat.id, mat.file_name)}
+                                                    style={{
+                                                        background: 'transparent',
+                                                        border: 'none',
+                                                        color: 'var(--color-primary, #4f46e5)',
+                                                        cursor: 'pointer',
+                                                        padding: '4px',
+                                                        borderRadius: '4px',
+                                                        display: 'flex',
+                                                        alignItems: 'center'
+                                                    }}
+                                                    title="Tải xuống tài liệu"
+                                                >
+                                                    <Download size={14} />
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleDeleteMaterial(mat.id, mat.file_name)}
+                                                    style={{
+                                                        background: 'transparent',
+                                                        border: 'none',
+                                                        color: 'var(--color-danger, #ef4444)',
+                                                        cursor: 'pointer',
+                                                        padding: '4px',
+                                                        borderRadius: '4px',
+                                                        display: 'flex',
+                                                        alignItems: 'center'
+                                                    }}
+                                                    title="Xóa tài liệu này"
+                                                >
+                                                    <Trash2 size={14} />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div style={{ fontSize: '11px', color: 'var(--color-ink-muted)', fontStyle: 'italic', padding: '4px 0' }}>
+                                        Chưa có tài liệu đính kèm (N/A). Bạn có thể bấm "Chỉnh sửa bài tập" để tải lên file.
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -600,7 +805,7 @@ export default function LecturerAssignmentDetailPage() {
                                                     )}
                                                 </td>
                                                 <td style={{ padding: '8px' }}>
-                                                    {formatDateDMY(sub.submitted_at)}
+                                                    {sub.submitted_at ? formatDateDMY(sub.submitted_at) : 'N/A'}
                                                 </td>
 
                                                 <td style={{ padding: '8px' }}>
@@ -791,6 +996,19 @@ export default function LecturerAssignmentDetailPage() {
                     </div>
                 </div>,
                 document.body
+            )}
+
+            {/* MODAL CHỈNH SỬA BÀI TẬP */}
+            {isEditModalOpen && (
+                <AssignmentFormModal
+                    isOpen={isEditModalOpen}
+                    onClose={() => setIsEditModalOpen(false)}
+                    mode="edit"
+                    initialData={assignment}
+                    onSubmit={handleSaveEdit}
+                    isSubmitting={isSavingEdit}
+                    onDeleteExistingMaterial={handleDeleteMaterial}
+                />
             )}
         </div>
     );

@@ -1,10 +1,12 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   activateSemester,
   closeSemester,
   createSemester,
   getSemesters,
   lockSemester,
+  reopenSemester,
   updateSemester,
 } from '../../services/semester.service';
 import '../module-pages.css';
@@ -63,7 +65,6 @@ function SemesterModal({ semester, saving, error, onClose, onSubmit }) {
       <section className="module-modal__panel card" role="dialog" aria-modal="true" aria-labelledby="semester-modal-title">
         <div className="module-modal__header">
           <div>
-            <p className="module-page__eyebrow">Module 18</p>
             <h2 id="semester-modal-title">{semester ? 'Cập nhật học kỳ' : 'Tạo học kỳ mới'}</h2>
           </div>
           <button className="module-icon-button" type="button" onClick={onClose} aria-label="Đóng biểu mẫu">
@@ -111,7 +112,9 @@ function SemesterModal({ semester, saving, error, onClose, onSubmit }) {
 }
 
 export default function SemesterManagementPage() {
+  const navigate = useNavigate();
   const [semesters, setSemesters] = useState([]);
+  const [allSemesters, setAllSemesters] = useState([]);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [draftSearch, setDraftSearch] = useState('');
@@ -132,11 +135,19 @@ export default function SemesterManagementPage() {
       const params = { page, limit };
       if (search) params.search = search;
       if (status === 'active') params.is_active = 'true';
-      if (status === 'closed') params.is_active = 'false';
+      if (status === 'closed') {
+        params.is_active = 'false';
+        params.is_locked = 'false';
+      }
       if (status === 'current') params.is_current = 'true';
-      const response = await getSemesters(params);
+      if (status === 'locked') params.is_locked = 'true';
+      const [response, summaryResponse] = await Promise.all([
+        getSemesters(params),
+        getSemesters({ page: 1, limit: 100 }),
+      ]);
       setSemesters(response.data || []);
       setTotal(response.pagination?.total ?? response.total ?? 0);
+      setAllSemesters(summaryResponse.data || []);
     } catch (requestError) {
       setError(errorMessage(requestError, 'Không thể tải danh sách học kỳ.'));
       setSemesters([]);
@@ -146,6 +157,10 @@ export default function SemesterManagementPage() {
   }, [page, search, status]);
 
   useEffect(() => { load(); }, [load]);
+
+  const notifySemesterChanged = () => {
+    window.dispatchEvent(new CustomEvent('edux:semester-updated'));
+  };
 
   const openCreate = () => {
     setFormError('');
@@ -165,6 +180,7 @@ export default function SemesterManagementPage() {
       else await createSemester(payload);
       setModal(null);
       await load();
+      notifySemesterChanged();
     } catch (requestError) {
       setFormError(errorMessage(requestError, 'Không thể lưu học kỳ.'));
     } finally {
@@ -173,11 +189,17 @@ export default function SemesterManagementPage() {
   };
 
   const transition = async (semester, action) => {
-    const labels = { activate: 'kích hoạt', close: 'đóng', lock: 'khóa' };
+    const labels = {
+      activate: 'kích hoạt',
+      close: 'đóng',
+      reopen: 'mở lại',
+      lock: 'khóa vĩnh viễn',
+    };
     const notes = {
-      activate: 'Học kỳ này sẽ trở thành học kỳ hiện tại.',
+      activate: 'Học kỳ này sẽ trở thành học kỳ hiện tại của toàn hệ thống.',
       close: 'Học kỳ sẽ ngừng hoạt động và không còn là học kỳ hiện tại.',
-      lock: 'Học kỳ đã khóa không thể cập nhật hoặc kích hoạt lại.',
+      reopen: 'Học kỳ sẽ được mở lại để tiếp tục quản lý lớp học hoặc đặt làm học kỳ hiện tại.',
+      lock: 'Học kỳ đã khóa không thể chỉnh sửa, mở lại hoặc kích hoạt lại.',
     };
     if (!window.confirm(`Bạn có chắc muốn ${labels[action]} “${semester.name}”?\n\n${notes[action]}`)) return;
 
@@ -186,8 +208,10 @@ export default function SemesterManagementPage() {
     try {
       if (action === 'activate') await activateSemester(semester.id);
       if (action === 'close') await closeSemester(semester.id);
+      if (action === 'reopen') await reopenSemester(semester.id);
       if (action === 'lock') await lockSemester(semester.id);
       await load();
+      notifySemesterChanged();
     } catch (requestError) {
       setError(errorMessage(requestError, `Không thể ${labels[action]} học kỳ.`));
     } finally {
@@ -196,20 +220,56 @@ export default function SemesterManagementPage() {
   };
 
   const totalPages = Math.max(1, Math.ceil(total / limit));
+  const currentSemester = allSemesters.find((item) => item.is_current);
+  const openCount = allSemesters.filter((item) => item.is_active && !item.is_locked).length;
+  const lockedCount = allSemesters.filter((item) => item.is_locked).length;
 
   return (
     <div className="module-page">
       <header className="module-page__header">
         <div>
-          <p className="module-page__eyebrow">Module 18 · Academic Operations</p>
+          <p className="module-page__eyebrow">Quản trị Đào tạo</p>
           <h1 className="module-page__title">Quản lý học kỳ</h1>
-          <p className="module-page__subtitle">Tạo lịch học kỳ, chọn học kỳ hiện tại, đóng và khóa dữ liệu theo vòng đời đào tạo.</p>
+          <p className="module-page__subtitle">Tạo lịch học kỳ, chọn học kỳ hiện tại, đóng/mở lại và khóa dữ liệu theo vòng đời đào tạo.</p>
         </div>
-        <button className="btn btn-primary" type="button" onClick={openCreate}>
-          <span className="material-symbols-outlined" aria-hidden="true">add</span>
-          Thêm học kỳ
-        </button>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <button className="btn btn-secondary" type="button" onClick={() => navigate('/admin/classes')}>
+            <span className="material-symbols-outlined" aria-hidden="true">school</span>
+            Quản lý Lớp học
+          </button>
+          <button className="btn btn-primary" type="button" onClick={openCreate}>
+            <span className="material-symbols-outlined" aria-hidden="true">add</span>
+            Thêm học kỳ
+          </button>
+        </div>
       </header>
+
+      <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: 14 }}>
+        <div className="card" style={{ padding: '16px 18px' }}>
+          <div className="module-secondary-text" style={{ marginTop: 0 }}>Học kỳ hiện tại</div>
+          <div className="module-primary-text" style={{ fontSize: '1.1rem', marginTop: 6 }}>
+            {currentSemester ? `${currentSemester.code} — ${currentSemester.name}` : 'Chưa chọn học kỳ hiện tại'}
+          </div>
+          <div className="module-secondary-text">
+            {currentSemester ? `Năm học ${currentSemester.academic_year}` : 'Bấm biểu tượng Kích hoạt trên học kỳ đang mở'}
+          </div>
+        </div>
+        <div className="card" style={{ padding: '16px 18px' }}>
+          <div className="module-secondary-text" style={{ marginTop: 0 }}>Tổng số học kỳ</div>
+          <div className="module-primary-text" style={{ fontSize: '1.35rem', marginTop: 6 }}>{allSemesters.length || total}</div>
+          <div className="module-secondary-text">Trong toàn bộ hệ thống</div>
+        </div>
+        <div className="card" style={{ padding: '16px 18px' }}>
+          <div className="module-secondary-text" style={{ marginTop: 0 }}>Học kỳ đang mở</div>
+          <div className="module-primary-text" style={{ fontSize: '1.35rem', marginTop: 6, color: 'var(--color-success)' }}>{openCount}</div>
+          <div className="module-secondary-text">Có thể xếp lớp & giảng dạy</div>
+        </div>
+        <div className="card" style={{ padding: '16px 18px' }}>
+          <div className="module-secondary-text" style={{ marginTop: 0 }}>Học kỳ đã khóa</div>
+          <div className="module-primary-text" style={{ fontSize: '1.35rem', marginTop: 6, color: 'var(--color-danger)' }}>{lockedCount}</div>
+          <div className="module-secondary-text">Đã lưu trữ cố định</div>
+        </div>
+      </section>
 
       <form className="module-toolbar card" onSubmit={(event) => {
         event.preventDefault();
@@ -225,8 +285,9 @@ export default function SemesterManagementPage() {
         <select id="semester-status" className="module-select" value={status} onChange={(event) => { setStatus(event.target.value); setPage(1); }}>
           <option value="all">Tất cả trạng thái</option>
           <option value="current">Hiện tại</option>
-          <option value="active">Đang hoạt động</option>
-          <option value="closed">Đã đóng</option>
+          <option value="active">Đang mở</option>
+          <option value="closed">Đã đóng (chưa khóa)</option>
+          <option value="locked">Đã khóa</option>
         </select>
         <button className="btn btn-secondary" type="submit">Lọc dữ liệu</button>
       </form>
@@ -241,12 +302,30 @@ export default function SemesterManagementPage() {
         ) : (
           <div className="module-table-wrap">
             <table className="module-table">
-              <thead><tr><th>Học kỳ</th><th>Thời gian</th><th>Trạng thái</th><th aria-label="Thao tác" /></tr></thead>
+              <thead><tr><th>Học kỳ</th><th>Thời gian</th><th>Quy mô lớp học</th><th>Trạng thái</th><th aria-label="Thao tác" /></tr></thead>
               <tbody>
                 {semesters.map((semester) => (
                   <tr key={semester.id}>
                     <td><div className="module-code">{semester.code}</div><div className="module-primary-text">{semester.name}</div><div className="module-secondary-text">Năm học {semester.academic_year}</div></td>
                     <td><div className="module-primary-text">{new Date(semester.start_date).toLocaleDateString('vi-VN')} – {new Date(semester.end_date).toLocaleDateString('vi-VN')}</div><div className="module-secondary-text">Cập nhật {new Date(semester.updated_at).toLocaleDateString('vi-VN')}</div></td>
+                    <td>
+                      <div className="module-badges">
+                        <button
+                          type="button"
+                          className="module-badge"
+                          style={{ cursor: 'pointer', background: 'var(--color-primary-light)', color: 'var(--color-primary)', border: '1px solid rgba(37, 99, 235, 0.2)' }}
+                          onClick={() => navigate(`/admin/classes?semester=${encodeURIComponent(semester.code)}`)}
+                          title={`Xem các lớp thuộc học kỳ ${semester.code}`}
+                        >
+                          <span className="material-symbols-outlined" style={{ fontSize: 15 }}>class</span>
+                          {semester.class_count ?? 0} lớp học
+                        </button>
+                        <span className="module-badge module-badge--muted">
+                          <span className="material-symbols-outlined" style={{ fontSize: 15 }}>groups</span>
+                          {semester.student_count ?? 0} SV
+                        </span>
+                      </div>
+                    </td>
                     <td><div className="module-badges">
                       {semester.is_current && <span className="module-badge module-badge--success"><span className="material-symbols-outlined" style={{ fontSize: 15 }}>check_circle</span>Hiện tại</span>}
                       <span className={`module-badge ${semester.is_active ? '' : 'module-badge--muted'}`}>{semester.is_active ? 'Đang mở' : 'Đã đóng'}</span>
@@ -256,7 +335,12 @@ export default function SemesterManagementPage() {
                       <button className="module-icon-button" type="button" onClick={() => openEdit(semester)} disabled={semester.is_locked} aria-label={`Sửa ${semester.name}`} title="Sửa học kỳ"><span className="material-symbols-outlined">edit</span></button>
                       {semester.is_active && !semester.is_current && <button className="module-icon-button" type="button" onClick={() => transition(semester, 'activate')} disabled={busyId !== '' || semester.is_locked} aria-label={`Kích hoạt ${semester.name}`} title="Đặt làm học kỳ hiện tại"><span className="material-symbols-outlined">play_circle</span></button>}
                       {semester.is_active && <button className="module-icon-button" type="button" onClick={() => transition(semester, 'close')} disabled={busyId !== '' || semester.is_locked} aria-label={`Đóng ${semester.name}`} title="Đóng học kỳ"><span className="material-symbols-outlined">event_busy</span></button>}
-                      {!semester.is_active && !semester.is_locked && <button className="module-icon-button module-icon-button--danger" type="button" onClick={() => transition(semester, 'lock')} disabled={busyId !== ''} aria-label={`Khóa ${semester.name}`} title="Khóa học kỳ"><span className="material-symbols-outlined">lock</span></button>}
+                      {!semester.is_active && !semester.is_locked && (
+                        <>
+                          <button className="module-icon-button" type="button" onClick={() => transition(semester, 'reopen')} disabled={busyId !== ''} aria-label={`Mở lại ${semester.name}`} title="Mở lại học kỳ"><span className="material-symbols-outlined">restart_alt</span></button>
+                          <button className="module-icon-button module-icon-button--danger" type="button" onClick={() => transition(semester, 'lock')} disabled={busyId !== ''} aria-label={`Khóa ${semester.name}`} title="Khóa vĩnh viễn học kỳ"><span className="material-symbols-outlined">lock</span></button>
+                        </>
+                      )}
                     </div></td>
                   </tr>
                 ))}

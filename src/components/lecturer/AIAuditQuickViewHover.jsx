@@ -897,6 +897,7 @@ export default function AIAuditQuickViewHover({
                     borderCollapse: 'collapse',
                     fontSize: '12px',
                     textAlign: 'left',
+                    tableLayout: 'fixed',
                   }}
                 >
                   <thead
@@ -1138,6 +1139,7 @@ export default function AIAuditQuickViewHover({
                                   'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
                                 whiteSpace: 'pre-wrap',
                                 wordBreak: 'break-word',
+                                minHeight: '100px',
                                 maxHeight: '144px',
                                 overflowY: 'auto',
                                 lineHeight: '1.5',
@@ -1171,6 +1173,7 @@ export default function AIAuditQuickViewHover({
                                 color: '#334155',
                                 whiteSpace: 'pre-wrap',
                                 wordBreak: 'break-word',
+                                minHeight: '100px',
                                 maxHeight: '144px',
                                 overflowY: 'auto',
                                 lineHeight: '1.5',
@@ -1205,6 +1208,7 @@ export default function AIAuditQuickViewHover({
                                 fontWeight: '500',
                                 whiteSpace: 'pre-wrap',
                                 wordBreak: 'break-word',
+                                minHeight: '100px',
                                 maxHeight: '144px',
                                 overflowY: 'auto',
                                 lineHeight: '1.55',

@@ -4,8 +4,11 @@ import ClassService from '../../services/class.service';
 import {
     ChevronRight, Clock, Folder, FilePenLine, RotateCw, Calendar, Code, AlertCircle,
     Users,
-    Flame
+    Flame,
+    FolderKanban
 } from 'lucide-react';
+import ProjectWorkspace from
+    '../../components/student/ProjectWorkspace';
 import AssignmentSubwindowModal from '../../components/student/AssignmentSubwindowModal';
 import { createPortal } from 'react-dom';
 
@@ -190,6 +193,25 @@ export default function StudentClassDetailPage() {
                     style={{ backgroundColor: '#4f46e5', color: '#fff', padding: '0 12px', height: '32px', fontSize: '12px', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', gap: '6px' }}
                 >
                     <Users size={14} /> Members
+                </button>
+                <button
+                    className="btn"
+                    onClick={() => navigate(`/student/classes/${classId}/projects`)}
+                    style={{
+                        backgroundColor: '#0d9488',
+                        color: '#fff',
+                        padding: '0 12px',
+                        height: '32px',
+                        fontSize: '12px',
+                        borderRadius: 'var(--radius-sm)',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px',
+                    }}
+                >
+                    <FolderKanban size={14} />
+                    Projects
                 </button>
                 <button className="btn btn-primary" onClick={() => setIsAssignmentModalOpen(true)} style={{ padding: '0 12px', height: '32px', fontSize: '12px', borderRadius: 'var(--radius-sm)' }}>
                     <FilePenLine size={14} /> Assignments
@@ -429,7 +451,7 @@ export default function StudentClassDetailPage() {
                                                         border: `1px solid ${streak > 0 ? '#ffedd5' : '#e5e7eb'}`
                                                     }}>
                                                         <Flame size={13} fill={streak > 0 ? '#f97316' : 'none'} color={streak > 0 ? '#ea580c' : '#9ca3af'} />
-                                                        <span>{streak} {streak === 1 }</span>
+                                                        <span>{streak} {streak === 1}</span>
                                                     </div>
                                                 </div>
                                             </div>

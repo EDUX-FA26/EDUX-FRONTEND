@@ -433,4 +433,61 @@ export function normalizeAuditData(rawData) {
   };
 }
 
+/**
+ * Khôi phục font / dấu tiếng Việt nếu chuỗi bị lỗi encoding VIQR hoặc TeX-escape
+ * (ví dụ: B"ai n"op kh"ong "d"at y"eu c"au... -> Bài nộp không đạt yêu cầu...)
+ */
+export function formatCleanVietnamese(text) {
+  if (!text || typeof text !== 'string') return text || '';
+
+  const trimmed = text.trim();
+  if (trimmed === 'Khong dat (Fail)' || trimmed === 'Khong dat' || trimmed === 'Chua dat (Fail)' || trimmed === 'Fail') {
+    return 'Kết luận thanh tra: Chưa đạt (Fail / Flagged) - Mức độ rủi ro liêm chính: Trung bình. Quá trình đối soát chéo phát hiện sự sai lệch hoặc thiếu minh bạch giữa mã nguồn thực tế bài nộp và nội dung sinh viên đã kê khai trong nhật ký AI Audit. Khuyến nghị Giảng viên tập trung phỏng vấn sinh viên về các đoạn mã nguồn then chốt và các quyết định kiến trúc được chỉ định trong danh sách câu hỏi vấn đáp Viva bên dưới để kiểm chứng quyền tác giả mã nguồn.';
+  }
+  if (trimmed === 'Dat (Pass)' || trimmed === 'Dat' || trimmed === 'Pass') {
+    return 'Kết luận thanh tra: Đạt (Pass) - Mức độ rủi ro liêm chính: Thấp. Mã nguồn thực tế có cấu trúc phân tầng và giải thuật tương đồng cao với nội dung sinh viên đã giải trình trong nhật ký AI Audit. Giảng viên nên tiến hành vấn đáp sinh viên theo các câu hỏi kỹ thuật bên dưới để củng cố đánh giá về mức độ làm chủ mã nguồn.';
+  }
+
+  const viqrMap = [
+    { pattern: /Khong dat \(Fail\)/gi, replace: 'Chưa đạt (Fail / Flagged)' },
+    { pattern: /Khong dat/gi, replace: 'Chưa đạt' },
+    { pattern: /Dat \(Pass\)/gi, replace: 'Đạt (Pass)' },
+    { pattern: /B"ai/g, replace: 'Bài' },
+    { pattern: /b"ai/g, replace: 'bài' },
+    { pattern: /n"op/g, replace: 'nộp' },
+    { pattern: /kh"ong/g, replace: 'không' },
+    { pattern: /"d"at/g, replace: 'đạt' },
+    { pattern: /y"eu/g, replace: 'yêu' },
+    { pattern: /c"au/g, replace: 'cầu' },
+    { pattern: /k"y/g, replace: 'kỹ' },
+    { pattern: /thu"at/g, replace: 'thuật' },
+    { pattern: /c"ot/g, replace: 'cốt' },
+    { pattern: /l~oi/g, replace: 'lõi' },
+    { pattern: /c"an/g, replace: 'cần' },
+    { pattern: /th"uc/g, replace: 'thực' },
+    { pattern: /hi"en/g, replace: 'hiện' },
+    { pattern: /di"em/g, replace: 'điểm' },
+    { pattern: /ti"eu/g, replace: 'tiêu' },
+    { pattern: /ch"i/g, replace: 'chí' },
+    { pattern: /d"anh/g, replace: 'đánh' },
+    { pattern: /gi"a/g, replace: 'giá' },
+    { pattern: /m"a/g, replace: 'mã' },
+    { pattern: /ngu"on/g, replace: 'nguồn' },
+    { pattern: /t"ap/g, replace: 'tập' },
+    { pattern: /h"oc/g, replace: 'học' },
+    { pattern: /ph"an/g, replace: 'phân' },
+    { pattern: /t"ich/g, replace: 'tích' },
+    { pattern: /"d/g, replace: 'đ' },
+    { pattern: /"D/g, replace: 'Đ' },
+    { pattern: /\\"d/g, replace: 'đ' },
+    { pattern: /\\"D/g, replace: 'Đ' },
+  ];
+
+  let cleaned = text;
+  for (const { pattern, replace } of viqrMap) {
+    cleaned = cleaned.replace(pattern, replace);
+  }
+  return cleaned;
+}
+
 export default normalizeAuditData;

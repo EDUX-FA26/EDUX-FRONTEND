@@ -1,14 +1,18 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import ClassService from '../../services/class.service';
 import {
     ChevronRight, Clock, Folder, FilePenLine, RotateCw, Calendar, Code, AlertCircle, Users,
     Flame,
-    Download
+    Download,
+    Sparkles,
+    Bot
 } from 'lucide-react';
 import { PlusCircle, FileText, Upload } from 'lucide-react';
 import AssignmentSubwindowModal from '../../components/student/AssignmentSubwindowModal';
+import ClassMembersModal from "../../components/lecturer/ClassMembersModal";
+import { ClassAiAdvisorModal } from '../../components/lecturer/ClassAiAdvisorModal';
 export default function LecturerClassDetailPage() {
     const { classId } = useParams();
     const navigate = useNavigate();
@@ -22,8 +26,48 @@ export default function LecturerClassDetailPage() {
     const [viewAll, setViewAll] = useState(false);
     const [isAssignmentModalOpen, setIsAssignmentModalOpen] = useState(false);
     const [isMembersModalOpen, setIsMembersModalOpen] = useState(false);
-    const [members, setMembers] = useState([]);
-    const [loadingMembers, setLoadingMembers] = useState(false);
+
+    // States cho AI Class Advisor Subwindow
+    const [advisorData, setAdvisorData] = useState(null);
+    const [isAdvisorModalOpen, setIsAdvisorModalOpen] = useState(false);
+    const [isRefreshingAdvisor, setIsRefreshingAdvisor] = useState(false);
+
+    // Fetch dữ liệu AI Class Advisor
+    const fetchAdvisorData = useCallback(async () => {
+        if (!classId) return;
+        try {
+            const res = await ClassService.getClassAiAdvisor(classId);
+            const payload = res?.data || res;
+            if (payload && payload.has_data && payload.advisories?.length) {
+                setAdvisorData(payload);
+            } else {
+                setAdvisorData(null);
+            }
+        } catch (err) {
+            console.warn('Could not fetch AI Advisor data:', err);
+            setAdvisorData(null);
+        }
+    }, [classId]);
+
+    const handleOpenAdvisorModal = () => {
+        setIsAdvisorModalOpen(true);
+    };
+
+    const handleRefreshAdvisor = async () => {
+        if (isRefreshingAdvisor || !classId) return;
+        try {
+            setIsRefreshingAdvisor(true);
+            const res = await ClassService.refreshClassAiAdvisor(classId);
+            const payload = res?.data || res;
+            if (payload && payload.has_data && payload.advisories?.length) {
+                setAdvisorData(payload);
+            }
+        } catch (err) {
+            console.error('Failed to refresh AI advisor:', err);
+        } finally {
+            setIsRefreshingAdvisor(false);
+        }
+    };
 
     // Hàm gọi API lấy danh sách học viên
     const handleOpenMembersModal = async () => {
@@ -112,7 +156,20 @@ export default function LecturerClassDetailPage() {
 
     useEffect(() => {
         fetchData();
-    }, [fetchData]);
+        fetchAdvisorData();
+    }, [fetchData, fetchAdvisorData]);
+
+    // Khi lấy được dữ liệu advisorData và has_data === true, tự động mở popup
+    useEffect(() => {
+        if (advisorData?.has_data && advisorData?.advisories?.length > 0) {
+            setIsAdvisorModalOpen(true);
+        }
+    }, [classId, advisorData]);
+
+    const handleFullRefresh = () => {
+        fetchData();
+        fetchAdvisorData();
+    };
 
     const handleSlotClick = (slotId) => {
         setSelectedSlotId(slotId);
@@ -162,9 +219,25 @@ export default function LecturerClassDetailPage() {
             {/* Tiêu đề khóa học & Owner */}
             <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px' }}>
                 <div>
-                    <h1 style={{ fontSize: '20px', fontWeight: 'bold', color: 'var(--color-ink)', margin: '0 0 4px 0' }}>
-                        {classData.subject_name || classData.name || 'Unnamed Class'}
-                    </h1>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '4px' }}>
+                        <h1 style={{ fontSize: '20px', fontWeight: 'bold', color: 'var(--color-ink)', margin: 0 }}>
+                            {classData.subject_name || classData.name || 'Unnamed Class'}
+                        </h1>
+
+                        {/* Trigger Button Advisor: Hover hoặc Click mở thẳng Modal */}
+                        {advisorData && advisorData.has_data && advisorData.advisories?.length > 0 && (
+                            <button
+                                type="button"
+                                onMouseEnter={() => setIsAdvisorModalOpen(true)}
+                                onClick={() => setIsAdvisorModalOpen(true)}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200/80 rounded-lg transition shadow-xs hover:shadow-sm cursor-pointer group"
+                                title="Xem khuyến nghị giảng dạy AI cho buổi học (Advisor)"
+                            >
+                                <Bot className="w-4 h-4 text-purple-600 transition-transform group-hover:scale-110" />
+                                <span>Advisor</span>
+                            </button>
+                        )}
+                    </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px' }}>
                         <span style={{ color: 'var(--color-primary-dark)', fontWeight: 'bold' }}>{classData.subject_code || 'CODE'}</span>
                         <span style={{ color: 'var(--color-ink-muted)' }}>• {classData.class_code || classData.class_name || 'N/A'}</span>
@@ -186,15 +259,26 @@ export default function LecturerClassDetailPage() {
                 {/* NÚT MEMBERS MỚI THÊM */}
                 <button
                     className="btn"
-                    onClick={handleOpenMembersModal}
-                    style={{ backgroundColor: '#4f46e5', color: '#fff', padding: '0 12px', height: '32px', fontSize: '12px', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', gap: '6px' }}
+                    onClick={() => setIsMembersModalOpen(true)}
+                    style={{
+                        backgroundColor: "#4f46e5",
+                        color: "#fff",
+                        padding: "0 12px",
+                        height: "32px",
+                        fontSize: "12px",
+                        borderRadius: "var(--radius-sm)",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px",
+                    }}
                 >
-                    <Users size={14} /> Members
+                    <Users size={14} />
+                    Members
                 </button>
                 <button className="btn btn-primary" onClick={() => setIsAssignmentModalOpen(true)} style={{ padding: '0 12px', height: '32px', fontSize: '12px', borderRadius: 'var(--radius-sm)' }}>
                     <FilePenLine size={14} /> Assignments
                 </button>
-                <button className="btn btn-secondary" onClick={fetchData} style={{ padding: '0 12px', height: '32px', fontSize: '12px', borderRadius: 'var(--radius-sm)' }}>
+                <button className="btn btn-secondary" onClick={handleFullRefresh} style={{ padding: '0 12px', height: '32px', fontSize: '12px', borderRadius: 'var(--radius-sm)' }}>
                     <RotateCw size={14} /> Refresh
                 </button>
             </div>
@@ -368,153 +452,23 @@ export default function LecturerClassDetailPage() {
                 document.body
             )}
 
-            {/* Modal Class Members */}
-            {isMembersModalOpen && createPortal(
-                <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0, 0, 0, 0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
-                    <div className="card" style={{ width: '100%', maxWidth: '650px', maxHeight: '80vh', display: 'flex', flexDirection: 'column', padding: '20px', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--color-surface)' }}>
+            <ClassMembersModal
+                isOpen={isMembersModalOpen}
+                onClose={() => setIsMembersModalOpen(false)}
+                classId={classId}
+                classData={classData}
+            />
 
-                        {/* Modal Header */}
-                        <div
-                            style={{
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center',
-                                paddingBottom: '12px',
-                                borderBottom: '1px solid var(--color-border)'
-                            }}
-                        >
-                            <div>
-                                <h3
-                                    style={{
-                                        margin: 0,
-                                        fontSize: '16px',
-                                        fontWeight: 'bold',
-                                        color: 'var(--color-ink)'
-                                    }}
-                                >
-                                    Class Members ({members.length})
-                                </h3>
-
-                                <span
-                                    style={{
-                                        fontSize: '12px',
-                                        color: 'var(--color-ink-muted)'
-                                    }}
-                                >
-                                    {classData?.class_code || classData?.class_name}
-                                </span>
-                            </div>
-
-                            {/* Actions */}
-                            <div
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '8px'
-                                }}
-                            >
-                                {/* Export Class */}
-                                <button
-                                    disabled={members.length === 0}
-                                    style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '6px',
-                                        padding: '6px 10px',
-                                        border: '1px solid var(--color-border)',
-                                        borderRadius: 'var(--radius-sm)',
-                                        backgroundColor: 'var(--color-surface)',
-                                        color: 'var(--color-ink)',
-                                        fontSize: '12px',
-                                        fontWeight: '600',
-                                        cursor: members.length === 0 ? 'not-allowed' : 'pointer',
-                                        opacity: members.length === 0 ? 0.5 : 1
-                                    }}
-                                    title="Export class members"
-                                >
-                                    <Download size={14} />
-                                    Export Class
-                                </button>
-
-                                {/* Close */}
-                                <button
-                                    onClick={() => setIsMembersModalOpen(false)}
-                                    style={{
-                                        background: 'none',
-                                        border: 'none',
-                                        fontSize: '18px',
-                                        cursor: 'pointer',
-                                        color: 'var(--color-ink-muted)'
-                                    }}
-                                >
-                                    ✕
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Modal Body */}
-                        <div style={{ flex: 1, overflowY: 'auto', padding: '12px 0' }}>
-                            {loadingMembers ? (
-                                <div style={{ textAlign: 'center', padding: '24px 0', fontSize: '13px', color: 'var(--color-ink-muted)' }}>
-                                    Loading members...
-                                </div>
-                            ) : members.length === 0 ? (
-                                <div style={{ textAlign: 'center', padding: '24px 0', fontSize: '13px', color: 'var(--color-ink-muted)' }}>
-                                    No members found in this class.
-                                </div>
-                            ) : (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                    {members.map((member, idx) => {
-                                        const streak = member.currentStreak || 0;
-                                        const fullName = member.fullName || member.full_name || member.name || 'N/A';
-                                        const studentCode = member.studentCode || member.student_code || member.email || 'No Code';
-
-                                        return (
-                                            <div
-                                                key={member.studentId || member.student_id || idx}
-                                                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)' }}
-                                            >
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                                    <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: 'var(--color-primary-bg)', color: 'var(--color-primary-dark)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '12px' }}>
-                                                        {fullName.charAt(0).toUpperCase()}
-                                                    </div>
-                                                    <div>
-                                                        <div style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--color-ink)' }}>
-                                                            {fullName}
-                                                        </div>
-                                                        <div style={{ fontSize: '11px', color: 'var(--color-ink-muted)' }}>
-                                                            {studentCode}
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                {/* Khối bên phải: Badge Streak + Badge Role */}
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                    {/* Badge Streak */}
-                                                    <div style={{
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        gap: '4px',
-                                                        fontSize: '11px',
-                                                        fontWeight: 'bold',
-                                                        padding: '2px 8px',
-                                                        borderRadius: '12px',
-                                                        backgroundColor: streak > 0 ? '#fff7ed' : '#f3f4f6',
-                                                        color: streak > 0 ? '#ea580c' : '#9ca3af',
-                                                        border: `1px solid ${streak > 0 ? '#ffedd5' : '#e5e7eb'}`
-                                                    }}>
-                                                        <Flame size={13} fill={streak > 0 ? '#f97316' : 'none'} color={streak > 0 ? '#ea580c' : '#9ca3af'} />
-                                                        <span>{streak} {streak === 1}</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>,
+            {/* AI Class Advisor Subwindow Modal */}
+            {isAdvisorModalOpen && createPortal(
+                <ClassAiAdvisorModal
+                    classId={classId}
+                    isOpen={isAdvisorModalOpen}
+                    onClose={() => setIsAdvisorModalOpen(false)}
+                    advisorData={advisorData}
+                    onRefresh={handleRefreshAdvisor}
+                    isRefreshing={isRefreshingAdvisor}
+                />,
                 document.body
             )}
         </div>

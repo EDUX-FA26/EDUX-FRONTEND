@@ -28,7 +28,8 @@ import FlashcardTestPage from '../pages/student/FlashcardTestPage';
 import FlashcardTestResultPage from '../pages/student/FlashcardTestResultPage';
 import PersonalizedLearningPage from '../pages/student/PersonalizedLearningPage';
 import FocusRoomPage from '../pages/student/FocusRoomPage';
-
+import SmartTodoPage from '../pages/student/SmartTodoPage';
+import StudentProjectsPage from '../pages/student/StudentProjectsPage';
 // Layouts
 import DashboardLayout from '../layouts/DashboardLayout';
 
@@ -82,6 +83,7 @@ export default function AppRoutes() {
         <Route path="classes" element={<StudentClassesPage />} />
         <Route path="classes/:classId" element={<StudentClassDetailPage />} />
         <Route path="classes/:classId/materials" element={<ClassMaterialsPage />} />
+        <Route path="classes/:classId/projects" element={<StudentProjectsPage />} />
         <Route path="assignments/:id" element={<StudentAssignmentDetailPage />} />
         <Route index element={<Navigate to="dashboard" replace />} />
       </Route>
