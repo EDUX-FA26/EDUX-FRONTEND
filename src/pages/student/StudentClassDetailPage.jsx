@@ -123,7 +123,7 @@ export default function StudentClassDetailPage() {
 
     if (loading) {
         return (
-            <div style={{ maxWidth: '1152px', margin: '0 auto', width: '100%', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div className="w-full flex flex-col gap-4" style={{ width: '100%' }}>
                 <div className="skeleton" style={{ width: '33%', height: '24px' }}></div>
                 <div className="skeleton" style={{ width: '66%', height: '48px' }}></div>
                 <div style={{ display: 'grid', gridTemplateColumns: '2fr 3fr 7fr', gap: '20px', marginTop: '8px' }}>
@@ -137,7 +137,7 @@ export default function StudentClassDetailPage() {
 
     if (error) {
         return (
-            <div style={{ maxWidth: '1152px', margin: '0 auto', padding: '16px', backgroundColor: '#fee2e2', color: '#dc2626', border: '1px solid rgba(220, 38, 38, 0.2)', borderRadius: 'var(--radius-md)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div className="w-full flex items-center gap-2" style={{ width: '100%', padding: '16px', backgroundColor: '#fee2e2', color: '#dc2626', border: '1px solid rgba(220, 38, 38, 0.2)', borderRadius: 'var(--radius-md)' }}>
                 <AlertCircle size={20} />
                 <span>{error}</span>
             </div>
@@ -152,7 +152,7 @@ export default function StudentClassDetailPage() {
     const displayedSlots = viewAll ? slots : slots.slice((currentPage - 1) * 10, currentPage * 10);
 
     return (
-        <div className="animate-fade-in" style={{ maxWidth: '1152px', margin: '0 auto', width: '100%', display: 'flex', flexDirection: 'column', gap: '16px', position: 'relative' }}>
+        <div className="animate-fade-in w-full flex flex-col gap-4 relative" style={{ width: '100%' }}>
             {/* Breadcrumb */}
             <nav style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'var(--color-ink-muted)' }}>
                 <Link to="/student/classes" style={{ textDecoration: 'none', color: 'var(--color-ink-muted)' }} onMouseEnter={(e) => e.target.style.textDecoration = 'underline'} onMouseLeave={(e) => e.target.style.textDecoration = 'none'}>My Courses</Link>
