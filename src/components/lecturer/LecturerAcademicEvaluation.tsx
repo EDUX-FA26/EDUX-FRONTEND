@@ -897,7 +897,7 @@ export default function LecturerAcademicEvaluation({
   const codeLines = submissionFile.lines || (submissionFile.content ? submissionFile.content.split('\n') : []);
 
   return (
-    <div className="flex-1 flex flex-col h-full w-full overflow-hidden bg-[#f8fafc] text-slate-700 font-sans select-none m-0 p-0">
+    <div className="flex-1 min-h-0 flex flex-col h-full w-full overflow-hidden bg-[#f8fafc] text-slate-700 font-sans select-none m-0 p-0">
       {/* Toast Notification Floating */}
       {toastMessage && (
         <div className="fixed top-6 right-6 z-[1050] flex items-center gap-3 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-2xl border border-slate-700 animate-in fade-in slide-in-from-top-4 duration-200">
@@ -918,8 +918,8 @@ export default function LecturerAcademicEvaluation({
         </div>
       )}
 
-      {/* ==================== TOP NAVIGATION BAR (H-12 FLUSH FIT) ==================== */}
-      <header className="h-12 w-full bg-[#0f172a] text-white px-4 flex items-center justify-between border-b border-gray-800 shrink-0 select-none">
+      {/* ==================== TOP NAVIGATION BAR (H-14 FLUSH FIT) ==================== */}
+      <header className="h-14 w-full bg-[#0f172a] text-white px-4 flex items-center justify-between border-b border-gray-800 shrink-0 select-none">
         <div className="flex items-center gap-3 min-w-0">
           <button
             type="button"
@@ -1026,20 +1026,20 @@ export default function LecturerAcademicEvaluation({
       </header>
 
       {/* ==================== MAIN CONTENT AREA (WORKSPACE BODY) ==================== */}
-      <div className="flex-1 flex w-full overflow-hidden">
+      <div className="flex-1 min-h-0 flex w-full overflow-hidden">
         {/* CỘT TRÁI: CODE VIEWER / ANNOTATE (FLEX-1) */}
-        <div className="flex-1 flex flex-col overflow-hidden bg-white border-r border-gray-200 min-w-0">
+        <div className="flex-1 min-h-0 flex flex-col overflow-hidden bg-white border-r border-gray-200 min-w-0">
           <SubmissionFileViewer
             file={actualFile}
             onAiAnnotate={handleAiAnnotateClick}
             showAiAnnotationBanner={showAnnotateToast}
             onCloseAiAnnotationBanner={() => setShowAnnotateToast(false)}
-            className="w-full h-full flex flex-col overflow-hidden"
+            className="w-full h-full min-h-0 flex flex-col overflow-hidden"
           />
         </div>
 
         {/* CỘT PHẢI: TAB AI DECLARATION & AUDIT / ACADEMIC GRADING */}
-        <aside className="w-[440px] lg:w-[480px] xl:w-[520px] flex flex-col overflow-hidden bg-white shrink-0">
+        <aside className="w-[440px] lg:w-[480px] xl:w-[540px] flex flex-col min-h-0 overflow-hidden bg-white shrink-0 border-l border-slate-200">
           {/* TAB NAVIGATION CỐ ĐỊNH */}
           <div className="h-11 border-b border-gray-200 flex items-center px-2 shrink-0 bg-white select-none">
             <button
@@ -1072,11 +1072,11 @@ export default function LecturerAcademicEvaluation({
           </div>
 
           {/* VÙNG NỘI DUNG CUỘN RIÊNG BIỆT CHO MỖI TAB */}
-          <div className="flex-1 overflow-hidden relative flex flex-col">
+          <div className="flex-1 min-h-0 overflow-hidden relative flex flex-col">
             {/* ==================== TAB 1: AI DECLARATION & AUDIT ==================== */}
             <div
               id="panel-ai"
-              className={`flex-1 flex flex-col p-4 overflow-y-auto custom-scroll space-y-4 ${
+              className={`flex-1 min-h-0 flex flex-col p-4 pb-16 overflow-y-auto custom-scroll space-y-4 ${
                 activeTab === 'ai' ? '' : 'hidden'
               }`}
             >
@@ -1321,7 +1321,7 @@ export default function LecturerAcademicEvaluation({
             {/* ==================== TAB 2: ACADEMIC GRADING ==================== */}
             <div
               id="panel-grading"
-              className={`flex-1 flex flex-col p-4 overflow-y-auto custom-scroll space-y-6 ${
+              className={`flex-1 min-h-0 flex flex-col p-4 pb-16 overflow-y-auto custom-scroll space-y-6 ${
                 activeTab === 'grading' ? '' : 'hidden'
               }`}
             >
