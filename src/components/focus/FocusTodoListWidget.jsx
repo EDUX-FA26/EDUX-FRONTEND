@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import {
-  Check, X, Plus, ChevronDown, ChevronRight, Sparkles,
+  Check, X, Plus, ChevronDown, ChevronRight, ChevronUp, Sparkles,
   BookmarkCheck
 } from 'lucide-react';
 import TodoService from '../../services/todo.service';
@@ -101,6 +101,25 @@ function FocusTodoListWidget({
   const [loading, setLoading] = useState(true);
   const [collapsedGroups, setCollapsedGroups] = useState({});
   const [showPresets, setShowPresets] = useState(false);
+  const [isWidgetCollapsed, setIsWidgetCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem('focus_room_todo_collapsed') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const toggleWidgetCollapse = useCallback(() => {
+    setIsWidgetCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('focus_room_todo_collapsed', String(next));
+      } catch {
+        // ignore
+      }
+      return next;
+    });
+  }, []);
 
   // Danh sách các nhóm tuỳ chỉnh
   const [extraGroups, setExtraGroups] = useState(() => {
@@ -434,47 +453,85 @@ function FocusTodoListWidget({
 
   return (
     <div className="relative">
-      {/* ── BẢNG TO-DO-LIST (Hierarchical Tree View chuẩn 100% theo ảnh) ── */}
-      <div
-        className="
-          w-[320px] sm:w-[350px]
-          rounded-2xl
-          bg-[#181226]/85 backdrop-blur-2xl
-          border border-white/10
-          text-white
-          shadow-2xl
-          select-none
-          overflow-hidden
-          transition-all
-        "
-        style={{
-          boxShadow: '0 24px 48px -12px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06)',
-          padding: '16px 20px',
-        }}
-      >
-        {/* Header: To-Do-List (completed/total) + Presets button */}
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-baseline gap-1.5 min-w-0">
-            <span className="text-base font-semibold text-white tracking-wide">To-Do-List</span>
-            <span className="text-xs text-white/50 tabular-nums">
-              ({completedCount}/{totalCount})
-            </span>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => setShowPresets((prev) => !prev)}
-            className={`
-              rounded-full px-4 py-0.5 text-xs font-normal border transition-all active:scale-95
-              ${showPresets
-                ? 'bg-white text-[#181226] border-white shadow-sm'
-                : 'border-white/35 text-white/80 hover:text-white hover:border-white/70 bg-transparent hover:bg-white/10'
-              }
-            `}
+      {isWidgetCollapsed ? (
+        <button
+          type="button"
+          onClick={toggleWidgetCollapse}
+          className="
+            flex items-center gap-2.5 px-3.5 py-2 rounded-2xl
+            bg-[#181226]/85 hover:bg-[#201833]/95
+            border border-white/15 hover:border-white/25
+            text-white shadow-2xl backdrop-blur-2xl
+            transition-all duration-200 active:scale-95 group select-none
+          "
+          style={{
+            boxShadow: '0 16px 32px -8px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06)',
+          }}
+          title="Mở danh sách việc cần làm (To-Do-List)"
+        >
+          <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+          <span className="text-xs font-semibold tracking-wide text-white/90 group-hover:text-white">
+            To-Do-List
+          </span>
+          <span className="text-[11px] font-mono text-white/60 bg-white/10 px-2 py-0.5 rounded-full tabular-nums">
+            {completedCount}/{totalCount}
+          </span>
+          <ChevronDown size={14} className="text-white/60 group-hover:text-white group-hover:translate-y-0.5 transition-transform" />
+        </button>
+      ) : (
+        <>
+          {/* ── BẢNG TO-DO-LIST (Hierarchical Tree View chuẩn 100% theo ảnh) ── */}
+          <div
+            className="
+              w-[320px] sm:w-[350px]
+              rounded-2xl
+              bg-[#181226]/85 backdrop-blur-2xl
+              border border-white/10
+              text-white
+              shadow-2xl
+              select-none
+              overflow-hidden
+              transition-all
+            "
+            style={{
+              boxShadow: '0 24px 48px -12px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06)',
+              padding: '16px 20px',
+            }}
           >
-            Presets
-          </button>
-        </div>
+            {/* Header: To-Do-List (completed/total) + Presets button + Thu gọn */}
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-baseline gap-1.5 min-w-0">
+                <span className="text-base font-semibold text-white tracking-wide">To-Do-List</span>
+                <span className="text-xs text-white/50 tabular-nums">
+                  ({completedCount}/{totalCount})
+                </span>
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setShowPresets((prev) => !prev)}
+                  className={`
+                    rounded-full px-3.5 py-0.5 text-xs font-normal border transition-all active:scale-95
+                    ${showPresets
+                      ? 'bg-white text-[#181226] border-white shadow-sm'
+                      : 'border-white/35 text-white/80 hover:text-white hover:border-white/70 bg-transparent hover:bg-white/10'
+                    }
+                  `}
+                >
+                  Presets
+                </button>
+
+                <button
+                  type="button"
+                  onClick={toggleWidgetCollapse}
+                  className="p-1 rounded-lg text-white/50 hover:text-white hover:bg-white/10 transition active:scale-95"
+                  title="Thu gọn To-Do-List"
+                >
+                  <ChevronUp size={16} />
+                </button>
+              </div>
+            </div>
 
         {/* Divider thanh mảnh dưới Header */}
         <div className="w-full h-[1px] bg-white/15 mt-3 mb-2" />
@@ -1031,6 +1088,8 @@ function FocusTodoListWidget({
             </button>
           </div>
         </div>
+      )}
+        </>
       )}
     </div>
   );

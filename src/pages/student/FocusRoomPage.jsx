@@ -150,44 +150,58 @@ export default function FocusRoomPage() {
     }
   }, [sessionApi.session, initialTodoId]);
 
-  // ── Xử lý Audio Player thật ──
+  // ── Xử lý Audio Player thật: Đồng bộ bài hát & Play/Pause không bị Abort ──
   useEffect(() => {
     const audio = audioPlayerRef.current;
     if (!audio || !currentTrack?.src) return;
 
-    audio.src = currentTrack.src;
-    audio.load();
-    if (isPlayingMusic) {
-      audio.play().catch(() => {});
+    let isCancelled = false;
+
+    // Chỉ đổi src nếu đổi bài hát
+    if (audio.dataset.activeSrc !== currentTrack.src) {
+      audio.dataset.activeSrc = currentTrack.src;
+      audio.src = currentTrack.src;
+      setTrackSeconds(0);
+      if (currentTrack.duration) {
+        setTrackDuration(currentTrack.duration);
+      }
     }
-  }, [currentTrack]);
+
+    if (isPlayingMusic) {
+      const p = audio.play();
+      if (p !== undefined) {
+        p.catch((err) => {
+          if (isCancelled) return;
+          if (err.name !== 'AbortError') {
+            console.warn('Audio playback notice:', err.message);
+            setIsPlayingMusic(false);
+          }
+        });
+      }
+    } else {
+      audio.pause();
+    }
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [currentTrack?.src, isPlayingMusic]);
 
   const toggleMusicPlay = useCallback(() => {
     unlockAudio();
-    const audio = audioPlayerRef.current;
-    if (!audio) return;
-
-    if (isPlayingMusic) {
-      audio.pause();
-      setIsPlayingMusic(false);
-    } else {
-      audio.play().then(() => {
-        setIsPlayingMusic(true);
-      }).catch((e) => {
-        console.warn('Audio play request notice:', e.message);
-        setIsPlayingMusic(true);
-      });
-    }
-  }, [isPlayingMusic, unlockAudio]);
+    setIsPlayingMusic((prev) => !prev);
+  }, [unlockAudio]);
 
   const handlePrevTrack = useCallback(() => {
     setTrackIdx((idx) => (idx - 1 + playlist.length) % playlist.length);
     setTrackSeconds(0);
+    setIsPlayingMusic(true);
   }, [playlist.length]);
 
   const handleNextTrack = useCallback(() => {
     setTrackIdx((idx) => (idx + 1) % playlist.length);
     setTrackSeconds(0);
+    setIsPlayingMusic(true);
   }, [playlist.length]);
 
   const handleSelectTrack = (index) => {
@@ -223,10 +237,12 @@ export default function FocusRoomPage() {
   const handleLoadedMetadata = () => {
     if (audioPlayerRef.current && Number.isFinite(audioPlayerRef.current.duration)) {
       const dur = Math.floor(audioPlayerRef.current.duration);
-      setTrackDuration(dur);
-      setPlaylist((prev) =>
-        prev.map((t, idx) => (idx === trackIdx ? { ...t, duration: dur } : t))
-      );
+      if (dur > 0) {
+        setTrackDuration(dur);
+        setPlaylist((prev) =>
+          prev.map((t, idx) => (idx === trackIdx && t.duration !== dur ? { ...t, duration: dur } : t))
+        );
+      }
     }
   };
 
@@ -238,9 +254,26 @@ export default function FocusRoomPage() {
     const readDuration = (url) =>
       new Promise((resolve) => {
         const temp = new Audio();
+        temp.preload = 'metadata';
+        let done = false;
+        const finish = (val) => {
+          if (!done) {
+            done = true;
+            resolve(val);
+          }
+        };
+        const timer = setTimeout(() => finish(0), 2000);
+        temp.onloadedmetadata = () => {
+          clearTimeout(timer);
+          const dur = Math.floor(temp.duration);
+          finish(Number.isFinite(dur) ? dur : 0);
+        };
+        temp.onerror = () => {
+          clearTimeout(timer);
+          finish(0);
+        };
         temp.src = url;
-        temp.onloadedmetadata = () => resolve(Math.floor(temp.duration) || 0);
-        temp.onerror = () => resolve(0);
+        temp.load();
       });
 
     const newItems = await Promise.all(
@@ -262,6 +295,9 @@ export default function FocusRoomPage() {
     setPlaylist((prev) => [...newItems, ...prev]);
     setTrackIdx(0);
     setTrackSeconds(0);
+    if (newItems[0]?.duration > 0) {
+      setTrackDuration(newItems[0].duration);
+    }
     setIsPlayingMusic(true);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
@@ -384,10 +420,14 @@ export default function FocusRoomPage() {
       {/* HTML5 Audio Tag chạy ngầm cho Music Player */}
       <audio
         ref={audioPlayerRef}
+        preload="metadata"
+        referrerPolicy="no-referrer"
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
         onEnded={handleNextTrack}
-        onError={() => {}}
+        onError={(e) => {
+          console.warn('Audio playback element error:', e);
+        }}
       />
 
       {/* ── Top Bar: Pomodoro bên trái, To-Do-List bên phải ── */}
@@ -743,23 +783,13 @@ export default function FocusRoomPage() {
         </div>
       )}
 
-      {/* ── Drawer Thống kê (trượt từ mép phải khi mở) ── */}
+      {/* ── Drawer Thống kê (trượt từ mép phải khi mở: responsive rộng rãi Lofi) ── */}
       {drawer === 'stats' && (
-        <aside className="absolute inset-y-0 right-0 z-50 flex w-full max-w-sm flex-col bg-slate-900/90 p-6 backdrop-blur-2xl border-l border-white/10 shadow-2xl animate-fade-in text-white overflow-y-auto">
-          <div className="flex items-center justify-between pb-4 border-b border-white/10 mb-4">
-            <h2 className="text-base font-bold text-white flex items-center gap-2">
-              <BarChart2 size={18} className="text-orange-400" />
-              Thống kê Focus Room
-            </h2>
-            <button
-              onClick={() => setDrawer(null)}
-              className="rounded-lg p-1.5 text-white/60 hover:bg-white/10 hover:text-white transition"
-            >
-              <X size={18} />
-            </button>
-          </div>
-
-          <FocusStatsPanel refreshKey={sessionApi.lastEnded?.id} />
+        <aside className="absolute inset-y-0 right-0 z-50 flex w-full sm:max-w-xl md:max-w-2xl lg:max-w-3xl flex-col bg-[#161022]/95 p-5 sm:p-7 backdrop-blur-2xl border-l border-white/15 shadow-2xl animate-fade-in text-white overflow-y-auto">
+          <FocusStatsPanel
+            refreshKey={sessionApi.lastEnded?.id}
+            onClose={() => setDrawer(null)}
+          />
         </aside>
       )}
 

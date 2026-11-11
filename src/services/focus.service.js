@@ -43,7 +43,33 @@ const FocusService = {
     return response.data;
   },
 
-  // Nhóm D — Lịch sử & thống kê
+  // Nhóm D — Lịch sử & thống kê chuyên sâu (P0 Dashboard)
+  async getOverview(params = { timeframe: 'last_7_days' }) {
+    const response = await api.get('/focus/stats/overview', { params });
+    return response.data;
+  },
+  async getDailyStats(params = { timeframe: 'last_7_days' }) {
+    const response = await api.get('/focus/stats/daily', { params });
+    return response.data;
+  },
+  async getHeatmap(days = 120) {
+    const response = await api.get('/focus/stats/heatmap', { params: { days } });
+    return response.data;
+  },
+  async getDistribution(params = { timeframe: 'last_7_days' }) {
+    const response = await api.get('/focus/stats/distribution', { params });
+    return response.data;
+  },
+  async getTodosStats(params = { timeframe: 'last_7_days' }) {
+    const response = await api.get('/focus/stats/todos', { params });
+    return response.data;
+  },
+  async getInsights(params = { timeframe: 'last_7_days' }) {
+    const response = await api.get('/focus/stats/insights', { params });
+    return response.data;
+  },
+
+  // Tương thích ngược (Backward compatibility)
   async getHistory(params = {}) {
     const response = await api.get('/focus/sessions/history', { params });
     return response.data;

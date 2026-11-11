@@ -90,6 +90,16 @@ h6 {
   color: var(--color-ink);
 }
 
+/* Ensure headings & text inside dark panels & text-white containers stay bright white */
+[class*="text-white"] h1,
+[class*="text-white"] h2,
+[class*="text-white"] h3,
+[class*="text-white"] h4,
+[class*="text-white"] h5,
+[class*="text-white"] h6 {
+  color: #ffffff;
+}
+
 /* Ensure headings & text inside dark hero banners stay bright white */
 .card[style*="linear-gradient"] h1,
 .card[style*="linear-gradient"] h2,
