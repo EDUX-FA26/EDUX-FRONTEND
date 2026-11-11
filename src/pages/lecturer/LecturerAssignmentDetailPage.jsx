@@ -541,7 +541,7 @@ export default function LecturerAssignmentDetailPage() {
     const title = assignment?.title || titleMap[id] || `Assignment ${id}`;
 
     return (
-        <div className="animate-fade-in" style={{ maxWidth: '1152px', margin: '0 auto', width: '100%', display: 'flex', flexDirection: 'column', gap: '24px', padding: '16px 0', position: 'relative' }}>
+        <div className="animate-fade-in w-full flex flex-col gap-6 relative" style={{ width: '100%' }}>
 
             {/* TOAST ALERT TỰ ĐỘNG THÔNG BÁO */}
             {toast.show && createPortal(
