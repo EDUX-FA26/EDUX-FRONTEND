@@ -1,36 +1,75 @@
-import axios from 'axios';
+
+import axios from "axios";
+
+import {
+  getActiveSchoolId,
+} from "./../services/tenantSession";
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api',
+  baseURL:
+    import.meta.env.VITE_API_URL || "/api",
+
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
 });
 
-// Inject JWT token vào mỗi request
+// ==========================================
+// REQUEST INTERCEPTOR
+// ==========================================
+
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('accessToken');
+    const token = localStorage.getItem(
+      "accessToken"
+    );
+
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+      config.headers.Authorization =
+        `Bearer ${token}`;
     }
+
+    // ONLY migrated Multi-Tenant APIs
+    // should use schoolScoped: true.
+    if (config.schoolScoped === true) {
+      const schoolId = getActiveSchoolId();
+
+      if (!schoolId) {
+        const error = new Error(
+          "School context is not ready"
+        );
+
+        error.code = "SCHOOL_CONTEXT_REQUIRED";
+
+        return Promise.reject(error);
+      }
+
+      config.headers["X-School-Id"] =
+        schoolId;
+    }
+
     return config;
   },
   (error) => Promise.reject(error)
 );
 
-// Xử lý lỗi 401 (token hết hạn)
+// ==========================================
+// RESPONSE INTERCEPTOR
+// ==========================================
+
 api.interceptors.response.use(
   (response) => response,
+
   (error) => {
     if (error.response?.status === 401) {
-      // 💡 Thêm điều kiện: CHỈ redirect nếu KHÔNG PHẢI đang ở trang login
-      if (window.location.pathname !== '/login') {
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('user');
-        window.location.href = '/login';
+      if (window.location.pathname !== "/login") {
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("user");
+
+        window.location.replace("/login");
       }
     }
+
     return Promise.reject(error);
   }
 );
