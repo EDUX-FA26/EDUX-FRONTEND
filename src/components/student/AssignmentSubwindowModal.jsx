@@ -149,7 +149,7 @@ export default function AssignmentSubwindowModal({ isOpen, onClose, classId, cla
                         <button className="btn" onClick={onClose} style={{ backgroundColor: 'transparent', border: '1px solid var(--color-border)', color: 'var(--color-ink-soft)', padding: '8px 20px', fontSize: '12px', fontWeight: 'bold' }}>
                             CLOSE
                         </button>
-                        {role === 'lecturer' && (
+                        {['lecturer', 'school_admin'].includes(role) && (
                             <button className="btn" onClick={() => setIsCreating(true)} style={{ backgroundColor: 'var(--color-primary)', border: 'none', color: '#fff', padding: '8px 20px', fontSize: '12px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}>
                                 <Plus size={14} /> CREATE ASSIGNMENT
                             </button>

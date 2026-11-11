@@ -2,22 +2,30 @@ import api from '../config/axios.config.js';
 
 const GradingService = {
     async createGrade(payload) {
-        const response = await api.post('/grades', payload);
+        const response = await api.post('/grades', payload, {
+            schoolScoped: true,
+        });
         return response.data;
     },
 
     async updateGrade(gradeId, payload) {
-        const response = await api.patch(`/grades/${gradeId}`, payload);
+        const response = await api.patch(`/grades/${gradeId}`, payload, {
+            schoolScoped: true,
+        });
         return response.data;
     },
 
     async getGrade(gradeId) {
-        const response = await api.get(`/grades/${gradeId}`);
+        const response = await api.get(`/grades/${gradeId}`, {
+            schoolScoped: true,
+        });
         return response.data;
     },
 
     async getGradebook(classId) {
-        const response = await api.get(`/gradebooks/${classId}`);
+        const response = await api.get(`/gradebooks/${classId}`, {
+            schoolScoped: true,
+        });
         return response.data;
     },
 
@@ -25,6 +33,7 @@ const GradingService = {
         const response = await api.get(`/gradebooks/${classId}/export`, {
             params: { format },
             responseType: 'blob', // Rất quan trọng để tải file
+            schoolScoped: true,
         });
 
         // Xử lý tạo link ảo và tự động click để tải file về máy
