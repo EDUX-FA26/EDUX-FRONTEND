@@ -1,6 +1,6 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import ProtectedRoute from './ProtectedRoute';
+import ProtectedRoute from './SchoolProtectedRoute';
 import { useAuth } from '../contexts/AuthContext';
 
 // Pages
@@ -42,18 +42,71 @@ import LecturerClassDetailPage from '../pages/lecturer/LecturerClassDetailPage';
 import StudentAssignmentDetailPage from '../pages/student/StudentAssignmentDetailPage';
 import LecturerAssignmentDetailPage from '../pages/lecturer/LecturerAssignmentDetailPage';
 import LecturerGradingPage from '../pages/lecturer/LecturerGradingPage';
+import { useSchool } from '../contexts/SchoolContext';
+
+import SchoolSelectionPage
+  from '../pages/schools/SchoolSelectionPage';
+
 
 function RootRedirect() {
-  const { isAuthenticated, user } = useAuth();
-  if (!isAuthenticated) return <Navigate to="/login" replace />;
-  return <Navigate to={ROLE_HOME[user?.role] || '/login'} replace />;
+  const { isAuthenticated } = useAuth();
+
+  const {
+    schoolRole,
+    status,
+  } = useSchool();
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (
+    status === "loading" ||
+    status === "idle"
+  ) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <p>Đang chuẩn bị EDUX...</p>
+      </div>
+    );
+  }
+
+  if (status !== "ready") {
+    return (
+      <Navigate to="/select-school" replace />
+    );
+  }
+
+  const uiRole =
+    schoolRole === "school_admin"
+      ? ROLES.ADMIN
+      : schoolRole;
+
+  const destination = ROLE_HOME[uiRole];
+
+  if (!destination) {
+    return (
+      <Navigate to="/select-school" replace />
+    );
+  }
+
+  return (
+    <Navigate to={destination} replace />
+  );
 }
+
 
 export default function AppRoutes() {
   return (
     <Routes>
       {/* Public */}
       <Route path="/login" element={<LoginPage />} />
+
+      {/* Multi-Tenant School Selection */}
+      <Route
+        path="/select-school"
+        element={<SchoolSelectionPage />}
+      />
 
       {/* Root redirect */}
       <Route path="/" element={<RootRedirect />} />
