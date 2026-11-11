@@ -31,35 +31,36 @@ export default function LecturerClassDetailPage() {
     const [advisorData, setAdvisorData] = useState(null);
     const [isAdvisorModalOpen, setIsAdvisorModalOpen] = useState(false);
     const [isRefreshingAdvisor, setIsRefreshingAdvisor] = useState(false);
+    const [isLoadingAdvisor, setIsLoadingAdvisor] = useState(false);
 
     // Fetch dữ liệu AI Class Advisor
     const fetchAdvisorData = useCallback(async () => {
         if (!classId) return;
         try {
+            setIsLoadingAdvisor(true);
             const res = await ClassService.getClassAiAdvisor(classId);
-            const payload = res?.data || res;
-            if (payload && payload.has_data && payload.advisories?.length) {
+            const payload = res?.advisories ? res : (res?.data || res);
+            if (payload && payload.has_data && Array.isArray(payload.advisories) && payload.advisories.length > 0) {
                 setAdvisorData(payload);
             } else {
-                setAdvisorData(null);
+                setAdvisorData({ has_data: false, advisories: [] });
             }
         } catch (err) {
             console.warn('Could not fetch AI Advisor data:', err);
-            setAdvisorData(null);
+            setAdvisorData({ has_data: false, advisories: [] });
+        } finally {
+            setIsLoadingAdvisor(false);
         }
     }, [classId]);
 
     const handleOpenAdvisorModal = () => {
-        if (!advisorData) {
+        if (!advisorData || !advisorData.has_data) {
             fetchAdvisorData();
         }
         setIsAdvisorModalOpen(true);
     };
 
     const handleCloseAdvisorModal = () => {
-        if (classId) {
-            sessionStorage.setItem(`viewed_advisor_${classId}`, 'true');
-        }
         setIsAdvisorModalOpen(false);
     };
 
@@ -164,20 +165,25 @@ export default function LecturerClassDetailPage() {
         }
     }, [classId]);
 
+    // Reset modal state & advisor data khi chuyển lớp học (ngăn chặn race condition giữa các lớp)
+    useEffect(() => {
+        setIsAdvisorModalOpen(false);
+        setAdvisorData(null);
+    }, [classId]);
+
     useEffect(() => {
         fetchData();
         fetchAdvisorData();
     }, [fetchData, fetchAdvisorData]);
 
-    // Tự động mở popup lần đầu khi vào lớp nếu có dữ liệu và chưa xem trong phiên làm việc
+    // BẬT TRỰC TIẾP SUBWINDOW ADVISOR KHI VÀO LỚP:
+    // Cứ khi tải xong dữ liệu và thấy có data (has_data === true, advisories > 0) là tự động bật modal ngay lập tức
+    // Không dùng sessionStorage hay cờ chặn nào.
     useEffect(() => {
-        if (classId && advisorData?.has_data && advisorData?.advisories?.length > 0) {
-            const hasViewed = sessionStorage.getItem(`viewed_advisor_${classId}`);
-            if (!hasViewed) {
-                setIsAdvisorModalOpen(true);
-            }
+        if (!isLoadingAdvisor && advisorData?.has_data && Array.isArray(advisorData?.advisories) && advisorData.advisories.length > 0) {
+            setIsAdvisorModalOpen(true);
         }
-    }, [classId, advisorData]);
+    }, [advisorData, isLoadingAdvisor]);
 
     const handleFullRefresh = () => {
         fetchData();
@@ -483,7 +489,7 @@ export default function LecturerClassDetailPage() {
                     onClose={handleCloseAdvisorModal}
                     advisorData={advisorData}
                     onRefresh={handleRefreshAdvisor}
-                    isRefreshing={isRefreshingAdvisor}
+                    isRefreshing={isRefreshingAdvisor || isLoadingAdvisor}
                 />,
                 document.body
             )}

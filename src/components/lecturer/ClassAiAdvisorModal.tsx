@@ -115,15 +115,6 @@ export const ClassAiAdvisorModal: React.FC<ClassAiAdvisorModalProps> = ({
   const isLatest = currentItem.id === advisorData.advisories[0].id;
   const isProgressReminder = currentItem.mode === 'PROGRESS_REMINDER';
 
-  const rawTransparency = currentItem.class_overview?.avg_ai_transparency;
-  const hasAvgTransparency = Boolean(
-    rawTransparency &&
-    rawTransparency !== 'null' &&
-    rawTransparency !== 'N/A' &&
-    !String(rawTransparency).toLowerCase().includes('đang cập nhật') &&
-    !String(rawTransparency).toLowerCase().includes('chưa có dữ liệu')
-  );
-
   const formattedDate = currentItem.generated_at
     ? new Date(currentItem.generated_at).toLocaleDateString('vi-VN', {
         day: '2-digit',
@@ -162,13 +153,9 @@ export const ClassAiAdvisorModal: React.FC<ClassAiAdvisorModalProps> = ({
                     <History className="w-3 h-3" /> Lịch sử lưu trữ{formattedDate ? ` - ${formattedDate}` : ''}
                   </span>
                 )}
-                {isProgressReminder ? (
+                {isProgressReminder && (
                   <span className="text-[11px] font-medium text-amber-800 bg-amber-100/90 border border-amber-300 px-2 py-0.5 rounded-full flex items-center gap-1">
                     <span>⚠️</span> Đôn đốc tiến độ
-                  </span>
-                ) : (
-                  <span className="text-[11px] font-medium text-indigo-800 bg-indigo-100/90 border border-indigo-300 px-2 py-0.5 rounded-full flex items-center gap-1">
-                    <span>🔬</span> Phân tích chuyên sâu
                   </span>
                 )}
               </div>
@@ -239,33 +226,17 @@ export const ClassAiAdvisorModal: React.FC<ClassAiAdvisorModalProps> = ({
 
         {/* Content Body (Scrollable) */}
         <div className="p-6 overflow-y-auto space-y-4">
-          {/* 1. Thống kê vĩ mô */}
-          <div className={`grid gap-3 ${hasAvgTransparency ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'}`}>
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-                <Users className="w-4 h-4" />
-              </div>
-              <div className="text-xs">
-                <div className="text-slate-500 font-medium">Tỷ lệ nộp bài</div>
-                <div className="text-slate-800 font-semibold mt-0.5">
-                  {currentItem.class_overview?.submission_rate_text || 'Chưa có thông tin nộp bài'}
-                </div>
+          {/* 1. Thống kê vĩ mô: Tỷ lệ hoàn thành bài nộp */}
+          <div className="w-full p-3.5 bg-slate-50/80 rounded-xl border border-slate-100 flex items-center gap-3.5">
+            <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+              <Users className="w-5 h-5" />
+            </div>
+            <div className="text-xs">
+              <div className="text-slate-500 font-medium">Tỷ lệ hoàn thành bài nộp</div>
+              <div className="text-slate-800 font-semibold text-sm mt-0.5">
+                {currentItem.class_overview?.submission_rate_text || 'Chưa có thông tin nộp bài'}
               </div>
             </div>
-
-            {hasAvgTransparency && (
-              <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
-                  <Sparkles className="w-4 h-4" />
-                </div>
-                <div className="text-xs">
-                  <div className="text-slate-500 font-medium">Minh bạch AI trung bình</div>
-                  <div className="text-slate-800 font-semibold mt-0.5">
-                    {rawTransparency}
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
 
           {/* 2. Cụm lỗi kỹ thuật */}
