@@ -352,27 +352,25 @@ export function getDecisionBadgeStyle(decision) {
 }
 
 /**
- * AIAuditQuickViewHover Component
+ * AIAuditDetailModal Component
  *
- * Full-scale Quick View Subwindow Modal:
+ * Full-scale Modal displaying 5 Computational Thinking Standard Rubrics:
  * - Size: w-[80vw] max-w-5xl h-[75vh]
- * - Centered via fixed inset-0 z-[9999] with backdrop blur
+ * - Centered via fixed inset-0 z-[99999] with backdrop blur
  * - 4 Rich Columns:
  *   1. Rubric & AI Tool + Decision badges
  *   2. Prompt / Input Used (code block box)
  *   3. AI Respond Summary (soft blue box)
  *   4. Student Self-Reflection & Evaluation (soft amber box)
- * - Safe hover debouncing (220ms buffer)
  */
-export default function AIAuditQuickViewHover({
+export function AIAuditDetailModal({
+  isOpen,
+  onClose,
   declarationData,
   studentName = '',
   studentCode = '',
-  className = '',
 }) {
-  const [isOpen, setIsOpen] = useState(false);
   const [activeScopeIdx, setActiveScopeIdx] = useState(0);
-  const closeTimeoutRef = useRef(null);
 
   const tabsContainerRef = useRef(null);
   const [isDraggingTabs, setIsDraggingTabs] = useState(false);
@@ -381,7 +379,6 @@ export default function AIAuditQuickViewHover({
   const hasMovedRef = useRef(false);
 
   const parsedData = parseDeclarationData(declarationData);
-  const isDeclared = parsedData?.isDeclared && parsedData?.completedCount > 0;
 
   // Derived: current scope's rubrics for display
   const hasScopes = Array.isArray(parsedData?.scopes) && parsedData.scopes.length > 0;
@@ -421,134 +418,85 @@ export default function AIAuditQuickViewHover({
   const handleTabsMouseUp = () => {
     setIsDraggingTabs(false);
   };
+
   const safeScope = hasScopes
     ? parsedData.scopes[Math.min(activeScopeIdx, parsedData.scopes.length - 1)]
     : null;
   const displayRubrics = safeScope?.rubrics ?? parsedData?.rubrics ?? [];
 
-  const handleMouseEnter = () => {
-    if (closeTimeoutRef.current) {
-      clearTimeout(closeTimeoutRef.current);
-      closeTimeoutRef.current = null;
-    }
-    setIsOpen(true);
-  };
-
-  const handleMouseLeave = () => {
-    closeTimeoutRef.current = setTimeout(() => {
-      setIsOpen(false);
-    }, 220); // 220ms buffer to safely transition between eye icon & subwindow
-  };
-
-  useEffect(() => {
-    return () => {
-      if (closeTimeoutRef.current) {
-        clearTimeout(closeTimeoutRef.current);
-      }
-    };
-  }, []);
-
   // Keyboard accessibility: Escape closes modal
   useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape') setIsOpen(false);
+      if (e.key === 'Escape') onClose?.();
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen]);
+  }, [isOpen, onClose]);
 
-  return (
-    <>
-      {/* TRIGGER BUTTON (ROUND EYE ICON) */}
-      <button
-        type="button"
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
-        onClick={() => setIsOpen((prev) => !prev)}
-        aria-label="Xem nhanh AI Audit"
-        title="Quick view: AI Audit Log (5 Tiêu chí Computational Thinking)"
-        className={`inline-flex items-center justify-center w-8 h-8 rounded-full border transition-all duration-150 cursor-pointer outline-none relative ${
-          isDeclared
-            ? 'bg-indigo-50 hover:bg-indigo-100 text-indigo-600 border-indigo-200 shadow-xs'
-            : 'bg-slate-100 hover:bg-slate-200 text-slate-400 border-slate-200'
-        } ${className}`}
+  if (!isOpen) return null;
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/40 backdrop-blur-sm transition-all duration-200"
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 99999,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'rgba(15, 23, 42, 0.45)',
+        backdropFilter: 'blur(3px)',
+      }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          onClose?.();
+        }
+      }}
+    >
+      {/* CSS SCROLLBAR RULES */}
+      <style>{`
+        .edux-ai-scroll::-webkit-scrollbar {
+          width: 6px;
+          height: 6px;
+        }
+        .edux-ai-scroll::-webkit-scrollbar-track {
+          background: #f8fafc;
+          border-radius: 4px;
+        }
+        .edux-ai-scroll::-webkit-scrollbar-thumb {
+          background: #cbd5e1;
+          border-radius: 4px;
+        }
+        .edux-ai-scroll::-webkit-scrollbar-thumb:hover {
+          background: #94a3b8;
+        }
+      `}</style>
+
+      {/* MODAL CARD: w-[80vw] max-w-5xl h-[75vh] flex flex-col overflow-hidden */}
+      <div
+        className="pointer-events-auto flex flex-col h-[75vh] w-[80vw] max-w-5xl bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden"
         style={{
-          width: '32px',
-          height: '32px',
-          borderRadius: '50%',
+          pointerEvents: 'auto',
+          width: '80vw',
+          maxWidth: '1080px',
+          height: '75vh',
+          backgroundColor: '#ffffff',
+          borderRadius: '18px',
+          border: '1px solid #e2e8f0',
+          boxShadow:
+            '0 25px 50px -12px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(0, 0, 0, 0.08)',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
         }}
+        onClick={(e) => e.stopPropagation()}
       >
-        <Eye size={16} />
-        {/* Active notification indicator */}
-        {isDeclared && (
-          <span
-            className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white"
-            style={{ width: '9px', height: '9px' }}
-          />
-        )}
-      </button>
-
-      {/* FULL-SCALE SUBWINDOW MODAL (PORTAL) */}
-      {isOpen &&
-        createPortal(
-          <div
-            className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm pointer-events-none transition-all duration-200"
-            style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              zIndex: 99999,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: 'rgba(15, 23, 42, 0.45)',
-              backdropFilter: 'blur(3px)',
-              pointerEvents: 'none',
-            }}
-          >
-            {/* CSS SCROLLBAR RULES */}
-            <style>{`
-              .edux-ai-scroll::-webkit-scrollbar {
-                width: 6px;
-                height: 6px;
-              }
-              .edux-ai-scroll::-webkit-scrollbar-track {
-                background: #f8fafc;
-                border-radius: 4px;
-              }
-              .edux-ai-scroll::-webkit-scrollbar-thumb {
-                background: #cbd5e1;
-                border-radius: 4px;
-              }
-              .edux-ai-scroll::-webkit-scrollbar-thumb:hover {
-                background: #94a3b8;
-              }
-            `}</style>
-
-            {/* MODAL CARD: w-[80vw] max-w-5xl h-[75vh] flex flex-col overflow-hidden */}
-            <div
-              onMouseEnter={handleMouseEnter}
-              onMouseLeave={handleMouseLeave}
-              className="pointer-events-auto flex flex-col h-[75vh] w-[80vw] max-w-5xl bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden"
-              style={{
-                pointerEvents: 'auto',
-                width: '80vw',
-                maxWidth: '1080px',
-                height: '75vh',
-                backgroundColor: '#ffffff',
-                borderRadius: '18px',
-                border: '1px solid #e2e8f0',
-                boxShadow:
-                  '0 25px 50px -12px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(0, 0, 0, 0.08)',
-                display: 'flex',
-                flexDirection: 'column',
-                overflow: 'hidden',
-              }}
-            >
-              {/* 1. HEADER */}
+        {/* 1. HEADER */}
               <div
                 className="px-7 py-4 border-b border-gray-200 bg-white flex items-center justify-between shrink-0"
                 style={{
@@ -675,7 +623,7 @@ export default function AIAuditQuickViewHover({
                   {/* Close button X */}
                   <button
                     type="button"
-                    onClick={() => setIsOpen(false)}
+                    onClick={onClose}
                     style={{
                       background: 'none',
                       border: 'none',
@@ -1246,11 +1194,11 @@ export default function AIAuditQuickViewHover({
                 }}
               >
                 <span>
-                  💡 <strong>Ghi chú:</strong> Di chuyển chuột ra ngoài để đóng xem nhanh. Bấm <strong>"Sửa điểm"</strong> ở danh sách để thẩm định và cho điểm trên từng tiêu chí Rubric.
+                  💡 <strong>Ghi chú:</strong> Bấm <strong>"Đóng"</strong> hoặc phím <strong>Esc</strong> để đóng xem nhanh. Bấm <strong>"Sửa điểm"</strong> ở danh sách để thẩm định và cho điểm trên từng tiêu chí Rubric.
                 </span>
                 <button
                   type="button"
-                  onClick={() => setIsOpen(false)}
+                  onClick={onClose}
                   style={{
                     padding: '5px 14px',
                     backgroundColor: '#ffffff',
@@ -1269,7 +1217,106 @@ export default function AIAuditQuickViewHover({
             </div>
           </div>,
           document.body
-        )}
+        );
+}
+
+/**
+ * AIAuditQuickViewHover Component (Trình kích hoạt icon con mắt xem AI Audit Log)
+ */
+export default function AIAuditQuickViewHover({
+  declarationData,
+  studentName = '',
+  studentCode = '',
+  className = '',
+  hasDeclared: hasDeclaredProp = undefined,
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const parsedData = parseDeclarationData(declarationData);
+  const hasDeclared =
+    typeof hasDeclaredProp === 'boolean'
+      ? hasDeclaredProp
+      : Boolean(parsedData?.isDeclared && parsedData?.completedCount > 0);
+
+  return (
+    <>
+      <div className="relative group inline-block" style={{ position: 'relative', display: 'inline-block' }}>
+        <button
+          type="button"
+          disabled={!hasDeclared}
+          onClick={() => hasDeclared && setIsOpen(true)}
+          className={`w-7 h-7 inline-flex items-center justify-center rounded-full transition-all ${
+            hasDeclared
+              ? 'bg-slate-100 text-slate-600 hover:text-purple-600 hover:bg-purple-50 cursor-pointer active:scale-95'
+              : 'bg-slate-50 text-slate-300 opacity-40 cursor-not-allowed hover:bg-transparent pointer-events-auto'
+          } ${className}`}
+          style={{
+            width: '28px',
+            height: '28px',
+            borderRadius: '50%',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            border: '1px solid #e2e8f0',
+            cursor: hasDeclared ? 'pointer' : 'not-allowed',
+            opacity: hasDeclared ? 1 : 0.4,
+          }}
+          aria-label={hasDeclared ? "Xem chi tiết khai báo AI Audit" : "Sinh viên chưa khai báo AI Audit Log"}
+          title={hasDeclared ? "Xem chi tiết khai báo AI Audit" : "Sinh viên chưa khai báo AI Audit Log"}
+        >
+          <Eye className="w-4 h-4" size={15} />
+        </button>
+
+        {/* Tooltip hiển thị khi hover (áp dụng cả khi disabled) */}
+        <div
+          className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col items-center z-30 pointer-events-none"
+          style={{
+            position: 'absolute',
+            bottom: '100%',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            marginBottom: '6px',
+            zIndex: 999,
+            pointerEvents: 'none',
+          }}
+        >
+          <div
+            className="bg-slate-800 text-white text-[11px] font-normal px-2.5 py-1 rounded-md shadow-md whitespace-nowrap"
+            style={{
+              backgroundColor: '#1e293b',
+              color: '#ffffff',
+              fontSize: '11px',
+              padding: '4px 10px',
+              borderRadius: '6px',
+              whiteSpace: 'nowrap',
+              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+            }}
+          >
+            {hasDeclared
+              ? "Xem chi tiết khai báo AI Audit"
+              : "Sinh viên chưa khai báo AI Audit Log"}
+          </div>
+          <div
+            className="w-1.5 h-1.5 bg-slate-800 rotate-45 -mt-0.5"
+            style={{
+              width: '6px',
+              height: '6px',
+              backgroundColor: '#1e293b',
+              transform: 'rotate(45deg)',
+              marginTop: '-2px',
+            }}
+          />
+        </div>
+      </div>
+
+      <AIAuditDetailModal
+        isOpen={isOpen}
+        onClose={() => setIsOpen(false)}
+        declarationData={declarationData}
+        studentName={studentName}
+        studentCode={studentCode}
+      />
     </>
   );
 }
+
+export { AIAuditDetailModal as AIAuditModal };
