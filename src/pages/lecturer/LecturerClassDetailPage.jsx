@@ -50,7 +50,17 @@ export default function LecturerClassDetailPage() {
     }, [classId]);
 
     const handleOpenAdvisorModal = () => {
+        if (!advisorData) {
+            fetchAdvisorData();
+        }
         setIsAdvisorModalOpen(true);
+    };
+
+    const handleCloseAdvisorModal = () => {
+        if (classId) {
+            sessionStorage.setItem(`viewed_advisor_${classId}`, 'true');
+        }
+        setIsAdvisorModalOpen(false);
     };
 
     const handleRefreshAdvisor = async () => {
@@ -159,10 +169,13 @@ export default function LecturerClassDetailPage() {
         fetchAdvisorData();
     }, [fetchData, fetchAdvisorData]);
 
-    // Khi lấy được dữ liệu advisorData và has_data === true, tự động mở popup
+    // Tự động mở popup lần đầu khi vào lớp nếu có dữ liệu và chưa xem trong phiên làm việc
     useEffect(() => {
-        if (advisorData?.has_data && advisorData?.advisories?.length > 0) {
-            setIsAdvisorModalOpen(true);
+        if (classId && advisorData?.has_data && advisorData?.advisories?.length > 0) {
+            const hasViewed = sessionStorage.getItem(`viewed_advisor_${classId}`);
+            if (!hasViewed) {
+                setIsAdvisorModalOpen(true);
+            }
         }
     }, [classId, advisorData]);
 
@@ -224,19 +237,22 @@ export default function LecturerClassDetailPage() {
                             {classData.subject_name || classData.name || 'Unnamed Class'}
                         </h1>
 
-                        {/* Trigger Button Advisor: Hover hoặc Click mở thẳng Modal */}
-                        {advisorData && advisorData.has_data && advisorData.advisories?.length > 0 && (
-                            <button
-                                type="button"
-                                onMouseEnter={() => setIsAdvisorModalOpen(true)}
-                                onClick={() => setIsAdvisorModalOpen(true)}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200/80 rounded-lg transition shadow-xs hover:shadow-sm cursor-pointer group"
-                                title="Xem khuyến nghị giảng dạy AI cho buổi học (Advisor)"
-                            >
-                                <Bot className="w-4 h-4 text-purple-600 transition-transform group-hover:scale-110" />
-                                <span>Advisor</span>
-                            </button>
-                        )}
+                        {/* Trigger Button Advisor: BẮT BUỘC luôn hiển thị ở Header cạnh tên môn học */}
+                        <button
+                            type="button"
+                            onClick={handleOpenAdvisorModal}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200/80 rounded-lg transition shadow-xs hover:shadow-sm cursor-pointer group"
+                            title="Xem khuyến nghị giảng dạy AI cho buổi học (Advisor)"
+                        >
+                            <Bot className="w-4 h-4 text-purple-600 transition-transform group-hover:scale-110" />
+                            <span>Advisor</span>
+                            {advisorData?.has_data && (
+                                <span className="flex h-2 w-2 relative">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-purple-600"></span>
+                                </span>
+                            )}
+                        </button>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px' }}>
                         <span style={{ color: 'var(--color-primary-dark)', fontWeight: 'bold' }}>{classData.subject_code || 'CODE'}</span>
@@ -464,7 +480,7 @@ export default function LecturerClassDetailPage() {
                 <ClassAiAdvisorModal
                     classId={classId}
                     isOpen={isAdvisorModalOpen}
-                    onClose={() => setIsAdvisorModalOpen(false)}
+                    onClose={handleCloseAdvisorModal}
                     advisorData={advisorData}
                     onRefresh={handleRefreshAdvisor}
                     isRefreshing={isRefreshingAdvisor}

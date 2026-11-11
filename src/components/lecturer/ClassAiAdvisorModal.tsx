@@ -72,7 +72,44 @@ export const ClassAiAdvisorModal: React.FC<ClassAiAdvisorModalProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
-  if (!isOpen || !advisorData?.has_data || !advisorData?.advisories?.length) return null;
+  if (!isOpen) return null;
+
+  if (!advisorData?.has_data || !advisorData?.advisories?.length) {
+    return (
+      <div 
+        className="fixed top-16 right-0 bottom-0 left-0 z-50 flex items-center justify-center p-4 md:p-6 bg-slate-900/40 backdrop-blur-xs transition-all animate-fadeIn"
+        onClick={onClose}
+      >
+        <div 
+          className="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-purple-100 p-8 flex flex-col items-center justify-center text-center space-y-4 my-auto animate-scaleUp"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {isRefreshing ? (
+            <>
+              <div className="w-10 h-10 border-3 border-purple-600 border-t-transparent rounded-full animate-spin" />
+              <div className="text-sm font-bold text-slate-800">Đang tổng hợp dữ liệu lớp học qua Gemini...</div>
+              <p className="text-xs text-slate-500">Hệ thống đang đối soát dữ liệu bài nộp và lưu snapshot mới vào cơ sở dữ liệu.</p>
+            </>
+          ) : (
+            <>
+              <div className="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center">
+                <Bot className="w-6 h-6" />
+              </div>
+              <div className="text-sm font-bold text-slate-800">Chưa có khuyến nghị AI cho lớp này</div>
+              <p className="text-xs text-slate-500">Lớp học chưa có bài tập hoặc chưa có dữ liệu bài nộp từ sinh viên để tổng hợp khuyến nghị.</p>
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition cursor-pointer"
+              >
+                Đóng
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   const currentItem = advisorData.advisories.find((item: AdvisoryItem) => item.id === selectedId) || advisorData.advisories[0];
   const isLatest = currentItem.id === advisorData.advisories[0].id;

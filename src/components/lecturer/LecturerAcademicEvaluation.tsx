@@ -77,12 +77,16 @@ export interface AiDeclarationPhase {
 }
 
 export interface RubricScores {
-  abstraction: number;       // Problem Abstraction & Decomposition (Tối đa: 2.0)
-  implementation: number;    // Implementation & Code Quality (Tối đa: 3.0)
-  verification: number;      // Functionality & Verification (Tối đa: 2.5)
-  ai_interaction: number;    // AI Interaction Quality & Audit Alignment (Tối đa: 1.5)
-  reflection: number;        // Reflection & Oral Defense Ownership (Tối đa: 1.0)
-  decomposition?: number;    // Tương thích ngược
+  core_requirements?: number; // Core Requirements & Functionality (Tối đa: 6.0)
+  technical_quality?: number; // Technical Quality & Architecture (Tối đa: 2.5)
+  code_clean?: number;        // Code Clean & Naming Conventions (Tối đa: 1.5)
+  // Tương thích ngược với hệ tiêu chí cũ
+  abstraction?: number;
+  implementation?: number;
+  verification?: number;
+  ai_interaction?: number;
+  reflection?: number;
+  decomposition?: number;
   pattern?: number;
   algorithmic?: number;
   r1?: number;
@@ -92,6 +96,9 @@ export interface RubricScores {
 }
 
 export const DEFAULT_RUBRIC_SCORES: RubricScores = {
+  core_requirements: 0,
+  technical_quality: 0,
+  code_clean: 0,
   abstraction: 0,
   implementation: 0,
   verification: 0,
@@ -101,69 +108,43 @@ export const DEFAULT_RUBRIC_SCORES: RubricScores = {
 
 export const RUBRIC_CRITERIA_LIST = [
   {
-    key: 'abstraction' as const,
-    name: 'Problem Abstraction & Decomposition',
-    viName: 'Trừu tượng hóa & Phân rã bài toán',
-    max: 2.0,
-    color: 'bg-indigo-500',
-    borderColor: 'border-indigo-200',
-    textColor: 'text-indigo-700',
-    focusRing: 'focus:ring-indigo-400',
-    activeBg: 'bg-indigo-600',
-    pills: [0, 0.5, 1.0, 1.5, 2.0],
-    desc: 'Khả năng phân rã bài toán phức tạp, thiết kế interface trừu tượng và tách lớp dịch vụ độc lập.',
-  },
-  {
-    key: 'implementation' as const,
-    name: 'Implementation & Code Quality',
-    viName: 'Chất lượng mã nguồn & Cài đặt',
-    max: 3.0,
-    color: 'bg-blue-500',
-    borderColor: 'border-blue-200',
-    textColor: 'text-blue-700',
-    focusRing: 'focus:ring-blue-400',
-    activeBg: 'bg-blue-600',
-    pills: [0, 1.0, 1.5, 2.0, 2.5, 3.0],
-    desc: 'Mã nguồn sạch, cấu trúc chặt chẽ, tuân thủ nguyên lý SOLID, xử lý ngoại lệ và an toàn bảo mật.',
-  },
-  {
-    key: 'verification' as const,
-    name: 'Functionality & Verification',
-    viName: 'Kiểm thử & Khả năng vận hành',
-    max: 2.5,
+    key: 'core_requirements' as const,
+    name: 'Core Requirements & Functionality',
+    viName: 'Mức độ hoàn thành chức năng cốt lõi',
+    max: 6.0,
     color: 'bg-emerald-500',
     borderColor: 'border-emerald-200',
     textColor: 'text-emerald-700',
     focusRing: 'focus:ring-emerald-400',
     activeBg: 'bg-emerald-600',
-    pills: [0, 0.5, 1.0, 1.5, 2.0, 2.5],
-    desc: 'Tính đúng đắn của logic nghiệp vụ, xử lý truy vấn tối ưu (aggregation, indexing) và kiểm thử thực tế.',
+    pills: [0, 2.0, 4.0, 5.0, 5.5, 6.0],
+    desc: 'Có đầy đủ phương thức nghiệp vụ theo yêu cầu đề bài, nhận tham số, thao tác cơ sở dữ liệu và xử lý trả về kết quả chuẩn xác (Điểm sàn 5.0 - 6.0đ nếu có khung sườn).',
   },
   {
-    key: 'ai_interaction' as const,
-    name: 'AI Interaction Quality & Audit Alignment',
-    viName: 'Chất lượng tương tác & Đối soát AI',
+    key: 'technical_quality' as const,
+    name: 'Technical Quality & Architecture',
+    viName: 'Chất lượng kỹ thuật & Kiến trúc',
+    max: 2.5,
+    color: 'bg-indigo-500',
+    borderColor: 'border-indigo-200',
+    textColor: 'text-indigo-700',
+    focusRing: 'focus:ring-indigo-400',
+    activeBg: 'bg-indigo-600',
+    pills: [0, 1.0, 1.5, 2.0, 2.5],
+    desc: 'Xử lý ngoại lệ, tính toán chuẩn xác (BigDecimal/float), an toàn dữ liệu (@Transactional), phân tầng kiến trúc, phòng tránh N+1 Query.',
+  },
+  {
+    key: 'code_clean' as const,
+    name: 'Code Clean & Naming Conventions',
+    viName: 'Định dạng mã nguồn & Quy chuẩn đặt tên',
     max: 1.5,
-    color: 'bg-purple-500',
-    borderColor: 'border-purple-200',
-    textColor: 'text-purple-700',
-    focusRing: 'focus:ring-purple-400',
-    activeBg: 'bg-purple-600',
+    color: 'bg-blue-500',
+    borderColor: 'border-blue-200',
+    textColor: 'text-blue-700',
+    focusRing: 'focus:ring-blue-400',
+    activeBg: 'bg-blue-600',
     pills: [0, 0.5, 1.0, 1.5],
-    desc: 'Mức độ trung thực trong khai báo công cụ AI, độ khớp AST 5 phases và chất lượng prompt kỹ thuật.',
-  },
-  {
-    key: 'reflection' as const,
-    name: 'Reflection & Oral Defense Ownership',
-    viName: 'Phản tư & Bảo vệ vấn đáp (Viva)',
-    max: 1.0,
-    color: 'bg-amber-500',
-    borderColor: 'border-amber-200',
-    textColor: 'text-amber-700',
-    focusRing: 'focus:ring-amber-400',
-    activeBg: 'bg-amber-600',
-    pills: [0, 0.25, 0.5, 0.75, 1.0],
-    desc: 'Năng lực làm chủ mã nguồn, trả lời gãy gọn và bảo vệ vững vàng quyết định kỹ thuật trong phiên vấn đáp.',
+    desc: 'Mã nguồn sạch, cấu trúc rõ ràng, đặt tên biến/hàm nhất quán chuẩn mực (camelCase, PascalCase) và dễ bảo trì.',
   },
 ];
 
@@ -599,37 +580,55 @@ export default function LecturerAcademicEvaluation({
     });
   }, [currentScope, aiDeclarations]);
 
-  // Chuẩn hóa Rubric 5 tiêu chí (hỗ trợ chuyển đổi từ r1, r2, r3 cũ nếu có)
+  // Chuẩn hóa Rubric chuyên môn thang 10 (hỗ trợ chuyển đổi từ tiêu chí cũ nếu có)
   const normalizedInitialRubrics: RubricScores = useMemo(() => {
+    if (initialRubrics && (initialRubrics.core_requirements !== undefined || initialRubrics.technical_quality !== undefined || initialRubrics.code_clean !== undefined)) {
+      return {
+        core_requirements: initialRubrics.core_requirements ?? 5.5,
+        technical_quality: initialRubrics.technical_quality ?? 2.0,
+        code_clean: initialRubrics.code_clean ?? 1.2,
+        ...initialRubrics
+      };
+    }
     if (initialRubrics && initialRubrics.abstraction !== undefined && initialRubrics.implementation !== undefined) {
-      return initialRubrics;
+      const sum = (initialRubrics.abstraction || 0) + (initialRubrics.implementation || 0) + (initialRubrics.verification || 0) + (initialRubrics.ai_interaction || 0) + (initialRubrics.reflection || 0);
+      const ratio = sum > 0 ? sum / 10 : 0.85;
+      return {
+        core_requirements: parseFloat((6.0 * ratio).toFixed(2)),
+        technical_quality: parseFloat((2.5 * ratio).toFixed(2)),
+        code_clean: parseFloat((1.5 * ratio).toFixed(2)),
+        ...initialRubrics
+      };
     }
     if (initialRubrics && (initialRubrics.decomposition !== undefined || initialRubrics.pattern !== undefined)) {
       const totalOld = (initialRubrics.decomposition || 0) + (initialRubrics.pattern || 0) + (initialRubrics.abstraction || 0) + (initialRubrics.algorithmic || 0) + (initialRubrics.reflection || 0);
-      const ratio = totalOld > 0 ? totalOld / 10 : 0;
+      const ratio = totalOld > 0 ? totalOld / 10 : 0.85;
       return {
-        abstraction: parseFloat((2.0 * ratio).toFixed(2)),
-        implementation: parseFloat((3.0 * ratio).toFixed(2)),
-        verification: parseFloat((2.5 * ratio).toFixed(2)),
-        ai_interaction: parseFloat((1.5 * ratio).toFixed(2)),
-        reflection: parseFloat((1.0 * ratio).toFixed(2)),
+        core_requirements: parseFloat((6.0 * ratio).toFixed(2)),
+        technical_quality: parseFloat((2.5 * ratio).toFixed(2)),
+        code_clean: parseFloat((1.5 * ratio).toFixed(2)),
+        ...initialRubrics
       };
     }
     if (initialRubrics && (initialRubrics.r1 || initialRubrics.r2 || initialRubrics.r3)) {
       const sum = (initialRubrics.r1 || 0) + (initialRubrics.r2 || 0) + (initialRubrics.r3 || 0);
-      const ratio = sum > 0 ? sum / 10 : 0;
+      const ratio = sum > 0 ? sum / 10 : 0.85;
       return {
-        abstraction: parseFloat((2.0 * ratio).toFixed(2)),
-        implementation: parseFloat((3.0 * ratio).toFixed(2)),
-        verification: parseFloat((2.5 * ratio).toFixed(2)),
-        ai_interaction: parseFloat((1.5 * ratio).toFixed(2)),
-        reflection: parseFloat((1.0 * ratio).toFixed(2)),
+        core_requirements: parseFloat((6.0 * ratio).toFixed(2)),
+        technical_quality: parseFloat((2.5 * ratio).toFixed(2)),
+        code_clean: parseFloat((1.5 * ratio).toFixed(2)),
+        ...initialRubrics
       };
     }
-    return DEFAULT_RUBRIC_SCORES;
+    return {
+      core_requirements: 5.5,
+      technical_quality: 2.0,
+      code_clean: 1.2,
+      ...DEFAULT_RUBRIC_SCORES
+    };
   }, [initialRubrics]);
 
-  // Rubric Scores State (5 tiêu chí x 2.0 điểm tối đa)
+  // Rubric Scores State (Thang 10 điểm chuyên môn)
   const isUserModifiedRef = React.useRef(false);
   const [scores, setScores] = useState<RubricScores>(normalizedInitialRubrics);
   const [feedback, setFeedback] = useState<string>(initialFeedback);
@@ -666,19 +665,17 @@ export default function LecturerAcademicEvaluation({
   const [vivaQuestions, setVivaQuestions] = useState<VivaQuestion[]>([]);
   const [overallAiFeedback, setOverallAiFeedback] = useState<string>('');
 
-  // Calculate Total Score (Thang 10: 5 tiêu chí x 2.0 điểm)
+  // Calculate Total Score (Thang 10 điểm học thuật chuyên môn)
   const totalScore = parseFloat(
     (
-      (scores.abstraction || 0) +
-      (scores.implementation || 0) +
-      (scores.verification || 0) +
-      (scores.ai_interaction || 0) +
-      (scores.reflection || 0)
+      (scores.core_requirements !== undefined || scores.technical_quality !== undefined || scores.code_clean !== undefined)
+        ? (scores.core_requirements || 0) + (scores.technical_quality || 0) + (scores.code_clean || 0)
+        : (scores.abstraction || 0) + (scores.implementation || 0) + (scores.verification || 0) + (scores.ai_interaction || 0) + (scores.reflection || 0)
     ).toFixed(2)
   );
 
   // Update Rubric Score
-  const handleUpdateRubric = (key: keyof RubricScores, val: string | number, maxScore: number = 2) => {
+  const handleUpdateRubric = (key: keyof RubricScores, val: string | number, maxScore: number = 6) => {
     isUserModifiedRef.current = true;
     const numVal = typeof val === 'number' ? val : parseFloat(val);
     setScores((prev) => ({
@@ -687,10 +684,13 @@ export default function LecturerAcademicEvaluation({
     }));
   };
 
-  // Khớp từng tiêu chí với AI: 8.50 / 10 (1.75 + 2.55 + 2.15 + 1.25 + 0.80 = 8.50)
+  // Khớp từng tiêu chí với AI: 8.70 / 10 (5.50 + 2.00 + 1.20 = 8.70)
   const applyAiSuggestion = () => {
     isUserModifiedRef.current = true;
     setScores({
+      core_requirements: 5.5,
+      technical_quality: 2.0,
+      code_clean: 1.2,
       abstraction: 1.75,
       implementation: 2.55,
       verification: 2.15,
@@ -698,7 +698,7 @@ export default function LecturerAcademicEvaluation({
       reflection: 0.80,
     });
     if (!feedback) {
-      setFeedback('Code có kiến trúc tốt, phân tách service layer rõ ràng. Khai báo AI minh bạch và có tự phản chiếu xác đáng.');
+      setFeedback('Code có cấu trúc tốt, hoàn thành đầy đủ khung sườn các hàm nghiệp vụ theo yêu cầu. Điểm chuyên môn đạt yêu cầu thực tế.');
     }
   };
 
@@ -972,22 +972,22 @@ export default function LecturerAcademicEvaluation({
             <span className="text-xs font-semibold text-white truncate max-w-[180px]">
               {student.name} ({student.code})
             </span>
-            {student.aiRiskLevel === 'low' && (
-              <span className="inline-flex items-center gap-1.5 bg-[#063f35] text-[#2fe8a6] border border-[#0d594b] text-[10px] font-semibold px-2 py-0.5 rounded-full">
+            {(student.aiRiskLevel === 'low' || auditIntegrity?.risk_level === 'LOW_RISK' || auditIntegrity?.riskLevel === 'low') && (
+              <span className="inline-flex items-center gap-1.5 bg-[#063f35] text-[#2fe8a6] border border-[#0d594b] text-[10px] font-semibold px-2 py-0.5 rounded-full" title="Rủi ro minh bạch AI: Thấp (Đánh giá độc lập, không trừ điểm học thuật)">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#2fe8a6]"></span>
-                <span>{student.aiRiskLabel || 'low AI-transparency risk'}</span>
+                <span>LOW_RISK (AI Transparency)</span>
               </span>
             )}
-            {student.aiRiskLevel === 'medium' && (
-              <span className="inline-flex items-center gap-1.5 bg-[#3f2f06] text-[#e8b52f] border border-[#59440d] text-[10px] font-semibold px-2 py-0.5 rounded-full">
+            {(student.aiRiskLevel === 'medium' || auditIntegrity?.risk_level === 'MEDIUM_RISK' || auditIntegrity?.riskLevel === 'medium') && (
+              <span className="inline-flex items-center gap-1.5 bg-[#3f2f06] text-[#e8b52f] border border-[#59440d] text-[10px] font-semibold px-2 py-0.5 rounded-full" title="Rủi ro minh bạch AI: Trung bình (Đánh giá độc lập, không trừ điểm học thuật)">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#e8b52f]"></span>
-                <span>{student.aiRiskLabel || 'medium AI-transparency risk'}</span>
+                <span>MEDIUM_RISK (AI Transparency)</span>
               </span>
             )}
-            {student.aiRiskLevel === 'high' && (
-              <span className="inline-flex items-center gap-1.5 bg-[#3f0606] text-[#e82f2f] border border-[#590d0d] text-[10px] font-semibold px-2 py-0.5 rounded-full">
+            {(student.aiRiskLevel === 'high' || auditIntegrity?.risk_level === 'HIGH_RISK' || auditIntegrity?.riskLevel === 'high') && (
+              <span className="inline-flex items-center gap-1.5 bg-[#3f0606] text-[#e82f2f] border border-[#590d0d] text-[10px] font-semibold px-2 py-0.5 rounded-full" title="Rủi ro minh bạch AI: Cao (Đánh giá độc lập, dùng câu hỏi VIVA để vấn đáp, không trừ thẳng điểm code)">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#e82f2f]"></span>
-                <span>{student.aiRiskLabel || 'high AI-transparency risk'}</span>
+                <span>HIGH_RISK (AI Transparency)</span>
               </span>
             )}
           </div>
@@ -1536,14 +1536,14 @@ export default function LecturerAcademicEvaluation({
                 )}
               </div>
 
-              {/* Điều chỉnh Rubric 5 Tiêu chí Chuẩn thang 10 */}
+              {/* Điều chỉnh Rubric chuyên môn thang 10 */}
               <div className="space-y-3.5 pt-2 border-t border-slate-100 shrink-0">
                 <div className="flex items-center justify-between">
                   <div className="text-xs font-bold text-slate-800 uppercase tracking-wide">
-                    ĐIỀU CHỈNH TỪNG TIÊU CHÍ RUBRIC (5 TIÊU CHÍ)
+                    ĐIỀU CHỈNH TIÊU CHÍ CHUYÊN MÔN (ACADEMIC FUNCTIONAL RUBRIC)
                   </div>
-                  <span className="text-[10px] text-indigo-600 font-semibold bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-100">
-                    Thang 10.0
+                  <span className="text-[10px] text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">
+                    Thang 10.0 • Tách biệt rủi ro AI
                   </span>
                 </div>
 
