@@ -573,7 +573,7 @@ export default function DashboardLayout() {
       </header>
 
       {/* Body container dưới header */}
-      <div className="pt-16 flex flex-1 w-full min-h-screen">
+      <div className={`pt-16 flex flex-1 w-full ${isGradePage ? 'h-[calc(100vh-64px)] max-h-[calc(100vh-64px)] overflow-hidden' : 'min-h-screen'}`}>
         {/* Sidebar Trái */}
         <aside
           id="dashboard-sidebar"
@@ -633,23 +633,29 @@ export default function DashboardLayout() {
 
         {/* Main Content - Căn sát vừa vặn, không chừa khoảng trống dư thừa */}
         <main
-          className={`dashboard-layout__main flex-1 flex flex-col min-w-0 transition-all duration-200 ease-in-out ${
-            sidebarCollapsed ? 'md:ml-16' : 'md:ml-64'
-          } ml-0`}
+          className={
+            isGradePage
+              ? `dashboard-layout__main fixed top-16 bottom-0 right-0 z-20 flex flex-col min-h-0 overflow-hidden bg-slate-100 transition-all duration-200 ${
+                  sidebarCollapsed ? 'left-16' : 'left-64'
+                }`
+              : `dashboard-layout__main flex-1 flex flex-col min-w-0 transition-all duration-200 ease-in-out ${
+                  sidebarCollapsed ? 'md:ml-16' : 'md:ml-64'
+                } ml-0`
+          }
         >
           {/* Main content: render Outlet */}
           <div
             className={
-              isFocusRoom
-                ? 'flex-1 w-full m-0 p-0 flex flex-col h-[calc(100vh-64px)] overflow-hidden'
+              isFocusRoom || isGradePage
+                ? 'flex-1 min-h-0 w-full m-0 p-0 flex flex-col h-full overflow-hidden'
                 : 'flex-1 w-full flex flex-col'
             }
           >
             {/* Container nội dung: lề trái 20px - 24px đồng bộ */}
             <div
               className={
-                isFocusRoom
-                  ? 'w-full h-full'
+                isFocusRoom || isGradePage
+                  ? 'w-full h-full min-h-0 m-0 p-0 flex flex-col overflow-hidden'
                   : 'px-5 sm:px-6 py-6 w-full flex-1'
               }
             >
