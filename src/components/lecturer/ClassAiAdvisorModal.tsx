@@ -19,6 +19,10 @@ interface AdvisoryItem {
   id: string;
   assignment_id: string;
   assignment_title: string;
+  type?: 'assignment' | 'lab' | string;
+  deadline?: string;
+  deadline_formatted?: string;
+  dropdown_label?: string;
   mode?: 'PROGRESS_REMINDER' | 'DEEP_TECHNICAL' | string;
   is_latest: boolean;
   generated_at: string;
@@ -133,6 +137,11 @@ export const ClassAiAdvisorModal: React.FC<ClassAiAdvisorModalProps> = ({
               </div>
               <p className="text-xs text-slate-500 mt-0.5">
                 Tổng hợp bài tập: <span className="font-medium text-slate-700">{currentItem.assignment_title}</span>
+                {currentItem.deadline_formatted && (
+                  <span className="text-slate-400 ml-1.5 font-normal">
+                    (Hạn nộp: {currentItem.deadline_formatted})
+                  </span>
+                )}
               </p>
             </div>
           </div>
@@ -155,16 +164,25 @@ export const ClassAiAdvisorModal: React.FC<ClassAiAdvisorModalProps> = ({
               <select
                 value={selectedId}
                 onChange={(e) => setSelectedId(e.target.value)}
-                className="font-medium text-slate-700 bg-white border border-slate-200 rounded-md px-2.5 py-1 focus:outline-none focus:ring-1 focus:ring-purple-500 shadow-xs cursor-pointer"
+                className="font-medium text-slate-700 bg-white border border-slate-200 rounded-md px-2.5 py-1 focus:outline-none focus:ring-1 focus:ring-purple-500 shadow-xs cursor-pointer text-xs max-w-[360px] truncate"
               >
-                {advisorData.advisories.map((adv: AdvisoryItem, index: number) => (
-                  <option key={adv.id} value={adv.id}>
-                    {index === 0 ? `📍 Mới nhất: ${adv.assignment_title}` : `🕒 ${adv.assignment_title}`}
-                  </option>
-                ))}
+                {advisorData.advisories.map((adv: AdvisoryItem, index: number) => {
+                  const label = adv.dropdown_label || (
+                    adv.deadline_formatted
+                      ? `[${adv.type === 'lab' ? 'Lab' : 'Bài tập'}] ${adv.assignment_title} - Hạn: ${adv.deadline_formatted}`
+                      : adv.assignment_title
+                  );
+                  return (
+                    <option key={adv.id} value={adv.id}>
+                      {index === 0 ? `📍 Mới nhất: ${label}` : `🕒 ${label}`}
+                    </option>
+                  );
+                })}
               </select>
             ) : (
-              <span className="font-medium text-slate-700">{currentItem.assignment_title}</span>
+              <span className="font-medium text-slate-700">
+                {currentItem.dropdown_label || currentItem.assignment_title}
+              </span>
             )}
           </div>
 
