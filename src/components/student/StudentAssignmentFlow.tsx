@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import {
   Brain,
   Puzzle,
@@ -113,6 +113,8 @@ export interface Assignment {
   aiDeclarationRequired?: boolean;
   minAiInteractions?: number;
   maxAiInteractions?: number;
+  rubric_configs?: any[];
+  rubricConfigs?: any[];
   instructor: {
     name: string;
     avatarUrl?: string;
@@ -246,6 +248,51 @@ export const AI_DECISIONS: string[] = [
   'Heavily Modified',
   'Rejected / Reference Only',
 ];
+
+export const getActiveRubricKeys = (rubricConfigs?: any[]): RubricKey[] => {
+  if (!rubricConfigs || !Array.isArray(rubricConfigs) || rubricConfigs.length === 0) {
+    return ['decomposition', 'pattern', 'abstraction', 'algorithmic', 'reflection'];
+  }
+
+  const enabled = rubricConfigs.filter((c: any) => c.is_enabled !== false);
+  if (enabled.length === 0) {
+    return ['decomposition', 'pattern', 'abstraction', 'algorithmic', 'reflection'];
+  }
+
+  const KEY_MAP: Record<string, RubricKey> = {
+    PROBLEM_ABSTRACTION: 'decomposition',
+    DECOMPOSITION: 'decomposition',
+    decomposition: 'decomposition',
+
+    IMPLEMENTATION_QUALITY: 'pattern',
+    PATTERN_RECOGNITION: 'pattern',
+    pattern: 'pattern',
+    pattern_recognition: 'pattern',
+
+    CRITICAL_EVALUATION: 'abstraction',
+    ABSTRACTION: 'abstraction',
+    abstraction: 'abstraction',
+
+    AI_INTERACTION: 'algorithmic',
+    ALGORITHMIC_THINKING: 'algorithmic',
+    algorithmic: 'algorithmic',
+    algorithmic_thinking: 'algorithmic',
+
+    METACOGNITIVE_REFLECTION: 'reflection',
+    REFLECTION: 'reflection',
+    reflection: 'reflection',
+  };
+
+  const keys: RubricKey[] = [];
+  enabled.forEach((c: any) => {
+    const k = KEY_MAP[c.criterion_key] || (c.criterion_key ? (String(c.criterion_key).toLowerCase() as RubricKey) : null);
+    if (k && !keys.includes(k)) {
+      keys.push(k);
+    }
+  });
+
+  return keys.length > 0 ? keys : ['decomposition', 'pattern', 'abstraction', 'algorithmic', 'reflection'];
+};
 
 export const INITIAL_DECLARATIONS: Record<RubricKey, AiDeclarationRubric> = {
   decomposition: {
@@ -758,6 +805,8 @@ interface AiAuditLogCardProps {
   transparencyScore?: number;
   lastEditedAt?: string | null;
   version?: number;
+  activeRubricKeys?: RubricKey[];
+  rubricConfigs?: any[];
 }
 
 export const AiAuditLogCard: React.FC<AiAuditLogCardProps> = ({
@@ -766,16 +815,14 @@ export const AiAuditLogCard: React.FC<AiAuditLogCardProps> = ({
   transparencyScore = 95,
   lastEditedAt,
   version = 1,
+  activeRubricKeys,
+  rubricConfigs,
 }) => {
   const [expandedKey, setExpandedKey] = useState<RubricKey | null>(null);
   const [activeScopeIdx, setActiveScopeIdx] = useState(0);
-  const rubricKeys: RubricKey[] = [
-    'decomposition',
-    'pattern',
-    'abstraction',
-    'algorithmic',
-    'reflection',
-  ];
+  const rubricKeys: RubricKey[] = activeRubricKeys && activeRubricKeys.length > 0
+    ? activeRubricKeys
+    : getActiveRubricKeys(rubricConfigs);
 
   const tabsContainerRef = useRef<HTMLDivElement | null>(null);
   const [isDraggingTabs, setIsDraggingTabs] = useState(false);
@@ -825,7 +872,7 @@ export const AiAuditLogCard: React.FC<AiAuditLogCardProps> = ({
   const totalCompleted = hasScopes
     ? scopes!.reduce((acc, s) => acc + rubricKeys.filter(k => isRubricDeclaredComplete(s?.declarations?.[k])).length, 0)
     : rubricKeys.filter(k => isRubricDeclaredComplete(declarations?.[k])).length;
-  const totalRubrics = hasScopes ? scopes!.length * 5 : 5;
+  const totalRubrics = hasScopes ? scopes!.length * rubricKeys.length : rubricKeys.length;
   const completedCount = rubricKeys.filter(k => isRubricDeclaredComplete(activeDeclarations?.[k])).length;
 
   return (
@@ -852,7 +899,7 @@ export const AiAuditLogCard: React.FC<AiAuditLogCardProps> = ({
               )}
             </div>
             <p className="text-[11px] text-slate-500 mt-0.5">
-              Computational Thinking audit trail across 5 rubrics.
+              Computational Thinking audit trail across active rubrics.
               {lastEditedAt && ` Last revised: ${lastEditedAt}`}
             </p>
           </div>
@@ -913,7 +960,7 @@ export const AiAuditLogCard: React.FC<AiAuditLogCardProps> = ({
                   <span>{scope.scope_title || scope.title || `Khai báo ${idx + 1}`}</span>
                   <span className={`text-[9px] font-bold px-1.5 rounded ${
                     isAct ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-400'
-                  }`}>{sc}/5</span>
+                  }`}>{sc}/{rubricKeys.length}</span>
                 </button>
               );
             })}
@@ -1043,6 +1090,8 @@ interface SubmissionStatusViewProps {
   maxScore?: number;
   isLateBlocked?: boolean;
   dueDate?: string;
+  activeRubricKeys?: RubricKey[];
+  rubricConfigs?: any[];
 }
 
 export const SubmissionStatusView: React.FC<SubmissionStatusViewProps> = ({
@@ -1051,6 +1100,8 @@ export const SubmissionStatusView: React.FC<SubmissionStatusViewProps> = ({
   maxScore = 10,
   isLateBlocked = false,
   dueDate = 'N/A',
+  activeRubricKeys,
+  rubricConfigs,
 }) => {
   const isDraft = submission.status === 'Draft';
   const isGraded = submission.status === 'Graded' || submission.score != null || submission.grade?.score != null;
@@ -1342,6 +1393,8 @@ export const SubmissionStatusView: React.FC<SubmissionStatusViewProps> = ({
               transparencyScore={submission.transparencyScore || 95}
               lastEditedAt={submission.lastEditedAt}
               version={submission.version || 1}
+              activeRubricKeys={activeRubricKeys}
+              rubricConfigs={rubricConfigs}
             />
           ) : (
             <div className="rounded-2xl border-2 border-dashed border-slate-200 p-8 text-center space-y-2 bg-slate-50/30">
@@ -1353,7 +1406,7 @@ export const SubmissionStatusView: React.FC<SubmissionStatusViewProps> = ({
               </h4>
               <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
                 Once you submit your project file and declare GenAI interactions,
-                your 5-rubric transparency audit log will appear here.
+                your transparency audit log will appear here.
               </p>
             </div>
           )}
@@ -1956,6 +2009,8 @@ interface AiRubricFormProps {
   autoSaveStatus?: 'idle' | 'saving' | 'saved' | 'error';
   onRunSanityCheck?: () => void;
   isSanityChecking?: boolean;
+  activeRubricKeys?: RubricKey[];
+  rubricConfigs?: any[];
 }
 
 export const AiRubricForm: React.FC<AiRubricFormProps> = ({
@@ -1969,16 +2024,22 @@ export const AiRubricForm: React.FC<AiRubricFormProps> = ({
   autoSaveStatus = 'idle',
   onRunSanityCheck,
   isSanityChecking = false,
+  activeRubricKeys,
+  rubricConfigs,
 }) => {
   const [activeScopeIdx, setActiveScopeIdx] = useState(0);
-  const [activeKey, setActiveKey] = useState<RubricKey>('decomposition');
-  const rubricKeys: RubricKey[] = [
-    'decomposition',
-    'pattern',
-    'abstraction',
-    'algorithmic',
-    'reflection',
-  ];
+  const rubricKeys: RubricKey[] = useMemo(() => {
+    if (activeRubricKeys && activeRubricKeys.length > 0) return activeRubricKeys;
+    return getActiveRubricKeys(rubricConfigs);
+  }, [activeRubricKeys, rubricConfigs]);
+
+  const [activeKey, setActiveKey] = useState<RubricKey>(rubricKeys[0] || 'decomposition');
+
+  useEffect(() => {
+    if (!rubricKeys.includes(activeKey)) {
+      setActiveKey(rubricKeys[0] || 'decomposition');
+    }
+  }, [rubricKeys, activeKey]);
 
   const tabsContainerRef = useRef<HTMLDivElement | null>(null);
   const [isDraggingTabs, setIsDraggingTabs] = useState(false);
@@ -2049,7 +2110,7 @@ export const AiRubricForm: React.FC<AiRubricFormProps> = ({
     const newScope = makeDefaultScope(scopes.length);
     onScopesChange([...scopes, newScope]);
     setActiveScopeIdx(scopes.length);
-    setActiveKey('decomposition');
+    setActiveKey(rubricKeys[0] || 'decomposition');
   };
 
   const handleRemoveScope = (idx: number) => {
@@ -2064,14 +2125,14 @@ export const AiRubricForm: React.FC<AiRubricFormProps> = ({
   const handlePrevScope = () => {
     if (safeIdx > 0) {
       setActiveScopeIdx(safeIdx - 1);
-      setActiveKey('decomposition');
+      setActiveKey(rubricKeys[0] || 'decomposition');
     }
   };
 
   const handleNextScope = () => {
     if (safeIdx < scopes.length - 1) {
       setActiveScopeIdx(safeIdx + 1);
-      setActiveKey('decomposition');
+      setActiveKey(rubricKeys[0] || 'decomposition');
     }
   };
 
@@ -2119,7 +2180,7 @@ export const AiRubricForm: React.FC<AiRubricFormProps> = ({
   const totalCompleted = scopes.reduce(
     (acc, s) => acc + rubricKeys.filter(k => isRubricDeclaredComplete(s.declarations[k])).length, 0
   );
-  const totalRubrics = scopes.length * 5;
+  const totalRubrics = scopes.length * rubricKeys.length;
 
   return (
     <div className="space-y-4">
@@ -2178,7 +2239,7 @@ export const AiRubricForm: React.FC<AiRubricFormProps> = ({
                   onClick={() => {
                     if (hasMovedRef.current) return;
                     setActiveScopeIdx(idx);
-                    setActiveKey('decomposition');
+                    setActiveKey(rubricKeys[0] || 'decomposition');
                   }}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer whitespace-nowrap shrink-0 border select-none ${
                     isActive
@@ -2745,6 +2806,10 @@ export default function StudentAssignmentFlow({
   const [assignment, setAssignment] = useState<Assignment>(initialAssignment);
   const [submission, setSubmission] = useState<SubmissionData>(initialSubmission || EMPTY_SUBMISSION_STATE);
 
+  const activeRubricKeys = useMemo(() => {
+    return getActiveRubricKeys(assignment?.rubric_configs || (assignment as any)?.rubricConfigs);
+  }, [assignment?.rubric_configs, (assignment as any)?.rubricConfigs]);
+
   // Silent Auto-Save States
   const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [isUploadingFile, setIsUploadingFile] = useState(false);
@@ -3052,13 +3117,12 @@ export default function StudentAssignmentFlow({
       let completedCount = 0;
       if (draftScopes && draftScopes.length > 0) {
         draftScopes.forEach(s => {
-          Object.values(s.declarations || {}).forEach(d => {
-            if (isRubricDeclaredComplete(d)) completedCount++;
+          activeRubricKeys.forEach(k => {
+            if (isRubricDeclaredComplete(s?.declarations?.[k])) completedCount++;
           });
         });
       } else {
-        const rubricKeys: RubricKey[] = ['decomposition', 'pattern', 'abstraction', 'algorithmic', 'reflection'];
-        completedCount = rubricKeys.filter(k => isRubricDeclaredComplete(draftDeclarations[k])).length;
+        completedCount = activeRubricKeys.filter(k => isRubricDeclaredComplete(draftDeclarations[k])).length;
       }
 
       const minRequired = assignment.minAiInteractions || 1;
@@ -3113,19 +3177,13 @@ export default function StudentAssignmentFlow({
       }
 
       // Tính toán AI Transparency Score tự động
-      const rubricKeys: RubricKey[] = [
-        'decomposition',
-        'pattern',
-        'abstraction',
-        'algorithmic',
-        'reflection',
-      ];
-      const completedCount = rubricKeys.filter(
+      const completedCount = activeRubricKeys.filter(
         (k) => isRubricDeclaredComplete(draftDeclarations[k])
       ).length;
+      const totalPossible = Math.max(1, activeRubricKeys.length);
       const calculatedScore = Math.min(
         100,
-        Math.max(60, completedCount * 18 + 10)
+        Math.max(60, Math.round((completedCount / totalPossible) * 35 + 65))
       );
 
       const now = new Date();
@@ -3293,6 +3351,8 @@ export default function StudentAssignmentFlow({
                 maxScore={assignment.maxScore ?? 10}
                 isLateBlocked={isLateBlocked}
                 dueDate={assignment.dueDate}
+                activeRubricKeys={activeRubricKeys}
+                rubricConfigs={assignment.rubric_configs || (assignment as any).rubricConfigs}
               />
             ) : (
               /* CHẾ ĐỘ B: FORM STEPPER (ADD HOẶC EDIT) */
@@ -3470,6 +3530,8 @@ export default function StudentAssignmentFlow({
                     autoSaveStatus={autoSaveStatus}
                     onRunSanityCheck={handleRunSanityCheck}
                     isSanityChecking={isSanityChecking}
+                    activeRubricKeys={activeRubricKeys}
+                    rubricConfigs={assignment.rubric_configs || (assignment as any).rubricConfigs}
                   />
                 )}
               </div>

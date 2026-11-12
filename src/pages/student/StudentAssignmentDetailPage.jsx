@@ -111,6 +111,8 @@ export default function StudentAssignmentDetailPage() {
         aiDeclarationRequired: assignment?.ai_declaration_required !== false,
         minAiInteractions: assignment?.min_ai_interactions != null ? Number(assignment.min_ai_interactions) : 1,
         maxAiInteractions: assignment?.max_ai_interactions != null ? Number(assignment.max_ai_interactions) : 20,
+        rubric_configs: assignment?.rubric_configs || assignment?.rubricConfigs || [],
+        rubricConfigs: assignment?.rubric_configs || assignment?.rubricConfigs || [],
     };
 
     // Format real Submission data from backend if present, else null

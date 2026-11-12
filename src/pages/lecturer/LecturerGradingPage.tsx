@@ -120,6 +120,7 @@ export default function LecturerGradingPage() {
                 classId: assign.class_id || assign.classId || stateData?.class_id || stateData?.classId,
                 assignmentId: assignmentId || assign.id,
                 subjectId: resolvedSubjectId,
+                rubric_configs: assign.rubric_configs,
               });
 
               if (resolvedSubjectId) {
@@ -744,6 +745,7 @@ export default function LecturerGradingPage() {
       <LecturerAcademicEvaluation
         student={studentInfo}
         courseInfo={courseInfo}
+        rubricConfigs={(courseInfo as any)?.rubric_configs || (courseInfo as any)?.rubricConfigs}
         submissionFile={submissionFile}
         file={currentFile}
         aiDeclarations={aiDeclarations}
