@@ -15,10 +15,15 @@ export type AiTool =
   | 'Other';
 
 export type AiDecision =
-  | 'Fully Accepted'
+  | 'Accepted Directly'
   | 'Partially Modified'
+  | 'Heavily Modified'
+  | 'Rejected / Reference Only'
+  | 'Fully Accepted'
   | 'Heavily Adapted'
-  | 'Rejected';
+  | 'Rejected'
+  | ''
+  | string;
 
 export type SubmissionStatus =
   | 'NOT_SUBMITTED'

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import {
   Brain,
   Puzzle,
@@ -63,13 +63,20 @@ export type AiTool =
   | 'Claude'
   | 'Gemini'
   | 'GitHub Copilot'
-  | 'Other';
+  | 'Other'
+  | ''
+  | string;
 
 export type AiDecision =
-  | 'Fully Accepted'
+  | 'Accepted Directly'
   | 'Partially Modified'
+  | 'Heavily Modified'
+  | 'Rejected / Reference Only'
+  | 'Fully Accepted'
   | 'Heavily Adapted'
-  | 'Rejected';
+  | 'Rejected'
+  | ''
+  | string;
 
 export type SubmissionStatus = 'No submission' | 'Draft' | 'Submitted' | 'Graded';
 
@@ -106,6 +113,8 @@ export interface Assignment {
   aiDeclarationRequired?: boolean;
   minAiInteractions?: number;
   maxAiInteractions?: number;
+  rubric_configs?: any[];
+  rubricConfigs?: any[];
   instructor: {
     name: string;
     avatarUrl?: string;
@@ -233,20 +242,65 @@ export const AI_TOOLS: AiTool[] = [
   'Other',
 ];
 
-export const AI_DECISIONS: AiDecision[] = [
-  'Fully Accepted',
+export const AI_DECISIONS: string[] = [
+  'Accepted Directly',
   'Partially Modified',
-  'Heavily Adapted',
-  'Rejected',
+  'Heavily Modified',
+  'Rejected / Reference Only',
 ];
+
+export const getActiveRubricKeys = (rubricConfigs?: any[]): RubricKey[] => {
+  if (!rubricConfigs || !Array.isArray(rubricConfigs) || rubricConfigs.length === 0) {
+    return ['decomposition', 'pattern', 'abstraction', 'algorithmic', 'reflection'];
+  }
+
+  const enabled = rubricConfigs.filter((c: any) => c.is_enabled !== false);
+  if (enabled.length === 0) {
+    return ['decomposition', 'pattern', 'abstraction', 'algorithmic', 'reflection'];
+  }
+
+  const KEY_MAP: Record<string, RubricKey> = {
+    PROBLEM_ABSTRACTION: 'decomposition',
+    DECOMPOSITION: 'decomposition',
+    decomposition: 'decomposition',
+
+    IMPLEMENTATION_QUALITY: 'pattern',
+    PATTERN_RECOGNITION: 'pattern',
+    pattern: 'pattern',
+    pattern_recognition: 'pattern',
+
+    CRITICAL_EVALUATION: 'abstraction',
+    ABSTRACTION: 'abstraction',
+    abstraction: 'abstraction',
+
+    AI_INTERACTION: 'algorithmic',
+    ALGORITHMIC_THINKING: 'algorithmic',
+    algorithmic: 'algorithmic',
+    algorithmic_thinking: 'algorithmic',
+
+    METACOGNITIVE_REFLECTION: 'reflection',
+    REFLECTION: 'reflection',
+    reflection: 'reflection',
+  };
+
+  const keys: RubricKey[] = [];
+  enabled.forEach((c: any) => {
+    const k = KEY_MAP[c.criterion_key] || (c.criterion_key ? (String(c.criterion_key).toLowerCase() as RubricKey) : null);
+    if (k && !keys.includes(k)) {
+      keys.push(k);
+    }
+  });
+
+  return keys.length > 0 ? keys : ['decomposition', 'pattern', 'abstraction', 'algorithmic', 'reflection'];
+};
 
 export const INITIAL_DECLARATIONS: Record<RubricKey, AiDeclarationRubric> = {
   decomposition: {
     rubricKey: 'decomposition',
     title: RUBRIC_METADATA.decomposition.title,
     description: RUBRIC_METADATA.decomposition.description,
-    aiTool: 'ChatGPT',
-    decision: 'Partially Modified',
+    aiTool: '',
+    decision: '',
     prompt: '',
     responseSummary: '',
     reflection: '',
@@ -256,8 +310,8 @@ export const INITIAL_DECLARATIONS: Record<RubricKey, AiDeclarationRubric> = {
     rubricKey: 'pattern',
     title: RUBRIC_METADATA.pattern.title,
     description: RUBRIC_METADATA.pattern.description,
-    aiTool: 'Claude',
-    decision: 'Heavily Adapted',
+    aiTool: '',
+    decision: '',
     prompt: '',
     responseSummary: '',
     reflection: '',
@@ -267,8 +321,8 @@ export const INITIAL_DECLARATIONS: Record<RubricKey, AiDeclarationRubric> = {
     rubricKey: 'abstraction',
     title: RUBRIC_METADATA.abstraction.title,
     description: RUBRIC_METADATA.abstraction.description,
-    aiTool: 'ChatGPT',
-    decision: 'Fully Accepted',
+    aiTool: '',
+    decision: '',
     prompt: '',
     responseSummary: '',
     reflection: '',
@@ -278,8 +332,8 @@ export const INITIAL_DECLARATIONS: Record<RubricKey, AiDeclarationRubric> = {
     rubricKey: 'algorithmic',
     title: RUBRIC_METADATA.algorithmic.title,
     description: RUBRIC_METADATA.algorithmic.description,
-    aiTool: 'GitHub Copilot',
-    decision: 'Partially Modified',
+    aiTool: '',
+    decision: '',
     prompt: '',
     responseSummary: '',
     reflection: '',
@@ -289,8 +343,8 @@ export const INITIAL_DECLARATIONS: Record<RubricKey, AiDeclarationRubric> = {
     rubricKey: 'reflection',
     title: RUBRIC_METADATA.reflection.title,
     description: RUBRIC_METADATA.reflection.description,
-    aiTool: 'Gemini',
-    decision: 'Partially Modified',
+    aiTool: '',
+    decision: '',
     prompt: '',
     responseSummary: '',
     reflection: '',
@@ -734,7 +788,15 @@ export function isRubricDeclaredComplete(item?: any): boolean {
   const prompt = (item.prompt || item.prompt_used || item.promptUsed || item.promptContent || '').trim();
   const response = (item.responseSummary || item.response || item.aiResponseSummary || item.ai_response_summary || item.aiResponse || '').trim();
   const reflection = (item.reflection || item.studentReflection || item.student_reflection || item.selfReflection || '').trim();
-  return prompt.length > 0 && response.length > 0 && reflection.length > 0;
+  const decision = (item.decision || item.yourDecision || '').trim();
+  const hasDecision = decision.length > 0 && decision.toLowerCase() !== 'not declared';
+  const isNoAi = item.aiTool === 'No AI used (Self-written)' || item.tool === 'No AI used (Self-written)';
+
+  if (isNoAi) {
+    return hasDecision;
+  }
+
+  return prompt.length > 0 && response.length > 0 && reflection.length > 0 && hasDecision;
 }
 
 interface AiAuditLogCardProps {
@@ -743,6 +805,8 @@ interface AiAuditLogCardProps {
   transparencyScore?: number;
   lastEditedAt?: string | null;
   version?: number;
+  activeRubricKeys?: RubricKey[];
+  rubricConfigs?: any[];
 }
 
 export const AiAuditLogCard: React.FC<AiAuditLogCardProps> = ({
@@ -751,16 +815,14 @@ export const AiAuditLogCard: React.FC<AiAuditLogCardProps> = ({
   transparencyScore = 95,
   lastEditedAt,
   version = 1,
+  activeRubricKeys,
+  rubricConfigs,
 }) => {
   const [expandedKey, setExpandedKey] = useState<RubricKey | null>(null);
   const [activeScopeIdx, setActiveScopeIdx] = useState(0);
-  const rubricKeys: RubricKey[] = [
-    'decomposition',
-    'pattern',
-    'abstraction',
-    'algorithmic',
-    'reflection',
-  ];
+  const rubricKeys: RubricKey[] = activeRubricKeys && activeRubricKeys.length > 0
+    ? activeRubricKeys
+    : getActiveRubricKeys(rubricConfigs);
 
   const tabsContainerRef = useRef<HTMLDivElement | null>(null);
   const [isDraggingTabs, setIsDraggingTabs] = useState(false);
@@ -810,7 +872,7 @@ export const AiAuditLogCard: React.FC<AiAuditLogCardProps> = ({
   const totalCompleted = hasScopes
     ? scopes!.reduce((acc, s) => acc + rubricKeys.filter(k => isRubricDeclaredComplete(s?.declarations?.[k])).length, 0)
     : rubricKeys.filter(k => isRubricDeclaredComplete(declarations?.[k])).length;
-  const totalRubrics = hasScopes ? scopes!.length * 5 : 5;
+  const totalRubrics = hasScopes ? scopes!.length * rubricKeys.length : rubricKeys.length;
   const completedCount = rubricKeys.filter(k => isRubricDeclaredComplete(activeDeclarations?.[k])).length;
 
   return (
@@ -837,7 +899,7 @@ export const AiAuditLogCard: React.FC<AiAuditLogCardProps> = ({
               )}
             </div>
             <p className="text-[11px] text-slate-500 mt-0.5">
-              Computational Thinking audit trail across 5 rubrics.
+              Computational Thinking audit trail across active rubrics.
               {lastEditedAt && ` Last revised: ${lastEditedAt}`}
             </p>
           </div>
@@ -898,7 +960,7 @@ export const AiAuditLogCard: React.FC<AiAuditLogCardProps> = ({
                   <span>{scope.scope_title || scope.title || `Khai báo ${idx + 1}`}</span>
                   <span className={`text-[9px] font-bold px-1.5 rounded ${
                     isAct ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-400'
-                  }`}>{sc}/5</span>
+                  }`}>{sc}/{rubricKeys.length}</span>
                 </button>
               );
             })}
@@ -949,15 +1011,19 @@ export const AiAuditLogCard: React.FC<AiAuditLogCardProps> = ({
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0">
-                  <span className="text-[10px] font-semibold text-slate-600 bg-slate-100 px-2.5 py-0.5 rounded-md border border-slate-200">
-                    {item?.aiTool || 'ChatGPT'}
-                  </span>
+                  {item?.aiTool && (
+                    <span className="text-[10px] font-semibold text-slate-600 bg-slate-100 px-2.5 py-0.5 rounded-md border border-slate-200">
+                      {item.aiTool}
+                    </span>
+                  )}
 
-                  <span
-                    className={`text-[10px] font-bold px-2.5 py-0.5 rounded-md border ${badge?.bg || 'bg-amber-50'} ${badge?.text || 'text-amber-700'} ${badge?.border || 'border-amber-200'}`}
-                  >
-                    {item?.decision || 'Partially Modified'}
-                  </span>
+                  {item?.decision && (
+                    <span
+                      className={`text-[10px] font-bold px-2.5 py-0.5 rounded-md border ${badge?.bg || 'bg-amber-50'} ${badge?.text || 'text-amber-700'} ${badge?.border || 'border-amber-200'}`}
+                    >
+                      {item.decision}
+                    </span>
+                  )}
 
                   <span className="p-1 text-slate-400 hover:text-slate-600">
                     {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
@@ -1024,6 +1090,8 @@ interface SubmissionStatusViewProps {
   maxScore?: number;
   isLateBlocked?: boolean;
   dueDate?: string;
+  activeRubricKeys?: RubricKey[];
+  rubricConfigs?: any[];
 }
 
 export const SubmissionStatusView: React.FC<SubmissionStatusViewProps> = ({
@@ -1032,6 +1100,8 @@ export const SubmissionStatusView: React.FC<SubmissionStatusViewProps> = ({
   maxScore = 10,
   isLateBlocked = false,
   dueDate = 'N/A',
+  activeRubricKeys,
+  rubricConfigs,
 }) => {
   const isDraft = submission.status === 'Draft';
   const isGraded = submission.status === 'Graded' || submission.score != null || submission.grade?.score != null;
@@ -1323,6 +1393,8 @@ export const SubmissionStatusView: React.FC<SubmissionStatusViewProps> = ({
               transparencyScore={submission.transparencyScore || 95}
               lastEditedAt={submission.lastEditedAt}
               version={submission.version || 1}
+              activeRubricKeys={activeRubricKeys}
+              rubricConfigs={rubricConfigs}
             />
           ) : (
             <div className="rounded-2xl border-2 border-dashed border-slate-200 p-8 text-center space-y-2 bg-slate-50/30">
@@ -1334,7 +1406,7 @@ export const SubmissionStatusView: React.FC<SubmissionStatusViewProps> = ({
               </h4>
               <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
                 Once you submit your project file and declare GenAI interactions,
-                your 5-rubric transparency audit log will appear here.
+                your transparency audit log will appear here.
               </p>
             </div>
           )}
@@ -1732,10 +1804,182 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
    8. SUB-COMPONENT: STEP 2 - AI RUBRIC FORM (MULTI-SCOPE)
    ========================================================================== */
 
+const PRESET_TOOLS = [
+  'ChatGPT',
+  'Claude',
+  'Gemini',
+  'GitHub Copilot',
+  'No AI used (Self-written)',
+];
+
+interface AiToolSelectorProps {
+  rubricKey?: string;
+  value: string;
+  onChange: (val: string) => void;
+  className?: string;
+}
+
+export const AiToolSelector: React.FC<AiToolSelectorProps> = ({ rubricKey, value, onChange, className }) => {
+  const isCustom = Boolean(value && !PRESET_TOOLS.includes(value));
+
+  const [isOpen, setIsOpen] = useState(false);
+  const [isEditingOther, setIsEditingOther] = useState(false);
+  const [customDraft, setCustomDraft] = useState(isCustom ? value : '');
+
+  const containerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // CHỈ reset giao diện khi chuyển sang Rubric khác (không đặt `value` vào dependency làm mất focus khi gõ)
+  useEffect(() => {
+    const customCheck = Boolean(value && !PRESET_TOOLS.includes(value));
+    setIsEditingOther(false);
+    setIsOpen(false);
+    setCustomDraft(customCheck ? value : '');
+  }, [rubricKey]);
+
+  // Đồng bộ customDraft nếu dữ liệu từ API load chậm ở lần đầu tiên (khi không đang gõ)
+  useEffect(() => {
+    if (!isEditingOther) {
+      const customCheck = Boolean(value && !PRESET_TOOLS.includes(value));
+      setCustomDraft(customCheck ? value : '');
+    }
+  }, [value, isEditingOther]);
+
+  // Focus input khi bật chế độ nhập Other
+  useEffect(() => {
+    if (isEditingOther && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [isEditingOther]);
+
+  // Xử lý click ra ngoài vùng component
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        if (isEditingOther) {
+          const trimmed = customDraft.trim();
+          onChange(trimmed);
+          setIsEditingOther(false);
+        }
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isEditingOther, customDraft, onChange]);
+
+  const handleSelectPreset = (tool: string) => {
+    setIsEditingOther(false);
+    setIsOpen(false);
+    onChange(tool);
+  };
+
+  const handleOpenOtherInput = () => {
+    setIsOpen(false);
+    setIsEditingOther(true);
+    if (customDraft.trim()) {
+      onChange(customDraft.trim());
+    }
+  };
+
+  // CHẾ ĐỘ ĐANG GÕ TEXT CHO "OTHER"
+  if (isEditingOther) {
+    return (
+      <div ref={containerRef} className={`relative w-full ${className || ''}`}>
+        <div className="relative flex items-center">
+          <input
+            ref={inputRef}
+            type="text"
+            value={customDraft}
+            placeholder="Nhập tên AI đã dùng (vd: Cursor, DeepSeek...)"
+            onChange={(e) => {
+              setCustomDraft(e.target.value);
+              onChange(e.target.value);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'ArrowUp' || e.key === 'ArrowDown') e.stopPropagation();
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                onChange(customDraft.trim());
+                setIsEditingOther(false);
+              }
+            }}
+            className="w-full px-3 py-2 pr-9 text-sm border border-purple-500 rounded-xl bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
+          />
+          <button
+            type="button"
+            onClick={() => {
+              onChange(customDraft.trim());
+              setIsEditingOther(false);
+              setIsOpen(true);
+            }}
+            title="Mở danh sách AI"
+            className="absolute right-2.5 p-1 text-slate-400 hover:text-slate-600 rounded-md hover:bg-slate-100 transition cursor-pointer"
+          >
+            <ChevronDown className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // CHẾ ĐỘ HIỂN THỊ Ô CHỌN & DROPDOWN LIST
+  return (
+    <div ref={containerRef} className={`relative w-full ${className || ''}`}>
+      <button
+        type="button"
+        onClick={() => setIsOpen((prev) => !prev)}
+        className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl bg-white flex items-center justify-between text-left hover:border-slate-300 focus:outline-none focus:border-purple-500 cursor-pointer"
+      >
+        <span className={value ? 'text-slate-800 font-medium' : 'text-slate-400'}>
+          {value || 'AI used'}
+        </span>
+        <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />
+      </button>
+
+      {isOpen && (
+        <div className="absolute z-30 mt-1.5 w-full bg-white border border-slate-200 rounded-xl shadow-lg py-1 overflow-hidden">
+          {PRESET_TOOLS.map((tool) => (
+            <button
+              key={tool}
+              type="button"
+              onClick={() => handleSelectPreset(tool)}
+              className="w-full px-3 py-2 text-sm text-left flex items-center justify-between hover:bg-slate-50 text-slate-700 cursor-pointer"
+            >
+              <span>{tool}</span>
+              {value === tool && <Check className="w-4 h-4 text-purple-600" />}
+            </button>
+          ))}
+
+          {/* Nút Other luôn bắt sự kiện click để mở lại ô input bất cứ lúc nào */}
+          <button
+            type="button"
+            onClick={handleOpenOtherInput}
+            className="w-full px-3 py-2 text-sm text-left flex items-center justify-between hover:bg-purple-50 text-purple-700 font-medium border-t border-slate-100 cursor-pointer"
+          >
+            <span className="flex items-center gap-1.5">
+              <Edit3 className="w-3.5 h-3.5" />
+              {customDraft.trim() ? `Other (${customDraft.trim()})` : 'Other (Nhập tên AI khác...)'}
+            </span>
+            {isCustom && <Check className="w-4 h-4 text-purple-600" />}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
+
 function makeDefaultDeclarations(): Record<RubricKey, AiDeclarationRubric> {
   const keys: RubricKey[] = ['decomposition', 'pattern', 'abstraction', 'algorithmic', 'reflection'];
   const result = {} as Record<RubricKey, AiDeclarationRubric>;
-  keys.forEach(k => { result[k] = { ...INITIAL_DECLARATIONS[k], isModified: false }; });
+  keys.forEach(k => {
+    result[k] = {
+      ...INITIAL_DECLARATIONS[k],
+      aiTool: '',
+      decision: '',
+      isModified: false,
+    };
+  });
   return result;
 }
 
@@ -1765,6 +2009,8 @@ interface AiRubricFormProps {
   autoSaveStatus?: 'idle' | 'saving' | 'saved' | 'error';
   onRunSanityCheck?: () => void;
   isSanityChecking?: boolean;
+  activeRubricKeys?: RubricKey[];
+  rubricConfigs?: any[];
 }
 
 export const AiRubricForm: React.FC<AiRubricFormProps> = ({
@@ -1778,16 +2024,22 @@ export const AiRubricForm: React.FC<AiRubricFormProps> = ({
   autoSaveStatus = 'idle',
   onRunSanityCheck,
   isSanityChecking = false,
+  activeRubricKeys,
+  rubricConfigs,
 }) => {
   const [activeScopeIdx, setActiveScopeIdx] = useState(0);
-  const [activeKey, setActiveKey] = useState<RubricKey>('decomposition');
-  const rubricKeys: RubricKey[] = [
-    'decomposition',
-    'pattern',
-    'abstraction',
-    'algorithmic',
-    'reflection',
-  ];
+  const rubricKeys: RubricKey[] = useMemo(() => {
+    if (activeRubricKeys && activeRubricKeys.length > 0) return activeRubricKeys;
+    return getActiveRubricKeys(rubricConfigs);
+  }, [activeRubricKeys, rubricConfigs]);
+
+  const [activeKey, setActiveKey] = useState<RubricKey>(rubricKeys[0] || 'decomposition');
+
+  useEffect(() => {
+    if (!rubricKeys.includes(activeKey)) {
+      setActiveKey(rubricKeys[0] || 'decomposition');
+    }
+  }, [rubricKeys, activeKey]);
 
   const tabsContainerRef = useRef<HTMLDivElement | null>(null);
   const [isDraggingTabs, setIsDraggingTabs] = useState(false);
@@ -1858,7 +2110,7 @@ export const AiRubricForm: React.FC<AiRubricFormProps> = ({
     const newScope = makeDefaultScope(scopes.length);
     onScopesChange([...scopes, newScope]);
     setActiveScopeIdx(scopes.length);
-    setActiveKey('decomposition');
+    setActiveKey(rubricKeys[0] || 'decomposition');
   };
 
   const handleRemoveScope = (idx: number) => {
@@ -1873,14 +2125,14 @@ export const AiRubricForm: React.FC<AiRubricFormProps> = ({
   const handlePrevScope = () => {
     if (safeIdx > 0) {
       setActiveScopeIdx(safeIdx - 1);
-      setActiveKey('decomposition');
+      setActiveKey(rubricKeys[0] || 'decomposition');
     }
   };
 
   const handleNextScope = () => {
     if (safeIdx < scopes.length - 1) {
       setActiveScopeIdx(safeIdx + 1);
-      setActiveKey('decomposition');
+      setActiveKey(rubricKeys[0] || 'decomposition');
     }
   };
 
@@ -1928,7 +2180,7 @@ export const AiRubricForm: React.FC<AiRubricFormProps> = ({
   const totalCompleted = scopes.reduce(
     (acc, s) => acc + rubricKeys.filter(k => isRubricDeclaredComplete(s.declarations[k])).length, 0
   );
-  const totalRubrics = scopes.length * 5;
+  const totalRubrics = scopes.length * rubricKeys.length;
 
   return (
     <div className="space-y-4">
@@ -1987,7 +2239,7 @@ export const AiRubricForm: React.FC<AiRubricFormProps> = ({
                   onClick={() => {
                     if (hasMovedRef.current) return;
                     setActiveScopeIdx(idx);
-                    setActiveKey('decomposition');
+                    setActiveKey(rubricKeys[0] || 'decomposition');
                   }}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer whitespace-nowrap shrink-0 border select-none ${
                     isActive
@@ -2104,7 +2356,9 @@ export const AiRubricForm: React.FC<AiRubricFormProps> = ({
             const hasAnyText = Boolean(
               (item?.prompt || '').trim() ||
               (item?.responseSummary || '').trim() ||
-              (item?.reflection || '').trim()
+              (item?.reflection || '').trim() ||
+              ((item?.decision || '').trim() && item.decision !== 'Not Declared') ||
+              (item?.aiTool || '').trim()
             );
             const isPartially = hasAnyText && !isDone;
 
@@ -2141,19 +2395,19 @@ export const AiRubricForm: React.FC<AiRubricFormProps> = ({
                   <div className="flex items-center justify-between mt-1">
                     <span
                       className={`text-[10px] uppercase font-semibold ${
-                        isEdited
-                          ? 'text-amber-600 font-bold'
-                          : isDone
+                        isDone
                           ? 'text-emerald-600 font-bold'
+                          : isEdited
+                          ? 'text-amber-600 font-bold'
                           : isPartially
                           ? 'text-amber-500 font-medium'
                           : 'text-slate-400'
                       }`}
                     >
-                      {isEdited ? 'EDITED' : isDone ? 'DECLARED' : isPartially ? 'INCOMPLETE' : 'NOT DECLARED'}
+                      {isDone ? 'DECLARED' : isEdited ? 'EDITED' : isPartially ? 'INCOMPLETE' : 'NOT DECLARED'}
                     </span>
                     <span className="text-[9px] text-slate-400 font-mono">
-                      {item.aiTool}
+                      {item?.aiTool || ''}
                     </span>
                   </div>
                 </div>
@@ -2190,19 +2444,14 @@ export const AiRubricForm: React.FC<AiRubricFormProps> = ({
               <label className="saf-input-label">
                 AI Tool Used <span className="text-rose-500">*</span>
               </label>
-              <select
-                value={activeItem?.aiTool || 'ChatGPT'}
-                onChange={(e) =>
-                  handleDeclarationChange(activeKey, 'aiTool', e.target.value)
+              <AiToolSelector
+                key={activeKey}
+                rubricKey={activeKey}
+                value={activeItem?.aiTool || ''}
+                onChange={(val) =>
+                  handleDeclarationChange(activeKey, 'aiTool', val)
                 }
-                className="saf-select"
-              >
-                {AI_TOOLS.map((tool) => (
-                  <option key={tool} value={tool}>
-                    {tool}
-                  </option>
-                ))}
-              </select>
+              />
             </div>
 
             <div>
@@ -2210,17 +2459,27 @@ export const AiRubricForm: React.FC<AiRubricFormProps> = ({
                 Your Decision <span className="text-rose-500">*</span>
               </label>
               <select
-                value={activeItem?.decision || 'Partially Modified'}
+                value={activeItem?.decision || ''}
                 onChange={(e) =>
                   handleDeclarationChange(activeKey, 'decision', e.target.value)
                 }
-                className="saf-select"
+                className={`w-full px-3 py-2 text-sm border border-slate-200 rounded-xl bg-white focus:outline-none focus:border-purple-500 cursor-pointer ${
+                  !activeItem?.decision ? 'text-slate-400' : 'text-slate-800 font-medium'
+                }`}
               >
+                <option value="" disabled hidden className="text-slate-400">
+                  Not declared
+                </option>
                 {AI_DECISIONS.map((dec) => (
-                  <option key={dec} value={dec}>
+                  <option key={dec} value={dec} className="text-slate-800">
                     {dec}
                   </option>
                 ))}
+                {activeItem?.decision && !AI_DECISIONS.includes(activeItem.decision as any) && (
+                  <option value={activeItem.decision} className="text-slate-800">
+                    {activeItem.decision}
+                  </option>
+                )}
               </select>
             </div>
           </div>
@@ -2340,29 +2599,6 @@ export const AiRubricForm: React.FC<AiRubricFormProps> = ({
               </>
             )}
           </div>
-
-          {/* Quick AI Sanity Check Button */}
-          {onRunSanityCheck && (
-            <button
-              type="button"
-              disabled={isSubmittingPayload || isSanityChecking}
-              onClick={onRunSanityCheck}
-              title="Chẩn đoán nhanh lỗi logic, độ lệch đề và khai báo AI trước khi nộp chính thức (Không ảnh hưởng đến điểm số)."
-              className="bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-xl px-3 py-2 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50"
-            >
-              {isSanityChecking ? (
-                <>
-                  <Loader2 size={13} className="animate-spin text-purple-600" />
-                  <span>Đang kiểm tra AI...</span>
-                </>
-              ) : (
-                <>
-                  <Sparkles size={13} className="text-purple-600" />
-                  <span>Kiểm tra nhanh bằng AI</span>
-                </>
-              )}
-            </button>
-          )}
 
           <button
             type="button"
@@ -2569,6 +2805,10 @@ export default function StudentAssignmentFlow({
   // Core Data States
   const [assignment, setAssignment] = useState<Assignment>(initialAssignment);
   const [submission, setSubmission] = useState<SubmissionData>(initialSubmission || EMPTY_SUBMISSION_STATE);
+
+  const activeRubricKeys = useMemo(() => {
+    return getActiveRubricKeys(assignment?.rubric_configs || (assignment as any)?.rubricConfigs);
+  }, [assignment?.rubric_configs, (assignment as any)?.rubricConfigs]);
 
   // Silent Auto-Save States
   const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
@@ -2877,13 +3117,12 @@ export default function StudentAssignmentFlow({
       let completedCount = 0;
       if (draftScopes && draftScopes.length > 0) {
         draftScopes.forEach(s => {
-          Object.values(s.declarations || {}).forEach(d => {
-            if (isRubricDeclaredComplete(d)) completedCount++;
+          activeRubricKeys.forEach(k => {
+            if (isRubricDeclaredComplete(s?.declarations?.[k])) completedCount++;
           });
         });
       } else {
-        const rubricKeys: RubricKey[] = ['decomposition', 'pattern', 'abstraction', 'algorithmic', 'reflection'];
-        completedCount = rubricKeys.filter(k => isRubricDeclaredComplete(draftDeclarations[k])).length;
+        completedCount = activeRubricKeys.filter(k => isRubricDeclaredComplete(draftDeclarations[k])).length;
       }
 
       const minRequired = assignment.minAiInteractions || 1;
@@ -2938,19 +3177,13 @@ export default function StudentAssignmentFlow({
       }
 
       // Tính toán AI Transparency Score tự động
-      const rubricKeys: RubricKey[] = [
-        'decomposition',
-        'pattern',
-        'abstraction',
-        'algorithmic',
-        'reflection',
-      ];
-      const completedCount = rubricKeys.filter(
+      const completedCount = activeRubricKeys.filter(
         (k) => isRubricDeclaredComplete(draftDeclarations[k])
       ).length;
+      const totalPossible = Math.max(1, activeRubricKeys.length);
       const calculatedScore = Math.min(
         100,
-        Math.max(60, completedCount * 18 + 10)
+        Math.max(60, Math.round((completedCount / totalPossible) * 35 + 65))
       );
 
       const now = new Date();
@@ -3118,6 +3351,8 @@ export default function StudentAssignmentFlow({
                 maxScore={assignment.maxScore ?? 10}
                 isLateBlocked={isLateBlocked}
                 dueDate={assignment.dueDate}
+                activeRubricKeys={activeRubricKeys}
+                rubricConfigs={assignment.rubric_configs || (assignment as any).rubricConfigs}
               />
             ) : (
               /* CHẾ ĐỘ B: FORM STEPPER (ADD HOẶC EDIT) */
@@ -3295,6 +3530,8 @@ export default function StudentAssignmentFlow({
                     autoSaveStatus={autoSaveStatus}
                     onRunSanityCheck={handleRunSanityCheck}
                     isSanityChecking={isSanityChecking}
+                    activeRubricKeys={activeRubricKeys}
+                    rubricConfigs={assignment.rubric_configs || (assignment as any).rubricConfigs}
                   />
                 )}
               </div>

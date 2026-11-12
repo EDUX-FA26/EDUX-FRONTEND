@@ -687,14 +687,16 @@ export default function SubmissionStatusForm({
                     AI Tool Used
                   </label>
                   <select
-                    value={activeDeclarationItem.tool || "ChatGPT"}
+                    value={activeDeclarationItem.tool || ""}
                     onChange={(e) => handleDeclarationChange("tool", e.target.value)}
                     className="w-full bg-white outline-none focus:border-blue-500 rubric-input"
                   >
+                    <option value="" disabled hidden>AI used</option>
                     <option>ChatGPT</option>
                     <option>Claude</option>
                     <option>Gemini</option>
                     <option>GitHub Copilot</option>
+                    <option>No AI used (Self-written)</option>
                     <option>DeepSeek</option>
                     <option>Other</option>
                   </select>
@@ -704,14 +706,15 @@ export default function SubmissionStatusForm({
                     Your Decision
                   </label>
                   <select
-                    value={activeDeclarationItem.decision || "Fully Accepted"}
+                    value={activeDeclarationItem.decision || ""}
                     onChange={(e) => handleDeclarationChange("decision", e.target.value)}
                     className="w-full bg-white outline-none focus:border-blue-500 rubric-input"
                   >
-                    <option>Fully Accepted</option>
-                    <option>Partially Modified</option>
-                    <option>Heavily Adapted</option>
-                    <option>Rejected</option>
+                    <option value="" disabled hidden>Not declared</option>
+                    <option value="Accepted Directly">Accepted Directly</option>
+                    <option value="Partially Modified">Partially Modified</option>
+                    <option value="Heavily Modified">Heavily Modified</option>
+                    <option value="Rejected / Reference Only">Rejected / Reference Only</option>
                   </select>
                 </div>
               </div>
