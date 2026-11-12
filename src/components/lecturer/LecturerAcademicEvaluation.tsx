@@ -77,74 +77,107 @@ export interface AiDeclarationPhase {
 }
 
 export interface RubricScores {
-  core_requirements?: number; // Core Requirements & Functionality (Tối đa: 6.0)
-  technical_quality?: number; // Technical Quality & Architecture (Tối đa: 2.5)
-  code_clean?: number;        // Code Clean & Naming Conventions (Tối đa: 1.5)
-  // Tương thích ngược với hệ tiêu chí cũ
-  abstraction?: number;
-  implementation?: number;
-  verification?: number;
-  ai_interaction?: number;
-  reflection?: number;
-  decomposition?: number;
+  decomposition?: number;        // Decomposition (Phân rã bài toán - Tối đa 2.0)
+  pattern_recognition?: number;  // Pattern Recognition (Nhận diện mẫu kiến trúc - Tối đa 2.0)
+  abstraction?: number;          // Abstraction (Trừu tượng hóa & DTO/Entity - Tối đa 2.0)
+  algorithmic_thinking?: number; // Algorithmic Thinking (Tư duy thuật toán & Logic nghiệp vụ - Tối đa 2.0)
+  reflection?: number;           // Reflection (Đánh giá & Kiểm thử biên - Tối đa 2.0)
+  // Aliases tương thích
   pattern?: number;
   algorithmic?: number;
-  r1?: number;
-  r2?: number;
-  r3?: number;
+  DECOMPOSITION?: number;
+  PATTERN_RECOGNITION?: number;
+  ABSTRACTION?: number;
+  ALGORITHMIC_THINKING?: number;
+  REFLECTION?: number;
+  core_requirements?: number;
+  technical_quality?: number;
+  code_clean?: number;
   [key: string]: any;
 }
 
 export const DEFAULT_RUBRIC_SCORES: RubricScores = {
-  core_requirements: 0,
-  technical_quality: 0,
-  code_clean: 0,
-  abstraction: 0,
-  implementation: 0,
-  verification: 0,
-  ai_interaction: 0,
-  reflection: 0,
+  decomposition: 1.6,
+  pattern_recognition: 1.6,
+  abstraction: 1.6,
+  algorithmic_thinking: 1.3,
+  reflection: 1.3,
+  pattern: 1.6,
+  algorithmic: 1.3,
 };
 
 export const RUBRIC_CRITERIA_LIST = [
   {
-    key: 'core_requirements' as const,
-    name: 'Core Requirements & Functionality',
-    viName: 'Mức độ hoàn thành chức năng cốt lõi',
-    max: 6.0,
-    color: 'bg-emerald-500',
-    borderColor: 'border-emerald-200',
-    textColor: 'text-emerald-700',
-    focusRing: 'focus:ring-emerald-400',
-    activeBg: 'bg-emerald-600',
-    pills: [0, 2.0, 4.0, 5.0, 5.5, 6.0],
-    desc: 'Có đầy đủ phương thức nghiệp vụ theo yêu cầu đề bài, nhận tham số, thao tác cơ sở dữ liệu và xử lý trả về kết quả chuẩn xác (Điểm sàn 5.0 - 6.0đ nếu có khung sườn).',
-  },
-  {
-    key: 'technical_quality' as const,
-    name: 'Technical Quality & Architecture',
-    viName: 'Chất lượng kỹ thuật & Kiến trúc',
-    max: 2.5,
-    color: 'bg-indigo-500',
-    borderColor: 'border-indigo-200',
-    textColor: 'text-indigo-700',
-    focusRing: 'focus:ring-indigo-400',
-    activeBg: 'bg-indigo-600',
-    pills: [0, 1.0, 1.5, 2.0, 2.5],
-    desc: 'Xử lý ngoại lệ, tính toán chuẩn xác (BigDecimal/float), an toàn dữ liệu (@Transactional), phân tầng kiến trúc, phòng tránh N+1 Query.',
-  },
-  {
-    key: 'code_clean' as const,
-    name: 'Code Clean & Naming Conventions',
-    viName: 'Định dạng mã nguồn & Quy chuẩn đặt tên',
-    max: 1.5,
+    key: 'decomposition' as const,
+    apiKey: 'DECOMPOSITION',
+    name: 'Decomposition',
+    viName: 'Phân rã bài toán',
+    max: 2.0,
     color: 'bg-blue-500',
     borderColor: 'border-blue-200',
     textColor: 'text-blue-700',
     focusRing: 'focus:ring-blue-400',
     activeBg: 'bg-blue-600',
-    pills: [0, 0.5, 1.0, 1.5],
-    desc: 'Mã nguồn sạch, cấu trúc rõ ràng, đặt tên biến/hàm nhất quán chuẩn mực (camelCase, PascalCase) và dễ bảo trì.',
+    pills: [0, 0.5, 1.0, 1.5, 1.8, 2.0],
+    desc: 'Phân chia luồng xử lý thành các bước rõ ràng (validation, fetch inventory, trừ kho, tính tiền, lưu order).',
+  },
+  {
+    key: 'pattern_recognition' as const,
+    altKey: 'pattern',
+    apiKey: 'PATTERN_RECOGNITION',
+    name: 'Pattern Recognition',
+    viName: 'Nhận diện mẫu kiến trúc',
+    max: 2.0,
+    color: 'bg-indigo-500',
+    borderColor: 'border-indigo-200',
+    textColor: 'text-indigo-700',
+    focusRing: 'focus:ring-indigo-400',
+    activeBg: 'bg-indigo-600',
+    pills: [0, 0.5, 1.0, 1.5, 1.8, 2.0],
+    desc: 'Áp dụng đúng các mẫu thiết kế (Spring Service/Repository, Transaction, Map lookup phòng tránh N+1 Query).',
+  },
+  {
+    key: 'abstraction' as const,
+    apiKey: 'ABSTRACTION',
+    name: 'Abstraction',
+    viName: 'Trừu tượng hóa & DTO/Entity',
+    max: 2.0,
+    color: 'bg-cyan-500',
+    borderColor: 'border-cyan-200',
+    textColor: 'text-cyan-700',
+    focusRing: 'focus:ring-cyan-400',
+    activeBg: 'bg-cyan-600',
+    pills: [0, 0.5, 1.0, 1.5, 1.8, 2.0],
+    desc: 'Mô hình hóa dữ liệu, tách biệt DTO Request/Response và Entity database, đóng gói dữ liệu phù hợp.',
+  },
+  {
+    key: 'algorithmic_thinking' as const,
+    altKey: 'algorithmic',
+    apiKey: 'ALGORITHMIC_THINKING',
+    name: 'Algorithmic Thinking',
+    viName: 'Tư duy thuật toán & Logic nghiệp vụ',
+    max: 2.0,
+    color: 'bg-emerald-500',
+    borderColor: 'border-emerald-200',
+    textColor: 'text-emerald-700',
+    focusRing: 'focus:ring-emerald-400',
+    activeBg: 'bg-emerald-600',
+    pills: [0, 0.5, 1.0, 1.5, 1.8, 2.0],
+    desc: 'Tính đúng đắn của logic tính toán, thứ tự công thức (VAT, trừ discount), tính toán tiền tệ BigDecimal chuẩn xác.',
+  },
+  {
+    key: 'reflection' as const,
+    apiKey: 'REFLECTION',
+    name: 'Reflection',
+    viName: 'Đánh giá & Kiểm thử biên',
+    max: 2.0,
+    color: 'bg-purple-500',
+    borderColor: 'border-purple-200',
+    textColor: 'text-purple-700',
+    focusRing: 'focus:ring-purple-400',
+    activeBg: 'bg-purple-600',
+    pills: [0, 0.5, 1.0, 1.5, 1.8, 2.0],
+    desc: 'Kiểm soát các trường hợp ngoại lệ (Edge cases: số lượng âm, discount > subtotal, null/rỗng) và phản tư làm chủ AI.',
   },
 ];
 
@@ -580,50 +613,52 @@ export default function LecturerAcademicEvaluation({
     });
   }, [currentScope, aiDeclarations]);
 
-  // Chuẩn hóa Rubric chuyên môn thang 10 (hỗ trợ chuyển đổi từ tiêu chí cũ nếu có)
+  // Chuẩn hóa Rubric chuyên môn thang 10 theo đúng 5 tiêu chí Rubric gốc (mỗi tiêu chí max 2.0đ, tổng 10.0đ)
   const normalizedInitialRubrics: RubricScores = useMemo(() => {
-    if (initialRubrics && (initialRubrics.core_requirements !== undefined || initialRubrics.technical_quality !== undefined || initialRubrics.code_clean !== undefined)) {
-      return {
-        core_requirements: initialRubrics.core_requirements ?? 5.5,
-        technical_quality: initialRubrics.technical_quality ?? 2.0,
-        code_clean: initialRubrics.code_clean ?? 1.2,
-        ...initialRubrics
-      };
-    }
-    if (initialRubrics && initialRubrics.abstraction !== undefined && initialRubrics.implementation !== undefined) {
-      const sum = (initialRubrics.abstraction || 0) + (initialRubrics.implementation || 0) + (initialRubrics.verification || 0) + (initialRubrics.ai_interaction || 0) + (initialRubrics.reflection || 0);
-      const ratio = sum > 0 ? sum / 10 : 0.85;
-      return {
-        core_requirements: parseFloat((6.0 * ratio).toFixed(2)),
-        technical_quality: parseFloat((2.5 * ratio).toFixed(2)),
-        code_clean: parseFloat((1.5 * ratio).toFixed(2)),
-        ...initialRubrics
-      };
-    }
-    if (initialRubrics && (initialRubrics.decomposition !== undefined || initialRubrics.pattern !== undefined)) {
-      const totalOld = (initialRubrics.decomposition || 0) + (initialRubrics.pattern || 0) + (initialRubrics.abstraction || 0) + (initialRubrics.algorithmic || 0) + (initialRubrics.reflection || 0);
-      const ratio = totalOld > 0 ? totalOld / 10 : 0.85;
-      return {
-        core_requirements: parseFloat((6.0 * ratio).toFixed(2)),
-        technical_quality: parseFloat((2.5 * ratio).toFixed(2)),
-        code_clean: parseFloat((1.5 * ratio).toFixed(2)),
-        ...initialRubrics
-      };
-    }
-    if (initialRubrics && (initialRubrics.r1 || initialRubrics.r2 || initialRubrics.r3)) {
-      const sum = (initialRubrics.r1 || 0) + (initialRubrics.r2 || 0) + (initialRubrics.r3 || 0);
-      const ratio = sum > 0 ? sum / 10 : 0.85;
-      return {
-        core_requirements: parseFloat((6.0 * ratio).toFixed(2)),
-        technical_quality: parseFloat((2.5 * ratio).toFixed(2)),
-        code_clean: parseFloat((1.5 * ratio).toFixed(2)),
-        ...initialRubrics
-      };
+    if (initialRubrics) {
+      const decomp = initialRubrics.decomposition ?? initialRubrics.DECOMPOSITION;
+      const pattern = initialRubrics.pattern_recognition ?? initialRubrics.PATTERN_RECOGNITION ?? initialRubrics.pattern;
+      const abstraction = initialRubrics.abstraction ?? initialRubrics.ABSTRACTION;
+      const algo = initialRubrics.algorithmic_thinking ?? initialRubrics.ALGORITHMIC_THINKING ?? initialRubrics.algorithmic;
+      const reflection = initialRubrics.reflection ?? initialRubrics.REFLECTION;
+
+      if (decomp !== undefined || pattern !== undefined || abstraction !== undefined || algo !== undefined || reflection !== undefined) {
+        return {
+          decomposition: decomp ?? 1.6,
+          pattern_recognition: pattern ?? 1.6,
+          abstraction: abstraction ?? 1.6,
+          algorithmic_thinking: algo ?? 1.3,
+          reflection: reflection ?? 1.3,
+          pattern: pattern ?? 1.6,
+          algorithmic: algo ?? 1.3,
+          ...initialRubrics
+        };
+      }
+
+      // Nếu có 3 tiêu chí cũ, quy đổi sang 5 tiêu chí mới
+      if (initialRubrics.core_requirements !== undefined || initialRubrics.technical_quality !== undefined) {
+        const sum = (initialRubrics.core_requirements || 0) + (initialRubrics.technical_quality || 0) + (initialRubrics.code_clean || 0);
+        const ratio = sum > 0 ? sum / 10 : 0.78;
+        return {
+          decomposition: parseFloat((2.0 * ratio).toFixed(1)),
+          pattern_recognition: parseFloat((2.0 * ratio).toFixed(1)),
+          abstraction: parseFloat((2.0 * ratio).toFixed(1)),
+          algorithmic_thinking: parseFloat((2.0 * ratio).toFixed(1)),
+          reflection: parseFloat((2.0 * ratio).toFixed(1)),
+          pattern: parseFloat((2.0 * ratio).toFixed(1)),
+          algorithmic: parseFloat((2.0 * ratio).toFixed(1)),
+          ...initialRubrics
+        };
+      }
     }
     return {
-      core_requirements: 5.5,
-      technical_quality: 2.0,
-      code_clean: 1.2,
+      decomposition: 1.6,
+      pattern_recognition: 1.6,
+      abstraction: 1.6,
+      algorithmic_thinking: 1.3,
+      reflection: 1.3,
+      pattern: 1.6,
+      algorithmic: 1.3,
       ...DEFAULT_RUBRIC_SCORES
     };
   }, [initialRubrics]);
@@ -665,40 +700,51 @@ export default function LecturerAcademicEvaluation({
   const [vivaQuestions, setVivaQuestions] = useState<VivaQuestion[]>([]);
   const [overallAiFeedback, setOverallAiFeedback] = useState<string>('');
 
-  // Calculate Total Score (Thang 10 điểm học thuật chuyên môn)
+  // Calculate Total Score (Thang 10 điểm học thuật chuyên môn: Tổng 5 tiêu chí)
   const totalScore = parseFloat(
     (
-      (scores.core_requirements !== undefined || scores.technical_quality !== undefined || scores.code_clean !== undefined)
-        ? (scores.core_requirements || 0) + (scores.technical_quality || 0) + (scores.code_clean || 0)
-        : (scores.abstraction || 0) + (scores.implementation || 0) + (scores.verification || 0) + (scores.ai_interaction || 0) + (scores.reflection || 0)
+      (scores.decomposition !== undefined || scores.DECOMPOSITION !== undefined || scores.pattern_recognition !== undefined || scores.algorithmic_thinking !== undefined)
+        ? (scores.decomposition ?? scores.DECOMPOSITION ?? 0) +
+          (scores.pattern_recognition ?? scores.PATTERN_RECOGNITION ?? scores.pattern ?? 0) +
+          (scores.abstraction ?? scores.ABSTRACTION ?? 0) +
+          (scores.algorithmic_thinking ?? scores.ALGORITHMIC_THINKING ?? scores.algorithmic ?? 0) +
+          (scores.reflection ?? scores.REFLECTION ?? 0)
+        : (scores.core_requirements || 0) + (scores.technical_quality || 0) + (scores.code_clean || 0)
     ).toFixed(2)
   );
 
   // Update Rubric Score
-  const handleUpdateRubric = (key: keyof RubricScores, val: string | number, maxScore: number = 6) => {
+  const handleUpdateRubric = (key: keyof RubricScores, val: string | number, maxScore: number = 2.0) => {
     isUserModifiedRef.current = true;
     const numVal = typeof val === 'number' ? val : parseFloat(val);
-    setScores((prev) => ({
-      ...prev,
-      [key]: isNaN(numVal) ? 0 : Math.min(maxScore, Math.max(0, parseFloat(numVal.toFixed(2)))),
-    }));
+    const validVal = isNaN(numVal) ? 0 : Math.min(maxScore, Math.max(0, parseFloat(numVal.toFixed(1))));
+    setScores((prev) => {
+      const updated: RubricScores = {
+        ...prev,
+        [key]: validVal,
+      };
+      if (key === 'pattern_recognition') updated.pattern = validVal;
+      if (key === 'pattern') updated.pattern_recognition = validVal;
+      if (key === 'algorithmic_thinking') updated.algorithmic = validVal;
+      if (key === 'algorithmic') updated.algorithmic_thinking = validVal;
+      return updated;
+    });
   };
 
-  // Khớp từng tiêu chí với AI: 8.70 / 10 (5.50 + 2.00 + 1.20 = 8.70)
+  // Khớp từng tiêu chí với AI: 5 tiêu chí chuẩn max 2.0đ
   const applyAiSuggestion = () => {
     isUserModifiedRef.current = true;
     setScores({
-      core_requirements: 5.5,
-      technical_quality: 2.0,
-      code_clean: 1.2,
-      abstraction: 1.75,
-      implementation: 2.55,
-      verification: 2.15,
-      ai_interaction: 1.25,
-      reflection: 0.80,
+      decomposition: 1.6,
+      pattern_recognition: 1.6,
+      abstraction: 1.6,
+      algorithmic_thinking: 1.3,
+      reflection: 1.3,
+      pattern: 1.6,
+      algorithmic: 1.3,
     });
     if (!feedback) {
-      setFeedback('Code có cấu trúc tốt, hoàn thành đầy đủ khung sườn các hàm nghiệp vụ theo yêu cầu. Điểm chuyên môn đạt yêu cầu thực tế.');
+      setFeedback('Code có cấu trúc tốt, hoàn thành các hàm nghiệp vụ theo yêu cầu. Đã ghi nhận một số lỗi tính toán thứ tự VAT và kiểm tra biên.');
     }
   };
 
@@ -723,7 +769,7 @@ export default function LecturerAcademicEvaluation({
   }, [savedEvaluation]);
 
   const handleAuditWithAi = async (options: { force?: boolean; applyScores?: boolean } = {}) => {
-    const { force = false, applyScores = false } = options;
+    const { force = true, applyScores = true } = options;
     if (!activeSubmissionId) {
       showToastNotification('Lỗi thẩm định', 'Không xác định được mã bài nộp (submissionId).', 'error');
       return;
@@ -754,54 +800,90 @@ export default function LecturerAcademicEvaluation({
         throw new Error('Dữ liệu thẩm định AI không tồn tại.');
       }
 
-      // CHỈ CẬP NHẬT ĐIỂM SỐ NẾU applyScores = true (khi Giảng viên chủ động bấm Khớp điểm hoặc Chấm lại bằng AI)
-      // Thao tác Thanh tra/Vấn đáp TUYỆT ĐỐI KHÔNG ĐƯỢC THAY ĐỔI ĐIỂM SỐ
-      if (applyScores && (aiData.rubrics || aiData.rubric_scores)) {
+      // 1. CẬP NHẬT TRỰC TIẾP VÀO STATE HIỂN THỊ ĐIỂM (Đảm bảo re-render ngay trong 1 lần bấm duy nhất)
+      if (applyScores) {
         isUserModifiedRef.current = true;
         const newScores: RubricScores = { ...scores };
         const newReasons: Record<string, string> = {};
 
-        if (Array.isArray(aiData.rubrics)) {
-          aiData.rubrics.forEach((item: any) => {
-            if (item.criterion_id) {
-              newScores[item.criterion_id] = typeof item.score === 'number' ? item.score : parseFloat(item.score);
-              newReasons[item.criterion_id] = item.short_reason || '';
-            }
-          });
-        } else if (aiData.rubric_scores) {
+        // Merge rubric_scores trước (tương thích cả 5 tiêu chí chuẩn và các alias)
+        if (aiData.rubric_scores) {
           Object.assign(newScores, aiData.rubric_scores);
-          if (aiData.rubric_reasonings) {
-            Object.assign(newReasons, aiData.rubric_reasonings);
-          }
         }
 
+        // Merge chi tiết từng criterion từ rubric_evaluations hoặc rubrics array
+        const evals = Array.isArray(aiData.rubric_evaluations)
+          ? aiData.rubric_evaluations
+          : (Array.isArray(aiData.rubrics) ? aiData.rubrics : []);
+
+        evals.forEach((item: any) => {
+          const keyLower = String(item.criterion_id || item.criterion_key || '').toLowerCase();
+          const keyUpper = String(item.criterion_key || item.criterion_id || '').toUpperCase();
+          const val = typeof item.score === 'number' ? item.score : parseFloat(item.score);
+          if (!isNaN(val)) {
+            newScores[keyLower] = val;
+            newScores[keyUpper] = val;
+            if (keyLower === 'pattern_recognition') newScores['pattern'] = val;
+            if (keyLower === 'algorithmic_thinking') newScores['algorithmic'] = val;
+          }
+          const reasonText = item.reason || item.reasoning || item.short_reason || '';
+          if (reasonText) {
+            newReasons[keyLower] = reasonText;
+            newReasons[keyUpper] = reasonText;
+            if (keyLower === 'pattern_recognition') newReasons['pattern'] = reasonText;
+            if (keyLower === 'algorithmic_thinking') newReasons['algorithmic'] = reasonText;
+          }
+        });
+
+        // Merge lý do rubric_reasonings
+        if (aiData.rubric_reasonings) {
+          Object.assign(newReasons, aiData.rubric_reasonings);
+        }
+
+        // Cập nhật state điểm và giải trình
         setScores(newScores);
         setRubricReasonings(newReasons);
       } else if (aiData.rubric_reasonings) {
-        setRubricReasonings(aiData.rubric_reasonings);
+        setRubricReasonings((prev) => ({ ...prev, ...aiData.rubric_reasonings }));
       }
 
+      // 2. Cập nhật câu hỏi Viva, độ liêm chính và nhận xét tổng quan
       if (Array.isArray(aiData.viva_questions) && aiData.viva_questions.length > 0) {
         setVivaQuestions(aiData.viva_questions);
       }
       if (aiData.audit_integrity) {
         setAuditIntegrity(aiData.audit_integrity);
       }
-      if (aiData.overall_verdict || aiData.ai_verdict) {
-        setOverallAiFeedback(aiData.overall_verdict || aiData.ai_verdict);
-      }
 
       const verdict = aiData.overall_verdict || aiData.ai_verdict || aiData.overall_feedback || '';
       if (verdict) {
-        setAiVerdict(verdict);
-        if (!feedback && applyScores) {
-          setFeedback(verdict);
+        const cleanVerdict = formatCleanVietnamese(verdict);
+        setOverallAiFeedback(cleanVerdict);
+        setAiVerdict(cleanVerdict);
+        if (applyScores) {
+          setFeedback(cleanVerdict);
         }
       }
+
+      // 3. Thông báo thành công
+      showToastNotification(
+        'AI đã chấm điểm thành công!',
+        'Điểm số và nhận xét đã được cập nhật trực tiếp vào bảng điểm.',
+        'success'
+      );
     } catch (err: any) {
       console.error('[ART-AI] AI Audit error:', err);
-      const errMsg = err?.response?.data?.message || err?.message || 'Không thể thẩm định qua Gemini API.';
-      showToastNotification('Lỗi thẩm định AI', errMsg, 'error');
+      const is503OrBusy = err?.response?.status === 503 || err?.status === 503 || err?.response?.status === 429 || err?.status === 429;
+      if (is503OrBusy) {
+        showToastNotification(
+          'Hệ thống AI đang bận',
+          'Hệ thống AI đang bận xử lý nhiều yêu cầu cùng lúc. Vui lòng thử lại sau vài giây.',
+          'error'
+        );
+      } else {
+        const errMsg = err?.response?.data?.message || err?.message || 'Không thể thực hiện đánh giá bằng AI.';
+        showToastNotification('Lỗi thẩm định AI', errMsg, 'error');
+      }
     } finally {
       setIsAuditingAi(false);
     }
@@ -1342,7 +1424,7 @@ export default function LecturerAcademicEvaluation({
                   <button
                     type="button"
                     disabled={isAuditingAi}
-                    onClick={() => handleAuditWithAi({ force: false, applyScores: true })}
+                    onClick={() => handleAuditWithAi({ force: true, applyScores: true })}
                     className="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-500/20 transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     {isAuditingAi ? (
@@ -1540,16 +1622,16 @@ export default function LecturerAcademicEvaluation({
               <div className="space-y-3.5 pt-2 border-t border-slate-100 shrink-0">
                 <div className="flex items-center justify-between">
                   <div className="text-xs font-bold text-slate-800 uppercase tracking-wide">
-                    ĐIỀU CHỈNH TIÊU CHÍ CHUYÊN MÔN (ACADEMIC FUNCTIONAL RUBRIC)
+                    ĐIỀU CHỈNH 5 TIÊU CHÍ RUBRIC CHUẨN (ACADEMIC RUBRIC GRADING)
                   </div>
                   <span className="text-[10px] text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">
-                    Thang 10.0 • Tách biệt rủi ro AI
+                    5 Tiêu chí • Mỗi tiêu chí tối đa 2.0đ • Tổng 10.0đ
                   </span>
                 </div>
 
                 {RUBRIC_CRITERIA_LIST.map((crit) => {
-                  const currentVal = scores[crit.key] ?? 0;
-                  const reasoning = rubricReasonings[crit.key];
+                  const currentVal = scores[crit.key] ?? (crit.altKey ? scores[crit.altKey] : undefined) ?? scores[crit.apiKey] ?? 0;
+                  const reasoning = rubricReasonings[crit.key] || (crit.altKey ? rubricReasonings[crit.altKey] : undefined) || rubricReasonings[crit.apiKey];
                   return (
                     <div
                       key={crit.key}
@@ -1568,7 +1650,7 @@ export default function LecturerAcademicEvaluation({
                             type="number"
                             min="0"
                             max={crit.max}
-                            step="0.05"
+                            step="0.1"
                             value={currentVal}
                             onChange={(e) => handleUpdateRubric(crit.key, e.target.value, crit.max)}
                             className={`w-16 px-1.5 py-0.5 text-right font-bold text-xs bg-white border ${crit.borderColor} rounded-md ${crit.textColor} outline-none focus:ring-1 ${crit.focusRing}`}
@@ -1590,7 +1672,7 @@ export default function LecturerAcademicEvaluation({
                                 : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'
                             }`}
                           >
-                            {pillVal.toFixed(pillVal % 1 === 0 ? 0 : (pillVal * 10) % 1 === 0 ? 1 : 2)}
+                            {pillVal.toFixed(pillVal % 1 === 0 ? 0 : 1)}
                           </button>
                         ))}
                       </div>
@@ -1600,7 +1682,7 @@ export default function LecturerAcademicEvaluation({
                         type="range"
                         min="0"
                         max={crit.max}
-                        step="0.05"
+                        step="0.1"
                         value={currentVal}
                         id={`range-${crit.key}`}
                         onChange={(e) => handleUpdateRubric(crit.key, e.target.value, crit.max)}
@@ -2141,8 +2223,9 @@ export default function LecturerAcademicEvaluation({
                     {!isAuditingAi && (
                       <button
                         type="button"
-                        onClick={() => handleAuditWithAi({ force: false, applyScores: false })}
-                        className="px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl text-xs font-bold transition shadow-md shadow-indigo-500/20 cursor-pointer"
+                        disabled={isAuditingAi}
+                        onClick={() => handleAuditWithAi({ force: true, applyScores: true })}
+                        className="px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl text-xs font-bold transition shadow-md shadow-indigo-500/20 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                       >
                         Phân Tích Code & Tạo Câu Hỏi Viva
                       </button>

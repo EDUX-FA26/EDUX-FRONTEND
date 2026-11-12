@@ -102,7 +102,9 @@ const SubmissionService = {
     },
 
     async auditRubric(submissionId, payload = {}) {
-        const response = await api.post(`/submissions/${submissionId}/ai-rubric`, payload);
+        const response = await api.post(`/submissions/${submissionId}/ai-rubric`, payload, {
+            timeout: 60000 // Tối thiểu 60000ms (60 giây), tránh bị ngắt kết nối giữa chừng
+        });
         return response.data;
     },
 
@@ -110,7 +112,9 @@ const SubmissionService = {
      * 3. AI Pre-submission Sanity Check (Chẩn đoán nhanh bài nháp)
      */
     async runSanityCheck(assignmentId, payload = {}) {
-        const response = await api.post(`/submissions/${assignmentId}/sanity-check`, payload);
+        const response = await api.post(`/submissions/${assignmentId}/sanity-check`, payload, {
+            timeout: 60000 // Tối thiểu 60000ms (60 giây)
+        });
         return response.data;
     },
 
