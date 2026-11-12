@@ -865,12 +865,7 @@ export default function LecturerAcademicEvaluation({
         }
       }
 
-      // 3. Thông báo thành công
-      showToastNotification(
-        'AI đã chấm điểm thành công!',
-        'Điểm số và nhận xét đã được cập nhật trực tiếp vào bảng điểm.',
-        'success'
-      );
+      // 3. Điểm số và nhận xét đã tự động cập nhật trực tiếp lên giao diện (không bật toast làm vướng màn hình)
     } catch (err: any) {
       console.error('[ART-AI] AI Audit error:', err);
       const is503OrBusy = err?.response?.status === 503 || err?.status === 503 || err?.response?.status === 429 || err?.status === 429;
@@ -1995,8 +1990,14 @@ export default function LecturerAcademicEvaluation({
 
       {/* ==================== MODAL 2: VIVA & AUDIT INSPECTOR ==================== */}
       {showVivaModal && (
-        <div className="fixed inset-0 z-[999] bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5 md:p-6 overflow-hidden animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/90 shadow-2xl max-w-3xl w-full flex flex-col max-h-[86vh] overflow-hidden animate-in zoom-in-95 duration-200 my-auto">
+        <div 
+          className="fixed top-16 right-0 bottom-0 left-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-900/45 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-200"
+          onClick={() => setShowVivaModal(false)}
+        >
+          <div 
+            className="w-full max-w-3xl bg-white rounded-2xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden max-h-[calc(100vh-112px)] my-auto animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
             
             {/* 1. FIXED MODAL HEADER - Luôn hiển thị ở trên cùng, không bị che khuất bởi navbar */}
             <div className="px-5 sm:px-6 py-4 border-b border-slate-100 bg-white flex items-center justify-between shrink-0 shadow-xs">
@@ -2025,7 +2026,7 @@ export default function LecturerAcademicEvaluation({
             </div>
 
             {/* 2. SCROLLABLE MODAL BODY - Cuộn độc lập bên trong, không ảnh hưởng header/footer */}
-            <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-5 custom-scroll">
+            <div className="flex-1 min-h-0 overflow-y-auto p-5 sm:p-6 space-y-5 custom-scroll">
               
               {/* Cảnh báo Penalty trong Modal nếu có */}
               {auditIntegrity?.penalty_applied && (
@@ -2236,15 +2237,15 @@ export default function LecturerAcademicEvaluation({
             </div>
 
             {/* 3. FIXED MODAL FOOTER - Luôn hiển thị ở đáy modal */}
-            <div className="px-5 sm:px-6 py-3.5 bg-slate-50 border-t border-slate-100 flex items-center justify-between shrink-0">
-              <span className="text-[11px] text-slate-400 flex items-center gap-1.5">
+            <div className="px-6 py-3.5 border-t border-slate-100 bg-slate-50/70 flex items-center justify-between shrink-0">
+              <span className="text-xs text-emerald-600 font-medium flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                 <span>Thanh tra hoàn tất lúc {new Date().toLocaleTimeString('vi-VN')}</span>
               </span>
               <button
                 type="button"
                 onClick={() => setShowVivaModal(false)}
-                className="px-5 py-2 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition cursor-pointer shadow-xs"
+                className="px-5 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition shadow-xs cursor-pointer"
               >
                 Đóng báo cáo
               </button>

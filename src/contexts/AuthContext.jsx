@@ -1,14 +1,17 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   login as loginApi,
   googleLogin as googleLoginApi,
   logout as logoutApi,
 } from '../services/auth.service';
 import { ROLE_HOME } from '../config/constants';
+import { getHomeRouteByRole } from '../config/roles.config';
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
+  const navigate = useNavigate();
   const [user, setUser] = useState(() => {
     try {
       const stored = localStorage.getItem('user');
@@ -24,9 +27,19 @@ export function AuthProvider({ children }) {
 
   const saveSession = useCallback((session) => {
     localStorage.setItem('accessToken', session.accessToken);
+    localStorage.setItem('access_token', session.accessToken);
     localStorage.setItem('user', JSON.stringify(session.user));
+    localStorage.removeItem('last_visited_url');
+    localStorage.removeItem('redirect_after_login');
+    localStorage.removeItem('redirectUrl');
+    localStorage.removeItem('lastPath');
+    localStorage.removeItem('student_last_subject_id');
+    sessionStorage.removeItem('lastPath');
+    sessionStorage.clear();
     setUser(session.user);
-    return { success: true, redirectTo: ROLE_HOME[session.user.role] || '/' };
+    const targetHome = getHomeRouteByRole(session.user);
+
+    return { success: true, user: session.user, redirectTo: targetHome };
   }, []);
 
   const login = useCallback(async (identifier, password) => {
@@ -66,10 +79,22 @@ export function AuthProvider({ children }) {
       // Ignore logout API errors — still clear local state
     } finally {
       localStorage.removeItem('accessToken');
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('refresh_token');
       localStorage.removeItem('user');
+      localStorage.removeItem('last_visited_url');
+      localStorage.removeItem('redirect_after_login');
+      localStorage.removeItem('redirectUrl');
+      localStorage.removeItem('lastPath');
+      localStorage.removeItem('student_last_subject_id');
+      sessionStorage.clear();
       setUser(null);
+      try {
+        navigate('/login', { replace: true, state: null });
+      } catch {}
     }
-  }, []);
+  }, [navigate]);
 
   const clearError = useCallback(() => setError(null), []);
 

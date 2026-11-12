@@ -1,7 +1,7 @@
 import React from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { ROLE_HOME } from '../config/constants';
+import { getHomeRouteByRole } from '../config/roles.config';
 
 /**
  * ProtectedRoute — chỉ cho phép truy cập nếu đã đăng nhập.
@@ -9,15 +9,18 @@ import { ROLE_HOME } from '../config/constants';
  */
 export default function ProtectedRoute({ children, allowedRoles }) {
   const { isAuthenticated, user } = useAuth();
-  const location = useLocation();
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    return <Navigate to="/login" replace state={null} />;
   }
 
-  if (allowedRoles && user && !allowedRoles.includes(user.role)) {
-    const home = ROLE_HOME[user.role] || '/';
-    return <Navigate to={home} replace />;
+  if (allowedRoles && user) {
+    const userRole = String(user.role || '').toLowerCase();
+    const hasRole = allowedRoles.some((r) => String(r || '').toLowerCase() === userRole);
+    if (!hasRole) {
+      const home = getHomeRouteByRole(user.role);
+      return <Navigate to={home} replace state={null} />;
+    }
   }
 
   return children;
