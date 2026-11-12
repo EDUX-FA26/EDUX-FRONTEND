@@ -72,20 +72,48 @@ export const ClassAiAdvisorModal: React.FC<ClassAiAdvisorModalProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
-  if (!isOpen || !advisorData?.has_data || !advisorData?.advisories?.length) return null;
+  if (!isOpen) return null;
+
+  if (!advisorData?.has_data || !advisorData?.advisories?.length) {
+    return (
+      <div 
+        className="fixed top-16 right-0 bottom-0 left-0 z-50 flex items-center justify-center p-4 md:p-6 bg-slate-900/40 backdrop-blur-xs transition-all animate-fadeIn"
+        onClick={onClose}
+      >
+        <div 
+          className="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-purple-100 p-8 flex flex-col items-center justify-center text-center space-y-4 my-auto animate-scaleUp"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {isRefreshing ? (
+            <>
+              <div className="w-10 h-10 border-3 border-purple-600 border-t-transparent rounded-full animate-spin" />
+              <div className="text-sm font-bold text-slate-800">Đang tổng hợp dữ liệu lớp học qua Gemini...</div>
+              <p className="text-xs text-slate-500">Hệ thống đang đối soát dữ liệu bài nộp và lưu snapshot mới vào cơ sở dữ liệu.</p>
+            </>
+          ) : (
+            <>
+              <div className="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center">
+                <Bot className="w-6 h-6" />
+              </div>
+              <div className="text-sm font-bold text-slate-800">Chưa có khuyến nghị AI cho lớp này</div>
+              <p className="text-xs text-slate-500">Lớp học chưa có bài tập hoặc chưa có dữ liệu bài nộp từ sinh viên để tổng hợp khuyến nghị.</p>
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition cursor-pointer"
+              >
+                Đóng
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   const currentItem = advisorData.advisories.find((item: AdvisoryItem) => item.id === selectedId) || advisorData.advisories[0];
   const isLatest = currentItem.id === advisorData.advisories[0].id;
   const isProgressReminder = currentItem.mode === 'PROGRESS_REMINDER';
-
-  const rawTransparency = currentItem.class_overview?.avg_ai_transparency;
-  const hasAvgTransparency = Boolean(
-    rawTransparency &&
-    rawTransparency !== 'null' &&
-    rawTransparency !== 'N/A' &&
-    !String(rawTransparency).toLowerCase().includes('đang cập nhật') &&
-    !String(rawTransparency).toLowerCase().includes('chưa có dữ liệu')
-  );
 
   const formattedDate = currentItem.generated_at
     ? new Date(currentItem.generated_at).toLocaleDateString('vi-VN', {
@@ -125,13 +153,9 @@ export const ClassAiAdvisorModal: React.FC<ClassAiAdvisorModalProps> = ({
                     <History className="w-3 h-3" /> Lịch sử lưu trữ{formattedDate ? ` - ${formattedDate}` : ''}
                   </span>
                 )}
-                {isProgressReminder ? (
+                {isProgressReminder && (
                   <span className="text-[11px] font-medium text-amber-800 bg-amber-100/90 border border-amber-300 px-2 py-0.5 rounded-full flex items-center gap-1">
                     <span>⚠️</span> Đôn đốc tiến độ
-                  </span>
-                ) : (
-                  <span className="text-[11px] font-medium text-indigo-800 bg-indigo-100/90 border border-indigo-300 px-2 py-0.5 rounded-full flex items-center gap-1">
-                    <span>🔬</span> Phân tích chuyên sâu
                   </span>
                 )}
               </div>
@@ -202,33 +226,17 @@ export const ClassAiAdvisorModal: React.FC<ClassAiAdvisorModalProps> = ({
 
         {/* Content Body (Scrollable) */}
         <div className="p-6 overflow-y-auto space-y-4">
-          {/* 1. Thống kê vĩ mô */}
-          <div className={`grid gap-3 ${hasAvgTransparency ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'}`}>
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-                <Users className="w-4 h-4" />
-              </div>
-              <div className="text-xs">
-                <div className="text-slate-500 font-medium">Tỷ lệ nộp bài</div>
-                <div className="text-slate-800 font-semibold mt-0.5">
-                  {currentItem.class_overview?.submission_rate_text || 'Chưa có thông tin nộp bài'}
-                </div>
+          {/* 1. Thống kê vĩ mô: Tỷ lệ hoàn thành bài nộp */}
+          <div className="w-full p-3.5 bg-slate-50/80 rounded-xl border border-slate-100 flex items-center gap-3.5">
+            <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+              <Users className="w-5 h-5" />
+            </div>
+            <div className="text-xs">
+              <div className="text-slate-500 font-medium">Tỷ lệ hoàn thành bài nộp</div>
+              <div className="text-slate-800 font-semibold text-sm mt-0.5">
+                {currentItem.class_overview?.submission_rate_text || 'Chưa có thông tin nộp bài'}
               </div>
             </div>
-
-            {hasAvgTransparency && (
-              <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
-                  <Sparkles className="w-4 h-4" />
-                </div>
-                <div className="text-xs">
-                  <div className="text-slate-500 font-medium">Minh bạch AI trung bình</div>
-                  <div className="text-slate-800 font-semibold mt-0.5">
-                    {rawTransparency}
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
 
           {/* 2. Cụm lỗi kỹ thuật */}

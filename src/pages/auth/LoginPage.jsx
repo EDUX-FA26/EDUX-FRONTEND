@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { ROLE_HOME } from '../../config/constants';
+import { getHomeRouteByRole } from '../../config/roles.config';
 import SettingsToggle from '../../components/common/SettingsToggle';
 import GoogleSignInButton from '../../components/auth/GoogleSignInButton';
 
@@ -10,7 +10,6 @@ export default function LoginPage() {
   const { login, googleLogin, isAuthenticated, user, loading, error, clearError } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
-  const location = useLocation();
   const L = t.login;
 
   const [identifier, setIdentifier] = useState('');
@@ -27,12 +26,16 @@ export default function LoginPage() {
     return '';
   };
 
+  const handleLoginSuccess = (loggedInUser) => {
+    const targetHome = getHomeRouteByRole(loggedInUser);
+    navigate(targetHome, { replace: true, state: null });
+  };
+
   useEffect(() => {
     if (isAuthenticated && user) {
-      const from = location.state?.from?.pathname || ROLE_HOME[user.role] || '/';
-      navigate(from, { replace: true });
+      handleLoginSuccess(user);
     }
-  }, [isAuthenticated, user, navigate, location]);
+  }, [isAuthenticated, user, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -50,7 +53,7 @@ export default function LoginPage() {
       const result = await login(identifier.trim(), password);
 
       if (result && result.success) {
-        navigate(result.redirectTo, { replace: true });
+        handleLoginSuccess(result.user || user);
       } else {
         const errorMsg = result?.error || '';
 
@@ -80,7 +83,7 @@ export default function LoginPage() {
     clearError();
     const result = await googleLogin(credential);
     if (result.success) {
-      navigate(result.redirectTo, { replace: true });
+      handleLoginSuccess(result.user || user);
     } else {
       setLocalError(result.error);
     }

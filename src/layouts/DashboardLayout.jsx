@@ -119,7 +119,8 @@ export default function DashboardLayout() {
     return () => window.removeEventListener('edux:semester-updated', fetchCurrentSemester);
   }, [user]);
 
-  const navItems = NAV_BY_ROLE[user?.role] || [];
+  const normalizedRole = String(user?.role || '').toLowerCase();
+  const navItems = NAV_BY_ROLE[normalizedRole] || NAV_BY_ROLE[user?.role] || [];
   const activeId = navItems.find((item) =>
     location.pathname.startsWith(item.path)
   )?.id;
@@ -133,8 +134,22 @@ export default function DashboardLayout() {
 
   const handleLogout = async () => {
     setShowUserMenu(false);
-    await logout();
-    navigate('/login', { replace: true });
+    try {
+      await logout();
+    } finally {
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('refresh_token');
+      localStorage.removeItem('user');
+      localStorage.removeItem('last_visited_url');
+      localStorage.removeItem('redirect_after_login');
+      localStorage.removeItem('redirectUrl');
+      localStorage.removeItem('lastPath');
+      localStorage.removeItem('student_last_subject_id');
+      sessionStorage.clear();
+      navigate('/login', { replace: true, state: null });
+    }
   };
 
   const initials = user?.full_name

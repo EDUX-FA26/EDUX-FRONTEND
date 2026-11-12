@@ -1,7 +1,9 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import ProtectedRoute from './ProtectedRoute';
+import GuestRoute from './GuestRoute';
 import { useAuth } from '../contexts/AuthContext';
+import { getHomeRouteByRole } from '../config/roles.config';
 
 // Pages
 import LoginPage from '../pages/auth/LoginPage';
@@ -45,15 +47,22 @@ import LecturerGradingPage from '../pages/lecturer/LecturerGradingPage';
 
 function RootRedirect() {
   const { isAuthenticated, user } = useAuth();
-  if (!isAuthenticated) return <Navigate to="/login" replace />;
-  return <Navigate to={ROLE_HOME[user?.role] || '/login'} replace />;
+  if (!isAuthenticated) return <Navigate to="/login" replace state={null} />;
+  return <Navigate to={getHomeRouteByRole(user?.role)} replace state={null} />;
 }
 
 export default function AppRoutes() {
   return (
     <Routes>
       {/* Public */}
-      <Route path="/login" element={<LoginPage />} />
+      <Route
+        path="/login"
+        element={
+          <GuestRoute>
+            <LoginPage />
+          </GuestRoute>
+        }
+      />
 
       {/* Root redirect */}
       <Route path="/" element={<RootRedirect />} />
