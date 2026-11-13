@@ -64,27 +64,7 @@ export default function StudentClassDetailPage() {
             setClassData(cData);
 
             const sData = slotsRes?.data || slotsRes || [];
-            let parsedSlots = Array.isArray(sData) ? sData : sData.data || [];
-
-            if (parsedSlots.length < 20) {
-                const existingLength = parsedSlots.length;
-                const mockSlots = Array.from({ length: 20 - existingLength }, (_, i) => {
-                    const slotNum = existingLength + i + 1;
-                    return {
-                        id: `mock-slot-${slotNum}`,
-                        _id: `mock-slot-${slotNum}`,
-                        slot_number: slotNum,
-                        date: new Date(Date.now() + i * 86400000).toISOString(),
-                        time: slotNum % 2 === 0 ? '12:30 - 14:45' : '15:00 - 17:15',
-                        title: `Session ${slotNum}: Introduction and Concepts`,
-                        content: `Detailed content for session ${slotNum}`
-                    };
-                });
-                parsedSlots = [...parsedSlots, ...mockSlots];
-            }
-
-
-
+            const parsedSlots = Array.isArray(sData) ? sData : sData.data || [];
 
             setSlots(parsedSlots);
 
@@ -98,35 +78,18 @@ export default function StudentClassDetailPage() {
             }
 
             if (parsedSlots.length > 0) {
-                setSelectedSlotId(parsedSlots[0].id || parsedSlots[0]._id);
+                setSelectedSlotId(prev => prev && parsedSlots.some(s => (s.id || s._id) === prev) ? prev : (parsedSlots[0].id || parsedSlots[0]._id));
+            } else {
+                setSelectedSlotId(null);
             }
 
             setError(null);
         } catch (err) {
-            // Fallback to mock data if API fails or if it's a mock class
-            setClassData({
-                id: classId,
-                subject_code: classId === 'mock-2' ? 'SWD392' : classId === 'mock-3' ? 'MMA301' : 'PRJ301',
-                subject_name: classId === 'mock-2' ? 'Software Architecture and Design' : classId === 'mock-3' ? 'Mobile Application Development' : 'Java Web Application Development',
-                class_code: 'SE20A09',
-                class_name: 'SE20A09',
-                owner_name: 'LoiNX',
-                lecturer_name: 'LoiNX'
-            });
-
-            const mockSlots = Array.from({ length: 20 }, (_, i) => ({
-                id: `mock-slot-${i + 1}`,
-                _id: `mock-slot-${i + 1}`,
-                slot_number: i + 1,
-                date: new Date(Date.now() + i * 86400000).toISOString(),
-                time: i % 2 === 0 ? '12:30 - 14:45' : '15:00 - 17:15',
-                title: `Session ${i + 1}: Introduction and Concepts`,
-                content: `Detailed content for session ${i + 1}`
-            }));
-
-            setSlots(mockSlots);
-            setSelectedSlotId(mockSlots[0].id);
-            setError(null); // Clear error since we are using mock data
+            console.error('Failed to fetch class details for student:', err);
+            setClassData(null);
+            setSlots([]);
+            setSelectedSlotId(null);
+            setError(err.response?.data?.message || err.message || 'Không thể tải thông tin lớp học.');
         } finally {
             setLoading(false);
         }
@@ -140,7 +103,21 @@ export default function StudentClassDetailPage() {
         setSelectedSlotId(slotId);
     };
 
-    if (loading) {
+    if (loading || !classData) {
+        if (error) {
+            return (
+                <div className="w-full flex items-center justify-between gap-4" style={{ width: '100%', padding: '16px', backgroundColor: '#fee2e2', color: '#dc2626', border: '1px solid rgba(220, 38, 38, 0.2)', borderRadius: 'var(--radius-md)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <AlertCircle size={20} />
+                        <span>{error}</span>
+                    </div>
+                    <button className="btn btn-secondary" onClick={fetchData} style={{ fontSize: '12px', padding: '6px 14px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <RotateCw size={14} /> Thử lại
+                    </button>
+                </div>
+            );
+        }
+
         return (
             <div className="w-full flex flex-col gap-4" style={{ width: '100%' }}>
                 <div className="skeleton" style={{ width: '33%', height: '24px' }}></div>
@@ -153,17 +130,6 @@ export default function StudentClassDetailPage() {
             </div>
         );
     }
-
-    if (error) {
-        return (
-            <div className="w-full flex items-center gap-2" style={{ width: '100%', padding: '16px', backgroundColor: '#fee2e2', color: '#dc2626', border: '1px solid rgba(220, 38, 38, 0.2)', borderRadius: 'var(--radius-md)' }}>
-                <AlertCircle size={20} />
-                <span>{error}</span>
-            </div>
-        );
-    }
-
-    if (!classData) return null;
 
     const selectedSlot = slots.find(s => (s.id || s._id) === selectedSlotId);
 

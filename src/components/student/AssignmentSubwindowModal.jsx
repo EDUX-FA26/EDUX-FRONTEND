@@ -45,10 +45,9 @@ export default function AssignmentSubwindowModal({
     const activeSlotId = defaultSlotId || slotId;
 
     const loadAssignments = () => {
-        if (classId && (classId.startsWith('mock-') || !classId.includes('-'))) {
+        if (!classId) {
             setLoading(false);
             setAssignments([]);
-            setError('This is a mock class. Please test with a real class from the DB.');
             return;
         }
         setLoading(true);
