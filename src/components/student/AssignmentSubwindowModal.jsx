@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { X, Briefcase, AlertCircle, Plus, Eye, Layers, Calendar, FileText } from 'lucide-react';
+import { X, Briefcase, AlertCircle, Plus, Eye, Layers, Calendar, FileText, Trash2 } from 'lucide-react';
 import AssignmentService from '../../services/assignment.service';
 import AssignmentFormModal from '../lecturer/AssignmentFormModal';
 import AssignmentDescriptionModal from '../common/AssignmentDescriptionModal';
+import ConfirmDeleteAssignmentModal from '../common/ConfirmDeleteAssignmentModal';
 
 export default function AssignmentSubwindowModal({
     isOpen,
@@ -13,6 +14,7 @@ export default function AssignmentSubwindowModal({
     role = 'student',
     defaultSlotId = null,
     slotId = null,
+    onAssignmentCreated,
 }) {
     const navigate = useNavigate();
 
@@ -21,7 +23,24 @@ export default function AssignmentSubwindowModal({
     const [error, setError] = useState(null);
     const [isCreating, setIsCreating] = useState(false);
     const [creating, setCreating] = useState(false);
+    const createSubmitLockRef = useRef(false);
     const [selectedDescAssignment, setSelectedDescAssignment] = useState(null);
+    const [assignmentToDelete, setAssignmentToDelete] = useState(null);
+    const [isDeletingAssignment, setIsDeletingAssignment] = useState(false);
+
+    const handleConfirmDeleteAssignment = async (assignmentId, force = false) => {
+        setIsDeletingAssignment(true);
+        try {
+            await AssignmentService.deleteAssignment(assignmentId, force);
+            setAssignmentToDelete(null);
+            await loadAssignments();
+            if (onAssignmentCreated) {
+                await onAssignmentCreated();
+            }
+        } finally {
+            setIsDeletingAssignment(false);
+        }
+    };
 
     const activeSlotId = defaultSlotId || slotId;
 
@@ -61,13 +80,20 @@ export default function AssignmentSubwindowModal({
     };
 
     const handleCreateAssignment = async (formData) => {
+        if (createSubmitLockRef.current || creating) return;
+        createSubmitLockRef.current = true;
         setCreating(true);
         try {
             formData.append('class_id', classId);
             await AssignmentService.createAssignment(formData);
             setIsCreating(false);
-            loadAssignments();
+            await loadAssignments();
+            if (onAssignmentCreated) {
+                await onAssignmentCreated();
+            }
+            createSubmitLockRef.current = false;
         } catch (err) {
+            createSubmitLockRef.current = false;
             alert(err.response?.data?.message || 'Lỗi tạo assignment');
         } finally {
             setCreating(false);
@@ -175,7 +201,6 @@ export default function AssignmentSubwindowModal({
                                                     <div
                                                         onClick={() => setSelectedDescAssignment(item)}
                                                         className="cursor-pointer hover:text-orange-600 transition flex items-center justify-center gap-1.5 group max-w-[220px] mx-auto text-left"
-                                                        title="Click để xem toàn bộ mô tả chi tiết"
                                                     >
                                                         <span className="line-clamp-1 text-slate-600 group-hover:text-orange-600 text-xs">
                                                             {item.description || item.content || 'Xem mô tả...'}
@@ -184,11 +209,27 @@ export default function AssignmentSubwindowModal({
                                                     </div>
                                                 </td>
                                                 <td style={{ padding: '14px 8px' }}>
-                                                    <div onClick={() => handleNavigate(item.id)} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: 'var(--color-primary)', fontWeight: '500', cursor: 'pointer' }} onMouseEnter={e => e.currentTarget.style.color='var(--color-primary-dark)'} onMouseLeave={e => e.currentTarget.style.color='var(--color-primary)'}>
-                                                        <span style={{ width: '24px', height: '24px', borderRadius: '4px', backgroundColor: 'var(--color-primary-bg)', color: 'var(--color-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--color-border)' }}>
-                                                            <Briefcase size={12} />
-                                                        </span>
-                                                        <span>Open</span>
+                                                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                                                        <div onClick={() => handleNavigate(item.id)} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: 'var(--color-primary)', fontWeight: '500', cursor: 'pointer' }} onMouseEnter={e => e.currentTarget.style.color='var(--color-primary-dark)'} onMouseLeave={e => e.currentTarget.style.color='var(--color-primary)'}>
+                                                            <span style={{ width: '24px', height: '24px', borderRadius: '4px', backgroundColor: 'var(--color-primary-bg)', color: 'var(--color-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--color-border)' }}>
+                                                                <Briefcase size={12} />
+                                                            </span>
+                                                            <span>Open</span>
+                                                        </div>
+                                                        {role === 'lecturer' && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setAssignmentToDelete(item);
+                                                                }}
+                                                                className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition cursor-pointer"
+                                                                title="Xóa bài tập này"
+                                                                aria-label="Xóa bài tập"
+                                                            >
+                                                                <Trash2 size={13} />
+                                                            </button>
+                                                        )}
                                                     </div>
                                                 </td>
                                             </tr>
@@ -212,13 +253,23 @@ export default function AssignmentSubwindowModal({
                 </div>
             </div>
 
-            {/* SUB-WINDOW XEM TOÀN BỘ NỘI DUNG DESCRIPTION */}
+            {/* SUB-WINDOW NHỎ XEM DESCRIPTION (XẾP TẦNG Z-[60]) */}
             {selectedDescAssignment && (
                 <AssignmentDescriptionModal
                     isOpen={!!selectedDescAssignment}
                     onClose={() => setSelectedDescAssignment(null)}
                     assignment={selectedDescAssignment}
-                    onOpenAssignment={handleNavigate}
+                />
+            )}
+
+            {/* MODAL XÁC NHẬN XÓA BÀI TẬP (Z-[70]) */}
+            {assignmentToDelete && (
+                <ConfirmDeleteAssignmentModal
+                    isOpen={Boolean(assignmentToDelete)}
+                    onClose={() => setAssignmentToDelete(null)}
+                    assignment={assignmentToDelete}
+                    onConfirm={handleConfirmDeleteAssignment}
+                    isDeleting={isDeletingAssignment}
                 />
             )}
 

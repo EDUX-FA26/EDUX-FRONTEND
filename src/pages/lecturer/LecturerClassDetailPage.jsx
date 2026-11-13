@@ -13,10 +13,11 @@ import {
     Eye,
     Layers
 } from 'lucide-react';
-import { PlusCircle, FileText, Upload } from 'lucide-react';
+import { PlusCircle, FileText, Upload, Trash2 } from 'lucide-react';
 import AssignmentSubwindowModal from '../../components/student/AssignmentSubwindowModal';
 import AssignmentFormModal from '../../components/lecturer/AssignmentFormModal';
 import AssignmentDescriptionModal from '../../components/common/AssignmentDescriptionModal';
+import ConfirmDeleteAssignmentModal from '../../components/common/ConfirmDeleteAssignmentModal';
 import ClassMembersModal from "../../components/lecturer/ClassMembersModal";
 import { ClassAiAdvisorModal } from '../../components/lecturer/ClassAiAdvisorModal';
 export default function LecturerClassDetailPage() {
@@ -38,6 +39,41 @@ export default function LecturerClassDetailPage() {
     const [selectedDescAssignment, setSelectedDescAssignment] = useState(null);
     const [slotCreateTargetId, setSlotCreateTargetId] = useState(null);
     const [isSlotCreateModalOpen, setIsSlotCreateModalOpen] = useState(false);
+    const [assignmentToDelete, setAssignmentToDelete] = useState(null);
+    const [isDeletingAssignment, setIsDeletingAssignment] = useState(false);
+    const [isSlotCreating, setIsSlotCreating] = useState(false);
+    const slotSubmitLockRef = useRef(false);
+
+    const handleCreateSlotAssignment = async (formData) => {
+        if (slotSubmitLockRef.current || isSlotCreating) return;
+        slotSubmitLockRef.current = true;
+        setIsSlotCreating(true);
+
+        try {
+            formData.append('class_id', classId);
+            await AssignmentService.createAssignment(formData);
+            setIsSlotCreateModalOpen(false);
+            await fetchData();
+            slotSubmitLockRef.current = false;
+            setIsSlotCreating(false);
+        } catch (err) {
+            slotSubmitLockRef.current = false;
+            setIsSlotCreating(false);
+            alert(err.response?.data?.message || 'Lỗi tạo bài tập');
+            throw err;
+        }
+    };
+
+    const handleConfirmDeleteAssignment = async (assignmentId, force = false) => {
+        setIsDeletingAssignment(true);
+        try {
+            await AssignmentService.deleteAssignment(assignmentId, force);
+            setAssignmentToDelete(null);
+            await fetchData();
+        } finally {
+            setIsDeletingAssignment(false);
+        }
+    };
 
     // States cho AI Class Advisor Subwindow
     const [advisorData, setAdvisorData] = useState(null);
@@ -152,7 +188,7 @@ export default function LecturerClassDetailPage() {
             }
 
             if (parsedSlots.length > 0) {
-                setSelectedSlotId(parsedSlots[0].id || parsedSlots[0]._id);
+                setSelectedSlotId(prev => prev && parsedSlots.some(s => (s.id || s._id) === prev) ? prev : (parsedSlots[0].id || parsedSlots[0]._id));
             }
 
             setError(null);
@@ -480,7 +516,6 @@ export default function LecturerClassDetailPage() {
                                                                 <div
                                                                     onClick={() => setSelectedDescAssignment(asg)}
                                                                     className="cursor-pointer hover:text-orange-600 transition flex items-center gap-1 group text-[11px] text-slate-500 mt-1"
-                                                                    title="Click để xem toàn bộ mô tả chi tiết"
                                                                 >
                                                                     <span className="line-clamp-1 group-hover:text-orange-600">
                                                                         {asg.description || asg.content || 'Xem mô tả...'}
@@ -498,6 +533,18 @@ export default function LecturerClassDetailPage() {
                                                                     style={{ padding: '4px 8px', fontSize: '11px', height: '24px' }}
                                                                 >
                                                                     Open
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        setAssignmentToDelete(asg);
+                                                                    }}
+                                                                    className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition cursor-pointer"
+                                                                    title="Xóa bài tập này"
+                                                                    aria-label="Xóa bài tập"
+                                                                >
+                                                                    <Trash2 size={13} />
                                                                 </button>
                                                             </div>
                                                         </div>
@@ -558,6 +605,7 @@ export default function LecturerClassDetailPage() {
                     classId={classId}
                     classCode={classData?.class_code || classData?.class_name}
                     role="lecturer"
+                    onAssignmentCreated={fetchData}
                 />,
                 document.body
             )}
@@ -576,22 +624,31 @@ export default function LecturerClassDetailPage() {
             {isSlotCreateModalOpen && (
                 <AssignmentFormModal
                     isOpen={isSlotCreateModalOpen}
-                    onClose={() => setIsSlotCreateModalOpen(false)}
+                    onClose={() => {
+                        if (!isSlotCreating) {
+                            slotSubmitLockRef.current = false;
+                            setIsSlotCreating(false);
+                            setIsSlotCreateModalOpen(false);
+                        }
+                    }}
                     mode="create"
                     classId={classId}
                     initialSlotId={slotCreateTargetId}
                     slots={slots}
-                    onSubmit={async (formData) => {
-                        try {
-                            formData.append('class_id', classId);
-                            await AssignmentService.createAssignment(formData);
-                            setIsSlotCreateModalOpen(false);
-                            fetchData();
-                        } catch (err) {
-                            alert(err.response?.data?.message || 'Lỗi tạo bài tập');
-                        }
-                    }}
+                    onSubmit={handleCreateSlotAssignment}
+                    isSubmitting={isSlotCreating}
                     customTitle={`Tạo bài tập cho Slot ${selectedSlot?.slot_number || ''} - Lớp ${classData?.class_code || ''}`}
+                />
+            )}
+
+            {/* Modal Xác nhận Xóa Bài tập */}
+            {assignmentToDelete && (
+                <ConfirmDeleteAssignmentModal
+                    isOpen={Boolean(assignmentToDelete)}
+                    onClose={() => setAssignmentToDelete(null)}
+                    assignment={assignmentToDelete}
+                    onConfirm={handleConfirmDeleteAssignment}
+                    isDeleting={isDeletingAssignment}
                 />
             )}
 

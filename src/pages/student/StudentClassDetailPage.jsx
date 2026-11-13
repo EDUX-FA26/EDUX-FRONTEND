@@ -394,7 +394,6 @@ export default function StudentClassDetailPage() {
                                                                 <div
                                                                     onClick={() => setSelectedDescAssignment(asg)}
                                                                     className="cursor-pointer hover:text-orange-600 transition flex items-center gap-1 group text-[11px] text-slate-500 mt-1"
-                                                                    title="Click để xem toàn bộ mô tả chi tiết"
                                                                 >
                                                                     <span className="line-clamp-1 group-hover:text-orange-600">
                                                                         {asg.description || asg.content || 'Xem mô tả...'}

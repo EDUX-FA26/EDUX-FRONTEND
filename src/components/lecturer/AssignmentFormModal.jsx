@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { X as XIcon, Edit3, Plus, UploadCloud, FileText, Trash2, Calendar, ShieldCheck, Sparkles, AlertCircle, Scale, CheckCircle2, Layers } from 'lucide-react';
+import { X as XIcon, Edit3, Plus, UploadCloud, FileText, Trash2, Calendar, ShieldCheck, Sparkles, AlertCircle, Scale, CheckCircle2, Layers, Loader2 } from 'lucide-react';
 import ClassService from '../../services/class.service';
 
 export const DEFAULT_RUBRIC_CONFIGS = [
@@ -55,6 +55,10 @@ export default function AssignmentFormModal({
     slots = null,
 }) {
     const fileInputRef = useRef(null);
+    const submitLockRef = useRef(false);
+    const [localSubmitting, setLocalSubmitting] = useState(false);
+
+    const effectiveSubmitting = Boolean(isSubmitting || localSubmitting);
 
     const [title, setTitle] = useState('');
     const [deadline, setDeadline] = useState('');
@@ -188,6 +192,13 @@ export default function AssignmentFormModal({
 
     if (!isOpen) return null;
 
+    useEffect(() => {
+        if (isOpen) {
+            submitLockRef.current = false;
+            setLocalSubmitting(false);
+        }
+    }, [isOpen]);
+
     const handleFileSelect = (e) => {
         const files = Array.from(e.target.files || []);
         if (files.length > 0) {
@@ -204,6 +215,11 @@ export default function AssignmentFormModal({
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        // Chặn tuyệt đối mọi cú click thứ 2 ngay lập tức (kể cả trước khi React kịp re-render state)
+        if (submitLockRef.current || effectiveSubmitting) {
+            return;
+        }
+
         if (!title.trim() || !deadline) {
             alert('Vui lòng điền đủ tiêu đề và hạn nộp!');
             return;
@@ -214,26 +230,36 @@ export default function AssignmentFormModal({
             return;
         }
 
-        const formData = new FormData();
-        formData.append('title', title.trim());
-        formData.append('deadline', new Date(deadline).toISOString());
-        formData.append('publish_status', publishStatus || 'published');
-        formData.append('max_score', String(maxScore ?? 10));
-        formData.append('weight', String(weight ?? 10));
-        formData.append('description', description.trim());
-        formData.append('instructions', '');
-        formData.append('slot_id', slotId || '');
-        formData.append('session_id', slotId || '');
-        formData.append('ai_declaration_required', String(aiDeclarationRequired));
-        formData.append('allow_late_submission', 'false'); // Mặc định không cho nộp muộn
-        formData.append('rubric_configs', JSON.stringify(rubricConfigs));
+        submitLockRef.current = true;
+        setLocalSubmitting(true);
 
-        newMaterials.forEach((file) => {
-            formData.append('materials', file);
-        });
+        try {
+            const formData = new FormData();
+            formData.append('title', title.trim());
+            formData.append('deadline', new Date(deadline).toISOString());
+            formData.append('publish_status', publishStatus || 'published');
+            formData.append('max_score', String(maxScore ?? 10));
+            formData.append('weight', String(weight ?? 10));
+            formData.append('description', description.trim());
+            formData.append('instructions', '');
+            formData.append('slot_id', slotId || '');
+            formData.append('session_id', slotId || '');
+            formData.append('ai_declaration_required', String(aiDeclarationRequired));
+            formData.append('allow_late_submission', 'false'); // Mặc định không cho nộp muộn
+            formData.append('rubric_configs', JSON.stringify(rubricConfigs));
 
-        if (onSubmit) {
-            await onSubmit(formData);
+            newMaterials.forEach((file) => {
+                formData.append('materials', file);
+            });
+
+            if (onSubmit) {
+                await onSubmit(formData);
+            }
+        } catch (err) {
+            // Chỉ mở khóa lại khi API gặp lỗi để giảng viên có thể sửa và bấm lưu lại
+            submitLockRef.current = false;
+            setLocalSubmitting(false);
+            throw err;
         }
     };
 
@@ -255,7 +281,7 @@ export default function AssignmentFormModal({
                 justifyContent: 'center',
                 padding: '16px',
             }}
-            onClick={onClose}
+            onClick={() => { if (!effectiveSubmitting) onClose(); }}
         >
             <div
                 className="card animate-fade-in"
@@ -296,11 +322,14 @@ export default function AssignmentFormModal({
                         </h2>
                     </div>
                     <button
-                        onClick={onClose}
+                        type="button"
+                        onClick={() => { if (!effectiveSubmitting) onClose(); }}
+                        disabled={effectiveSubmitting}
                         style={{
                             background: 'transparent',
                             border: 'none',
-                            cursor: 'pointer',
+                            cursor: effectiveSubmitting ? 'not-allowed' : 'pointer',
+                            opacity: effectiveSubmitting ? 0.4 : 1,
                             color: 'var(--color-ink-muted)',
                             display: 'flex',
                             alignItems: 'center',
@@ -402,14 +431,13 @@ export default function AssignmentFormModal({
                                 color: slotId ? 'var(--color-ink)' : 'var(--color-ink-muted)',
                             }}
                         >
-                            <option value="">-- Không gắn Slot cụ thể (Bài tập chung toàn khóa) --</option>
+                            <option value="">Bài tập chung toàn khóa</option>
                             {availableSlots.map((s) => {
                                 const slotNo = s.slot_number || s.session_no;
                                 const dateStr = s.date ? new Date(s.date).toLocaleDateString('vi-VN') : '';
-                                const titleStr = s.title ? ` - ${s.title}` : '';
                                 return (
                                     <option key={s.id} value={s.id}>
-                                        Slot {slotNo}{dateStr ? ` (${dateStr})` : ''}{titleStr}
+                                        Slot {slotNo}{dateStr ? ` - ${dateStr}` : ''}
                                     </option>
                                 );
                             })}
@@ -844,13 +872,15 @@ export default function AssignmentFormModal({
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px', borderTop: '1px solid var(--color-border)', paddingTop: '14px' }}>
                         <button
                             type="button"
-                            onClick={onClose}
+                            onClick={() => { if (!effectiveSubmitting) onClose(); }}
+                            disabled={effectiveSubmitting}
                             style={{
                                 padding: '8px 18px',
                                 borderRadius: '6px',
                                 border: '1px solid var(--color-border)',
                                 backgroundColor: '#fff',
-                                cursor: 'pointer',
+                                cursor: effectiveSubmitting ? 'not-allowed' : 'pointer',
+                                opacity: effectiveSubmitting ? 0.6 : 1,
                                 fontSize: '12px',
                                 fontWeight: '600',
                             }}
@@ -859,14 +889,14 @@ export default function AssignmentFormModal({
                         </button>
                         <button
                             type="submit"
-                            disabled={isSubmitting || (aiDeclarationRequired && totalWeight !== 100)}
+                            disabled={effectiveSubmitting || (aiDeclarationRequired && totalWeight !== 100)}
                             style={{
                                 padding: '8px 22px',
                                 borderRadius: '6px',
                                 border: 'none',
-                                backgroundColor: (isSubmitting || (aiDeclarationRequired && totalWeight !== 100)) ? '#94a3b8' : 'var(--color-primary, #4f46e5)',
+                                backgroundColor: (effectiveSubmitting || (aiDeclarationRequired && totalWeight !== 100)) ? '#94a3b8' : 'var(--color-primary, #4f46e5)',
                                 color: '#fff',
-                                cursor: (isSubmitting || (aiDeclarationRequired && totalWeight !== 100)) ? 'not-allowed' : 'pointer',
+                                cursor: (effectiveSubmitting || (aiDeclarationRequired && totalWeight !== 100)) ? 'not-allowed' : 'pointer',
                                 fontSize: '12px',
                                 fontWeight: '600',
                                 display: 'flex',
@@ -876,9 +906,14 @@ export default function AssignmentFormModal({
                             }}
                             title={aiDeclarationRequired && totalWeight !== 100 ? `Tổng trọng số phải đạt đúng 100% (Hiện tại: ${totalWeight}%)` : ''}
                         >
-                            {isSubmitting
-                                ? (mode === 'edit' ? 'Đang cập nhật...' : 'Đang tạo...')
-                                : (mode === 'edit' ? 'Update Assignment' : 'Create Assignment')}
+                            {effectiveSubmitting ? (
+                                <>
+                                    <Loader2 size={14} className="animate-spin" />
+                                    <span>{mode === 'edit' ? 'Đang cập nhật bài tập...' : 'Đang tạo bài tập...'}</span>
+                                </>
+                            ) : (
+                                <span>{mode === 'edit' ? 'Update Assignment' : 'Create Assignment'}</span>
+                            )}
                         </button>
                     </div>
                 </form>

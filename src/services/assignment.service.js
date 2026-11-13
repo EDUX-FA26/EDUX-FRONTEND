@@ -29,6 +29,13 @@ const AssignmentService = {
     async deleteMaterial(assignmentId, materialId) {
         const response = await api.delete(`/assignments/${assignmentId}/materials/${materialId}`);
         return response.data;
+    },
+
+    async deleteAssignment(assignmentId, force = false) {
+        const response = await api.delete(`/assignments/${assignmentId}`, {
+            params: force ? { force: true } : {}
+        });
+        return response.data;
     }
 };
 
