@@ -81,6 +81,13 @@ export default function LecturerClassDetailPage() {
     const [isRefreshingAdvisor, setIsRefreshingAdvisor] = useState(false);
     const [isLoadingAdvisor, setIsLoadingAdvisor] = useState(false);
 
+    // Đọc trạng thái bật/tắt tự động popup của riêng lớp hiện tại (mặc định là true nếu chưa từng tắt trong phiên này)
+    const [isAutoPopupEnabled, setIsAutoPopupEnabled] = useState(() => {
+        if (!classId) return true;
+        const saved = sessionStorage.getItem(`art_ai_advisor_auto_${classId}`);
+        return saved === null ? true : saved === 'true';
+    });
+
     // Fetch dữ liệu AI Class Advisor
     const fetchAdvisorData = useCallback(async () => {
         if (!classId) return;
@@ -222,8 +229,11 @@ export default function LecturerClassDetailPage() {
         }
     }, [classId]);
 
-    // Reset modal state & advisor data khi chuyển lớp học (ngăn chặn race condition giữa các lớp)
+    // Đồng bộ lại state khi chuyển sang classId khác (ngăn chặn race condition giữa các lớp)
     useEffect(() => {
+        if (!classId) return;
+        const saved = sessionStorage.getItem(`art_ai_advisor_auto_${classId}`);
+        setIsAutoPopupEnabled(saved === null ? true : saved === 'true');
         setIsAdvisorModalOpen(false);
         setAdvisorData(null);
     }, [classId]);
@@ -233,14 +243,24 @@ export default function LecturerClassDetailPage() {
         fetchAdvisorData();
     }, [fetchData, fetchAdvisorData]);
 
-    // BẬT TRỰC TIẾP SUBWINDOW ADVISOR KHI VÀO LỚP:
-    // Cứ khi tải xong dữ liệu và thấy có data (has_data === true, advisories > 0) là tự động bật modal ngay lập tức
-    // Không dùng sessionStorage hay cờ chặn nào.
+    // Kích hoạt tự động mở popup nếu: (1) Lớp có dữ liệu Advisor VÀ (2) Công tắc tự động của lớp đang BẬT
     useEffect(() => {
-        if (!isLoadingAdvisor && advisorData?.has_data && Array.isArray(advisorData?.advisories) && advisorData.advisories.length > 0) {
+        if (
+            !isLoadingAdvisor &&
+            advisorData?.has_data &&
+            Array.isArray(advisorData?.advisories) &&
+            advisorData.advisories.length > 0 &&
+            isAutoPopupEnabled
+        ) {
             setIsAdvisorModalOpen(true);
         }
-    }, [advisorData, isLoadingAdvisor]);
+    }, [classId, advisorData, isLoadingAdvisor, isAutoPopupEnabled]);
+
+    // Hàm xử lý khi giảng viên gạt công tắc Bật/Tắt
+    const handleToggleAutoPopup = (nextValue) => {
+        setIsAutoPopupEnabled(nextValue);
+        sessionStorage.setItem(`art_ai_advisor_auto_${classId}`, String(nextValue));
+    };
 
     const handleFullRefresh = () => {
         fetchData();
@@ -668,6 +688,8 @@ export default function LecturerClassDetailPage() {
                     advisorData={advisorData}
                     onRefresh={handleRefreshAdvisor}
                     isRefreshing={isRefreshingAdvisor || isLoadingAdvisor}
+                    isAutoPopupEnabled={isAutoPopupEnabled}
+                    onToggleAutoPopup={handleToggleAutoPopup}
                 />,
                 document.body
             )}
