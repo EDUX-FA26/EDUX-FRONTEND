@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { X as XIcon, Edit3, Plus, UploadCloud, FileText, Trash2, Calendar, ShieldCheck, Sparkles, AlertCircle, Scale, CheckCircle2 } from 'lucide-react';
+import { X as XIcon, Edit3, Plus, UploadCloud, FileText, Trash2, Calendar, ShieldCheck, Sparkles, AlertCircle, Scale, CheckCircle2, Layers } from 'lucide-react';
+import ClassService from '../../services/class.service';
 
 export const DEFAULT_RUBRIC_CONFIGS = [
     {
@@ -49,6 +50,9 @@ export default function AssignmentFormModal({
     isSubmitting = false,
     customTitle = null,
     onDeleteExistingMaterial = null,
+    classId = null,
+    initialSlotId = null,
+    slots = null,
 }) {
     const fileInputRef = useRef(null);
 
@@ -58,6 +62,8 @@ export default function AssignmentFormModal({
     const [maxScore, setMaxScore] = useState(10);
     const [weight, setWeight] = useState(10);
     const [description, setDescription] = useState('');
+    const [slotId, setSlotId] = useState('');
+    const [availableSlots, setAvailableSlots] = useState([]);
     const [aiDeclarationRequired, setAiDeclarationRequired] = useState(true);
     const [rubricConfigs, setRubricConfigs] = useState(DEFAULT_RUBRIC_CONFIGS);
     const [newMaterials, setNewMaterials] = useState([]);
@@ -75,6 +81,19 @@ export default function AssignmentFormModal({
     useEffect(() => {
         if (!isOpen) return;
 
+        // Load danh sách Slots của lớp
+        const targetClassId = classId || initialData?.class_id || initialData?.classId;
+        if (Array.isArray(slots) && slots.length > 0) {
+            setAvailableSlots(slots);
+        } else if (targetClassId) {
+            ClassService.getClassSlots(targetClassId)
+                .then((res) => {
+                    const list = res?.data || res || [];
+                    setAvailableSlots(Array.isArray(list) ? list : []);
+                })
+                .catch(() => setAvailableSlots([]));
+        }
+
         if (mode === 'edit' && initialData) {
             let deadlineFormatted = '';
             if (initialData.deadline) {
@@ -90,6 +109,7 @@ export default function AssignmentFormModal({
             setMaxScore(initialData.max_score ?? 10);
             setWeight(initialData.weight ?? 10);
             setDescription(initialData.description || '');
+            setSlotId(initialData.slot_id || initialData.session_id || '');
             setAiDeclarationRequired(initialData.ai_declaration_required !== false);
             if (initialData.rubric_configs && Array.isArray(initialData.rubric_configs) && initialData.rubric_configs.length > 0) {
                 setRubricConfigs(initialData.rubric_configs.map((c, i) => ({
@@ -112,12 +132,13 @@ export default function AssignmentFormModal({
             setMaxScore(10);
             setWeight(10);
             setDescription('');
+            setSlotId(initialSlotId || initialData?.slot_id || initialData?.session_id || '');
             setAiDeclarationRequired(true);
             setRubricConfigs(DEFAULT_RUBRIC_CONFIGS);
             setExistingMaterials([]);
             setNewMaterials([]);
         }
-    }, [isOpen, mode, initialData]);
+    }, [isOpen, mode, initialData, classId, initialSlotId, slots]);
 
     const totalWeight = rubricConfigs
         .filter((c) => c.is_enabled)
@@ -201,6 +222,8 @@ export default function AssignmentFormModal({
         formData.append('weight', String(weight ?? 10));
         formData.append('description', description.trim());
         formData.append('instructions', '');
+        formData.append('slot_id', slotId || '');
+        formData.append('session_id', slotId || '');
         formData.append('ai_declaration_required', String(aiDeclarationRequired));
         formData.append('allow_late_submission', 'false'); // Mặc định không cho nộp muộn
         formData.append('rubric_configs', JSON.stringify(rubricConfigs));
@@ -356,6 +379,43 @@ export default function AssignmentFormModal({
                                 <option value="draft">Bản nháp (Draft)</option>
                                 <option value="closed">Đã đóng (Closed)</option>
                             </select>
+                        </div>
+                    </div>
+
+                    {/* Buổi học liên kết (Selection Slot) */}
+                    <div>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: '600', marginBottom: '6px', color: 'var(--color-ink)' }}>
+                            <Layers size={14} className="text-orange-500" />
+                            <span>Buổi học liên kết (Selection Slot)</span>
+                        </label>
+                        <select
+                            value={slotId}
+                            onChange={(e) => setSlotId(e.target.value)}
+                            style={{
+                                width: '100%',
+                                padding: '9px 12px',
+                                border: '1px solid var(--color-border)',
+                                borderRadius: '6px',
+                                fontSize: '13px',
+                                outline: 'none',
+                                backgroundColor: '#fff',
+                                color: slotId ? 'var(--color-ink)' : 'var(--color-ink-muted)',
+                            }}
+                        >
+                            <option value="">-- Không gắn Slot cụ thể (Bài tập chung toàn khóa) --</option>
+                            {availableSlots.map((s) => {
+                                const slotNo = s.slot_number || s.session_no;
+                                const dateStr = s.date ? new Date(s.date).toLocaleDateString('vi-VN') : '';
+                                const titleStr = s.title ? ` - ${s.title}` : '';
+                                return (
+                                    <option key={s.id} value={s.id}>
+                                        Slot {slotNo}{dateStr ? ` (${dateStr})` : ''}{titleStr}
+                                    </option>
+                                );
+                            })}
+                        </select>
+                        <div style={{ fontSize: '11px', color: 'var(--color-ink-muted)', marginTop: '4px' }}>
+                            {slotId ? 'Bài tập sẽ tự động xuất hiện trong chi tiết buổi học của Slot này.' : 'Bài tập sẽ hiển thị ở danh mục bài tập chung toàn khóa.'}
                         </div>
                     </div>
 

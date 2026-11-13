@@ -2,15 +2,21 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import ClassService from '../../services/class.service';
+import AssignmentService from '../../services/assignment.service';
 import {
     ChevronRight, Clock, Folder, FilePenLine, RotateCw, Calendar, Code, AlertCircle, Users,
     Flame,
     Download,
     Sparkles,
-    Bot
+    Bot,
+    Briefcase,
+    Eye,
+    Layers
 } from 'lucide-react';
 import { PlusCircle, FileText, Upload } from 'lucide-react';
 import AssignmentSubwindowModal from '../../components/student/AssignmentSubwindowModal';
+import AssignmentFormModal from '../../components/lecturer/AssignmentFormModal';
+import AssignmentDescriptionModal from '../../components/common/AssignmentDescriptionModal';
 import ClassMembersModal from "../../components/lecturer/ClassMembersModal";
 import { ClassAiAdvisorModal } from '../../components/lecturer/ClassAiAdvisorModal';
 export default function LecturerClassDetailPage() {
@@ -26,6 +32,12 @@ export default function LecturerClassDetailPage() {
     const [viewAll, setViewAll] = useState(false);
     const [isAssignmentModalOpen, setIsAssignmentModalOpen] = useState(false);
     const [isMembersModalOpen, setIsMembersModalOpen] = useState(false);
+
+    // States cho Slot Assignment và Description Modal
+    const [classAssignments, setClassAssignments] = useState([]);
+    const [selectedDescAssignment, setSelectedDescAssignment] = useState(null);
+    const [slotCreateTargetId, setSlotCreateTargetId] = useState(null);
+    const [isSlotCreateModalOpen, setIsSlotCreateModalOpen] = useState(false);
 
     // States cho AI Class Advisor Subwindow
     const [advisorData, setAdvisorData] = useState(null);
@@ -129,6 +141,15 @@ export default function LecturerClassDetailPage() {
 
 
             setSlots(parsedSlots);
+
+            // Fetch class assignments để đồng bộ vào từng Slot
+            try {
+                const asgRes = await AssignmentService.getClassAssignments(classId);
+                const aData = asgRes?.data || asgRes || [];
+                setClassAssignments(Array.isArray(aData) ? aData : aData.data || []);
+            } catch (aErr) {
+                console.warn('Failed to load class assignments:', aErr);
+            }
 
             if (parsedSlots.length > 0) {
                 setSelectedSlotId(parsedSlots[0].id || parsedSlots[0]._id);
@@ -422,17 +443,84 @@ export default function LecturerClassDetailPage() {
                                 </div>
 
                                 {(!selectedSlot.title && !selectedSlot.content) && (
-                                    <div style={{ marginTop: '32px', fontSize: '12px', color: 'var(--color-ink-muted)', textAlign: 'center' }}>
+                                    <div style={{ marginTop: '16px', fontSize: '12px', color: 'var(--color-ink-muted)', textAlign: 'center' }}>
                                         This slot has no specific detailed content yet.
                                     </div>
                                 )}
 
-                                <div style={{ display: 'flex', gap: '8px', marginTop: '32px', justifyContent: 'center' }}>
+                                {/* Danh sách bài tập được gắn cho Slot này */}
+                                {(() => {
+                                    const currentSlotAssignments = (selectedSlot?.assignments && Array.isArray(selectedSlot.assignments) && selectedSlot.assignments.length > 0)
+                                        ? selectedSlot.assignments
+                                        : classAssignments.filter(a => (a.slot_id && (a.slot_id === selectedSlot?.id || a.slot_id === selectedSlot?._id)) || (a.session_id && (a.session_id === selectedSlot?.id || a.session_id === selectedSlot?._id)));
+                                    return (
+                                        <div style={{ marginTop: '20px' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                                <h5 style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--color-ink)', display: 'flex', alignItems: 'center', gap: '6px', margin: 0 }}>
+                                                    <FileText size={14} className="text-orange-500" />
+                                                    <span>Bài tập của buổi học (Slot {selectedSlot.slot_number || slots.findIndex(s => s === selectedSlot) + 1})</span>
+                                                </h5>
+                                                <span style={{ fontSize: '11px', color: 'var(--color-ink-muted)' }}>
+                                                    {currentSlotAssignments.length} bài tập
+                                                </span>
+                                            </div>
+
+                                            {currentSlotAssignments.length === 0 ? (
+                                                <div style={{ padding: '12px', borderRadius: '8px', border: '1px dashed var(--color-border)', backgroundColor: 'var(--color-surface)', fontSize: '11px', color: 'var(--color-ink-muted)', textAlign: 'center' }}>
+                                                    Chưa có bài tập nào được gắn riêng cho Slot này.
+                                                </div>
+                                            ) : (
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                    {currentSlotAssignments.map(asg => (
+                                                        <div key={asg.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--color-border)', backgroundColor: '#fff', gap: '10px' }}>
+                                                            <div style={{ flex: 1, minWidth: 0 }}>
+                                                                <div style={{ fontWeight: '600', fontSize: '12px', color: 'var(--color-ink)' }}>
+                                                                    {asg.title}
+                                                                </div>
+                                                                <div
+                                                                    onClick={() => setSelectedDescAssignment(asg)}
+                                                                    className="cursor-pointer hover:text-orange-600 transition flex items-center gap-1 group text-[11px] text-slate-500 mt-1"
+                                                                    title="Click để xem toàn bộ mô tả chi tiết"
+                                                                >
+                                                                    <span className="line-clamp-1 group-hover:text-orange-600">
+                                                                        {asg.description || asg.content || 'Xem mô tả...'}
+                                                                    </span>
+                                                                    <Eye size={12} className="text-slate-400 group-hover:text-orange-500 shrink-0" />
+                                                                </div>
+                                                            </div>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+                                                                <span style={{ fontSize: '10px', color: 'var(--color-ink-muted)' }}>
+                                                                    {asg.deadline ? new Date(asg.deadline).toLocaleDateString('vi-VN') : ''}
+                                                                </span>
+                                                                <button
+                                                                    onClick={() => navigate(`/lecturer/assignments/${asg.id}`)}
+                                                                    className="btn btn-primary"
+                                                                    style={{ padding: '4px 8px', fontSize: '11px', height: '24px' }}
+                                                                >
+                                                                    Open
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })()}
+
+                                <div style={{ display: 'flex', gap: '8px', marginTop: '24px', justifyContent: 'center' }}>
                                     <button className="btn btn-primary" style={{ padding: '0 12px', height: '32px', fontSize: '12px', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', gap: '6px' }} onClick={() => alert('Create Test')}>
                                         <PlusCircle size={14} /> Create Test
                                     </button>
-                                    <button className="btn btn-secondary" style={{ padding: '0 12px', height: '32px', fontSize: '12px', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', gap: '6px' }} onClick={() => alert('Assignment')}>
-                                        <FileText size={14} /> Assignment
+                                    <button
+                                        className="btn btn-secondary"
+                                        style={{ padding: '0 12px', height: '32px', fontSize: '12px', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', gap: '6px' }}
+                                        onClick={() => {
+                                            setSlotCreateTargetId(selectedSlot.id || selectedSlot._id);
+                                            setIsSlotCreateModalOpen(true);
+                                        }}
+                                    >
+                                        <FileText size={14} /> + Thêm bài tập
                                     </button>
                                     <button className="btn btn-secondary" style={{ padding: '0 12px', height: '32px', fontSize: '12px', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', gap: '6px' }} onClick={() => alert('Upload Material')}>
                                         <Upload size={14} /> Upload Material
@@ -462,7 +550,7 @@ export default function LecturerClassDetailPage() {
                 </div>
             </div>
 
-            {/* Assignment Modal */}
+            {/* Assignment Modal (Global List) */}
             {isAssignmentModalOpen && createPortal(
                 <AssignmentSubwindowModal
                     isOpen={isAssignmentModalOpen}
@@ -472,6 +560,39 @@ export default function LecturerClassDetailPage() {
                     role="lecturer"
                 />,
                 document.body
+            )}
+
+            {/* Sub-window xem trọn vẹn Description bài tập */}
+            {selectedDescAssignment && (
+                <AssignmentDescriptionModal
+                    isOpen={!!selectedDescAssignment}
+                    onClose={() => setSelectedDescAssignment(null)}
+                    assignment={selectedDescAssignment}
+                    onOpenAssignment={(id) => navigate(`/lecturer/assignments/${id}`)}
+                />
+            )}
+
+            {/* Modal tạo bài tập trực tiếp từ Slot */}
+            {isSlotCreateModalOpen && (
+                <AssignmentFormModal
+                    isOpen={isSlotCreateModalOpen}
+                    onClose={() => setIsSlotCreateModalOpen(false)}
+                    mode="create"
+                    classId={classId}
+                    initialSlotId={slotCreateTargetId}
+                    slots={slots}
+                    onSubmit={async (formData) => {
+                        try {
+                            formData.append('class_id', classId);
+                            await AssignmentService.createAssignment(formData);
+                            setIsSlotCreateModalOpen(false);
+                            fetchData();
+                        } catch (err) {
+                            alert(err.response?.data?.message || 'Lỗi tạo bài tập');
+                        }
+                    }}
+                    customTitle={`Tạo bài tập cho Slot ${selectedSlot?.slot_number || ''} - Lớp ${classData?.class_code || ''}`}
+                />
             )}
 
             <ClassMembersModal

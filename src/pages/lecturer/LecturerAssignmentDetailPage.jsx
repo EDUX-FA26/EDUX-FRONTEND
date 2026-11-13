@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { createPortal } from 'react-dom';
-import { ChevronRight, FileText, ChevronDown, Briefcase, UploadCloud, X as XIcon, File as FileIcon, CheckCircle, AlertCircle, Sparkles, Settings, ShieldAlert, Edit3, Download, Trash2, Plus, Paperclip, Eye, EyeOff, Minus } from 'lucide-react';
+import { ChevronRight, FileText, ChevronDown, Briefcase, UploadCloud, X as XIcon, File as FileIcon, CheckCircle, AlertCircle, Sparkles, Settings, ShieldAlert, Edit3, Download, Trash2, Plus, Paperclip, Eye, EyeOff, Minus, Layers } from 'lucide-react';
 import AssignmentService from '../../services/assignment.service';
 import SubmissionService from '../../services/submission.service';
 import ClassService from '../../services/class.service';
@@ -629,6 +629,27 @@ export default function LecturerAssignmentDetailPage() {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
                     <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--color-ink)', margin: 0, letterSpacing: '-0.5px' }}>{title}</h1>
+                    {assignment?.slot_number ? (
+                        <span style={{
+                            display: 'inline-flex', alignItems: 'center', gap: '5px',
+                            fontSize: '11px', fontWeight: '600',
+                            padding: '3px 10px', borderRadius: '16px',
+                            backgroundColor: '#fff7ed', color: '#ea580c',
+                            border: '1px solid #ffedd5'
+                        }}>
+                            <Layers size={12} /> Slot {assignment.slot_number}
+                        </span>
+                    ) : (
+                        <span style={{
+                            display: 'inline-flex', alignItems: 'center', gap: '5px',
+                            fontSize: '11px', fontWeight: '600',
+                            padding: '3px 10px', borderRadius: '16px',
+                            backgroundColor: 'var(--color-surface, #f1f5f9)', color: 'var(--color-ink-muted, #64748b)',
+                            border: '1px solid var(--color-border, #e2e8f0)'
+                        }}>
+                            Toàn khóa
+                        </span>
+                    )}
                     {assignment?.ai_declaration_required !== false ? (
                         <span style={{
                             display: 'inline-flex', alignItems: 'center', gap: '5px',
@@ -1127,6 +1148,7 @@ export default function LecturerAssignmentDetailPage() {
                     onClose={() => setIsEditModalOpen(false)}
                     mode="edit"
                     initialData={assignment}
+                    classId={assignment?.class_id || assignment?.classId}
                     onSubmit={handleSaveEdit}
                     isSubmitting={isSavingEdit}
                     onDeleteExistingMaterial={handleDeleteMaterial}
