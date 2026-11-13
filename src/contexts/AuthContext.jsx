@@ -25,6 +25,16 @@ export function AuthProvider({ children }) {
 
   const isAuthenticated = !!user && !!localStorage.getItem('accessToken');
 
+  const clearAdvisorAutoPopupKeys = () => {
+    try {
+      Object.keys(sessionStorage).forEach((k) => {
+        if (k.startsWith('art_ai_advisor_auto_')) {
+          sessionStorage.removeItem(k);
+        }
+      });
+    } catch {}
+  };
+
   const saveSession = useCallback((session) => {
     localStorage.setItem('accessToken', session.accessToken);
     localStorage.setItem('access_token', session.accessToken);
@@ -36,6 +46,7 @@ export function AuthProvider({ children }) {
     localStorage.removeItem('student_last_subject_id');
     sessionStorage.removeItem('lastPath');
     sessionStorage.clear();
+    clearAdvisorAutoPopupKeys();
     setUser(session.user);
     const targetHome = getHomeRouteByRole(session.user);
 
@@ -89,6 +100,7 @@ export function AuthProvider({ children }) {
       localStorage.removeItem('lastPath');
       localStorage.removeItem('student_last_subject_id');
       sessionStorage.clear();
+      clearAdvisorAutoPopupKeys();
       setUser(null);
       try {
         navigate('/login', { replace: true, state: null });

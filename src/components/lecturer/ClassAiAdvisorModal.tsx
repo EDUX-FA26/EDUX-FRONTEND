@@ -7,7 +7,9 @@ import {
   Lightbulb, 
   X, 
   RotateCcw,
-  History
+  History,
+  Bell,
+  BellOff
 } from 'lucide-react';
 
 interface AdvisoryOverview {
@@ -44,6 +46,8 @@ interface ClassAiAdvisorModalProps {
   advisorData: ClassAiAdvisorData | null;
   onRefresh: () => Promise<void>;
   isRefreshing: boolean;
+  isAutoPopupEnabled?: boolean;
+  onToggleAutoPopup?: (nextValue: boolean) => void;
 }
 
 export const ClassAiAdvisorModal: React.FC<ClassAiAdvisorModalProps> = ({
@@ -51,7 +55,9 @@ export const ClassAiAdvisorModal: React.FC<ClassAiAdvisorModalProps> = ({
   onClose,
   advisorData,
   onRefresh,
-  isRefreshing
+  isRefreshing,
+  isAutoPopupEnabled = true,
+  onToggleAutoPopup,
 }) => {
   const [selectedId, setSelectedId] = useState<string>('');
 
@@ -170,20 +176,47 @@ export const ClassAiAdvisorModal: React.FC<ClassAiAdvisorModalProps> = ({
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition"
-            title="Đóng cửa sổ"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Nút Icon Notification Bật/Tắt tự động nhắc nhở cho riêng lớp này */}
+            {onToggleAutoPopup && (
+              <button
+                type="button"
+                onClick={() => onToggleAutoPopup(!isAutoPopupEnabled)}
+                title={
+                  isAutoPopupEnabled
+                    ? 'Đang bật tự động nhắc nhở lớp này (Bấm để tắt)'
+                    : 'Đã tắt tự động nhắc nhở lớp này (Bấm để bật lại)'
+                }
+                className={`p-2 rounded-xl border transition-all duration-150 flex items-center justify-center cursor-pointer ${
+                  isAutoPopupEnabled
+                    ? 'bg-orange-50 border-orange-200 text-orange-600 hover:bg-orange-100 shadow-2xs'
+                    : 'bg-slate-100 border-slate-200 text-slate-400 hover:bg-slate-200/70'
+                }`}
+              >
+                {isAutoPopupEnabled ? (
+                  <Bell className="w-4 h-4 fill-orange-500/20" />
+                ) : (
+                  <BellOff className="w-4 h-4" />
+                )}
+              </button>
+            )}
+
+            {/* Nút đóng Sub-window [X] */}
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-2 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100 transition cursor-pointer"
+              title="Đóng cửa sổ"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Toolbar: History Selector & Re-run */}
         <div className="px-6 py-2.5 bg-slate-50/60 border-b border-slate-100 flex items-center justify-between gap-3 text-xs">
-          <div className="flex items-center gap-2">
-            <span className="text-slate-500 font-medium">Chọn bài tập / Slot:</span>
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-slate-500 font-medium shrink-0">Chọn bài tập / Slot:</span>
             {advisorData.advisories.length > 1 ? (
               <select
                 value={selectedId}
@@ -204,7 +237,7 @@ export const ClassAiAdvisorModal: React.FC<ClassAiAdvisorModalProps> = ({
                 })}
               </select>
             ) : (
-              <span className="font-medium text-slate-700">
+              <span className="font-medium text-slate-700 truncate">
                 {currentItem.dropdown_label || currentItem.assignment_title}
               </span>
             )}
@@ -215,7 +248,7 @@ export const ClassAiAdvisorModal: React.FC<ClassAiAdvisorModalProps> = ({
               type="button"
               onClick={onRefresh}
               disabled={isRefreshing}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 text-slate-600 hover:text-purple-700 hover:bg-purple-50 rounded-md transition disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 text-slate-600 hover:text-purple-700 hover:bg-purple-50 rounded-md transition disabled:opacity-50 cursor-pointer shrink-0"
               title="Phân tích lại dữ liệu mới nhất"
             >
               <RotateCcw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-purple-600' : ''}`} />
@@ -293,7 +326,7 @@ export const ClassAiAdvisorModal: React.FC<ClassAiAdvisorModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg transition shadow-xs"
+            className="px-4 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg transition shadow-xs cursor-pointer"
           >
             Đóng
           </button>

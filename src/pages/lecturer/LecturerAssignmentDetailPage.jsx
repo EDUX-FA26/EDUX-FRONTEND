@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { createPortal } from 'react-dom';
-import { ChevronRight, FileText, ChevronDown, Briefcase, UploadCloud, X as XIcon, File as FileIcon, CheckCircle, AlertCircle, Sparkles, Settings, ShieldAlert, Edit3, Download, Trash2, Plus, Paperclip, Eye, EyeOff, Minus } from 'lucide-react';
+import { ChevronRight, FileText, ChevronDown, Briefcase, UploadCloud, X as XIcon, File as FileIcon, CheckCircle, AlertCircle, Sparkles, Settings, ShieldAlert, Edit3, Download, Trash2, Plus, Paperclip, Eye, EyeOff, Minus, Layers, RotateCw } from 'lucide-react';
 import AssignmentService from '../../services/assignment.service';
 import SubmissionService from '../../services/submission.service';
 import ClassService from '../../services/class.service';
@@ -18,6 +18,7 @@ export default function LecturerAssignmentDetailPage() {
     const [assignment, setAssignment] = useState(null);
     const [submissions, setSubmissions] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
     // --- STATE DÀNH CHO MODAL XEM CHI TIẾT AI AUDIT LOG ---
     const [selectedAuditSub, setSelectedAuditSub] = useState(null);
@@ -159,8 +160,11 @@ export default function LecturerAssignmentDetailPage() {
     }, [location.state]);
 
     const fetchDetail = async () => {
+        if (!id) return;
+        setLoading(true);
+        setError(null);
         try {
-            if (id && !id.startsWith('asm-')) {
+            if (id) {
                 const assignDataRaw = await AssignmentService.getAssignmentDetail(id);
                 const assignData = assignDataRaw.data || assignDataRaw;
 
@@ -329,113 +333,16 @@ export default function LecturerAssignmentDetailPage() {
                     return Array.from(studentMap.values());
                 };
 
-                if (combined.length === 0 && unmatchedSubmissions.length === 0) {
-                    const mockList = await MockSubmissionService.getAllMockSubmissions();
-                    const mappedMocks = mockList.map(m => ({
-                        id: m.id,
-                        student_id: m.studentId,
-                        student_name: m.studentName,
-                        student_email: m.studentEmail,
-                        student_code: m.studentCode,
-                        status: (m.grade?.score != null || m.score != null || m.status === 'GRADED') ? 'graded' : 'submitted',
-                        submitted_at: m.submittedAt,
-                        score: m.grade?.score ?? m.score ?? null,
-                        feedback: m.grade?.feedback ?? m.feedback ?? null,
-                        grade: m.grade,
-                        rubrics: m.grade?.rubrics ?? m.rubrics ?? null,
-                        latest_files: m.file ? [m.file] : [],
-                        latest_note: m.aiAuditLog?.isDeclared ? 'AI Audit Log: 5 Rubrics Declared' : 'Manual Submission',
-                        aiAuditLog: m.aiAuditLog,
-                        declarations: m.aiAuditLog
-                    }));
-                    setSubmissions(deduplicateList(mappedMocks));
-                } else {
-                    setSubmissions(deduplicateList([
-                        ...combined,
-                        ...unmatchedSubmissions
-                    ]));
-                }
-            } else {
-                // Mock assignment fallback
-                setAssignment({
-                    id,
-                    title: titleMap[id] || `Assignment ${id}`,
-                    class_id: 'mock-1',
-                    class_code: 'SE1801',
-                    class_name: 'SE1801',
-                    subject_name: 'Server-Side development with NodeJS',
-                    course_name: 'Server-Side development with NodeJS',
-                    max_score: 10,
-                });
-                const mockList = await MockSubmissionService.getAllMockSubmissions();
-                const mappedMocks = mockList.map(m => ({
-                    id: m.id,
-                    student_id: m.studentId,
-                    student_name: m.studentName,
-                    student_email: m.studentEmail,
-                    student_code: m.studentCode,
-                    status: (m.grade?.score != null || m.status === 'GRADED') ? 'graded' : 'submitted',
-                    submitted_at: m.submittedAt,
-                    score: m.grade?.score ?? m.score ?? null,
-                    feedback: m.grade?.feedback ?? m.feedback ?? null,
-                    grade: m.grade,
-                    rubrics: m.grade?.rubrics,
-                    latest_files: m.file ? [m.file] : [],
-                    latest_note: m.aiAuditLog?.isDeclared ? 'AI Audit Log: 5 Rubrics Declared' : 'Manual Submission',
-                    aiAuditLog: m.aiAuditLog,
-                    declarations: m.aiAuditLog
-                }));
-                const deduplicateList = (list) => {
-                    const studentMap = new Map();
-                    for (const item of list) {
-                        if (!item) continue;
-                        const key = item.student_code || item.student_id || item.id;
-                        if (!key) continue;
-                        if (!studentMap.has(key)) {
-                            studentMap.set(key, item);
-                        } else {
-                            const existing = studentMap.get(key);
-                            const itemIsGraded = item.score !== null && item.score !== undefined;
-                            const existingIsGraded = existing.score !== null && existing.score !== undefined;
-                            if (!existingIsGraded && itemIsGraded) {
-                                studentMap.set(key, item);
-                            }
-                        }
-                    }
-                    return Array.from(studentMap.values());
-                };
-                setSubmissions(deduplicateList(mappedMocks));
+                setSubmissions(deduplicateList([
+                    ...combined,
+                    ...unmatchedSubmissions
+                ]));
             }
         } catch (error) {
             console.error("Failed to fetch assignment details:", error);
-            try {
-                const mockList = await MockSubmissionService.getAllMockSubmissions();
-                const mappedMocks = mockList.map(m => ({
-                    id: m.id,
-                    student_id: m.studentId,
-                    student_name: m.studentName,
-                    student_email: m.studentEmail,
-                    student_code: m.studentCode,
-                    status: (m.grade?.score != null || m.status === 'GRADED') ? 'graded' : 'submitted',
-                    submitted_at: m.submittedAt,
-                    score: m.grade?.score ?? m.score ?? null,
-                    feedback: m.grade?.feedback ?? m.feedback ?? null,
-                    grade: m.grade,
-                    rubrics: m.grade?.rubrics,
-                    latest_files: m.file ? [m.file] : [],
-                    latest_note: m.aiAuditLog?.isDeclared ? 'AI Audit Log: 5 Rubrics Declared' : 'Manual Submission',
-                    aiAuditLog: m.aiAuditLog,
-                    declarations: m.aiAuditLog
-                }));
-                const studentMap = new Map();
-                for (const item of mappedMocks) {
-                    const key = item.student_code || item.student_id || item.id;
-                    if (key && !studentMap.has(key)) {
-                        studentMap.set(key, item);
-                    }
-                }
-                setSubmissions(Array.from(studentMap.values()));
-            } catch (e) {}
+            setAssignment(null);
+            setSubmissions([]);
+            setError(error.response?.data?.message || error.message || 'Không thể tải thông tin bài tập.');
         } finally {
             setLoading(false);
         }
@@ -525,20 +432,32 @@ export default function LecturerAssignmentDetailPage() {
         }
     };
 
-    const titleMap = {
-        '2': 'Assignment 2',
-        '4': 'Assignment 4',
-        'project': 'Nộp Project',
-        '3': 'Assignment 3',
-        '1': 'Assignment 1',
-        'asm-1': 'React Fundamental Exercises',
-        'asm-2': 'State Management Project',
-        'asm-3': 'Node.js Express API',
-        'asm-4': 'MongoDB Aggregation',
-        'asm-5': 'Final Backend Architecture'
-    };
+    if (loading || !assignment) {
+        if (error) {
+            return (
+                <div className="w-full flex items-center justify-between gap-4" style={{ width: '100%', padding: '16px', backgroundColor: '#fee2e2', color: '#dc2626', border: '1px solid rgba(220, 38, 38, 0.2)', borderRadius: 'var(--radius-md)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <AlertCircle size={20} />
+                        <span>{error}</span>
+                    </div>
+                    <button className="btn btn-secondary" onClick={fetchDetail} style={{ fontSize: '12px', padding: '6px 14px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <RotateCw size={14} /> Thử lại
+                    </button>
+                </div>
+            );
+        }
 
-    const title = assignment?.title || titleMap[id] || `Assignment ${id}`;
+        return (
+            <div className="w-full flex flex-col gap-4" style={{ width: '100%', padding: '24px' }}>
+                <div className="skeleton" style={{ width: '30%', height: '24px' }}></div>
+                <div className="skeleton" style={{ width: '60%', height: '40px' }}></div>
+                <div className="skeleton" style={{ width: '100%', height: '120px' }}></div>
+                <div className="skeleton" style={{ width: '100%', height: '300px' }}></div>
+            </div>
+        );
+    }
+
+    const title = assignment?.title || 'Assignment Detail';
 
     return (
         <div className="animate-fade-in w-full flex flex-col gap-6 relative" style={{ width: '100%' }}>
@@ -629,6 +548,27 @@ export default function LecturerAssignmentDetailPage() {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
                     <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--color-ink)', margin: 0, letterSpacing: '-0.5px' }}>{title}</h1>
+                    {assignment?.slot_number ? (
+                        <span style={{
+                            display: 'inline-flex', alignItems: 'center', gap: '5px',
+                            fontSize: '11px', fontWeight: '600',
+                            padding: '3px 10px', borderRadius: '16px',
+                            backgroundColor: '#fff7ed', color: '#ea580c',
+                            border: '1px solid #ffedd5'
+                        }}>
+                            <Layers size={12} /> Slot {assignment.slot_number}
+                        </span>
+                    ) : (
+                        <span style={{
+                            display: 'inline-flex', alignItems: 'center', gap: '5px',
+                            fontSize: '11px', fontWeight: '600',
+                            padding: '3px 10px', borderRadius: '16px',
+                            backgroundColor: 'var(--color-surface, #f1f5f9)', color: 'var(--color-ink-muted, #64748b)',
+                            border: '1px solid var(--color-border, #e2e8f0)'
+                        }}>
+                            Toàn khóa
+                        </span>
+                    )}
                     {assignment?.ai_declaration_required !== false ? (
                         <span style={{
                             display: 'inline-flex', alignItems: 'center', gap: '5px',
@@ -1127,6 +1067,7 @@ export default function LecturerAssignmentDetailPage() {
                     onClose={() => setIsEditModalOpen(false)}
                     mode="edit"
                     initialData={assignment}
+                    classId={assignment?.class_id || assignment?.classId}
                     onSubmit={handleSaveEdit}
                     isSubmitting={isSavingEdit}
                     onDeleteExistingMaterial={handleDeleteMaterial}
