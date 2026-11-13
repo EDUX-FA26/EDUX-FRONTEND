@@ -52,6 +52,8 @@ export interface CourseClassInfo {
   classId?: string;
   assignmentId?: string;
   subjectId?: string;
+  rubricConfigs?: any[];
+  rubric_configs?: any[];
 }
 
 export interface SubmissionCodeFile {
@@ -85,11 +87,19 @@ export interface RubricScores {
   // Aliases tương thích
   pattern?: number;
   algorithmic?: number;
+  implementation?: number;
+  verification?: number;
+  ai_interaction?: number;
   DECOMPOSITION?: number;
   PATTERN_RECOGNITION?: number;
   ABSTRACTION?: number;
   ALGORITHMIC_THINKING?: number;
   REFLECTION?: number;
+  PROBLEM_ABSTRACTION?: number;
+  IMPLEMENTATION_QUALITY?: number;
+  CRITICAL_EVALUATION?: number;
+  AI_INTERACTION?: number;
+  METACOGNITIVE_REFLECTION?: number;
   core_requirements?: number;
   technical_quality?: number;
   code_clean?: number;
@@ -756,15 +766,36 @@ export default function LecturerAcademicEvaluation({
 
   // Danh sách tiêu chí Rubric động theo cấu hình bài tập (chỉ lấy các tiêu chí is_enabled === true)
   const activeCriteriaList = useMemo(() => {
-    const rawConfigs = rubricConfigs || courseInfo?.rubricConfigs || (courseInfo as any)?.rubric_configs || auditData?.rubric_configs;
+    let rawConfigs = rubricConfigs || courseInfo?.rubricConfigs || (courseInfo as any)?.rubric_configs || auditData?.rubric_configs;
+
+    // Fallback: nếu chưa có rawConfigs, lấy từ grading_breakdown hoặc rubric_evaluations nếu có
+    if (!rawConfigs || !Array.isArray(rawConfigs) || rawConfigs.length === 0) {
+      const breakdown = auditData?.grading_breakdown ||
+        (auditData as any)?.evaluation_data?.grading_breakdown ||
+        savedEvaluation?.grading_breakdown ||
+        (savedEvaluation as any)?.evaluation_data?.grading_breakdown ||
+        auditData?.rubric_evaluations ||
+        savedEvaluation?.rubric_evaluations;
+
+      if (Array.isArray(breakdown) && breakdown.length > 0) {
+        rawConfigs = breakdown.map((item: any) => ({
+          criterion_key: item.criterion_key,
+          criterion_name: item.criteria || item.criterion_name,
+          weight_percent: item.weight_percent || (item.max_score ? Number((item.max_score * 10).toFixed(0)) : 20),
+          max_score: item.max_score,
+          is_enabled: true,
+        }));
+      }
+    }
+
     if (Array.isArray(rawConfigs) && rawConfigs.length > 0) {
-      const enabled = rawConfigs.filter((c: any) => c.is_enabled !== false);
+      const enabled = rawConfigs.filter((c: any) => c.is_enabled !== false && Number(c.weight_percent || c.max_score || 0) > 0);
       if (enabled.length > 0) {
         return enabled.map((c: any) => {
           const mappedKey = CANONICAL_RUBRIC_MAP[c.criterion_key] || 'decomposition';
           const preset = PRESET_CRITERIA_META[mappedKey] || PRESET_CRITERIA_META.decomposition;
-          const weight = Number(c.weight_percent) || 20;
-          const maxVal = Number((weight / 10).toFixed(2));
+          const weight = Number(c.weight_percent) || (c.max_score ? Number((c.max_score * 10).toFixed(0)) : 20);
+          const maxVal = typeof c.max_score === 'number' ? c.max_score : Number((weight / 10).toFixed(2));
           const p1 = 0;
           const p2 = Number((maxVal * 0.25).toFixed(1));
           const p3 = Number((maxVal * 0.5).toFixed(1));
@@ -776,7 +807,7 @@ export default function LecturerAcademicEvaluation({
           return {
             ...preset,
             criterion_key: c.criterion_key,
-            name: c.criterion_name || preset.name,
+            name: c.criterion_name || c.criteria || preset.name,
             max: maxVal,
             weight_percent: weight,
             pills,
@@ -786,7 +817,7 @@ export default function LecturerAcademicEvaluation({
     }
 
     return RUBRIC_CRITERIA_LIST;
-  }, [rubricConfigs, courseInfo, auditData]);
+  }, [rubricConfigs, courseInfo, auditData, savedEvaluation]);
 
   // Calculate Total Score (Thang 10 điểm học thuật chuyên môn: Tổng các tiêu chí đang bật)
   const totalScore = parseFloat(
@@ -847,6 +878,19 @@ export default function LecturerAcademicEvaluation({
       if (savedEvaluation.rubric_reasonings) {
         setRubricReasonings(savedEvaluation.rubric_reasonings);
       }
+      if (savedEvaluation.rubric_scores) {
+        setScores((prev) => ({ ...prev, ...savedEvaluation.rubric_scores }));
+      } else if (Array.isArray(savedEvaluation.grading_breakdown)) {
+        const newSc: RubricScores = { ...scores };
+        savedEvaluation.grading_breakdown.forEach((item: any) => {
+          const val = Number(item.awarded_score ?? item.score ?? 0);
+          const mapped = CANONICAL_RUBRIC_MAP[item.criterion_key];
+          if (mapped) newSc[mapped] = val;
+          newSc[String(item.criterion_key).toLowerCase()] = val;
+          newSc[String(item.criterion_key).toUpperCase()] = val;
+        });
+        setScores(newSc);
+      }
     }
   }, [savedEvaluation]);
 
@@ -893,25 +937,32 @@ export default function LecturerAcademicEvaluation({
           Object.assign(newScores, aiData.rubric_scores);
         }
 
-        // Merge chi tiết từng criterion từ rubric_evaluations hoặc rubrics array
-        const evals = Array.isArray(aiData.rubric_evaluations)
-          ? aiData.rubric_evaluations
-          : (Array.isArray(aiData.rubrics) ? aiData.rubrics : []);
+        // Merge chi tiết từng criterion từ grading_breakdown, rubric_evaluations hoặc rubrics array
+        const evals = Array.isArray(aiData.grading_breakdown)
+          ? aiData.grading_breakdown
+          : (Array.isArray(aiData.rubric_evaluations)
+            ? aiData.rubric_evaluations
+            : (Array.isArray(aiData.rubrics) ? aiData.rubrics : []));
 
         evals.forEach((item: any) => {
           const keyLower = String(item.criterion_id || item.criterion_key || '').toLowerCase();
           const keyUpper = String(item.criterion_key || item.criterion_id || '').toUpperCase();
-          const val = typeof item.score === 'number' ? item.score : parseFloat(item.score);
+          const rawScore = item.awarded_score !== undefined ? item.awarded_score : item.score;
+          const val = typeof rawScore === 'number' ? rawScore : parseFloat(rawScore);
           if (!isNaN(val)) {
             newScores[keyLower] = val;
             newScores[keyUpper] = val;
+            const mapped = CANONICAL_RUBRIC_MAP[item.criterion_key];
+            if (mapped) newScores[mapped] = val;
             if (keyLower === 'pattern_recognition') newScores['pattern'] = val;
             if (keyLower === 'algorithmic_thinking') newScores['algorithmic'] = val;
           }
-          const reasonText = item.reason || item.reasoning || item.short_reason || '';
+          const reasonText = item.comment || item.reason || item.reasoning || item.short_reason || '';
           if (reasonText) {
             newReasons[keyLower] = reasonText;
             newReasons[keyUpper] = reasonText;
+            const mapped = CANONICAL_RUBRIC_MAP[item.criterion_key];
+            if (mapped) newReasons[mapped] = reasonText;
             if (keyLower === 'pattern_recognition') newReasons['pattern'] = reasonText;
             if (keyLower === 'algorithmic_thinking') newReasons['algorithmic'] = reasonText;
           }
