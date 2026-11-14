@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useSchool } from '../../contexts/SchoolContext';
 import { getDashboard, getDashboardNotifications } from '../../services/dashboard.service';
 
 function StatCard({ label, value, icon, iconBg, iconColor, sub, onClick, className = '' }) {
@@ -81,29 +82,93 @@ export default function LecturerDashboardPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { t } = useLanguage();
+  const {
+    currentSchool,
+    status: schoolStatus,
+  } = useSchool();
+
+  const schoolId =
+    currentSchool?.schoolId ||
+    currentSchool?.id ||
+    null;
   const [data, setData] = useState(null);
   const [notifData, setNotifData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [notifLoading, setNotifLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const currentSchoolIdRef = useRef(schoolId);
+  const requestGenRef = useRef(0);
+  const abortControllerRef = useRef(null);
+
   useEffect(() => {
-    let cancelled = false;
+    currentSchoolIdRef.current = schoolId;
+    const genId = ++requestGenRef.current;
+
+    // Hủy các request đang bay của trường trước
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
+    setData(null);
+    setNotifData(null);
+    setError(null);
+
+    if (schoolStatus !== 'ready' || !schoolId) {
+      setLoading(false);
+      setNotifLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    setNotifLoading(true);
 
     // 1. Fetch main dashboard metrics
-    getDashboard()
-      .then((res) => { if (!cancelled) setData(res.data); })
-      .catch((err) => { if (!cancelled) setError(err.response?.data?.message || t.dashboard?.noData); })
-      .finally(() => { if (!cancelled) setLoading(false); });
+    getDashboard({ signal: controller.signal })
+      .then((res) => {
+        if (currentSchoolIdRef.current === schoolId && requestGenRef.current === genId) {
+          setData(res.data);
+          setError(null);
+        }
+      })
+      .catch((err) => {
+        if (err?.name === 'CanceledError' || err?.name === 'AbortError' || err?.code === 'ERR_CANCELED') {
+          return;
+        }
+        if (currentSchoolIdRef.current === schoolId && requestGenRef.current === genId) {
+          setError(err.response?.data?.message || t.dashboard?.noData);
+        }
+      })
+      .finally(() => {
+        if (currentSchoolIdRef.current === schoolId && requestGenRef.current === genId) {
+          setLoading(false);
+        }
+      });
 
     // 2. Fetch notifications separately
-    getDashboardNotifications()
-      .then((res) => { if (!cancelled) setNotifData(res.data); })
-      .catch(() => {})
-      .finally(() => { if (!cancelled) setNotifLoading(false); });
+    getDashboardNotifications({ signal: controller.signal })
+      .then((res) => {
+        if (currentSchoolIdRef.current === schoolId && requestGenRef.current === genId) {
+          setNotifData(res.data);
+        }
+      })
+      .catch((err) => {
+        if (err?.name === 'CanceledError' || err?.name === 'AbortError' || err?.code === 'ERR_CANCELED') {
+          return;
+        }
+      })
+      .finally(() => {
+        if (currentSchoolIdRef.current === schoolId && requestGenRef.current === genId) {
+          setNotifLoading(false);
+        }
+      });
 
-    return () => { cancelled = true; };
-  }, []);
+    return () => {
+      controller.abort();
+    };
+  }, [schoolId, schoolStatus]);
 
   const stats = data?.statistics;
   const submissions = data?.recentSubmissions || [];
@@ -130,7 +195,7 @@ export default function LecturerDashboardPage() {
 
       {/* Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
-        {loading ? [1,2,3,4].map(i => (
+        {loading ? [1, 2, 3, 4].map(i => (
           <div key={i} className="stat-card">
             <div className="skeleton" style={{ width: '80px', height: '14px', marginBottom: '12px' }} />
             <div className="skeleton" style={{ width: '60px', height: '32px', marginBottom: '8px' }} />
@@ -198,7 +263,7 @@ export default function LecturerDashboardPage() {
               </span>
             )}
           </div>
-          {loading ? [1,2,3].map(i => (
+          {loading ? [1, 2, 3].map(i => (
             <div key={i} style={{ display: 'flex', gap: '12px', paddingBottom: '12px', borderBottom: '1px solid var(--color-border)', marginBottom: '12px' }}>
               <div className="skeleton" style={{ width: '36px', height: '36px', borderRadius: '10px', flexShrink: 0 }} />
               <div style={{ flex: 1 }}>
@@ -233,7 +298,7 @@ export default function LecturerDashboardPage() {
             </div>
             {unreadCount > 0 && <span className="badge badge-orange">{(t.notifications?.newLabel || '{n} mới').replace('{n}', unreadCount)}</span>}
           </div>
-          {notifLoading ? [1,2,3].map(i => (
+          {notifLoading ? [1, 2, 3].map(i => (
             <div key={i} style={{ padding: '12px', borderRadius: '10px', background: 'var(--color-primary-bg)', marginBottom: '8px' }}>
               <div className="skeleton" style={{ width: '100px', height: '12px', marginBottom: '8px' }} />
               <div className="skeleton" style={{ width: '100%', height: '14px' }} />

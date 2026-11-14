@@ -8,21 +8,10 @@ import { getSemesters } from '../services/semester.service';
 import SettingsToggle from '../components/common/SettingsToggle';
 import PlatformAdminMenuItem from
   '../components/platform/PlatformAdminMenuItem';
-import {
-  FiChevronDown,
-  FiGrid,
-  FiLogOut,
-  FiMenu,
-  FiSearch,
-} from 'react-icons/fi';
-import {
-  Flame,
-  LibraryBig,
-  BookMarked,
-  Sparkles,
-  Headphones,
-} from 'lucide-react';
+import { FiChevronDown, FiGrid, FiLogOut, FiMenu, FiSearch } from 'react-icons/fi';
+import { Bell, Flame, LibraryBig, BookMarked, Sparkles, MessagesSquare, Headphones } from 'lucide-react';
 import AIChatBox from '../components/student/AIChatBox';
+import { getUnreadNotifications, getNotifications, markAsRead, markAllAsRead } from '../services/notification.service';
 
 // Nav config theo role
 const NAV_BY_ROLE = {
@@ -50,29 +39,15 @@ const NAV_BY_ROLE = {
       label: 'Lớp học',
     },
     { id: 'streak', icon: Flame, path: '/student/streak', key: 'streak' },
-    {
-      id: 'flashcards',
-      icon: BookMarked,
-      path: '/student/flashcards',
-      key: 'flashcards',
-    },
+    { id: 'flashcards', icon: BookMarked, path: '/student/flashcards', key: 'flashcards' },
+    { id: 'forum', icon: MessagesSquare, path: '/student/forum', key: 'forum', label: 'Diễn đàn' },
   ],
 
   [ROLES.LECTURER]: [
     { id: 'dashboard', icon: FiGrid, path: '/lecturer/dashboard', key: 'overview' },
-    {
-      id: 'flashcards',
-      icon: BookMarked,
-      path: '/lecturer/flashcards',
-      key: 'flashcards',
-    },
-    {
-      id: 'classes',
-      icon: LibraryBig,
-      path: '/lecturer/classes',
-      key: 'classes',
-      label: 'Lớp học',
-    },
+    { id: 'flashcards', icon: BookMarked, path: '/lecturer/flashcards', key: 'flashcards' },
+    { id: 'classes', icon: LibraryBig, path: '/lecturer/classes', key: 'classes', label: 'Lớp học' },
+    { id: 'forum', icon: MessagesSquare, path: '/lecturer/forum', key: 'forum', label: 'Diễn đàn' },
   ],
 
   [ROLES.ADMIN]: [
@@ -132,6 +107,9 @@ export default function DashboardLayout() {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [headerSearch, setHeaderSearch] = useState('');
   const [currentSemesterLabel, setCurrentSemesterLabel] = useState('');
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
 
 
   useEffect(() => {
@@ -234,6 +212,41 @@ export default function DashboardLayout() {
   const searchPath = effectiveRole
     ? `/${effectiveRole}/search`
     : "/";
+
+  const loadNotifications = async (unreadOnly = false) => {
+    try {
+      const result = unreadOnly
+        ? await getUnreadNotifications({ page: 1, limit: 8 })
+        : await getNotifications({ page: 1, limit: 8 });
+      const items = result.data || [];
+      if (unreadOnly) setUnreadCount(result.unread_count ?? items.length);
+      else setNotifications(items);
+    } catch (_) { /* Header notifications are non-blocking. */ }
+  };
+
+  useEffect(() => {
+    loadNotifications(true);
+    const timer = window.setInterval(() => loadNotifications(true), 30000);
+    return () => window.clearInterval(timer);
+  }, [user?.id]);
+
+  const toggleNotifications = async () => {
+    const next = !showNotifications;
+    setShowNotifications(next);
+    if (next) await loadNotifications(false);
+  };
+
+  const handleNotificationClick = async (notification) => {
+    if (!notification.is_read) {
+      await markAsRead(notification.id).catch(() => {});
+      setNotifications((items) => items.map((item) => item.id === notification.id ? { ...item, is_read: true } : item));
+      setUnreadCount((count) => Math.max(0, count - 1));
+    }
+    if (notification.related_entity_type === 'forum_post' && notification.related_entity_id) {
+      navigate(`/${user.role}/forum`);
+      setShowNotifications(false);
+    }
+  };
 
   useEffect(() => {
     if (location.pathname === searchPath) {
@@ -506,6 +519,24 @@ export default function DashboardLayout() {
                   }}
                 >
                   <SettingsToggle />
+
+                  {/* Notifications */}
+                  <div style={{ position: 'relative' }}>
+                    <button
+                      type="button"
+                      onClick={toggleNotifications}
+                      aria-label="Thông báo"
+                      aria-expanded={showNotifications}
+                      style={{ position: 'relative', width: 40, height: 40, borderRadius: 10, border: '1px solid var(--color-border)', background: 'var(--color-primary-card)', color: 'var(--color-ink)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                    >
+                      <Bell size={19} />
+                      {unreadCount > 0 && <span style={{ position: 'absolute', right: 4, top: 3, minWidth: 16, height: 16, borderRadius: 99, padding: '0 3px', background: '#ef4444', color: '#fff', fontSize: 10, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{unreadCount > 9 ? '9+' : unreadCount}</span>}
+                    </button>
+                    {showNotifications && <div style={{ position: 'absolute', right: 0, top: 'calc(100% + 8px)', width: 340, maxWidth: 'calc(100vw - 32px)', background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 14, boxShadow: 'var(--shadow-lg)', zIndex: 120, overflow: 'hidden' }}>
+                      <div style={{ padding: '12px 14px', borderBottom: '1px solid var(--color-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}><strong>Thông báo</strong><button type="button" onClick={async () => { await markAllAsRead().catch(() => {}); setNotifications((items) => items.map((item) => ({ ...item, is_read: true }))); setUnreadCount(0); }} style={{ border: 0, background: 'none', color: 'var(--color-primary)', cursor: 'pointer', fontSize: 12 }}>Đánh dấu đã đọc</button></div>
+                      <div style={{ maxHeight: 360, overflowY: 'auto' }}>{notifications.length === 0 ? <p style={{ padding: 22, textAlign: 'center', color: 'var(--color-ink-muted)', margin: 0 }}>Chưa có thông báo</p> : notifications.map((notification) => <button key={notification.id} type="button" onClick={() => handleNotificationClick(notification)} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '12px 14px', border: 0, borderBottom: '1px solid var(--color-border)', background: notification.is_read ? 'transparent' : 'var(--color-primary-bg)', cursor: 'pointer' }}><strong style={{ display: 'block', fontSize: 13, color: 'var(--color-ink)' }}>{notification.title}</strong><span style={{ display: 'block', marginTop: 3, color: 'var(--color-ink-muted)', fontSize: 12, lineHeight: 1.4 }}>{notification.message}</span><small style={{ color: 'var(--color-ink-soft)', fontSize: 10 }}>{new Date(notification.created_at).toLocaleString('vi-VN')}</small></button>)}</div>
+                    </div>}
+                  </div>
 
                   {/* Divider */}
                   <div

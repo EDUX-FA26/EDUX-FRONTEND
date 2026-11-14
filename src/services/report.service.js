@@ -1,40 +1,41 @@
-import axios from 'axios';
+import api from '../config/axios.config';
 
-const BASE_URL = import.meta.env.VITE_API_URL || '/api';
-
-const axiosInstance = axios.create({
-  baseURL: `${BASE_URL}/reports`,
-});
-
-axiosInstance.interceptors.request.use((config) => {
-  const token = localStorage.getItem('accessToken');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
-
-export const getSystemReports = async () => {
-  const response = await axiosInstance.get('/system');
+export const getSystemReports = async (options = {}) => {
+  const response = await api.get('/reports/system', {
+    schoolScoped: true,
+    ...options,
+  });
   return response.data;
 };
 
-export const getAiUsageStats = async () => {
-  const response = await axiosInstance.get('/ai-usage');
+export const getAiUsageStats = async (options = {}) => {
+  const response = await api.get('/reports/ai-usage', {
+    schoolScoped: true,
+    ...options,
+  });
   return response.data;
 };
 
-export const getAuditLogs = async () => {
-  const response = await axiosInstance.get('/audit-logs');
+export const getAuditLogs = async (options = {}) => {
+  const response = await api.get('/reports/audit-logs', {
+    schoolScoped: true,
+    ...options,
+  });
   return response.data;
 };
 
-export const exportLearningActivity = async () => {
-  const response = await axiosInstance.get('/learning-activity/export');
+export const exportLearningActivity = async (options = {}) => {
+  const response = await api.get('/reports/learning-activity/export', {
+    schoolScoped: true,
+    ...options,
+  });
   return response.data;
 };
 
-export const exportAiTransparency = async () => {
-  const response = await axiosInstance.get('/ai-transparency/export');
+export const exportAiTransparency = async (options = {}) => {
+  const response = await api.get('/reports/ai-transparency/export', {
+    schoolScoped: true,
+    ...options,
+  });
   return response.data;
 };

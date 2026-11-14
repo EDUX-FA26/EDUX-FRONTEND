@@ -1,7 +1,8 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState, useRef } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { searchContent } from '../../services/search.service';
 import { useAuth } from '../../contexts/AuthContext';
+import { useSchool } from '../../contexts/SchoolContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import '../module-pages.css';
 
@@ -19,7 +20,7 @@ const errorMessage = (error, fallback) => error.response?.data?.message || fallb
 const resultPath = (result, role) => {
   if (!result?.id || !role) return null;
 
-  if (role === 'admin') {
+  if (role === 'admin' || role === 'school_admin') {
     return ['class', 'assignment', 'material'].includes(result.type) ? '/admin/classes' : null;
   }
 
@@ -51,6 +52,7 @@ const paginationItems = (currentPage, totalPages) => {
 
 export default function SearchPage() {
   const { user } = useAuth();
+  const { activeSchool } = useSchool();
   const { t } = useLanguage();
   const S = t?.search || {};
   const [searchParams] = useSearchParams();
@@ -66,25 +68,75 @@ export default function SearchPage() {
   const [error, setError] = useState('');
   const limit = 12;
 
-  const runSearch = useCallback(async () => {
+  const currentRole = activeSchool?.role || null;
+  const currentSchoolIdRef = useRef(activeSchool?.id);
+  const requestGenRef = useRef(0);
+  const abortControllerRef = useRef(null);
+
+  const runSearch = useCallback(async (targetSchoolId = activeSchool?.id) => {
+    if (!targetSchoolId) {
+      setResults([]);
+      setTotal(0);
+      setLoading(false);
+      setError('');
+      return;
+    }
+
+    currentSchoolIdRef.current = targetSchoolId;
+    const genId = ++requestGenRef.current;
+
+    // Hủy request đang bay
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     setLoading(true);
     setError('');
+
     try {
       const params = { q: query, page, limit };
       if (type) params.type = type;
-      const response = await searchContent(params);
-      setResults(response.data || []);
-      setTotal(response.pagination?.total ?? response.total ?? 0);
-    } catch (requestError) {
-      setResults([]);
-      setTotal(0);
-      setError(errorMessage(requestError, S.searchError || 'Không thể thực hiện tìm kiếm. Vui lòng thử lại.'));
-    } finally {
-      setLoading(false);
-    }
-  }, [query, type, page, limit]);
+      const response = await searchContent(params, { signal: controller.signal });
 
-  useEffect(() => { runSearch(); }, [runSearch]);
+      if (currentSchoolIdRef.current === targetSchoolId && requestGenRef.current === genId) {
+        setResults(response.data || []);
+        setTotal(response.pagination?.total ?? response.total ?? 0);
+        setError('');
+      }
+    } catch (requestError) {
+      if (requestError?.name === 'CanceledError' || requestError?.name === 'AbortError' || requestError?.code === 'ERR_CANCELED') {
+        return;
+      }
+      if (currentSchoolIdRef.current === targetSchoolId && requestGenRef.current === genId) {
+        setResults([]);
+        setTotal(0);
+        setError(errorMessage(requestError, S.searchError || 'Không thể thực hiện tìm kiếm. Vui lòng thử lại.'));
+      }
+    } finally {
+      if (currentSchoolIdRef.current === targetSchoolId && requestGenRef.current === genId) {
+        setLoading(false);
+      }
+    }
+  }, [query, type, page, limit, activeSchool?.id, S.searchError]);
+
+  useEffect(() => {
+    setPage(1);
+    setResults([]);
+    setTotal(0);
+    runSearch(activeSchool?.id);
+
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, [activeSchool?.id]);
+
+  useEffect(() => {
+    runSearch(activeSchool?.id);
+  }, [query, type, page, limit]);
 
   useEffect(() => {
     setPage(1);
@@ -182,7 +234,7 @@ export default function SearchPage() {
             {results.map((result) => {
               const meta = TYPE_META[result.type] || { labelKey: result.type, icon: 'search' };
               const metaLabel = S.types?.[meta.labelKey] || result.type;
-              const destination = resultPath(result, user?.role);
+              const destination = resultPath(result, currentRole);
               const ResultCard = destination ? Link : 'article';
               return (
                 <ResultCard
