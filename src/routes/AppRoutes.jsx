@@ -161,9 +161,6 @@ export default function AppRoutes() {
         <Route path="semesters" element={<SemesterManagementPage />} />
         <Route path="subjects" element={<SubjectManagementPage />} />
         <Route path="search" element={<SearchPage />} />
-        <Route path="forum" element={<ForumPage />} />
-        <Route path="forum/new" element={<ForumCreatePage />} />
-        <Route path="forum/:postId" element={<ForumPostPage />} />
         <Route path="logs" element={<SystemLogsPage />} />
         <Route index element={<Navigate to="dashboard" replace />} />
       </Route>

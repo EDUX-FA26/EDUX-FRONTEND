@@ -34,7 +34,6 @@ const NAV_BY_ROLE = {
     { id: 'semesters', icon: 'calendar_month', path: '/admin/semesters', key: 'semesters', label: 'Học kỳ' },
     { id: 'subjects', icon: 'menu_book', path: '/admin/subjects', key: 'subjects', label: 'Môn học' },
     { id: 'logs', icon: 'history', path: '/admin/logs', key: 'logs', label: 'System Logs' },
-    { id: 'forum', icon: 'forum', path: '/admin/forum', key: 'forum', label: 'Diễn đàn' },
   ],
 };
 
