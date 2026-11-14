@@ -1012,7 +1012,7 @@ a:hover {
 
   /* Chừa chỗ cho sidebar */
   padding-left: var(--dashboard-sidebar-width);
-
+  padding-top: var(--dashboard-header-height);
   box-sizing: border-box;
 
   transition:

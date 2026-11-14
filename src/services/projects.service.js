@@ -49,7 +49,7 @@ export const ProjectsService = {
     async acceptInvitation(invitationId) {
         const { data } = await api.post(
             `/projects/invitations/${invitationId}/accept`,
-            undefined,
+            {},
             { schoolScoped: true }
         );
         return data;
@@ -58,11 +58,12 @@ export const ProjectsService = {
     async rejectInvitation(invitationId) {
         const { data } = await api.post(
             `/projects/invitations/${invitationId}/reject`,
-            undefined,
+            {},
             { schoolScoped: true }
         );
         return data;
     },
+
     async getProjectInvitations(projectId) {
         const { data } = await api.get(
             `/projects/${projectId}/invitations`,

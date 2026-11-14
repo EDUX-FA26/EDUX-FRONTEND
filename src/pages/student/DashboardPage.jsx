@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSchool } from '../../contexts/SchoolContext';
@@ -125,6 +125,7 @@ function NotifRow({ notif, t }) {
 export default function StudentDashboardPage() {
   const { user } = useAuth();
   const { currentSchool, status } = useSchool();
+  const activeSchool = currentSchool;
   const { t } = useLanguage();
   const navigate = useNavigate();
 
@@ -138,23 +139,86 @@ export default function StudentDashboardPage() {
   const [notifLoading, setNotifLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const schoolId = currentSchool?.schoolId ?? currentSchool?.id ?? null;
+
+  const currentSchoolIdRef = useRef(schoolId);
+  const requestGenRef = useRef(0);
+  const abortControllerRef = useRef(null);
+
   useEffect(() => {
-    let cancelled = false;
+    currentSchoolIdRef.current = schoolId;
+    const genId = ++requestGenRef.current;
+
+    // Hủy các request đang bay của trường trước
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
+    setData(null);
+    setNotifData(null);
+    setError(null);
+
+    if (!schoolId) {
+      setLoading(false);
+      setNotifLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    setNotifLoading(true);
 
     // 1. Fetch main dashboard metrics
-    getDashboard()
-      .then((res) => { if (!cancelled) setData(res.data); })
-      .catch((err) => { if (!cancelled) setError(err.response?.data?.message || t.dashboard?.noData); })
-      .finally(() => { if (!cancelled) setLoading(false); });
+    getDashboard({ signal: controller.signal })
+      .then((res) => {
+        if (currentSchoolIdRef.current === schoolId && requestGenRef.current === genId) {
+          setData(res.data);
+          setError(null);
+        }
+      })
+      .catch((err) => {
+        if (err?.name === 'CanceledError' || err?.name === 'AbortError' || err?.code === 'ERR_CANCELED') {
+          return;
+        }
+        if (currentSchoolIdRef.current === schoolId && requestGenRef.current === genId) {
+          setError(err.response?.data?.message || t.dashboard?.noData);
+        }
+      })
+      .finally(() => {
+        if (currentSchoolIdRef.current === schoolId && requestGenRef.current === genId) {
+          setLoading(false);
+        }
+      });
 
     // 2. Fetch notifications separately for fast asynchronous loading
-    getDashboardNotifications()
-      .then((res) => { if (!cancelled) setNotifData(res.data); })
-      .catch(() => { })
-      .finally(() => { if (!cancelled) setNotifLoading(false); });
+    getDashboardNotifications({ signal: controller.signal })
+      .then((res) => {
+        if (
+          currentSchoolIdRef.current === schoolId &&
+          requestGenRef.current === genId
+        ) {
+          setNotifData(res.data);
+        }
+      })
+      .catch((err) => {
+        if (err?.code !== 'ERR_CANCELED') {
+          console.error('[DASHBOARD NOTIFICATIONS]', err);
+        }
+      })
+      .finally(() => {
+        if (
+          currentSchoolIdRef.current === schoolId &&
+          requestGenRef.current === genId
+        ) {
+          setNotifLoading(false);
+        }
+      });
 
-    return () => { cancelled = true; };
-  }, []);
+    return () => {
+      controller.abort();
+    };
+  }, [schoolId, status]);
 
   const stats = data?.statistics;
   const assignments = data?.recentAssignments || [];

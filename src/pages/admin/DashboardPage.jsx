@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useSchool } from '../../contexts/SchoolContext';
 import { getDashboard, getDashboardNotifications } from '../../services/dashboard.service';
 import { broadcastNotification } from '../../services/admin.service';
 
@@ -56,38 +57,124 @@ function NotifRow({ notif, t }) {
 export default function AdminDashboardPage() {
   const { user } = useAuth();
   const { t } = useLanguage();
+  const { currentSchool, status: schoolStatus } = useSchool();
+
+  const schoolId =
+    currentSchool?.schoolId ??
+    currentSchool?.id ??
+    null;
   const [data, setData] = useState(null);
   const [notifData, setNotifData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [notifLoading, setNotifLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const currentSchoolIdRef = useRef(schoolId);
+  const requestGenRef = useRef(0);
+  const abortControllerRef = useRef(null);
+
   // Quick Action: Broadcast Modal state (SRS 3.7.1)
   const [showBroadcastModal, setShowBroadcastModal] = useState(false);
   const [broadcastForm, setBroadcastForm] = useState({ title: '', message: '', target: 'all' });
   const [broadcasting, setBroadcasting] = useState(false);
 
-  const fetchDashboardData = () => {
-    setLoading(true);
-    getDashboard()
-      .then((res) => setData(res.data))
-      .catch((err) => setError(err.response?.data?.message || t.dashboard?.noData || 'Không thể tải dữ liệu'))
-      .finally(() => setLoading(false));
+  const fetchDashboardData = (targetSchoolId = schoolId) => {
+    if (!targetSchoolId) {
+      setData(null);
+      setNotifData(null);
+      setLoading(false);
+      setNotifLoading(false);
+      return;
+    }
 
-    fetchNotifs();
+    currentSchoolIdRef.current = targetSchoolId;
+    const genId = ++requestGenRef.current;
+
+    // Hủy request cũ đang bay
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
+    setLoading(true);
+    setNotifLoading(true);
+    setError(null);
+
+    getDashboard({ signal: controller.signal })
+      .then((res) => {
+        if (currentSchoolIdRef.current === targetSchoolId && requestGenRef.current === genId) {
+          setData(res.data);
+          setError(null);
+        }
+      })
+      .catch((err) => {
+        if (err?.name === 'CanceledError' || err?.name === 'AbortError' || err?.code === 'ERR_CANCELED') {
+          return;
+        }
+        if (currentSchoolIdRef.current === targetSchoolId && requestGenRef.current === genId) {
+          setError(err.response?.data?.message || t.dashboard?.noData || 'Không thể tải dữ liệu');
+        }
+      })
+      .finally(() => {
+        if (currentSchoolIdRef.current === targetSchoolId && requestGenRef.current === genId) {
+          setLoading(false);
+        }
+      });
+
+    fetchNotifs(targetSchoolId, genId, controller.signal);
   };
 
-  const fetchNotifs = () => {
+  const fetchNotifs = (
+    targetSchoolId = schoolId,
+    genId = requestGenRef.current,
+    signal
+  ) => {
+    if (!targetSchoolId) {
+      setNotifData(null);
+      setNotifLoading(false);
+      return;
+    }
+
     setNotifLoading(true);
-    getDashboardNotifications()
-      .then((res) => setNotifData(res.data))
-      .catch(() => {})
-      .finally(() => setNotifLoading(false));
+    getDashboardNotifications({ signal })
+      .then((res) => {
+        if (currentSchoolIdRef.current === targetSchoolId && requestGenRef.current === genId) {
+          setNotifData(res.data);
+        }
+      })
+      .catch((err) => {
+        if (err?.name === 'CanceledError' || err?.name === 'AbortError' || err?.code === 'ERR_CANCELED') {
+          return;
+        }
+      })
+      .finally(() => {
+        if (currentSchoolIdRef.current === targetSchoolId && requestGenRef.current === genId) {
+          setNotifLoading(false);
+        }
+      });
   };
 
   useEffect(() => {
-    fetchDashboardData();
-  }, []);
+    setData(null);
+    setNotifData(null);
+    setError(null);
+
+    if (schoolStatus !== 'ready' || !schoolId) {
+      setLoading(false);
+      setNotifLoading(false);
+
+      return () => {
+        abortControllerRef.current?.abort();
+      };
+    }
+
+    fetchDashboardData(schoolId);
+
+    return () => {
+      abortControllerRef.current?.abort();
+    };
+  }, [schoolId, schoolStatus]);
 
   const handleBroadcastSubmit = async (e) => {
     e.preventDefault();
@@ -101,7 +188,7 @@ export default function AdminDashboardPage() {
       alert('Đã phát thông báo toàn trường thành công!');
       setShowBroadcastModal(false);
       setBroadcastForm({ title: '', message: '', target: 'all' });
-      fetchNotifs();
+      fetchNotifs(schoolId, requestGenRef.current);
     } catch (err) {
       alert(err.response?.data?.message || 'Lỗi khi gửi thông báo');
     } finally {
@@ -156,8 +243,8 @@ export default function AdminDashboardPage() {
 
       {/* Quick Access Links Bar (SRS 3.7.1) */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
-        <Link 
-          to="/admin/users" 
+        <Link
+          to="/admin/users"
           className="card"
           style={{ textDecoration: 'none', padding: '18px 20px', display: 'flex', alignItems: 'center', gap: '14px', transition: 'all 0.2s', border: '1px solid var(--color-border)' }}
           onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--color-primary)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
@@ -172,8 +259,8 @@ export default function AdminDashboardPage() {
           </div>
         </Link>
 
-        <Link 
-          to="/admin/classes" 
+        <Link
+          to="/admin/classes"
           className="card"
           style={{ textDecoration: 'none', padding: '18px 20px', display: 'flex', alignItems: 'center', gap: '14px', transition: 'all 0.2s', border: '1px solid var(--color-border)' }}
           onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#1e40af'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
@@ -188,8 +275,8 @@ export default function AdminDashboardPage() {
           </div>
         </Link>
 
-        <Link 
-          to="/admin/reports" 
+        <Link
+          to="/admin/reports"
           className="card"
           style={{ textDecoration: 'none', padding: '18px 20px', display: 'flex', alignItems: 'center', gap: '14px', transition: 'all 0.2s', border: '1px solid var(--color-border)' }}
           onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#7c3aed'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
@@ -204,8 +291,8 @@ export default function AdminDashboardPage() {
           </div>
         </Link>
 
-        <Link 
-          to="/admin/notifications" 
+        <Link
+          to="/admin/notifications"
           className="card"
           style={{ textDecoration: 'none', padding: '18px 20px', display: 'flex', alignItems: 'center', gap: '14px', transition: 'all 0.2s', border: '1px solid var(--color-border)' }}
           onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#059669'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
@@ -223,7 +310,7 @@ export default function AdminDashboardPage() {
 
       {/* Key System Metrics (SRS 3.7.1) */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
-        {loading ? [1,2,3,4].map(i => (
+        {loading ? [1, 2, 3, 4].map(i => (
           <div key={i} className="stat-card" style={{ padding: '20px' }}>
             <div className="skeleton" style={{ width: '80px', height: '14px', marginBottom: '12px' }} />
             <div className="skeleton" style={{ width: '60px', height: '32px', marginBottom: '8px' }} />
@@ -254,7 +341,7 @@ export default function AdminDashboardPage() {
               Xem tất cả →
             </Link>
           </div>
-          {loading ? [1,2,3].map(i => (
+          {loading ? [1, 2, 3].map(i => (
             <div key={i} style={{ display: 'flex', gap: '12px', paddingBottom: '12px', borderBottom: '1px solid var(--color-border)', marginBottom: '12px' }}>
               <div className="skeleton" style={{ width: '38px', height: '38px', borderRadius: '10px', flexShrink: 0 }} />
               <div style={{ flex: 1 }}>
@@ -283,7 +370,7 @@ export default function AdminDashboardPage() {
                 Chi tiết →
               </Link>
             </div>
-            {notifLoading ? [1,2].map(i => (
+            {notifLoading ? [1, 2].map(i => (
               <div key={i} style={{ padding: '12px', borderRadius: '10px', background: 'var(--color-primary-bg)', marginBottom: '8px' }}>
                 <div className="skeleton" style={{ width: '100%', height: '14px', marginBottom: '6px' }} />
                 <div className="skeleton" style={{ width: '60px', height: '12px' }} />
@@ -334,7 +421,7 @@ export default function AdminDashboardPage() {
                   <p style={{ fontSize: '0.8125rem', color: 'var(--color-ink-muted)', margin: 0 }}>Gửi thông báo realtime đến hòm thư sinh viên và giảng viên</p>
                 </div>
               </div>
-              <button 
+              <button
                 type="button"
                 onClick={() => setShowBroadcastModal(false)}
                 style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--color-ink-muted)' }}
@@ -346,21 +433,21 @@ export default function AdminDashboardPage() {
             <form onSubmit={handleBroadcastSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div>
                 <label style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--color-ink-muted)', marginBottom: '6px', display: 'block' }}>Tiêu đề thông báo *</label>
-                <input 
-                  required 
-                  value={broadcastForm.title} 
-                  onChange={e => setBroadcastForm({ ...broadcastForm, title: e.target.value })} 
-                  type="text" 
-                  placeholder="VD: Lịch nghỉ lễ và kế hoạch học bù..." 
-                  style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-ink)', outline: 'none' }} 
+                <input
+                  required
+                  value={broadcastForm.title}
+                  onChange={e => setBroadcastForm({ ...broadcastForm, title: e.target.value })}
+                  type="text"
+                  placeholder="VD: Lịch nghỉ lễ và kế hoạch học bù..."
+                  style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-ink)', outline: 'none' }}
                 />
               </div>
 
               <div>
                 <label style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--color-ink-muted)', marginBottom: '6px', display: 'block' }}>Đối tượng nhận thông báo *</label>
-                <select 
-                  value={broadcastForm.target} 
-                  onChange={e => setBroadcastForm({ ...broadcastForm, target: e.target.value })} 
+                <select
+                  value={broadcastForm.target}
+                  onChange={e => setBroadcastForm({ ...broadcastForm, target: e.target.value })}
                   style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-ink)', fontWeight: 600 }}
                 >
                   <option value="all">Toàn bộ người dùng (Sinh viên & Giảng viên)</option>
@@ -371,13 +458,13 @@ export default function AdminDashboardPage() {
 
               <div>
                 <label style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--color-ink-muted)', marginBottom: '6px', display: 'block' }}>Nội dung chi tiết *</label>
-                <textarea 
-                  required 
+                <textarea
+                  required
                   rows={4}
-                  value={broadcastForm.message} 
-                  onChange={e => setBroadcastForm({ ...broadcastForm, message: e.target.value })} 
-                  placeholder="Nhập nội dung thông báo phát thanh..." 
-                  style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-ink)', outline: 'none', resize: 'vertical' }} 
+                  value={broadcastForm.message}
+                  onChange={e => setBroadcastForm({ ...broadcastForm, message: e.target.value })}
+                  placeholder="Nhập nội dung thông báo phát thanh..."
+                  style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-ink)', outline: 'none', resize: 'vertical' }}
                 />
               </div>
 
