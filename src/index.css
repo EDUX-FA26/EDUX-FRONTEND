@@ -1565,35 +1565,55 @@ a:hover {
   top: 64px !important;
   bottom: 0 !important;
   right: 0 !important;
+  left: var(--dashboard-sidebar-width, 256px) !important;
+  width: auto !important;
+  max-width: calc(100vw - var(--dashboard-sidebar-width, 256px)) !important;
   height: auto !important;
-  max-height: none !important;
+  max-height: calc(100vh - 64px) !important;
   overflow: hidden !important;
+  overflow-x: hidden !important;
   padding: 0 !important;
   margin: 0 !important;
   min-height: 0 !important;
+  min-width: 0 !important;
   display: flex !important;
   flex-direction: column !important;
-  transition: left 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  box-sizing: border-box !important;
+  transition: left 0.2s cubic-bezier(0.4, 0, 0.2, 1), max-width 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
 .dashboard-layout--grade.dashboard-layout--collapsed .dashboard-layout__main {
   left: 64px !important;
+  max-width: calc(100vw - 64px) !important;
 }
 
 .dashboard-layout--grade:not(.dashboard-layout--collapsed) .dashboard-layout__main {
-  left: 256px !important;
+  left: var(--dashboard-sidebar-width, 256px) !important;
+  max-width: calc(100vw - var(--dashboard-sidebar-width, 256px)) !important;
 }
 
+@media (max-width: 768px) {
+  .dashboard-layout--grade .dashboard-layout__main {
+    left: 0 !important;
+    max-width: 100vw !important;
+  }
+}
+
+.dashboard-layout--grade .dashboard-layout__main>main,
+.dashboard-layout--grade .dashboard-layout__main--grade,
 .dashboard-layout--grade .dashboard-layout__main>div {
   padding: 0 !important;
   margin: 0 !important;
-  max-width: none !important;
+  max-width: 100% !important;
   width: 100% !important;
   height: 100% !important;
   min-height: 0 !important;
+  min-width: 0 !important;
   overflow: hidden !important;
+  overflow-x: hidden !important;
   display: flex !important;
   flex-direction: column !important;
+  box-sizing: border-box !important;
   border-top: 0 !important;
 }
 

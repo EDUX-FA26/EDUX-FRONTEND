@@ -2309,8 +2309,8 @@ export const AiRubricForm: React.FC<AiRubricFormProps> = ({
         </div>
 
         {/* Scope title & description editor */}
-        <div className="pt-2 border-t border-slate-200/70 grid grid-cols-1 md:grid-cols-12 gap-3">
-          <div className="md:col-span-4">
+        <div className="pt-2 border-t border-slate-200/70 grid grid-cols-1 md:grid-cols-12 gap-3 w-full min-w-0">
+          <div className="md:col-span-4 min-w-0">
             <label className="saf-input-label">
               Tiêu đề phân rã / Khai báo <span className="text-rose-500">*</span>
             </label>
@@ -2322,7 +2322,7 @@ export const AiRubricForm: React.FC<AiRubricFormProps> = ({
               className="saf-input text-xs font-semibold"
             />
           </div>
-          <div className="md:col-span-8">
+          <div className="md:col-span-8 min-w-0">
             <label className="saf-input-label">
               Mô tả phạm vi / kỹ thuật của module này
             </label>
@@ -2338,9 +2338,9 @@ export const AiRubricForm: React.FC<AiRubricFormProps> = ({
       </div>
 
 
-      <div className="grid grid-cols-12 gap-5 items-start">
+      <div className="grid grid-cols-12 gap-5 items-start w-full min-w-0">
         {/* Danh sách 5 Rubrics bên trái */}
-        <div className="col-span-12 md:col-span-4 space-y-2">
+        <div className="col-span-12 md:col-span-4 min-w-0 space-y-2">
           {rubricKeys.map((key, index) => {
             const meta = RUBRIC_METADATA[key];
             const item = declarations[key];
@@ -2411,7 +2411,7 @@ export const AiRubricForm: React.FC<AiRubricFormProps> = ({
         </div>
 
         {/* Form chi tiết bên phải */}
-        <div className="col-span-12 md:col-span-8 bg-slate-50/70 border border-slate-200/80 rounded-2xl p-5 space-y-4">
+        <div className="col-span-12 md:col-span-8 min-w-0 bg-slate-50/70 border border-slate-200/80 rounded-2xl p-5 space-y-4">
           <div className="flex items-start gap-3 border-b border-slate-200/80 pb-3">
             <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-sm shrink-0">
               <ActiveIcon size={20} />
@@ -3348,7 +3348,7 @@ export default function StudentAssignmentFlow({
   };
 
   return (
-    <div className="bg-[#f8fafc] text-slate-700 min-h-screen py-8 px-4 sm:px-6 lg:px-8">
+    <div className="w-full max-w-full min-w-0 bg-[#f8fafc] text-slate-700 min-h-full py-6 px-4 sm:px-6 lg:px-8">
       {/* Toast Feedback */}
       {toastMessage && (
         <div className="fixed top-6 right-6 z-50 flex items-center gap-3 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-xl animate-in slide-in-from-top-4 duration-200">
@@ -3364,7 +3364,7 @@ export default function StudentAssignmentFlow({
         </div>
       )}
 
-      <div className="max-w-6xl mx-auto space-y-6">
+      <div className="max-w-6xl mx-auto space-y-6 w-full min-w-0">
         {/* Breadcrumbs */}
         <nav className="flex items-center gap-2 text-xs font-semibold text-slate-500">
           <button
@@ -3423,9 +3423,9 @@ export default function StudentAssignmentFlow({
         </div>
 
         {/* Layout 2 Cột (Trái: 1/3, Phải: 2/3) */}
-        <div className="grid grid-cols-12 gap-6 items-start">
+        <div className="grid grid-cols-12 gap-6 items-start w-full min-w-0">
           {/* CỘT TRÁI */}
-          <div className="col-span-12 lg:col-span-4">
+          <div className="col-span-12 lg:col-span-4 min-w-0">
             <AssignmentOverview
               assignment={assignment}
               activeAssignmentTitle={assignment.title}
@@ -3434,7 +3434,7 @@ export default function StudentAssignmentFlow({
           </div>
 
           {/* CỘT PHẢI (State Container) */}
-          <div className="col-span-12 lg:col-span-8 saf-card bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-xs">
+          <div className="col-span-12 lg:col-span-8 min-w-0 saf-card bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-xs">
             {viewMode === 'VIEW_STATUS' ? (
               /* CHẾ ĐỘ A: VIEW_STATUS */
               <SubmissionStatusView

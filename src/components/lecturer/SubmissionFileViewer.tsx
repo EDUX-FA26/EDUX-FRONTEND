@@ -292,7 +292,7 @@ export default function SubmissionFileViewer({
     const codeLines = selectedFile?.content ? selectedFile.content.split('\n') : ['// Chọn một file trong cây thư mục bên trái để xem nội dung'];
 
     return (
-      <div className={`flex-1 min-h-0 flex flex-col bg-white overflow-hidden ${className}`}>
+      <div className={`flex-1 min-h-0 w-full max-w-full flex flex-col bg-white overflow-hidden ${className}`}>
         {/* Top Action Bar */}
         <div className="h-12 border-b border-slate-200 px-5 flex items-center justify-between bg-white shrink-0">
           <div className="flex items-center gap-2 font-bold text-xs text-slate-800">
@@ -347,7 +347,7 @@ export default function SubmissionFileViewer({
         )}
 
         {/* Body Split Pane: Left = GitHub File Tree | Right = Code Preview */}
-        <div className="flex-1 min-h-0 flex overflow-hidden">
+        <div className="flex-1 min-h-0 flex overflow-hidden min-w-0">
           {/* CỘT TRÁI CON: FILE TREE VIEW (GITHUB STYLE) */}
           <aside className="w-64 border-r border-slate-200 bg-slate-50/70 flex flex-col min-h-0 shrink-0 select-none">
             {/* Search filter in tree */}
@@ -392,7 +392,7 @@ export default function SubmissionFileViewer({
           </aside>
 
           {/* CỘT PHẢI CON: CODE CONTENT VIEWER */}
-          <div className="flex-1 min-h-0 flex flex-col bg-white overflow-hidden">
+          <div className="flex-1 min-h-0 flex flex-col bg-white overflow-hidden min-w-0">
             {/* Selected File Breadcrumb Bar */}
             <div className="h-9 border-b border-slate-200 px-4 flex items-center justify-between bg-slate-50/50 text-xs shrink-0">
               <div className="flex items-center gap-1.5 text-slate-600 font-mono text-[11px] truncate">
@@ -423,30 +423,32 @@ export default function SubmissionFileViewer({
             </div>
 
             {/* Code Lines Display */}
-            <div className="flex-1 min-h-0 p-4 pb-12 font-mono text-xs text-slate-700 bg-white overflow-y-auto custom-scroll leading-relaxed select-text">
-              {codeLines.map((line, idx) => {
-                const lineNum = idx + 1;
-                const isAnnotated =
-                  line.includes('AI Declaration') ||
-                  line.includes('RedisTokenBlacklistService') ||
-                  line.includes('IStorageProvider');
+            <div className="w-full max-w-full min-w-0 flex-1 overflow-auto custom-scroll p-4 pb-12 font-mono text-xs text-slate-700 bg-white leading-relaxed select-text">
+              <div className="w-max min-w-full">
+                {codeLines.map((line, idx) => {
+                  const lineNum = idx + 1;
+                  const isAnnotated =
+                    line.includes('AI Declaration') ||
+                    line.includes('RedisTokenBlacklistService') ||
+                    line.includes('IStorageProvider');
 
-                return (
-                  <div
-                    key={lineNum}
-                    className={`flex gap-3 px-1.5 py-0.5 rounded transition ${
-                      isAnnotated
-                        ? 'bg-purple-50/80 border-l-2 border-purple-500 text-purple-950 font-medium'
-                        : 'hover:bg-slate-50'
-                    }`}
-                  >
-                    <span className="text-slate-400 select-none w-8 text-right shrink-0 font-mono text-[11px]">
-                      {lineNum}
-                    </span>
-                    <span className="whitespace-pre flex-1">{line || ' '}</span>
-                  </div>
-                );
-              })}
+                  return (
+                    <div
+                      key={lineNum}
+                      className={`flex gap-3 px-1.5 py-0.5 rounded transition ${
+                        isAnnotated
+                          ? 'bg-purple-50/80 border-l-2 border-purple-500 text-purple-950 font-medium'
+                          : 'hover:bg-slate-50'
+                      }`}
+                    >
+                      <span className="text-slate-400 select-none w-8 text-right shrink-0 font-mono text-[11px]">
+                        {lineNum}
+                      </span>
+                      <span className="whitespace-pre flex-1 min-w-0">{line || ' '}</span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>
@@ -461,7 +463,7 @@ export default function SubmissionFileViewer({
   const textLines = effectiveContent.split('\n');
 
   return (
-    <div className={`flex-1 min-h-0 flex flex-col bg-white overflow-hidden ${className}`}>
+    <div className={`flex-1 min-h-0 w-full max-w-full flex flex-col bg-white overflow-hidden ${className}`}>
       {/* Header bar */}
       <div className="h-12 border-b border-slate-200 px-5 flex items-center justify-between bg-white shrink-0">
         <div className="flex items-center gap-2 font-bold text-xs text-slate-800">
@@ -495,13 +497,15 @@ export default function SubmissionFileViewer({
       </div>
 
       {/* Code Text Content */}
-      <div className="flex-1 min-h-0 p-5 pb-12 font-mono text-xs text-slate-700 bg-white overflow-y-auto custom-scroll leading-relaxed select-text">
-        {textLines.map((line, idx) => (
-          <div key={idx + 1} className="flex gap-4 hover:bg-slate-50 px-1 py-0.5 rounded">
-            <span className="text-slate-400 select-none w-8 text-right shrink-0">{idx + 1}</span>
-            <span className="whitespace-pre flex-1">{line || ' '}</span>
-          </div>
-        ))}
+      <div className="w-full max-w-full min-w-0 flex-1 overflow-auto custom-scroll p-5 pb-12 font-mono text-xs text-slate-700 bg-white leading-relaxed select-text">
+        <div className="w-max min-w-full">
+          {textLines.map((line, idx) => (
+            <div key={idx + 1} className="flex gap-4 hover:bg-slate-50 px-1 py-0.5 rounded">
+              <span className="text-slate-400 select-none w-8 text-right shrink-0">{idx + 1}</span>
+              <span className="whitespace-pre flex-1 min-w-0">{line || ' '}</span>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

@@ -742,7 +742,7 @@ export default function LecturerGradingPage() {
   }
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col h-full w-full overflow-hidden m-0 p-0">
+    <div className="flex-1 min-h-0 flex flex-col h-full w-full max-w-full min-w-0 overflow-hidden overflow-x-hidden m-0 p-0">
       <LecturerAcademicEvaluation
         student={studentInfo}
         courseInfo={courseInfo}

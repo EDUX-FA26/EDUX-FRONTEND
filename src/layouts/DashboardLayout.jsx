@@ -797,19 +797,24 @@ export default function DashboardLayout() {
 
         {/* Main content: chỉ render một Outlet */}
         <main
+          className={`flex-1 min-w-0 w-full overflow-x-hidden ${isGradePage ? 'dashboard-layout__main--grade' : ''}`}
           style={
-            isFocusRoom
+            isFocusRoom || isGradePage
               ? {
                 flex: 1,
                 width: '100%',
-                maxWidth: 'none',
+                maxWidth: '100%',
                 margin: 0,
                 padding: 0,
                 display: 'flex',
                 flexDirection: 'column',
                 height:
                   'calc(100vh - var(--dashboard-header-height, 64px))',
+                minHeight: 0,
+                minWidth: 0,
                 overflow: 'hidden',
+                overflowX: 'hidden',
+                boxSizing: 'border-box',
               }
               : {
                 flex: 1,

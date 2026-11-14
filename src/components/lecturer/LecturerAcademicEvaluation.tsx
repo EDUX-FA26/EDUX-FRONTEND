@@ -1218,7 +1218,7 @@ export default function LecturerAcademicEvaluation({
   const codeLines = submissionFile.lines || (submissionFile.content ? submissionFile.content.split('\n') : []);
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col h-full w-full overflow-hidden bg-[#f8fafc] text-slate-700 font-sans select-none m-0 p-0">
+    <div className="flex-1 min-h-0 flex flex-col h-full w-full max-w-full min-w-0 overflow-hidden overflow-x-hidden bg-[#f8fafc] text-slate-700 font-sans select-none m-0 p-0">
       {/* Toast Notification Floating */}
       {toastMessage && (
         <div className="fixed top-6 right-6 z-[1050] flex items-center gap-3 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-2xl border border-slate-700 animate-in fade-in slide-in-from-top-4 duration-200">
@@ -1240,8 +1240,9 @@ export default function LecturerAcademicEvaluation({
       )}
 
       {/* ==================== TOP NAVIGATION BAR (H-14 FLUSH FIT) ==================== */}
-      <header className="h-14 w-full bg-[#0f172a] text-white px-4 flex items-center justify-between border-b border-gray-800 shrink-0 select-none">
-        <div className="flex items-center gap-3 min-w-0">
+      <header className="h-14 w-full max-w-full min-w-0 bg-[#0f172a] text-white px-4 py-2.5 flex items-center justify-between gap-3 border-b border-gray-800 shrink-0 select-none overflow-hidden">
+        {/* Khối bên trái: Breadcrumb & Tên SV */}
+        <div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
           <button
             type="button"
             onClick={handleBackClick}
@@ -1252,7 +1253,7 @@ export default function LecturerAcademicEvaluation({
           </button>
 
           {/* Breadcrumbs */}
-          <nav aria-label="Breadcrumb" className="text-xs font-medium tracking-wide flex items-center gap-2 min-w-0">
+          <nav aria-label="Breadcrumb" className="text-xs font-medium tracking-wide flex items-center gap-1.5 min-w-0 truncate shrink-0">
             <button
               type="button"
               onClick={() => navigate('/lecturer/dashboard')}
@@ -1271,7 +1272,7 @@ export default function LecturerAcademicEvaluation({
                   navigate('/lecturer/classes');
                 }
               }}
-              className="cursor-pointer hover:text-blue-400 transition-colors max-w-[220px] truncate text-left bg-transparent border-0 p-0 text-slate-200"
+              className="cursor-pointer hover:text-blue-400 transition-colors max-w-[120px] sm:max-w-[160px] truncate text-left bg-transparent border-0 p-0 text-slate-200"
               title={displayCourseName}
             >
               {displayCourseName}
@@ -1280,7 +1281,7 @@ export default function LecturerAcademicEvaluation({
             <button
               type="button"
               onClick={handleBackClick}
-              className="cursor-pointer hover:text-blue-400 transition-colors max-w-[240px] truncate text-left bg-transparent border-0 p-0 text-slate-300"
+              className="cursor-pointer hover:text-blue-400 transition-colors max-w-[120px] sm:max-w-[160px] truncate text-left bg-transparent border-0 p-0 text-slate-300"
               title={displayAssignmentTitle}
             >
               {displayAssignmentTitle}
@@ -1288,25 +1289,25 @@ export default function LecturerAcademicEvaluation({
           </nav>
 
           {/* Divider & Student Info */}
-          <span className="text-slate-700 hidden sm:inline mx-1">|</span>
-          <div className="hidden md:flex items-center gap-2 shrink-0">
-            <span className="text-xs font-semibold text-white truncate max-w-[180px]">
+          <span className="text-slate-700 hidden sm:inline mx-1 shrink-0">|</span>
+          <div className="hidden md:flex items-center gap-2 shrink-0 min-w-0">
+            <span className="text-xs font-semibold text-white truncate max-w-[120px] sm:max-w-[150px]">
               {student.name} ({student.code})
             </span>
             {isAiRequired && (student.aiRiskLevel === 'low' || auditIntegrity?.risk_level === 'LOW_RISK' || auditIntegrity?.riskLevel === 'low') && (
-              <span className="inline-flex items-center gap-1.5 bg-[#063f35] text-[#2fe8a6] border border-[#0d594b] text-[10px] font-semibold px-2 py-0.5 rounded-full" title="Rủi ro minh bạch AI: Thấp (Đánh giá độc lập, không trừ điểm học thuật)">
+              <span className="hidden xl:inline-flex items-center gap-1.5 bg-[#063f35] text-[#2fe8a6] border border-[#0d594b] text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0" title="Rủi ro minh bạch AI: Thấp (Đánh giá độc lập, không trừ điểm học thuật)">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#2fe8a6]"></span>
                 <span>LOW_RISK (AI Transparency)</span>
               </span>
             )}
             {isAiRequired && (student.aiRiskLevel === 'medium' || auditIntegrity?.risk_level === 'MEDIUM_RISK' || auditIntegrity?.riskLevel === 'medium') && (
-              <span className="inline-flex items-center gap-1.5 bg-[#3f2f06] text-[#e8b52f] border border-[#59440d] text-[10px] font-semibold px-2 py-0.5 rounded-full" title="Rủi ro minh bạch AI: Trung bình (Đánh giá độc lập, không trừ điểm học thuật)">
+              <span className="hidden xl:inline-flex items-center gap-1.5 bg-[#3f2f06] text-[#e8b52f] border border-[#59440d] text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0" title="Rủi ro minh bạch AI: Trung bình (Đánh giá độc lập, không trừ điểm học thuật)">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#e8b52f]"></span>
                 <span>MEDIUM_RISK (AI Transparency)</span>
               </span>
             )}
             {isAiRequired && (student.aiRiskLevel === 'high' || auditIntegrity?.risk_level === 'HIGH_RISK' || auditIntegrity?.riskLevel === 'high') && (
-              <span className="inline-flex items-center gap-1.5 bg-[#3f0606] text-[#e82f2f] border border-[#590d0d] text-[10px] font-semibold px-2 py-0.5 rounded-full" title="Rủi ro minh bạch AI: Cao (Đánh giá độc lập, dùng câu hỏi VIVA để vấn đáp, không trừ thẳng điểm code)">
+              <span className="hidden xl:inline-flex items-center gap-1.5 bg-[#3f0606] text-[#e82f2f] border border-[#590d0d] text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0" title="Rủi ro minh bạch AI: Cao (Đánh giá độc lập, dùng câu hỏi VIVA để vấn đáp, không trừ thẳng điểm code)">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#e82f2f]"></span>
                 <span>HIGH_RISK (AI Transparency)</span>
               </span>
@@ -1314,11 +1315,12 @@ export default function LecturerAcademicEvaluation({
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5 shrink-0">
+        {/* Khối nút hành động bên phải */}
+        <div className="flex items-center gap-2 shrink-0">
           <button
             type="button"
             onClick={() => setShowResubmitModal(true)}
-            className="flex items-center gap-1.5 px-3 py-1 bg-white text-rose-600 rounded-lg text-xs font-bold hover:bg-rose-50 transition border border-rose-100 shadow-sm cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1 bg-white text-rose-600 rounded-lg text-xs font-bold hover:bg-rose-50 transition border border-rose-100 shadow-sm cursor-pointer shrink-0 whitespace-nowrap"
           >
             <RotateCcw size={13} />
             <span>Request Resubmit</span>
@@ -1328,7 +1330,7 @@ export default function LecturerAcademicEvaluation({
             type="button"
             disabled={isSaving}
             onClick={handleSaveDraft}
-            className="flex items-center gap-1.5 px-3 py-1 bg-[#1b2b52] text-slate-200 rounded-lg text-xs font-semibold hover:bg-[#233766] transition border border-slate-700 cursor-pointer disabled:opacity-50"
+            className="flex items-center gap-1.5 px-3 py-1 bg-[#1b2b52] text-slate-200 rounded-lg text-xs font-semibold hover:bg-[#233766] transition border border-slate-700 cursor-pointer disabled:opacity-50 shrink-0 whitespace-nowrap"
           >
             <Bookmark size={13} />
             <span>{isSaving ? 'Saving...' : 'Save Draft'}</span>
@@ -1338,7 +1340,7 @@ export default function LecturerAcademicEvaluation({
             type="button"
             disabled={isPublishing}
             onClick={handlePublishGrade}
-            className="flex items-center gap-1.5 px-3.5 py-1 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-lg text-xs font-bold hover:opacity-95 shadow-md shadow-orange-500/20 transition cursor-pointer disabled:opacity-50"
+            className="flex items-center gap-1.5 px-3.5 py-1 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-lg text-xs font-bold hover:opacity-95 shadow-md shadow-orange-500/20 transition cursor-pointer disabled:opacity-50 shrink-0 whitespace-nowrap"
           >
             <Send size={11} />
             <span>{isPublishing ? 'Đang công bố...' : `Công bố điểm (${totalScore.toFixed(2)} / 10)`}</span>
@@ -1347,9 +1349,9 @@ export default function LecturerAcademicEvaluation({
       </header>
 
       {/* ==================== MAIN CONTENT AREA (WORKSPACE BODY) ==================== */}
-      <div className="flex-1 min-h-0 flex w-full overflow-hidden">
-        {/* CỘT TRÁI: CODE VIEWER / ANNOTATE (FLEX-1) */}
-        <div className="flex-1 min-h-0 flex flex-col overflow-hidden bg-white border-r border-gray-200 min-w-0">
+      <div className="grid grid-cols-1 lg:grid-cols-12 w-full max-w-full min-w-0 h-[calc(100vh-112px)] overflow-hidden bg-white">
+        {/* CỘT TRÁI: CODE VIEWER / ANNOTATE (COL-SPAN-6 / XL:COL-SPAN-7) */}
+        <div className="lg:col-span-6 xl:col-span-7 min-w-0 w-full flex flex-col h-full overflow-hidden bg-white border-r border-gray-200">
           <SubmissionFileViewer
             file={actualFile}
             onAiAnnotate={handleAiAnnotateClick}
@@ -1359,44 +1361,44 @@ export default function LecturerAcademicEvaluation({
           />
         </div>
 
-        {/* CỘT PHẢI: TAB AI DECLARATION & AUDIT / ACADEMIC GRADING */}
-        <aside className="w-[440px] lg:w-[480px] xl:w-[540px] flex flex-col min-h-0 overflow-hidden bg-white shrink-0 border-l border-slate-200">
-          {/* TAB NAVIGATION CỐ ĐỊNH */}
+        {/* CỘT PHẢI: TAB AI DECLARATION & AUDIT / ACADEMIC GRADING (COL-SPAN-6 / XL:COL-SPAN-5) */}
+        <aside className="lg:col-span-6 xl:col-span-5 min-w-0 w-full flex flex-col h-full border-l border-slate-200 bg-white overflow-hidden">
+          {/* TAB NAVIGATION CỐ ĐỊNH (GRID 2 CỘT 50% - 50%) */}
           {isAiRequired ? (
-            <div className="h-11 border-b border-gray-200 flex items-center px-2 shrink-0 bg-white select-none">
+            <div className="grid grid-cols-2 w-full min-w-0 shrink-0 border-b border-slate-200 select-none bg-white">
               <button
                 id="tab-btn-ai"
                 type="button"
                 onClick={() => setActiveTab('ai')}
-                className={`flex-1 h-full flex items-center justify-center gap-1.5 text-xs font-bold transition cursor-pointer ${
+                className={`min-w-0 px-2 py-3 text-xs font-bold truncate flex items-center justify-center gap-1.5 transition cursor-pointer ${
                   activeTab === 'ai'
                     ? 'border-b-2 border-orange-500 text-orange-600'
                     : 'border-b-2 border-transparent text-slate-500 hover:text-slate-800'
                 }`}
               >
-                <ShieldCheck size={14} />
-                <span>AI DECLARATION & AUDIT</span>
+                <ShieldCheck size={14} className="shrink-0" />
+                <span className="truncate">AI DECLARATION & AUDIT</span>
               </button>
 
               <button
                 id="tab-btn-grading"
                 type="button"
                 onClick={() => setActiveTab('grading')}
-                className={`flex-1 h-full flex items-center justify-center gap-1.5 text-xs font-bold transition cursor-pointer ${
+                className={`min-w-0 px-2 py-3 text-xs font-bold truncate flex items-center justify-center gap-1.5 transition cursor-pointer ${
                   activeTab === 'grading'
                     ? 'border-b-2 border-indigo-600 text-indigo-600'
                     : 'border-b-2 border-transparent text-slate-500 hover:text-slate-800'
                 }`}
               >
-                <Bookmark size={14} />
-                <span>ACADEMIC GRADING</span>
+                <Bookmark size={14} className="shrink-0" />
+                <span className="truncate">ACADEMIC GRADING</span>
               </button>
             </div>
           ) : (
-            <div className="h-11 border-b border-gray-200 flex items-center px-4 shrink-0 bg-slate-50/70 select-none">
-              <div className="flex items-center gap-2 text-xs font-bold text-indigo-700 tracking-wide uppercase">
-                <Bookmark size={14} className="text-indigo-600" />
-                <span>BẢNG CHẤM ĐIỂM CHUYÊN MÔN (ACADEMIC GRADING)</span>
+            <div className="h-11 border-b border-gray-200 flex items-center px-4 shrink-0 bg-slate-50/70 select-none w-full min-w-0">
+              <div className="flex items-center gap-2 text-xs font-bold text-indigo-700 tracking-wide uppercase truncate">
+                <Bookmark size={14} className="text-indigo-600 shrink-0" />
+                <span className="truncate">BẢNG CHẤM ĐIỂM CHUYÊN MÔN (ACADEMIC GRADING)</span>
               </div>
             </div>
           )}
@@ -1407,7 +1409,7 @@ export default function LecturerAcademicEvaluation({
             {isAiRequired && (
               <div
                 id="panel-ai"
-                className={`flex-1 min-h-0 flex flex-col p-4 pb-16 overflow-y-auto custom-scroll space-y-4 ${
+                className={`flex-1 min-h-0 w-full overflow-y-auto overflow-x-hidden p-4 pb-16 space-y-4 custom-scroll ${
                   activeTab === 'ai' ? '' : 'hidden'
                 }`}
               >
@@ -1526,31 +1528,31 @@ export default function LecturerAcademicEvaluation({
                   </button>
                 </div>
               ) : (
-                <div className="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-xs shrink-0">
-                  <div className="max-h-[460px] overflow-x-auto overflow-y-auto custom-scroll">
-                    <table className="w-full min-w-[960px] border-collapse text-left text-xs table-fixed">
+                <div className="w-full max-w-full overflow-hidden border border-slate-200 rounded-2xl bg-white shadow-xs shrink-0">
+                  <div className="w-full max-w-full overflow-x-auto overflow-y-auto custom-scroll max-h-[460px]">
+                    <table className="w-full min-w-[690px] border-collapse text-left text-xs table-fixed">
                       <colgroup>
-                        <col className="w-[130px]" />
-                        <col className="w-[130px]" />
-                        <col className="w-[233px]" />
-                        <col className="w-[233px]" />
-                        <col className="w-[234px]" />
+                        <col className="w-[105px]" />
+                        <col className="w-[105px]" />
+                        <col className="w-[160px]" />
+                        <col className="w-[160px]" />
+                        <col className="w-[160px]" />
                       </colgroup>
                       <thead className="sticky top-0 bg-slate-50 border-b border-slate-200 text-[10px] font-bold text-slate-500 uppercase tracking-wider z-10">
                         <tr>
-                          <th className="py-3 px-3 w-[130px] border-b border-slate-200 bg-slate-50">
+                          <th className="py-2.5 px-2.5 w-[105px] border-b border-slate-200 bg-slate-50">
                             Phase / Rubric
                           </th>
-                          <th className="py-3 px-3 w-[130px] border-b border-slate-200 bg-slate-50">
+                          <th className="py-2.5 px-2.5 w-[105px] border-b border-slate-200 bg-slate-50">
                             Tool & Decision
                           </th>
-                          <th className="py-3 px-3 w-[233px] border-b border-slate-200 bg-slate-50">
+                          <th className="py-2.5 px-2.5 w-[160px] border-b border-slate-200 bg-slate-50">
                             Prompt Input
                           </th>
-                          <th className="py-3 px-3 w-[233px] border-b border-slate-200 bg-slate-50">
+                          <th className="py-2.5 px-2.5 w-[160px] border-b border-slate-200 bg-slate-50">
                             AI Response
                           </th>
-                          <th className="py-3 px-3 w-[234px] border-b border-slate-200 bg-slate-50">
+                          <th className="py-2.5 px-2.5 w-[160px] border-b border-slate-200 bg-slate-50">
                             Student Reflection / Self-Evaluation
                           </th>
                         </tr>
@@ -1668,7 +1670,7 @@ export default function LecturerAcademicEvaluation({
             {/* ==================== TAB 2: ACADEMIC GRADING ==================== */}
             <div
               id="panel-grading"
-              className={`flex-1 min-h-0 flex flex-col p-4 pb-16 overflow-y-auto custom-scroll space-y-6 ${
+              className={`flex-1 min-h-0 flex flex-col p-4 pb-16 overflow-y-auto overflow-x-hidden custom-scroll space-y-6 ${
                 activeTab === 'grading' ? '' : 'hidden'
               }`}
             >
