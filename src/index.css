@@ -1943,3 +1943,85 @@ main[style*="backdrop-filter"] p {
   }
 }
 
+/* =========================================
+   EDUX FORUM POST - RESPONSIVE FIX
+========================================= */
+
+.forum-post-page {
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0;
+  box-sizing: border-box;
+  container-type: inline-size;
+}
+
+/* Bài viết không được tràn khỏi vùng nội dung */
+.forum-post-page > article,
+.forum-post-page > section {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* Thông tin tác giả */
+.forum-post-page article > aside {
+  min-width: 0;
+  flex-wrap: wrap !important;
+  gap: 12px !important;
+}
+
+.forum-post-page article > aside strong {
+  overflow-wrap: anywhere;
+}
+
+.forum-post-page article > aside > div:last-child {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  min-width: 0;
+  margin-left: 0 !important;
+}
+
+/* Cột thông tin môn học */
+.forum-post-page > aside {
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.forum-post-page > aside > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Laptop có vùng nội dung hẹp */
+@container (max-width: 1100px) {
+  .forum-post-page > article,
+  .forum-post-page > section,
+  .forum-post-page > div[style*="width: calc(70%"] {
+    width: 100% !important;
+  }
+
+  .forum-post-page > aside {
+    position: static !important;
+    width: 100% !important;
+    margin-top: 18px;
+  }
+}
+
+/* Tablet / Mobile */
+@media (max-width: 768px) {
+  .forum-post-page {
+    padding: 16px !important;
+  }
+
+  .forum-post-page article {
+    padding: 16px !important;
+  }
+
+  .forum-post-page article > aside {
+    align-items: flex-start !important;
+  }
+
+  .forum-post-page article > aside > div:last-child {
+    width: 100%;
+  }
+}
