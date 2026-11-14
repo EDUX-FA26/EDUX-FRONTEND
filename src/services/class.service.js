@@ -12,6 +12,7 @@ const ClassService = {
         limit: 100,
         ...params,
       },
+      schoolScoped: true,
     });
 
     return response.data;
@@ -28,6 +29,7 @@ const ClassService = {
         limit: 100,
         ...params,
       },
+      schoolScoped: true,
     });
 
     return response.data;
@@ -44,6 +46,7 @@ const ClassService = {
         limit: 100,
         ...params,
       },
+      schoolScoped: true,
     });
 
     return response.data;
@@ -54,7 +57,9 @@ const ClassService = {
    * Lấy chi tiết lớp
    */
   async getClassById(classId) {
-    const response = await api.get(`/classes/${classId}`);
+    const response = await api.get(`/classes/${classId}`, {
+      schoolScoped: true,
+    });
     return response.data;
   },
 
@@ -63,7 +68,9 @@ const ClassService = {
    * Alias cho getClassById
    */
   async getClassDetail(classId) {
-    const response = await api.get(`/classes/${classId}`);
+    const response = await api.get(`/classes/${classId}`, {
+      schoolScoped: true,
+    });
     return response.data;
   },
 
@@ -74,6 +81,7 @@ const ClassService = {
   async getClassMembers(classId, params = {}) {
     const response = await api.get(`/classes/${classId}/members`, {
       params,
+      schoolScoped: true,
     });
 
     return response.data;
@@ -84,7 +92,9 @@ const ClassService = {
    * Lấy danh sách slot của lớp
    */
   async getClassSlots(classId) {
-    const response = await api.get(`/classes/${classId}/slots`);
+    const response = await api.get(`/classes/${classId}/slots`, {
+      schoolScoped: true,
+    });
     return response.data;
   },
 
@@ -93,7 +103,9 @@ const ClassService = {
    * Lấy dữ liệu trợ lý sư phạm AI & lịch sử
    */
   async getClassAiAdvisor(classId) {
-    const response = await api.get(`/classes/${classId}/ai-advisor`);
+    const response = await api.get(`/classes/${classId}/ai-advisor`, {
+      schoolScoped: true,
+    });
     return response.data;
   },
 
@@ -102,7 +114,11 @@ const ClassService = {
    * Buộc phân tích lại bài tập mới nhất
    */
   async refreshClassAiAdvisor(classId) {
-    const response = await api.post(`/classes/${classId}/ai-advisor/refresh`);
+    const response = await api.post(
+      `/classes/${classId}/ai-advisor/refresh`,
+      undefined,
+      { schoolScoped: true }
+    );
     return response.data;
   },
 };

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { useSchool } from '../../contexts/SchoolContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { getDashboard, getDashboardNotifications } from '../../services/dashboard.service';
 
@@ -120,10 +121,17 @@ function NotifRow({ notif, t }) {
 }
 
 // ─── Main Page ───
+
 export default function StudentDashboardPage() {
   const { user } = useAuth();
+  const { currentSchool, status } = useSchool();
   const { t } = useLanguage();
   const navigate = useNavigate();
+
+  const schoolName =
+    currentSchool?.schoolName ||
+    currentSchool?.name ||
+    null;
   const [data, setData] = useState(null);
   const [notifData, setNotifData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -142,7 +150,7 @@ export default function StudentDashboardPage() {
     // 2. Fetch notifications separately for fast asynchronous loading
     getDashboardNotifications()
       .then((res) => { if (!cancelled) setNotifData(res.data); })
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => { if (!cancelled) setNotifLoading(false); });
 
     return () => { cancelled = true; };
@@ -182,6 +190,40 @@ export default function StudentDashboardPage() {
           <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: 0, letterSpacing: '-0.02em', color: '#ffffff' }}>
             {t.dashboard?.welcomeStudent} {user?.full_name || user?.email}!
           </h1>
+
+          {/* Current School */}
+          {status === "ready" && schoolName && (
+            <div
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "8px",
+                marginTop: "14px",
+                padding: "8px 14px",
+                borderRadius: "10px",
+                background: "rgba(255,255,255,0.12)",
+                border: "1px solid rgba(255,255,255,0.2)",
+                color: "#ffffff",
+                fontSize: "0.875rem",
+                fontWeight: 500,
+              }}
+            >
+              <span
+                className="material-symbols-outlined"
+                style={{ fontSize: "19px" }}
+              >
+                school
+              </span>
+
+              <span>
+                Đang học tại:{" "}
+                <strong style={{ color: "#fed7aa" }}>
+                  {schoolName}
+                </strong>
+              </span>
+            </div>
+          )}
+
           <p style={{ marginTop: '8px', color: 'rgba(255, 255, 255, 0.9)', fontSize: '0.9375rem', lineHeight: '1.5', margin: '8px 0 0 0' }}>
             {t.dashboard?.welcomeDesc}
           </p>
@@ -199,13 +241,13 @@ export default function StudentDashboardPage() {
           </div>
         ) : (
           <>
-            <StatCard 
-              label={S?.totalClasses} 
-              value={stats?.totalClasses} 
-              icon="class" 
-              iconBg="#fff1e7" 
-              iconColor="var(--color-primary)" 
-              sub={S?.currentSemester} 
+            <StatCard
+              label={S?.totalClasses}
+              value={stats?.totalClasses}
+              icon="class"
+              iconBg="#fff1e7"
+              iconColor="var(--color-primary)"
+              sub={S?.currentSemester}
               onClick={() => navigate('/student/classes?semester=FALL_2026')}
               className="cursor-pointer hover:shadow-md transition-all hover:scale-[1.02]"
             />
@@ -236,7 +278,7 @@ export default function StudentDashboardPage() {
 
           {loading ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {[1,2,3].map(i => (
+              {[1, 2, 3].map(i => (
                 <div key={i} style={{ display: 'flex', gap: '12px', paddingBottom: '12px', borderBottom: '1px solid var(--color-border)' }}>
                   <div className="skeleton" style={{ width: '36px', height: '36px', borderRadius: '10px', flexShrink: 0 }} />
                   <div style={{ flex: 1 }}>
@@ -272,7 +314,7 @@ export default function StudentDashboardPage() {
 
           {notifLoading ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {[1,2,3].map(i => (
+              {[1, 2, 3].map(i => (
                 <div key={i} style={{ padding: '12px', borderRadius: '10px', background: 'var(--color-primary-bg)' }}>
                   <div className="skeleton" style={{ width: '120px', height: '12px', marginBottom: '8px' }} />
                   <div className="skeleton" style={{ width: '100%', height: '14px', marginBottom: '4px' }} />

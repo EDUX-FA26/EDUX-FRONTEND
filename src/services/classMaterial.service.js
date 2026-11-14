@@ -3,7 +3,10 @@ import api from '../config/axios.config.js';
 const ClassMaterialService = {
     // GET /api/classes/:classId/materials (Danh sách tài liệu lớp học)
     async getClassMaterials(classId, params = {}) {
-        const response = await api.get(`/classes/${classId}/materials`, { params });
+        const response = await api.get(`/classes/${classId}/materials`, {
+            params,
+            schoolScoped: true,
+        });
         return response.data;
     },
 
@@ -13,31 +16,40 @@ const ClassMaterialService = {
             headers: {
                 'Content-Type': 'multipart/form-data',
             },
+            schoolScoped: true,
         });
         return response.data;
     },
 
     // GET /api/materials/classes/:id (Chi tiết tài liệu)
     async getMaterialById(id) {
-        const response = await api.get(`/materials/classes/${id}`);
+        const response = await api.get(`/materials/classes/${id}`, {
+            schoolScoped: true,
+        });
         return response.data;
     },
 
     // GET /api/materials/classes/:id/download (Lấy presigned URL để tải xuống)
     async downloadMaterial(id) {
-        const response = await api.get(`/materials/classes/${id}/download`);
+        const response = await api.get(`/materials/classes/${id}/download`, {
+            schoolScoped: true,
+        });
         return response.data;
     },
 
     // PATCH /api/materials/classes/:id (Cập nhật metadata - Lecturer/Admin)
     async updateMaterial(id, updateData) {
-        const response = await api.patch(`/materials/classes/${id}`, updateData);
+        const response = await api.patch(`/materials/classes/${id}`, updateData, {
+            schoolScoped: true,
+        });
         return response.data;
     },
 
     // DELETE /api/materials/classes/:id (Xóa tài liệu - Lecturer/Admin)
     async deleteMaterial(id) {
-        const response = await api.delete(`/materials/classes/${id}`);
+        const response = await api.delete(`/materials/classes/${id}`, {
+            schoolScoped: true,
+        });
         return response.data;
     },
 };

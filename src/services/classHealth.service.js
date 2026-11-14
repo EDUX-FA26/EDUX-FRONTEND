@@ -3,7 +3,8 @@ import api from '../config/axios.config';
 
 export const getClassHealthSnapshot = async (classId) => {
   const response = await api.get(
-    `/classes/${classId}/health/snapshot`
+    `/classes/${classId}/health/snapshot`,
+    { schoolScoped: true }
   );
 
   return response.data;
@@ -16,7 +17,8 @@ export const sendClassHealthBulkNotification = async (
 ) => {
   const response = await api.post(
     `/classes/${classId}/health/notify`,
-    payload
+    payload,
+    { schoolScoped: true }
   );
 
   return response.data;

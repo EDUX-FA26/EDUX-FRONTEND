@@ -46,7 +46,8 @@ import { useSchool } from '../contexts/SchoolContext';
 
 import SchoolSelectionPage
   from '../pages/schools/SchoolSelectionPage';
-
+import PlatformDashboardPage from
+  "../pages/platform/PlatformDashboardPage.jsx";
 
 function RootRedirect() {
   const { isAuthenticated } = useAuth();
@@ -100,6 +101,10 @@ export default function AppRoutes() {
   return (
     <Routes>
       {/* Public */}
+      <Route
+        path="/platform"
+        element={<PlatformDashboardPage />}
+      />
       <Route path="/login" element={<LoginPage />} />
 
       {/* Multi-Tenant School Selection */}

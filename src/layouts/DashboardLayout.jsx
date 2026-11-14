@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useSchool } from '../contexts/SchoolContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { ROLES, SEMESTER_LABEL } from '../config/constants';
 import { getSemesters } from '../services/semester.service';
 import SettingsToggle from '../components/common/SettingsToggle';
+import PlatformAdminMenuItem from
+  '../components/platform/PlatformAdminMenuItem';
 import {
   FiChevronDown,
   FiGrid,
@@ -84,11 +87,41 @@ const NAV_BY_ROLE = {
   ],
 };
 
+
 export default function DashboardLayout() {
   const { user, logout } = useAuth();
+
+  const {
+    schoolRole,
+    currentSchool,
+    status: schoolStatus,
+  } = useSchool();
+
   const { t, lang } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
+
+  // ========================================
+  // MULTI-TENANT ROLE RESOLUTION
+  // ========================================
+
+  // School Membership is the source of truth.
+  // Never fall back to user.role (Legacy).
+
+  const effectiveRole =
+    schoolRole === "school_admin"
+      ? ROLES.ADMIN
+      : schoolRole === "lecturer"
+        ? ROLES.LECTURER
+        : schoolRole === "student"
+          ? ROLES.STUDENT
+          : null;
+
+  const schoolName =
+    currentSchool?.schoolName ||
+    currentSchool?.name ||
+    "EDUX";
+
 
   const isGradePage = location.pathname.includes('/grade');
   const isFocusRoom = location.pathname.startsWith('/student/focus');
@@ -99,27 +132,69 @@ export default function DashboardLayout() {
   const [headerSearch, setHeaderSearch] = useState('');
   const [currentSemesterLabel, setCurrentSemesterLabel] = useState('');
 
+
   useEffect(() => {
-    const fetchCurrentSemester = () => {
-      if (!user) return;
-      getSemesters({ is_current: 'true', limit: 1 })
-        .then((res) => {
-          const current = res?.data?.[0];
-          if (current) {
-            setCurrentSemesterLabel(`${current.name} (${current.code})`);
-          } else {
-            setCurrentSemesterLabel('');
-          }
-        })
-        .catch(() => {});
+    let cancelled = false;
+
+    // Clear semester information when
+    // the school or membership changes.
+    setCurrentSemesterLabel("");
+
+    if (
+      !user ||
+      schoolStatus !== "ready" ||
+      !currentSchool
+    ) {
+      return;
+    }
+
+    const fetchCurrentSemester = async () => {
+      try {
+        const res = await getSemesters({
+          is_current: "true",
+          limit: 1,
+        });
+
+        if (cancelled) return;
+
+        const current = res?.data?.[0];
+
+        setCurrentSemesterLabel(
+          current
+            ? `${current.name} (${current.code})`
+            : ""
+        );
+      } catch {
+        if (!cancelled) {
+          setCurrentSemesterLabel("");
+        }
+      }
     };
 
     fetchCurrentSemester();
-    window.addEventListener('edux:semester-updated', fetchCurrentSemester);
-    return () => window.removeEventListener('edux:semester-updated', fetchCurrentSemester);
-  }, [user]);
 
-  const navItems = NAV_BY_ROLE[user?.role] || [];
+    window.addEventListener(
+      "edux:semester-updated",
+      fetchCurrentSemester
+    );
+
+    return () => {
+      cancelled = true;
+
+      window.removeEventListener(
+        "edux:semester-updated",
+        fetchCurrentSemester
+      );
+    };
+  }, [
+    user?.id,
+    schoolStatus,
+    currentSchool?.id,
+    currentSchool?.schoolId,
+  ]);
+
+
+  const navItems = NAV_BY_ROLE[effectiveRole] || [];
   const activeId = navItems.find((item) =>
     location.pathname.startsWith(item.path)
   )?.id;
@@ -141,8 +216,23 @@ export default function DashboardLayout() {
     ? user.full_name.split(' ').slice(-1)[0][0].toUpperCase()
     : (user?.email?.[0] || 'U').toUpperCase();
 
-  const roleLabel = t?.role?.[user?.role] || user?.role || '';
-  const searchPath = user?.role ? `/${user.role}/search` : '/';
+
+  const roleLabel = effectiveRole
+    ? (
+      t?.role?.[effectiveRole] ||
+      (
+        effectiveRole === ROLES.ADMIN
+          ? "Quản trị trường"
+          : effectiveRole === ROLES.LECTURER
+            ? "Giảng viên"
+            : "Sinh viên"
+      )
+    )
+    : "";
+
+  const searchPath = effectiveRole
+    ? `/${effectiveRole}/search`
+    : "/";
 
   useEffect(() => {
     if (location.pathname === searchPath) {
@@ -164,9 +254,8 @@ export default function DashboardLayout() {
 
   return (
     <div
-      className={`dashboard-layout${
-        sidebarCollapsed ? ' dashboard-layout--collapsed' : ''
-      }${isGradePage ? ' dashboard-layout--grade' : ''}`}
+      className={`dashboard-layout${sidebarCollapsed ? ' dashboard-layout--collapsed' : ''
+        }${isGradePage ? ' dashboard-layout--grade' : ''}`}
     >
       {/* Mobile sidebar backdrop */}
       {mobileSidebarOpen && (
@@ -181,11 +270,9 @@ export default function DashboardLayout() {
       {/* Sidebar */}
       <nav
         id="dashboard-sidebar"
-        className={`dashboard-sidebar${
-          sidebarCollapsed ? ' dashboard-sidebar--collapsed' : ''
-        }${
-          mobileSidebarOpen ? ' dashboard-sidebar--mobile-open' : ''
-        }`}
+        className={`dashboard-sidebar${sidebarCollapsed ? ' dashboard-sidebar--collapsed' : ''
+          }${mobileSidebarOpen ? ' dashboard-sidebar--mobile-open' : ''
+          }`}
         aria-label={t?.layout?.navigation || 'Main navigation'}
       >
         <div className="dashboard-sidebar__section-label">
@@ -206,9 +293,8 @@ export default function DashboardLayout() {
                   navigate(item.path);
                   setMobileSidebarOpen(false);
                 }}
-                className={`dashboard-sidebar__item${
-                  isActive ? ' dashboard-sidebar__item--active' : ''
-                }`}
+                className={`dashboard-sidebar__item${isActive ? ' dashboard-sidebar__item--active' : ''
+                  }`}
                 title={sidebarCollapsed ? label : undefined}
                 aria-label={label}
                 aria-current={isActive ? 'page' : undefined}
@@ -232,8 +318,12 @@ export default function DashboardLayout() {
           })}
         </div>
 
-        <div className="dashboard-sidebar__footer">
-          FPT UNIVERSITY
+
+        <div
+          className="dashboard-sidebar__footer"
+          title={schoolName}
+        >
+          {schoolName}
         </div>
       </nav>
 
@@ -302,7 +392,9 @@ export default function DashboardLayout() {
                 >
                   <button
                     onClick={() =>
-                      navigate(NAV_BY_ROLE[user?.role]?.[0]?.path || '/')
+                      navigate(
+                        NAV_BY_ROLE[effectiveRole]?.[0]?.path || '/'
+                      )
                     }
                     aria-label="EDUX home"
                     className="dashboard-header__brand"
@@ -590,6 +682,75 @@ export default function DashboardLayout() {
                           <SettingsToggle compact />
                         </div>
 
+                        {/* =====================================
+    EDUX MULTI-TENANT WORKSPACES
+===================================== */}
+
+                        <div
+                          style={{
+                            padding: "6px",
+                            borderBottom: "1px solid var(--color-border)",
+                          }}
+                        >
+                          {/* SUPER ADMIN - PLATFORM WORKSPACE */}
+                          <PlatformAdminMenuItem
+                            onNavigate={() => setShowUserMenu(false)}
+                          />
+
+                          {/* SWITCH SCHOOL */}
+                          <button
+                            type="button"
+                            role="menuitem"
+                            onClick={() => {
+                              setShowUserMenu(false);
+                              navigate("/select-school");
+                            }}
+                            style={{
+                              width: "100%",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "10px",
+                              padding: "11px 12px",
+                              background: "none",
+                              border: "none",
+                              borderRadius: "9px",
+                              textAlign: "left",
+                              cursor: "pointer",
+                              color: "var(--color-ink)",
+                              fontFamily: "var(--font-sans)",
+                            }}
+                            onMouseEnter={(event) => {
+                              event.currentTarget.style.background =
+                                "var(--color-primary-bg)";
+                            }}
+                            onMouseLeave={(event) => {
+                              event.currentTarget.style.background =
+                                "none";
+                            }}
+                          >
+                            <span
+                              className="material-symbols-outlined"
+                              style={{
+                                fontSize: "20px",
+                                color: "var(--color-primary)",
+                              }}
+                            >
+                              school
+                            </span>
+
+                            <span
+                              style={{
+                                fontSize: "0.8125rem",
+                                fontWeight: 600,
+                              }}
+                            >
+                              {lang === "vi"
+                                ? "Chuyển trường học"
+                                : "Switch school"}
+                            </span>
+                          </button>
+                        </div>
+
                         {/* Logout */}
                         <div style={{ padding: '6px' }}>
                           <button
@@ -639,24 +800,24 @@ export default function DashboardLayout() {
           style={
             isFocusRoom
               ? {
-                  flex: 1,
-                  width: '100%',
-                  maxWidth: 'none',
-                  margin: 0,
-                  padding: 0,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  height:
-                    'calc(100vh - var(--dashboard-header-height, 64px))',
-                  overflow: 'hidden',
-                }
+                flex: 1,
+                width: '100%',
+                maxWidth: 'none',
+                margin: 0,
+                padding: 0,
+                display: 'flex',
+                flexDirection: 'column',
+                height:
+                  'calc(100vh - var(--dashboard-header-height, 64px))',
+                overflow: 'hidden',
+              }
               : {
-                  flex: 1,
-                  maxWidth: '1440px',
-                  width: '100%',
-                  margin: '0 auto',
-                  padding: '24px 24px 80px',
-                }
+                flex: 1,
+                maxWidth: '1440px',
+                width: '100%',
+                margin: '0 auto',
+                padding: '24px 24px 80px',
+              }
           }
         >
           <Outlet />
@@ -700,7 +861,7 @@ export default function DashboardLayout() {
                       color: 'var(--color-primary-dark)',
                     }}
                   >
-                    EDUX FPT UNIVERSITY
+                    EDUX • {schoolName}
                   </span>
 
                   <span style={{ color: 'var(--color-border-medium)' }}>
@@ -732,7 +893,11 @@ export default function DashboardLayout() {
           )}
 
         {/* Click outside overlay */}
-        {user?.role === ROLES.STUDENT && !isFocusRoom && <AIChatBox />}
+        {effectiveRole === ROLES.STUDENT &&
+          schoolStatus === "ready" &&
+          !isFocusRoom && (
+            <AIChatBox />
+          )}
 
         {showUserMenu && (
           <div
@@ -747,4 +912,5 @@ export default function DashboardLayout() {
       </div>
     </div>
   );
+
 }

@@ -100,7 +100,9 @@ export default function ProjectWorkspace({ classId }) {
     setInviteLoading(true);
     try {
       const [membersResponse, invitationsResponse, projectResponse] = await Promise.all([
-        api.get(`/classes/${classId}/members`),
+        api.get(`/classes/${classId}/members`, {
+          schoolScoped: true,
+        }),
         ProjectsService.getProjectInvitations(projectId),
         ProjectsService.getProject(projectId),
       ]);

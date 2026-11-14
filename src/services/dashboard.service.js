@@ -1,20 +1,32 @@
-import api from '../config/axios.config';
+import api from "../config/axios.config";
 
 /**
  * GET /api/dashboards
- * Requires: Bearer token — role xác định từ JWT
- * Returns: { role, statistics, recentAssignments|recentSubmissions|recentUsers }
+ *
+ * Dashboard theo trường đang chọn.
+ * Role được xác định từ School Membership.
  */
 export const getDashboard = async () => {
-  const { data } = await api.get('/dashboards');
+  const { data } = await api.get("/dashboards", {
+    schoolScoped: true,
+  });
+
   return data;
 };
 
 /**
  * GET /api/dashboards/notifications
- * Returns: { notifications, unreadCount }
+ *
+ * Lấy 5 thông báo mới nhất và unreadCount.
+ * Bao gồm thông báo trường hiện tại và platform.
  */
 export const getDashboardNotifications = async () => {
-  const { data } = await api.get('/dashboards/notifications');
+  const { data } = await api.get(
+    "/dashboards/notifications",
+    {
+      schoolScoped: true,
+    }
+  );
+
   return data;
 };
