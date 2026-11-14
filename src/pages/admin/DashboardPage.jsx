@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useSchool } from '../../contexts/SchoolContext';
 import { getDashboard, getDashboardNotifications } from '../../services/dashboard.service';
 import { broadcastNotification } from '../../services/admin.service';
 
@@ -56,38 +57,107 @@ function NotifRow({ notif, t }) {
 export default function AdminDashboardPage() {
   const { user } = useAuth();
   const { t } = useLanguage();
+  const { activeSchool } = useSchool();
   const [data, setData] = useState(null);
   const [notifData, setNotifData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [notifLoading, setNotifLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const currentSchoolIdRef = useRef(activeSchool?.id);
+  const requestGenRef = useRef(0);
+  const abortControllerRef = useRef(null);
+
   // Quick Action: Broadcast Modal state (SRS 3.7.1)
   const [showBroadcastModal, setShowBroadcastModal] = useState(false);
   const [broadcastForm, setBroadcastForm] = useState({ title: '', message: '', target: 'all' });
   const [broadcasting, setBroadcasting] = useState(false);
 
-  const fetchDashboardData = () => {
-    setLoading(true);
-    getDashboard()
-      .then((res) => setData(res.data))
-      .catch((err) => setError(err.response?.data?.message || t.dashboard?.noData || 'Không thể tải dữ liệu'))
-      .finally(() => setLoading(false));
+  const fetchDashboardData = (targetSchoolId = activeSchool?.id) => {
+    if (!targetSchoolId) {
+      setData(null);
+      setNotifData(null);
+      setLoading(false);
+      setNotifLoading(false);
+      return;
+    }
 
-    fetchNotifs();
+    currentSchoolIdRef.current = targetSchoolId;
+    const genId = ++requestGenRef.current;
+
+    // Hủy request cũ đang bay
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
+    setLoading(true);
+    setNotifLoading(true);
+    setError(null);
+
+    getDashboard({ signal: controller.signal })
+      .then((res) => {
+        if (currentSchoolIdRef.current === targetSchoolId && requestGenRef.current === genId) {
+          setData(res.data);
+          setError(null);
+        }
+      })
+      .catch((err) => {
+        if (err?.name === 'CanceledError' || err?.name === 'AbortError' || err?.code === 'ERR_CANCELED') {
+          return;
+        }
+        if (currentSchoolIdRef.current === targetSchoolId && requestGenRef.current === genId) {
+          setError(err.response?.data?.message || t.dashboard?.noData || 'Không thể tải dữ liệu');
+        }
+      })
+      .finally(() => {
+        if (currentSchoolIdRef.current === targetSchoolId && requestGenRef.current === genId) {
+          setLoading(false);
+        }
+      });
+
+    fetchNotifs(targetSchoolId, genId, controller.signal);
   };
 
-  const fetchNotifs = () => {
+  const fetchNotifs = (targetSchoolId = activeSchool?.id, genId = requestGenRef.current, signal) => {
+    if (!targetSchoolId) {
+      setNotifData(null);
+      setNotifLoading(false);
+      return;
+    }
+
     setNotifLoading(true);
-    getDashboardNotifications()
-      .then((res) => setNotifData(res.data))
-      .catch(() => {})
-      .finally(() => setNotifLoading(false));
+    getDashboardNotifications({ signal })
+      .then((res) => {
+        if (currentSchoolIdRef.current === targetSchoolId && requestGenRef.current === genId) {
+          setNotifData(res.data);
+        }
+      })
+      .catch((err) => {
+        if (err?.name === 'CanceledError' || err?.name === 'AbortError' || err?.code === 'ERR_CANCELED') {
+          return;
+        }
+      })
+      .finally(() => {
+        if (currentSchoolIdRef.current === targetSchoolId && requestGenRef.current === genId) {
+          setNotifLoading(false);
+        }
+      });
   };
 
   useEffect(() => {
-    fetchDashboardData();
-  }, []);
+    setData(null);
+    setNotifData(null);
+    setError(null);
+    fetchDashboardData(activeSchool?.id);
+
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, [activeSchool?.id]);
 
   const handleBroadcastSubmit = async (e) => {
     e.preventDefault();
