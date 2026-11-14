@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Bot, MessageCircle, Send, X } from 'lucide-react';
 import { askAiChat } from '../../services/aiChat.service';
+import { useSchool } from '../../contexts/SchoolContext';
 
 const suggestions = ['Bài tập sắp đến hạn?', 'Thông báo mới có gì?', 'Học kỳ hiện tại là gì?'];
 
 export default function AIChatBox() {
+  const { activeSchool } = useSchool();
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
@@ -12,19 +14,61 @@ export default function AIChatBox() {
     { role: 'assistant', text: 'Chào bạn! Mình có thể tra lớp, học kỳ, bài tập, thông báo và flashcard.' },
   ]);
 
+  const currentSchoolIdRef = useRef(activeSchool?.id);
+  const abortControllerRef = useRef(null);
+
+  // Reset cuộc hội thoại & hủy các request đang bay khi chuyển trường để ngăn rò rỉ và Race Condition
+  useEffect(() => {
+    currentSchoolIdRef.current = activeSchool?.id;
+
+    // Hủy request của trường cũ đang dở dang
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+
+    setLoading(false);
+    setMessages([
+      { role: 'assistant', text: 'Chào bạn! Mình có thể tra lớp, học kỳ, bài tập, thông báo và flashcard.' },
+    ]);
+  }, [activeSchool?.id]);
+
   const send = async (value = message) => {
     const text = value.trim();
     if (!text || loading) return;
+
+    const requestSchoolId = activeSchool?.id;
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     setMessage('');
     setMessages((items) => [...items, { role: 'user', text }]);
     setLoading(true);
+
     try {
-      const result = await askAiChat(text);
-      setMessages((items) => [...items, { role: 'assistant', text: result.answer || 'Mình chưa tìm thấy thông tin phù hợp.' }]);
+      const result = await askAiChat(text, { signal: controller.signal });
+      // Kiểm tra race condition: Chỉ cập nhật nếu người dùng vẫn đang ở đúng trường đã gửi request
+      if (currentSchoolIdRef.current === requestSchoolId) {
+        setMessages((items) => [
+          ...items,
+          { role: 'assistant', text: result.answer || 'Mình chưa tìm thấy thông tin phù hợp.' },
+        ]);
+      }
     } catch (error) {
-      setMessages((items) => [...items, { role: 'assistant', text: error.response?.data?.message || 'Không thể kết nối trợ lý. Vui lòng thử lại.' }]);
+      // Bỏ qua lỗi do chủ động hủy request khi chuyển trường
+      if (error?.name === 'CanceledError' || error?.name === 'AbortError' || error?.code === 'ERR_CANCELED') {
+        return;
+      }
+      if (currentSchoolIdRef.current === requestSchoolId) {
+        setMessages((items) => [
+          ...items,
+          { role: 'assistant', text: error.response?.data?.message || 'Không thể kết nối trợ lý. Vui lòng thử lại.' },
+        ]);
+      }
     } finally {
-      setLoading(false);
+      if (currentSchoolIdRef.current === requestSchoolId) {
+        setLoading(false);
+      }
     }
   };
 
