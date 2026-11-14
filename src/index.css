@@ -11,6 +11,7 @@
 
 /* ── Reset & Base ── */
 @layer base {
+
   *,
   *::before,
   *::after {
@@ -1004,9 +1005,18 @@ a:hover {
   display: flex;
   flex: 1;
   flex-direction: column;
+
+  width: 100%;
   min-width: 0;
   min-height: calc(100dvh - var(--dashboard-header-height));
-  transition: margin-left 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Chừa chỗ cho sidebar */
+  padding-left: var(--dashboard-sidebar-width);
+
+  box-sizing: border-box;
+
+  transition:
+    padding-left 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .dashboard-header {
@@ -1215,6 +1225,10 @@ a:hover {
     flex-direction: column;
   }
 
+  .dashboard-layout__main {
+    padding-left: 0;
+  }
+
   .dashboard-layout--collapsed {
     --dashboard-sidebar-width: 256px;
   }
@@ -1322,15 +1336,18 @@ a:hover {
     padding-top: 15px;
     box-shadow: 12px 0 34px rgba(31, 27, 23, .18);
     transform: translateX(-105%);
-    transition: transform 0.3s ease-in-out; /* Đảm bảo có hiệu ứng trượt mượt mà */
+    transition: transform 0.3s ease-in-out;
+    /* Đảm bảo có hiệu ứng trượt mượt mà */
   }
 
   .dashboard-sidebar--mobile-open {
-    transform: translateX(0) !important; /* Ép hiển thị khi có class mở */
+    transform: translateX(0) !important;
+    /* Ép hiển thị khi có class mở */
   }
 
   .dashboard-sidebar__brand-row {
-    display: none; /* Ẩn hẳn hàng chứa nút X đi */
+    display: none;
+    /* Ẩn hẳn hàng chứa nút X đi */
   }
 
   .dashboard-sidebar__section-label {
@@ -1451,6 +1468,7 @@ a:hover {
     display: none;
   }
 }
+
 .dashboard-header__inner {
   position: relative;
   padding-left: 68px !important;
@@ -1490,6 +1508,7 @@ a:hover {
   font-size: 1.05em;
   text-rendering: auto;
 }
+
 .katex-display {
   margin: 0.5em 0 !important;
   overflow-x: auto;
@@ -1565,7 +1584,7 @@ a:hover {
   left: 256px !important;
 }
 
-.dashboard-layout--grade .dashboard-layout__main > div {
+.dashboard-layout--grade .dashboard-layout__main>div {
   padding: 0 !important;
   margin: 0 !important;
   max-width: none !important;
