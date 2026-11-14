@@ -1066,7 +1066,10 @@ export default function LecturerAssignmentDetailPage() {
                     isOpen={isEditModalOpen}
                     onClose={() => setIsEditModalOpen(false)}
                     mode="edit"
-                    initialData={assignment}
+                    initialData={{
+                        ...assignment,
+                        submission_count: submissions?.length ?? assignment?.submission_count ?? 0
+                    }}
                     classId={assignment?.class_id || assignment?.classId}
                     onSubmit={handleSaveEdit}
                     isSubmitting={isSavingEdit}

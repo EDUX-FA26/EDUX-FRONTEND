@@ -121,6 +121,7 @@ export default function LecturerGradingPage() {
                 assignmentId: assignmentId || assign.id,
                 subjectId: resolvedSubjectId,
                 rubric_configs: assign.rubric_configs,
+                ai_declaration_required: assign.ai_declaration_required !== false,
               });
 
               if (resolvedSubjectId) {
