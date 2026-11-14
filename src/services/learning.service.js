@@ -3,33 +3,33 @@ import api from '../config/axios.config.js';
 const LearningService = {
   // ── Streak ──────────────────────────────────────────────────────
   async getAllSubjectStreaks() {
-    const response = await api.get('/learning/streak');
+    const response = await api.get('/learning/streak', { schoolScoped: true });
     return response.data;
   },
 
   async getSubjectStreak(subjectId) {
-    const response = await api.get(`/learning/streak/${subjectId}`);
+    const response = await api.get(`/learning/streak/${subjectId}`, { schoolScoped: true });
     return response.data;
   },
 
   async recoverSubjectStreak(subjectId) {
-    const response = await api.post(`/learning/streak/${subjectId}/recover`);
+    const response = await api.post(`/learning/streak/${subjectId}/recover`, {}, { schoolScoped: true });
     return response.data;
   },
 
   // ── Activity & Heatmap ───────────────────────────────────────────
   async getActivityHistory(params = {}) {
-    const response = await api.get('/learning/activity', { params });
+    const response = await api.get('/learning/activity', { params, schoolScoped: true });
     return response.data;
   },
 
   async getHeatmap(params = {}) {
-    const response = await api.get('/learning/heatmap', { params });
+    const response = await api.get('/learning/heatmap', { params, schoolScoped: true });
     return response.data;
   },
 
   async recordActivity(deckId) {
-    const response = await api.post('/learning/activity', { deckId });
+    const response = await api.post('/learning/activity', { deckId }, { schoolScoped: true });
     return response.data;
   },
 
@@ -37,6 +37,7 @@ const LearningService = {
   async getLearningProfile(subjectId) {
     const response = await api.get('/learning/profile', {
       params: subjectId ? { subjectId } : {},
+      schoolScoped: true,
     });
     return response.data;
   },
@@ -44,6 +45,7 @@ const LearningService = {
   async getTopicPerformance(subjectId) {
     const response = await api.get('/learning/topics/performance', {
       params: subjectId ? { subjectId } : {},
+      schoolScoped: true,
     });
     return response.data;
   },
@@ -53,6 +55,7 @@ const LearningService = {
   async getActivePlan(subjectId = null) {
     const response = await api.get('/learning/study-plan', {
       params: subjectId ? { subjectId } : {},
+      schoolScoped: true,
     });
     return response.data;
   },
@@ -67,6 +70,7 @@ const LearningService = {
           subjectId,
           ...(force ? { force: 'true' } : {}),
         },
+        schoolScoped: true,
       }
     );
 
@@ -77,6 +81,7 @@ const LearningService = {
   async getStudyPlanPreview(subjectId) {
     const response = await api.get('/learning/study-plan/preview', {
       params: { subjectId },
+      schoolScoped: true,
     });
     return response.data;
   },
@@ -84,19 +89,20 @@ const LearningService = {
   async getStudyPlanMistakes(subjectId) {
     const response = await api.get('/learning/study-plan/mistakes', {
       params: { subjectId },
+      schoolScoped: true,
     });
     return response.data;
   },
 
   /** Lấy chi tiết 1 ngày học (câu hỏi đã tạo) */
   async getStudyPlanDay(planDayId) {
-    const response = await api.get(`/learning/study-plan/days/${planDayId}`);
+    const response = await api.get(`/learning/study-plan/days/${planDayId}`, { schoolScoped: true });
     return response.data;
   },
 
   /** Tạo câu hỏi AI cho 1 ngày học (gọi Gemini) */
   async generateStudyPlanDay(planDayId) {
-    const response = await api.post(`/learning/study-plan/days/${planDayId}/generate`);
+    const response = await api.post(`/learning/study-plan/days/${planDayId}/generate`, {}, { schoolScoped: true });
     return response.data;
   },
 
@@ -104,14 +110,15 @@ const LearningService = {
   async submitStudyPlanDay(planDayId, answers) {
     const response = await api.post(
       `/learning/study-plan/days/${planDayId}/submit`,
-      { answers }
+      { answers },
+      { schoolScoped: true }
     );
     return response.data;
   },
 
   /** Xem lại kết quả 1 ngày học đã nộp */
   async getStudyPlanDayResult(planDayId) {
-    const response = await api.get(`/learning/study-plan/days/${planDayId}/result`);
+    const response = await api.get(`/learning/study-plan/days/${planDayId}/result`, { schoolScoped: true });
     return response.data;
   },
 };
