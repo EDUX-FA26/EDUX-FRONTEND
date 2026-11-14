@@ -3348,7 +3348,7 @@ export default function StudentAssignmentFlow({
   };
 
   return (
-    <div className="w-full max-w-full min-w-0 bg-[#f8fafc] text-slate-700 min-h-full py-6 px-4 sm:px-6 lg:px-8">
+    <div className="w-full max-w-full min-w-0 min-h-[calc(100vh-64px)] bg-[#F8FAFC] px-6 pt-7 pb-8 flex flex-col space-y-6">
       {/* Toast Feedback */}
       {toastMessage && (
         <div className="fixed top-6 right-6 z-50 flex items-center gap-3 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-xl animate-in slide-in-from-top-4 duration-200">
@@ -3364,9 +3364,8 @@ export default function StudentAssignmentFlow({
         </div>
       )}
 
-      <div className="max-w-6xl mx-auto space-y-6 w-full min-w-0">
-        {/* Breadcrumbs */}
-        <nav className="flex items-center gap-2 text-xs font-semibold text-slate-500">
+      {/* Breadcrumbs */}
+      <nav className="flex items-center gap-2 text-xs font-semibold text-slate-500">
           <button
             type="button"
             onClick={onBackToCourse || (() => alert('Navigate to Home'))}
@@ -3423,7 +3422,7 @@ export default function StudentAssignmentFlow({
         </div>
 
         {/* Layout 2 Cột (Trái: 1/3, Phải: 2/3) */}
-        <div className="grid grid-cols-12 gap-6 items-start w-full min-w-0">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start w-full min-w-0 flex-1">
           {/* CỘT TRÁI */}
           <div className="col-span-12 lg:col-span-4 min-w-0">
             <AssignmentOverview
@@ -3643,7 +3642,6 @@ export default function StudentAssignmentFlow({
             )}
           </div>
         </div>
-      </div>
 
       {/* Modal xác nhận nộp bài chính thức */}
       {showSubmitConfirmModal && (
