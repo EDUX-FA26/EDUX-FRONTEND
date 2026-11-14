@@ -100,6 +100,7 @@ export default function DashboardLayout() {
 
   const isGradePage = location.pathname.includes('/grade');
   const isFocusRoom = location.pathname.startsWith('/student/focus');
+  const isStudentAssignment = location.pathname.startsWith('/student/assignments');
 
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -828,34 +829,55 @@ export default function DashboardLayout() {
 
         {/* Main content: chỉ render một Outlet */}
         <main
+          className={`flex-1 min-w-0 w-full overflow-x-hidden ${isGradePage ? 'dashboard-layout__main--grade' : ''}`}
           style={
-            isFocusRoom
+            isFocusRoom || isGradePage
               ? {
                 flex: 1,
                 width: '100%',
-                maxWidth: 'none',
+                maxWidth: '100%',
                 margin: 0,
                 padding: 0,
                 display: 'flex',
                 flexDirection: 'column',
                 height:
                   'calc(100vh - var(--dashboard-header-height, 64px))',
+                minHeight: 0,
+                minWidth: 0,
                 overflow: 'hidden',
+                overflowX: 'hidden',
+                boxSizing: 'border-box',
               }
-              : {
-                flex: 1,
-                maxWidth: '1440px',
-                width: '100%',
-                margin: '0 auto',
-                padding: '24px 24px 80px',
-              }
+              : isStudentAssignment
+                ? {
+                  flex: 1,
+                  width: '100%',
+                  maxWidth: '100%',
+                  margin: 0,
+                  padding: 0,
+                  paddingTop: 'var(--dashboard-header-height, 64px)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  minHeight: '100vh',
+                  minWidth: 0,
+                  boxSizing: 'border-box',
+                  backgroundColor: '#F8FAFC',
+                }
+                : {
+                  flex: 1,
+                  maxWidth: '1440px',
+                  width: '100%',
+                  margin: '0 auto',
+                  padding: '24px 24px 80px',
+                }
           }
         >
           <Outlet />
         </main>
 
-        {/* Footer: ẩn ở trang flashcard, grading và focus room */}
+        {/* Footer: ẩn ở trang flashcard, grading, student assignment và focus room */}
         {!isGradePage &&
+          !isStudentAssignment &&
           !location.pathname.startsWith('/student/flashcards') &&
           !location.pathname.startsWith('/lecturer/flashcards') &&
           !isFocusRoom && (

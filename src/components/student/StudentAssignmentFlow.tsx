@@ -905,15 +905,15 @@ export const AiAuditLogCard: React.FC<AiAuditLogCardProps> = ({
           </div>
         </div>
 
-        {/* Score Badge */}
+        {/* Hộp thống kê chỉ hiển thị số lượng Rubric (đã loại bỏ hoàn toàn số %) */}
         <div className="flex items-center gap-2 self-start sm:self-auto bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-xs">
           <Sparkles size={14} className="text-amber-500" />
           <div className="text-right">
             <span className="text-[10px] uppercase font-bold text-slate-400 block leading-none">
-              Transparency Score
+              DECLARED RUBRICS
             </span>
             <span className="text-xs font-extrabold text-slate-800">
-              {transparencyScore}% ({totalCompleted}/{totalRubrics} Rubrics)
+              {totalCompleted} / {totalRubrics} Rubrics
             </span>
           </div>
         </div>
@@ -1087,21 +1087,27 @@ export const AiAuditLogCard: React.FC<AiAuditLogCardProps> = ({
 interface SubmissionStatusViewProps {
   submission: SubmissionData;
   onAddOrEditClick: () => void;
+  isPendingAiSupplement?: boolean;
+  onSupplementAiClick?: () => void;
   maxScore?: number;
   isLateBlocked?: boolean;
   dueDate?: string;
   activeRubricKeys?: RubricKey[];
   rubricConfigs?: any[];
+  aiDeclarationRequired?: boolean;
 }
 
 export const SubmissionStatusView: React.FC<SubmissionStatusViewProps> = ({
   submission,
   onAddOrEditClick,
+  isPendingAiSupplement = false,
+  onSupplementAiClick,
   maxScore = 10,
   isLateBlocked = false,
   dueDate = 'N/A',
   activeRubricKeys,
   rubricConfigs,
+  aiDeclarationRequired = true,
 }) => {
   const isDraft = submission.status === 'Draft';
   const isGraded = submission.status === 'Graded' || submission.score != null || submission.grade?.score != null;
@@ -1159,12 +1165,6 @@ export const SubmissionStatusView: React.FC<SubmissionStatusViewProps> = ({
                 v{submission.version}.0
               </span>
             )}
-            {isDraft && (
-              <span className="text-[10px] font-bold bg-amber-50 text-amber-700 px-2.5 py-0.5 rounded-md border border-amber-300 flex items-center gap-1">
-                <Bookmark size={11} className="text-amber-600" />
-                <span>Bản nháp (Draft - Chưa nộp chính thức)</span>
-              </span>
-            )}
             {isGraded && (
               <span className="text-[10px] font-bold bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-md border border-indigo-200">
                 Score: {Number(finalScore).toFixed(2)} / 10
@@ -1176,7 +1176,16 @@ export const SubmissionStatusView: React.FC<SubmissionStatusViewProps> = ({
           </p>
         </div>
 
-        {isLateBlocked ? (
+        {isPendingAiSupplement ? (
+          <button
+            type="button"
+            onClick={onSupplementAiClick || onAddOrEditClick}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold tracking-wide uppercase transition shadow-md bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white shadow-amber-500/25 cursor-pointer"
+          >
+            <FileText size={15} />
+            <span>📝 BỔ SUNG KHAI BÁO AI</span>
+          </button>
+        ) : isLateBlocked ? (
           <div className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-100 text-slate-400 border border-slate-200 text-xs font-bold uppercase tracking-wide cursor-not-allowed">
             <AlertCircle size={15} />
             <span>Hết hạn nộp</span>
@@ -1212,6 +1221,26 @@ export const SubmissionStatusView: React.FC<SubmissionStatusViewProps> = ({
           </button>
         )}
       </div>
+
+      {/* Banner cảnh báo thân thiện khi GV bật AI sau khi sinh viên đã nộp bài */}
+      {isPendingAiSupplement && (
+        <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-start gap-3.5 text-amber-900 shadow-xs">
+          <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center shrink-0 mt-0.5">
+            <AlertTriangle size={18} />
+          </div>
+          <div className="space-y-1 flex-1">
+            <div className="text-xs font-bold text-amber-800 uppercase tracking-wide flex items-center gap-2">
+              <span>Yêu cầu bổ sung khai báo AI Audit Log</span>
+              <span className="text-[10px] font-semibold bg-amber-200/80 text-amber-900 px-2 py-0.5 rounded-full">
+                Cần bổ sung
+              </span>
+            </div>
+            <p className="text-xs text-amber-700 leading-relaxed">
+              Giảng viên đã bật yêu cầu khai báo AI Audit Log cho bài tập này. Tệp bài làm của bạn vẫn được giữ nguyên thời gian nộp ban đầu, vui lòng bổ sung khai báo AI.
+            </p>
+          </div>
+        </div>
+      )}
 
       {isLateBlocked && (
         <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-2xl flex items-center gap-3 text-xs text-rose-700 font-medium">
@@ -1375,7 +1404,7 @@ export const SubmissionStatusView: React.FC<SubmissionStatusViewProps> = ({
           </div>
           <div className="text-xs text-slate-700 leading-relaxed bg-slate-50/70 p-3 rounded-xl border border-slate-100">
             {isDraft
-              ? (submission.feedback || 'Bản nháp đang được lưu an toàn. Nhấn "Tiếp tục chỉnh sửa bản nháp" để hoàn tất và nộp chính thức.')
+              ? (submission.feedback && !submission.feedback.includes('Bản nháp đang được lưu an toàn') ? submission.feedback : '—')
               : isSubmitted
               ? submission.feedback ||
                 'No feedback yet. Submitted successfully. Waiting for grading.'
@@ -1384,33 +1413,35 @@ export const SubmissionStatusView: React.FC<SubmissionStatusViewProps> = ({
         </div>
         )}
 
-        {/* Hàng 4: AI AUDIT LOG STATUS */}
-        <div className="pt-2 border-t border-slate-100">
-          {isSubmitted || (isDraft && (submission.scopes?.length || Object.values(submission.declarations || {}).some(d => d?.prompt || d?.isCompleted))) ? (
-            <AiAuditLogCard
-              declarations={submission.declarations}
-              scopes={submission.scopes}
-              transparencyScore={submission.transparencyScore || 95}
-              lastEditedAt={submission.lastEditedAt}
-              version={submission.version || 1}
-              activeRubricKeys={activeRubricKeys}
-              rubricConfigs={rubricConfigs}
-            />
-          ) : (
-            <div className="rounded-2xl border-2 border-dashed border-slate-200 p-8 text-center space-y-2 bg-slate-50/30">
-              <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-400 mx-auto flex items-center justify-center">
-                <Brain size={20} />
+        {/* Hàng 4: AI AUDIT LOG STATUS (Chỉ hiển thị khi bài tập yêu cầu khai báo AI) */}
+        {aiDeclarationRequired && (
+          <div className="pt-2 border-t border-slate-100">
+            {isSubmitted || (isDraft && (submission.scopes?.length || Object.values(submission.declarations || {}).some(d => d?.prompt || d?.isCompleted))) ? (
+              <AiAuditLogCard
+                declarations={submission.declarations}
+                scopes={submission.scopes}
+                transparencyScore={submission.transparencyScore || 95}
+                lastEditedAt={submission.lastEditedAt}
+                version={submission.version || 1}
+                activeRubricKeys={activeRubricKeys}
+                rubricConfigs={rubricConfigs}
+              />
+            ) : (
+              <div className="rounded-2xl border-2 border-dashed border-slate-200 p-8 text-center space-y-2 bg-slate-50/30">
+                <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-400 mx-auto flex items-center justify-center">
+                  <Brain size={20} />
+                </div>
+                <h4 className="text-xs font-bold text-slate-700">
+                  AI Audit Log Not Recorded
+                </h4>
+                <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
+                  Once you submit your project file and declare GenAI interactions,
+                  your transparency audit log will appear here.
+                </p>
               </div>
-              <h4 className="text-xs font-bold text-slate-700">
-                AI Audit Log Not Recorded
-              </h4>
-              <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
-                Once you submit your project file and declare GenAI interactions,
-                your transparency audit log will appear here.
-              </p>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -1578,10 +1609,12 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
                   <p className="text-xs font-bold text-slate-800 truncate" title={currentFile.name}>
                     {currentFile.name}
                   </p>
-                  <span className="bg-emerald-50 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-200 shrink-0 flex items-center gap-1">
-                    <Cloud size={11} className="text-emerald-600" />
-                    <span>{isEditMode ? 'Tệp bài nộp hiện tại' : 'Đã lưu tạm (Cloud)'}</span>
-                  </span>
+                  {isEditMode && (
+                    <span className="bg-emerald-50 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-200 shrink-0 flex items-center gap-1">
+                      <Cloud size={11} className="text-emerald-600" />
+                      <span>Tệp bài nộp hiện tại</span>
+                    </span>
+                  )}
                 </div>
                 <p className="text-[11px] text-slate-400 font-mono mt-0.5">
                   {formatFileSize(currentFile.size)} • Sẵn sàng để nộp bài
@@ -1656,49 +1689,6 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
         </button>
 
         <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
-          {/* Silent Auto-Save Status Pill */}
-          <div className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold bg-slate-50 border border-slate-200 text-slate-600">
-            {isUploadingFile || autoSaveStatus === 'saving' ? (
-              <>
-                <RefreshCw size={12} className="animate-spin text-blue-600" />
-                <span>Đang tự động lưu...</span>
-              </>
-            ) : autoSaveStatus === 'saved' || currentFile ? (
-              <>
-                <Cloud size={13} className="text-emerald-600" />
-                <span className="text-emerald-700">Đã lưu tạm</span>
-              </>
-            ) : (
-              <>
-                <Cloud size={13} className="text-slate-400" />
-                <span className="text-slate-400">Tự động lưu bật</span>
-              </>
-            )}
-          </div>
-
-          {/* Quick AI Sanity Check Button */}
-          {currentFile && onRunSanityCheck && (
-            <button
-              type="button"
-              disabled={isUploadingFile || isSanityChecking}
-              onClick={onRunSanityCheck}
-              title="Chẩn đoán nhanh lỗi logic, độ lệch đề và khai báo AI trước khi nộp chính thức (Không ảnh hưởng đến điểm số)."
-              className="bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-xl px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50"
-            >
-              {isSanityChecking ? (
-                <>
-                  <Loader2 size={13} className="animate-spin text-purple-600" />
-                  <span>Đang kiểm tra AI...</span>
-                </>
-              ) : (
-                <>
-                  <Sparkles size={13} className="text-purple-600" />
-                  <span>Kiểm tra nhanh bằng AI</span>
-                </>
-              )}
-            </button>
-          )}
-
           {!isAiRequired ? (
             <button
               type="button"
@@ -1999,10 +1989,12 @@ function makeDefaultScope(idx: number): AiScope {
 interface AiRubricFormProps {
   scopes: AiScope[];
   isEditMode: boolean;
+  isSupplementMode?: boolean;
   onScopesChange: (scopes: AiScope[]) => void;
   onPreviousStep: () => void;
   onCancel: () => void;
   onSubmit: () => void;
+  onSupplementSubmit?: () => void;
   isSubmittingPayload: boolean;
   onSaveDraft?: () => void;
   isSavingDraft?: boolean;
@@ -2016,10 +2008,12 @@ interface AiRubricFormProps {
 export const AiRubricForm: React.FC<AiRubricFormProps> = ({
   scopes,
   isEditMode,
+  isSupplementMode = false,
   onScopesChange,
   onPreviousStep,
   onCancel,
   onSubmit,
+  onSupplementSubmit,
   isSubmittingPayload,
   autoSaveStatus = 'idle',
   onRunSanityCheck,
@@ -2315,8 +2309,8 @@ export const AiRubricForm: React.FC<AiRubricFormProps> = ({
         </div>
 
         {/* Scope title & description editor */}
-        <div className="pt-2 border-t border-slate-200/70 grid grid-cols-1 md:grid-cols-12 gap-3">
-          <div className="md:col-span-4">
+        <div className="pt-2 border-t border-slate-200/70 grid grid-cols-1 md:grid-cols-12 gap-3 w-full min-w-0">
+          <div className="md:col-span-4 min-w-0">
             <label className="saf-input-label">
               Tiêu đề phân rã / Khai báo <span className="text-rose-500">*</span>
             </label>
@@ -2328,7 +2322,7 @@ export const AiRubricForm: React.FC<AiRubricFormProps> = ({
               className="saf-input text-xs font-semibold"
             />
           </div>
-          <div className="md:col-span-8">
+          <div className="md:col-span-8 min-w-0">
             <label className="saf-input-label">
               Mô tả phạm vi / kỹ thuật của module này
             </label>
@@ -2344,9 +2338,9 @@ export const AiRubricForm: React.FC<AiRubricFormProps> = ({
       </div>
 
 
-      <div className="grid grid-cols-12 gap-5 items-start">
+      <div className="grid grid-cols-12 gap-5 items-start w-full min-w-0">
         {/* Danh sách 5 Rubrics bên trái */}
-        <div className="col-span-12 md:col-span-4 space-y-2">
+        <div className="col-span-12 md:col-span-4 min-w-0 space-y-2">
           {rubricKeys.map((key, index) => {
             const meta = RUBRIC_METADATA[key];
             const item = declarations[key];
@@ -2417,7 +2411,7 @@ export const AiRubricForm: React.FC<AiRubricFormProps> = ({
         </div>
 
         {/* Form chi tiết bên phải */}
-        <div className="col-span-12 md:col-span-8 bg-slate-50/70 border border-slate-200/80 rounded-2xl p-5 space-y-4">
+        <div className="col-span-12 md:col-span-8 min-w-0 bg-slate-50/70 border border-slate-200/80 rounded-2xl p-5 space-y-4">
           <div className="flex items-start gap-3 border-b border-slate-200/80 pb-3">
             <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-sm shrink-0">
               <ActiveIcon size={20} />
@@ -2575,45 +2569,20 @@ export const AiRubricForm: React.FC<AiRubricFormProps> = ({
         </div>
 
         <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
-          {/* Silent Auto-Save Status Pill */}
-          <div className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold bg-slate-50 border border-slate-200 text-slate-600">
-            {autoSaveStatus === 'saving' ? (
-              <>
-                <RefreshCw size={12} className="animate-spin text-blue-600" />
-                <span>Đang tự động lưu...</span>
-              </>
-            ) : autoSaveStatus === 'saved' ? (
-              <>
-                <Cloud size={13} className="text-emerald-600" />
-                <span className="text-emerald-700">Đã lưu tạm</span>
-              </>
-            ) : autoSaveStatus === 'error' ? (
-              <>
-                <AlertCircle size={12} className="text-rose-500" />
-                <span className="text-rose-600">Lỗi lưu tạm</span>
-              </>
-            ) : (
-              <>
-                <Cloud size={13} className="text-slate-400" />
-                <span className="text-slate-400">Tự động lưu bật</span>
-              </>
-            )}
-          </div>
-
           <button
             type="button"
             disabled={isSubmittingPayload}
-            onClick={onSubmit}
+            onClick={isSupplementMode && onSupplementSubmit ? onSupplementSubmit : onSubmit}
             className="saf-btn-dark"
           >
             {isSubmittingPayload ? (
               <>
                 <RefreshCw size={14} className="animate-spin" />
-                <span>{isEditMode ? 'Đang cập nhật bài nộp...' : 'Đang nộp bài...'}</span>
+                <span>{isSupplementMode ? 'Đang lưu bổ sung...' : isEditMode ? 'Đang cập nhật bài nộp...' : 'Đang nộp bài...'}</span>
               </>
             ) : (
               <>
-                <span>{isEditMode ? 'Cập nhật bài nộp & Khai báo AI' : 'Nộp bài chính thức (Submit Final)'}</span>
+                <span>{isSupplementMode ? 'Lưu bổ sung khai báo AI' : isEditMode ? 'Cập nhật bài nộp & Khai báo AI' : 'Nộp bài chính thức (Submit Final)'}</span>
                 <CheckCircle2 size={14} className="text-emerald-400" />
               </>
             )}
@@ -2777,6 +2746,7 @@ interface StudentAssignmentFlowProps {
   onSaveDraftFile?: (file: File, onUploadProgress?: (progressEvent: any) => void) => Promise<any>;
   onRemoveDraftFile?: () => Promise<any>;
   onSaveDraftDeclarations?: (payload: { scopes?: any[]; declarations?: any; note?: string }) => Promise<any>;
+  onSupplementDeclarations?: (payload: { scopes?: any[]; declarations?: any; note?: string }) => Promise<any>;
   onRunSanityCheck?: (payload: { scopes?: any[]; ai_declarations?: any }) => Promise<any>;
 }
 
@@ -2796,6 +2766,7 @@ export default function StudentAssignmentFlow({
   onSaveDraftFile,
   onRemoveDraftFile,
   onSaveDraftDeclarations,
+  onSupplementDeclarations,
   onRunSanityCheck,
 }: StudentAssignmentFlowProps) {
   // State Machine Quản lý 2 Chế độ chính
@@ -2862,6 +2833,31 @@ export default function StudentAssignmentFlow({
   const isDeadlinePassed = Boolean(assignment.deadlineRaw && new Date() > new Date(assignment.deadlineRaw));
   const isLateBlocked = isDeadlinePassed && assignment.allowLateSubmission === false;
 
+  // Supplement AI Declaration Mode (GV bật yêu cầu AI sau khi sinh viên đã nộp)
+  const [isSupplementMode, setIsSupplementMode] = useState<boolean>(false);
+
+  const hasCompletedDeclarations = useMemo(() => {
+    if (!submission) return false;
+    const scopes = submission.scopes;
+    if (Array.isArray(scopes) && scopes.length > 0) {
+      return scopes.some(s =>
+        activeRubricKeys.some(k => isRubricDeclaredComplete(s?.declarations?.[k]))
+      );
+    }
+    const decs = submission.declarations;
+    if (decs && typeof decs === 'object') {
+      return activeRubricKeys.some(k => isRubricDeclaredComplete(decs[k]));
+    }
+    return false;
+  }, [submission, activeRubricKeys]);
+
+  const isPendingAiSupplement = Boolean(
+    (submission.status === 'Submitted' || submission.status === 'Graded') &&
+    submission.file &&
+    assignment.aiDeclarationRequired !== false &&
+    !hasCompletedDeclarations
+  );
+
   // Draft States trong Form
   const [draftFile, setDraftFile] = useState<SubmissionFile | null>(submission.file);
   const [draftRawFile, setDraftRawFile] = useState<File | null>(null);
@@ -2903,6 +2899,7 @@ export default function StudentAssignmentFlow({
       return;
     }
 
+    setIsSupplementMode(false);
     // Populate draft state from existing submission
     setDraftFile(submission.file);
     setDraftRawFile(null);
@@ -2930,9 +2927,109 @@ export default function StudentAssignmentFlow({
     setViewMode('FORM');
   };
 
+  const handleStartSupplementAi = () => {
+    setIsSupplementMode(true);
+    setDraftFile(submission.file);
+    setDraftRawFile(null);
+
+    const clonedDeclarations = {} as Record<RubricKey, AiDeclarationRubric>;
+    const keys: RubricKey[] = ['decomposition', 'pattern', 'abstraction', 'algorithmic', 'reflection'];
+    keys.forEach(k => {
+      clonedDeclarations[k] = {
+        ...(submission.declarations?.[k] || INITIAL_DECLARATIONS[k]),
+        isModified: false,
+      };
+    });
+    setDraftDeclarations(clonedDeclarations);
+
+    setDraftScopes(getInitialScopes(submission).map(s => ({
+      ...s,
+      declarations: Object.fromEntries(
+        keys.map(k => [k, { ...(s.declarations[k] || INITIAL_DECLARATIONS[k]), isModified: false }])
+      ) as Record<RubricKey, AiDeclarationRubric>,
+    })));
+
+    setFormStep(2);
+    setViewMode('FORM');
+  };
+
   const handleCancelForm = () => {
+    setIsSupplementMode(false);
     setViewMode('VIEW_STATUS');
     setFormStep(1);
+  };
+
+  const handleSupplementSubmit = async () => {
+    let completedCount = 0;
+    if (draftScopes && draftScopes.length > 0) {
+      draftScopes.forEach(s => {
+        activeRubricKeys.forEach(k => {
+          if (isRubricDeclaredComplete(s?.declarations?.[k])) completedCount++;
+        });
+      });
+    } else {
+      completedCount = activeRubricKeys.filter(k => isRubricDeclaredComplete(draftDeclarations[k])).length;
+    }
+
+    const minRequired = assignment.minAiInteractions || 1;
+    if (completedCount < minRequired) {
+      alert(`Bài tập yêu cầu hoàn thiện tối thiểu ${minRequired} tiêu chí khai báo AI tương tác trước khi lưu bổ sung! (Hiện có: ${completedCount})`);
+      return;
+    }
+
+    try {
+      setIsSubmittingPayload(true);
+      const notePayload = JSON.stringify({
+        version: '2.0',
+        scopes: draftScopes,
+        declarations: draftDeclarations,
+        isSupplement: true,
+        savedAt: new Date().toISOString(),
+      });
+
+      if (onSupplementDeclarations) {
+        await onSupplementDeclarations({
+          scopes: draftScopes,
+          declarations: draftDeclarations,
+          note: notePayload,
+        });
+      } else {
+        await SubmissionService.supplementDeclarations(assignment.id, {
+          scopes: draftScopes,
+          ai_declarations: draftDeclarations,
+          note: notePayload,
+        });
+      }
+
+      const totalPossible = Math.max(1, activeRubricKeys.length);
+      const calculatedScore = Math.min(
+        100,
+        Math.max(60, Math.round((completedCount / totalPossible) * 35 + 65))
+      );
+
+      const nowStr = new Date().toISOString().replace('T', ' ').substring(0, 19);
+
+      setSubmission(prev => ({
+        ...prev,
+        scopes: draftScopes,
+        declarations: draftDeclarations,
+        transparencyScore: calculatedScore,
+        lastEditedAt: nowStr,
+      }));
+
+      setIsSupplementMode(false);
+      setViewMode('VIEW_STATUS');
+      setFormStep(1);
+
+      showToast(
+        'Bổ sung khai báo AI thành công! Thời gian nộp bài ban đầu của bạn được giữ nguyên.'
+      );
+    } catch (err: any) {
+      console.error('Supplement AI declaration error:', err);
+      alert('Không thể lưu bổ sung khai báo AI: ' + (err?.message || 'Lỗi kết nối'));
+    } finally {
+      setIsSubmittingPayload(false);
+    }
   };
 
   // Pre-Submission AI Sanity Check (Chẩn đoán nhanh bài làm bằng AI)
@@ -3251,7 +3348,7 @@ export default function StudentAssignmentFlow({
   };
 
   return (
-    <div className="bg-[#f8fafc] text-slate-700 min-h-screen py-8 px-4 sm:px-6 lg:px-8">
+    <div className="w-full max-w-full min-w-0 min-h-[calc(100vh-64px)] bg-[#F8FAFC] px-6 pt-7 pb-8 flex flex-col space-y-6">
       {/* Toast Feedback */}
       {toastMessage && (
         <div className="fixed top-6 right-6 z-50 flex items-center gap-3 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-xl animate-in slide-in-from-top-4 duration-200">
@@ -3267,9 +3364,8 @@ export default function StudentAssignmentFlow({
         </div>
       )}
 
-      <div className="max-w-6xl mx-auto space-y-6">
-        {/* Breadcrumbs */}
-        <nav className="flex items-center gap-2 text-xs font-semibold text-slate-500">
+      {/* Breadcrumbs */}
+      <nav className="flex items-center gap-2 text-xs font-semibold text-slate-500">
           <button
             type="button"
             onClick={onBackToCourse || (() => alert('Navigate to Home'))}
@@ -3303,11 +3399,6 @@ export default function StudentAssignmentFlow({
                   <Check size={12} />
                   <span>Submitted</span>
                 </span>
-              ) : submission.status === 'Draft' ? (
-                <span className="bg-amber-50 text-amber-700 text-xs font-bold px-2.5 py-0.5 rounded-full border border-amber-300 flex items-center gap-1">
-                  <Bookmark size={12} />
-                  <span>Bản nháp (Draft - Chưa nộp chính thức)</span>
-                </span>
               ) : null}
             </div>
             <p className="text-xs text-slate-500 mt-0.5">
@@ -3315,25 +3406,25 @@ export default function StudentAssignmentFlow({
             </p>
           </div>
 
-          <span
-            className={`text-xs font-bold px-3 py-1.5 rounded-full border self-start sm:self-auto ${
-              submission.status === 'Graded'
-                ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
-                : submission.status === 'Submitted'
-                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                : submission.status === 'Draft'
-                ? 'bg-amber-50 text-amber-800 border-amber-300'
-                : 'bg-slate-100 text-slate-600 border-slate-200'
-            }`}
-          >
-            {submission.status === 'Draft' ? 'Bản nháp (Draft)' : submission.status}
-          </span>
+          {submission.status && submission.status !== 'Draft' && (
+            <span
+              className={`text-xs font-bold px-3 py-1.5 rounded-full border self-start sm:self-auto ${
+                submission.status === 'Graded'
+                  ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                  : submission.status === 'Submitted'
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                  : 'bg-slate-100 text-slate-600 border-slate-200'
+              }`}
+            >
+              {submission.status}
+            </span>
+          )}
         </div>
 
         {/* Layout 2 Cột (Trái: 1/3, Phải: 2/3) */}
-        <div className="grid grid-cols-12 gap-6 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start w-full min-w-0 flex-1">
           {/* CỘT TRÁI */}
-          <div className="col-span-12 lg:col-span-4">
+          <div className="col-span-12 lg:col-span-4 min-w-0">
             <AssignmentOverview
               assignment={assignment}
               activeAssignmentTitle={assignment.title}
@@ -3342,17 +3433,20 @@ export default function StudentAssignmentFlow({
           </div>
 
           {/* CỘT PHẢI (State Container) */}
-          <div className="col-span-12 lg:col-span-8 saf-card bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-xs">
+          <div className="col-span-12 lg:col-span-8 min-w-0 saf-card bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-xs">
             {viewMode === 'VIEW_STATUS' ? (
               /* CHẾ ĐỘ A: VIEW_STATUS */
               <SubmissionStatusView
                 submission={submission}
                 onAddOrEditClick={handleOpenForm}
+                isPendingAiSupplement={isPendingAiSupplement}
+                onSupplementAiClick={handleStartSupplementAi}
                 maxScore={assignment.maxScore ?? 10}
                 isLateBlocked={isLateBlocked}
                 dueDate={assignment.dueDate}
                 activeRubricKeys={activeRubricKeys}
                 rubricConfigs={assignment.rubric_configs || (assignment as any).rubricConfigs}
+                aiDeclarationRequired={assignment.aiDeclarationRequired !== false && (assignment as any).ai_declaration_required !== false}
               />
             ) : (
               /* CHẾ ĐỘ B: FORM STEPPER (ADD HOẶC EDIT) */
@@ -3362,13 +3456,19 @@ export default function StudentAssignmentFlow({
                   <div>
                     <div className="flex items-center gap-2 flex-wrap">
                       <h2 className="text-lg font-bold text-slate-900 tracking-tight">
-                        {isEditMode
+                        {isSupplementMode
+                          ? 'Bổ sung khai báo AI Audit Log'
+                          : isEditMode
                           ? (assignment.aiDeclarationRequired !== false ? 'Edit Submission & AI Declaration' : 'Edit Submission File')
                           : submission.status === 'Draft'
                           ? 'Tiếp tục chỉnh sửa bản nháp'
                           : 'Submit Assignment'}
                       </h2>
-                      {isEditMode ? (
+                      {isSupplementMode ? (
+                        <span className="text-[10px] font-bold bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full border border-amber-200">
+                          Bổ sung khai báo AI
+                        </span>
+                      ) : isEditMode ? (
                         <span className="text-[10px] font-bold bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full border border-amber-200">
                           Editing Mode
                         </span>
@@ -3388,7 +3488,7 @@ export default function StudentAssignmentFlow({
                         ) : autoSaveStatus === 'saved' || draftFile || submission.status === 'Draft' ? (
                           <>
                             <Cloud size={12} className="text-emerald-600" />
-                            <span className="text-emerald-700">Đã lưu tạm (Cloud)</span>
+                            <span className="text-emerald-700">Đã lưu tạm</span>
                           </>
                         ) : autoSaveStatus === 'error' ? (
                           <>
@@ -3425,7 +3525,9 @@ export default function StudentAssignmentFlow({
                       </button>
                     </div>
                     <p className="text-xs text-slate-500 mt-0.5">
-                      {assignment.aiDeclarationRequired !== false ? (
+                      {isSupplementMode ? (
+                        'Bổ sung khai báo minh bạch việc sử dụng GenAI • Tệp bài làm và thời gian nộp ban đầu được giữ nguyên'
+                      ) : assignment.aiDeclarationRequired !== false ? (
                         <>
                           Step {formStep} of 2 •{' '}
                           {formStep === 1
@@ -3522,10 +3624,12 @@ export default function StudentAssignmentFlow({
                   <AiRubricForm
                     scopes={draftScopes}
                     isEditMode={isEditMode}
+                    isSupplementMode={isSupplementMode}
                     onScopesChange={handleScopesChangeWithDebounce}
                     onPreviousStep={() => setFormStep(1)}
                     onCancel={handleCancelForm}
-                    onSubmit={handleTriggerSubmitFinal}
+                    onSubmit={isSupplementMode ? handleSupplementSubmit : handleTriggerSubmitFinal}
+                    onSupplementSubmit={handleSupplementSubmit}
                     isSubmittingPayload={isSubmittingPayload}
                     autoSaveStatus={autoSaveStatus}
                     onRunSanityCheck={handleRunSanityCheck}
@@ -3538,7 +3642,6 @@ export default function StudentAssignmentFlow({
             )}
           </div>
         </div>
-      </div>
 
       {/* Modal xác nhận nộp bài chính thức */}
       {showSubmitConfirmModal && (

@@ -518,8 +518,24 @@ export default function LecturerAcademicEvaluation({
   const displayTopics = topics !== undefined ? topics : internalTopics;
   const loadingTopics = isLoadingTopics ?? isFetchingTopics;
 
+  const isAiRequired = useMemo(() => {
+    if ((courseInfo as any)?.ai_declaration_required === false) return false;
+    if (auditData?.submission?.assignment_ai_declaration_required === false) return false;
+    if (auditData?.submission?.ai_declaration_required === false) return false;
+    if ((auditData as any)?.ai_declaration_required === false) return false;
+    if ((auditData as any)?.assignment?.ai_declaration_required === false) return false;
+    return true;
+  }, [courseInfo, auditData]);
+
   // Tab Navigation State
-  const [activeTab, setActiveTab] = useState<'ai' | 'grading'>('ai');
+  const [activeTab, setActiveTab] = useState<'ai' | 'grading'>(isAiRequired ? 'ai' : 'grading');
+
+  // Cố định tab 'grading' nếu bài tập không yêu cầu khai báo AI
+  React.useEffect(() => {
+    if (!isAiRequired && activeTab !== 'grading') {
+      setActiveTab('grading');
+    }
+  }, [isAiRequired, activeTab]);
 
   // ==========================================================================
   // MULTI-SCOPE / MULTI-PHASE STATE & NORMALIZATION
@@ -563,6 +579,27 @@ export default function LecturerAcademicEvaluation({
       return p.length > 0 && r.length > 0 && ref.length > 0;
     }).length;
   };
+
+  const hasDeclaredAnyAi = useMemo(() => {
+    if (!normalizedAudit) return false;
+    if (Array.isArray(normalizedAudit.scopes) && normalizedAudit.scopes.length > 0) {
+      return normalizedAudit.scopes.some((scope: any) => {
+        if (!scope?.declarations) return false;
+        return Object.values(scope.declarations).some((item: any) => {
+          const prompt = (item?.prompt || item?.prompt_used || '').trim();
+          const response = (item?.response || item?.responseSummary || item?.aiResponseSummary || '').trim();
+          const reflection = (item?.reflection || item?.studentReflection || '').trim();
+          return prompt.length > 0 || response.length > 0 || reflection.length > 0;
+        });
+      });
+    }
+    return false;
+  }, [normalizedAudit]);
+
+  const isPendingAiSupplement = Boolean(
+    isAiRequired &&
+    !hasDeclaredAnyAi
+  );
 
   // Kiểm tra xem sinh viên có khai báo AI nào không (nếu tất cả các scope đều trống text và aiDeclarations rỗng)
   const hasAnyDeclaration = useMemo(() => {
@@ -789,7 +826,51 @@ export default function LecturerAcademicEvaluation({
     }
 
     if (Array.isArray(rawConfigs) && rawConfigs.length > 0) {
-      const enabled = rawConfigs.filter((c: any) => c.is_enabled !== false && Number(c.weight_percent || c.max_score || 0) > 0);
+      let enabled = rawConfigs.filter((c: any) => c.is_enabled !== false && Number(c.weight_percent || c.max_score || 0) > 0);
+
+      // Nếu bài tập KHÔNG yêu cầu AI: Tự động loại bỏ tiêu chí AI và quy đổi lại tỷ lệ tiêu chí chuyên môn về đúng tổng 10.0
+      if (!isAiRequired) {
+        const isAiSpecific = (c: any) => {
+          const key = String(c.criterion_key || c.key || '').toUpperCase();
+          const name = String(c.criterion_name || c.criteria || c.name || '').toLowerCase();
+          const aiKeys = [
+            'AI_INTERACTION', 'AI_USAGE', 'AI_AUDIT', 'AI_AUDIT_LOG',
+            'METACOGNITIVE_REFLECTION', 'PROMPT_ENGINEERING', 'CRITICAL_EVALUATION_OF_AI', 'AI_COMPLIANCE'
+          ];
+          if (aiKeys.includes(key)) return true;
+          if (key.includes('AI_') || key.includes('_AI') || key === 'AI') return true;
+          if (name.includes('ai interaction') || name.includes('prompt engineering') ||
+              name.includes('critical evaluation of ai') || name.includes('khai báo ai') ||
+              name.includes('sử dụng ai') || name.includes('ai audit') ||
+              name.includes('ai transparency') || name.includes('metacognitive reflection')) {
+            return true;
+          }
+          return false;
+        };
+
+        const nonAi = enabled.filter((c: any) => !isAiSpecific(c));
+        if (nonAi.length > 0) {
+          const sumWeight = nonAi.reduce((acc: number, c: any) => acc + (Number(c.weight_percent) || (c.max_score ? Number(c.max_score * 10) : 20)), 0);
+          let runningWeight = 0;
+          enabled = nonAi.map((c: any, idx: number) => {
+            const rawWeight = Number(c.weight_percent) || (c.max_score ? Number(c.max_score * 10) : 20);
+            let rescaledWeight: number;
+            if (idx === nonAi.length - 1) {
+              rescaledWeight = Number((100 - runningWeight).toFixed(1));
+            } else {
+              rescaledWeight = sumWeight > 0 ? Number(((rawWeight / sumWeight) * 100).toFixed(1)) : Number((100 / nonAi.length).toFixed(1));
+              runningWeight += rescaledWeight;
+            }
+            const rescaledMax = Number(((rescaledWeight / 100) * 10).toFixed(2));
+            return {
+              ...c,
+              weight_percent: rescaledWeight,
+              max_score: rescaledMax,
+            };
+          });
+        }
+      }
+
       if (enabled.length > 0) {
         return enabled.map((c: any) => {
           const mappedKey = CANONICAL_RUBRIC_MAP[c.criterion_key] || 'decomposition';
@@ -816,8 +897,37 @@ export default function LecturerAcademicEvaluation({
       }
     }
 
+    if (!isAiRequired) {
+      return [
+        {
+          ...PRESET_CRITERIA_META.decomposition,
+          criterion_key: 'PROBLEM_ABSTRACTION',
+          name: 'Problem Abstraction & Solution Design',
+          max: 3.0,
+          weight_percent: 30,
+          pills: [0, 0.8, 1.5, 2.3, 2.7, 3.0],
+        },
+        {
+          ...PRESET_CRITERIA_META.pattern_recognition,
+          criterion_key: 'IMPLEMENTATION_QUALITY',
+          name: 'Implementation & Code Quality',
+          max: 4.0,
+          weight_percent: 40,
+          pills: [0, 1.0, 2.0, 3.0, 3.6, 4.0],
+        },
+        {
+          ...PRESET_CRITERIA_META.abstraction,
+          criterion_key: 'CRITICAL_EVALUATION',
+          name: 'Critical Evaluation & Verification',
+          max: 3.0,
+          weight_percent: 30,
+          pills: [0, 0.8, 1.5, 2.3, 2.7, 3.0],
+        },
+      ];
+    }
+
     return RUBRIC_CRITERIA_LIST;
-  }, [rubricConfigs, courseInfo, auditData, savedEvaluation]);
+  }, [rubricConfigs, courseInfo, auditData, savedEvaluation, isAiRequired]);
 
   // Calculate Total Score (Thang 10 điểm học thuật chuyên môn: Tổng các tiêu chí đang bật)
   const totalScore = parseFloat(
@@ -906,16 +1016,17 @@ export default function LecturerAcademicEvaluation({
 
       const payload = {
         force,
-        aiAuditSummary: {
+        ai_declaration_required: isAiRequired,
+        aiAuditSummary: isAiRequired ? {
           declarationAlignment: '96.4%',
           transparencyIndex: 'A+',
           reflectionDepth: 'High',
           riskLevel: student.aiRiskLevel || 'low',
           summary: 'Khai báo chi tiết cả tool được chấp thuận và tool bị từ chối.'
-        },
+        } : null,
         oralExamLogs: [],
-        aiDeclarations: currentScopeDeclarations,
-        aiAuditData: auditData || normalizedAudit,
+        aiDeclarations: isAiRequired ? currentScopeDeclarations : [],
+        aiAuditData: isAiRequired ? (auditData || normalizedAudit) : null,
         codeSnippet: actualFile.textContent || (codeLines.join('\n'))
       };
 
@@ -1107,7 +1218,7 @@ export default function LecturerAcademicEvaluation({
   const codeLines = submissionFile.lines || (submissionFile.content ? submissionFile.content.split('\n') : []);
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col h-full w-full overflow-hidden bg-[#f8fafc] text-slate-700 font-sans select-none m-0 p-0">
+    <div className="flex-1 min-h-0 flex flex-col h-full w-full max-w-full min-w-0 overflow-hidden overflow-x-hidden bg-[#f8fafc] text-slate-700 font-sans select-none m-0 p-0">
       {/* Toast Notification Floating */}
       {toastMessage && (
         <div className="fixed top-6 right-6 z-[1050] flex items-center gap-3 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-2xl border border-slate-700 animate-in fade-in slide-in-from-top-4 duration-200">
@@ -1129,8 +1240,9 @@ export default function LecturerAcademicEvaluation({
       )}
 
       {/* ==================== TOP NAVIGATION BAR (H-14 FLUSH FIT) ==================== */}
-      <header className="h-14 w-full bg-[#0f172a] text-white px-4 flex items-center justify-between border-b border-gray-800 shrink-0 select-none">
-        <div className="flex items-center gap-3 min-w-0">
+      <header className="h-14 w-full max-w-full min-w-0 bg-[#0f172a] text-white px-4 py-2.5 flex items-center justify-between gap-3 border-b border-gray-800 shrink-0 select-none overflow-hidden">
+        {/* Khối bên trái: Breadcrumb & Tên SV */}
+        <div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
           <button
             type="button"
             onClick={handleBackClick}
@@ -1141,7 +1253,7 @@ export default function LecturerAcademicEvaluation({
           </button>
 
           {/* Breadcrumbs */}
-          <nav aria-label="Breadcrumb" className="text-xs font-medium tracking-wide flex items-center gap-2 min-w-0">
+          <nav aria-label="Breadcrumb" className="text-xs font-medium tracking-wide flex items-center gap-1.5 min-w-0 truncate shrink-0">
             <button
               type="button"
               onClick={() => navigate('/lecturer/dashboard')}
@@ -1160,7 +1272,7 @@ export default function LecturerAcademicEvaluation({
                   navigate('/lecturer/classes');
                 }
               }}
-              className="cursor-pointer hover:text-blue-400 transition-colors max-w-[220px] truncate text-left bg-transparent border-0 p-0 text-slate-200"
+              className="cursor-pointer hover:text-blue-400 transition-colors max-w-[120px] sm:max-w-[160px] truncate text-left bg-transparent border-0 p-0 text-slate-200"
               title={displayCourseName}
             >
               {displayCourseName}
@@ -1169,7 +1281,7 @@ export default function LecturerAcademicEvaluation({
             <button
               type="button"
               onClick={handleBackClick}
-              className="cursor-pointer hover:text-blue-400 transition-colors max-w-[240px] truncate text-left bg-transparent border-0 p-0 text-slate-300"
+              className="cursor-pointer hover:text-blue-400 transition-colors max-w-[120px] sm:max-w-[160px] truncate text-left bg-transparent border-0 p-0 text-slate-300"
               title={displayAssignmentTitle}
             >
               {displayAssignmentTitle}
@@ -1177,25 +1289,25 @@ export default function LecturerAcademicEvaluation({
           </nav>
 
           {/* Divider & Student Info */}
-          <span className="text-slate-700 hidden sm:inline mx-1">|</span>
-          <div className="hidden md:flex items-center gap-2 shrink-0">
-            <span className="text-xs font-semibold text-white truncate max-w-[180px]">
+          <span className="text-slate-700 hidden sm:inline mx-1 shrink-0">|</span>
+          <div className="hidden md:flex items-center gap-2 shrink-0 min-w-0">
+            <span className="text-xs font-semibold text-white truncate max-w-[120px] sm:max-w-[150px]">
               {student.name} ({student.code})
             </span>
-            {(student.aiRiskLevel === 'low' || auditIntegrity?.risk_level === 'LOW_RISK' || auditIntegrity?.riskLevel === 'low') && (
-              <span className="inline-flex items-center gap-1.5 bg-[#063f35] text-[#2fe8a6] border border-[#0d594b] text-[10px] font-semibold px-2 py-0.5 rounded-full" title="Rủi ro minh bạch AI: Thấp (Đánh giá độc lập, không trừ điểm học thuật)">
+            {isAiRequired && (student.aiRiskLevel === 'low' || auditIntegrity?.risk_level === 'LOW_RISK' || auditIntegrity?.riskLevel === 'low') && (
+              <span className="hidden xl:inline-flex items-center gap-1.5 bg-[#063f35] text-[#2fe8a6] border border-[#0d594b] text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0" title="Rủi ro minh bạch AI: Thấp (Đánh giá độc lập, không trừ điểm học thuật)">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#2fe8a6]"></span>
                 <span>LOW_RISK (AI Transparency)</span>
               </span>
             )}
-            {(student.aiRiskLevel === 'medium' || auditIntegrity?.risk_level === 'MEDIUM_RISK' || auditIntegrity?.riskLevel === 'medium') && (
-              <span className="inline-flex items-center gap-1.5 bg-[#3f2f06] text-[#e8b52f] border border-[#59440d] text-[10px] font-semibold px-2 py-0.5 rounded-full" title="Rủi ro minh bạch AI: Trung bình (Đánh giá độc lập, không trừ điểm học thuật)">
+            {isAiRequired && (student.aiRiskLevel === 'medium' || auditIntegrity?.risk_level === 'MEDIUM_RISK' || auditIntegrity?.riskLevel === 'medium') && (
+              <span className="hidden xl:inline-flex items-center gap-1.5 bg-[#3f2f06] text-[#e8b52f] border border-[#59440d] text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0" title="Rủi ro minh bạch AI: Trung bình (Đánh giá độc lập, không trừ điểm học thuật)">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#e8b52f]"></span>
                 <span>MEDIUM_RISK (AI Transparency)</span>
               </span>
             )}
-            {(student.aiRiskLevel === 'high' || auditIntegrity?.risk_level === 'HIGH_RISK' || auditIntegrity?.riskLevel === 'high') && (
-              <span className="inline-flex items-center gap-1.5 bg-[#3f0606] text-[#e82f2f] border border-[#590d0d] text-[10px] font-semibold px-2 py-0.5 rounded-full" title="Rủi ro minh bạch AI: Cao (Đánh giá độc lập, dùng câu hỏi VIVA để vấn đáp, không trừ thẳng điểm code)">
+            {isAiRequired && (student.aiRiskLevel === 'high' || auditIntegrity?.risk_level === 'HIGH_RISK' || auditIntegrity?.riskLevel === 'high') && (
+              <span className="hidden xl:inline-flex items-center gap-1.5 bg-[#3f0606] text-[#e82f2f] border border-[#590d0d] text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0" title="Rủi ro minh bạch AI: Cao (Đánh giá độc lập, dùng câu hỏi VIVA để vấn đáp, không trừ thẳng điểm code)">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#e82f2f]"></span>
                 <span>HIGH_RISK (AI Transparency)</span>
               </span>
@@ -1203,11 +1315,12 @@ export default function LecturerAcademicEvaluation({
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5 shrink-0">
+        {/* Khối nút hành động bên phải */}
+        <div className="flex items-center gap-2 shrink-0">
           <button
             type="button"
             onClick={() => setShowResubmitModal(true)}
-            className="flex items-center gap-1.5 px-3 py-1 bg-white text-rose-600 rounded-lg text-xs font-bold hover:bg-rose-50 transition border border-rose-100 shadow-sm cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1 bg-white text-rose-600 rounded-lg text-xs font-bold hover:bg-rose-50 transition border border-rose-100 shadow-sm cursor-pointer shrink-0 whitespace-nowrap"
           >
             <RotateCcw size={13} />
             <span>Request Resubmit</span>
@@ -1217,7 +1330,7 @@ export default function LecturerAcademicEvaluation({
             type="button"
             disabled={isSaving}
             onClick={handleSaveDraft}
-            className="flex items-center gap-1.5 px-3 py-1 bg-[#1b2b52] text-slate-200 rounded-lg text-xs font-semibold hover:bg-[#233766] transition border border-slate-700 cursor-pointer disabled:opacity-50"
+            className="flex items-center gap-1.5 px-3 py-1 bg-[#1b2b52] text-slate-200 rounded-lg text-xs font-semibold hover:bg-[#233766] transition border border-slate-700 cursor-pointer disabled:opacity-50 shrink-0 whitespace-nowrap"
           >
             <Bookmark size={13} />
             <span>{isSaving ? 'Saving...' : 'Save Draft'}</span>
@@ -1227,7 +1340,7 @@ export default function LecturerAcademicEvaluation({
             type="button"
             disabled={isPublishing}
             onClick={handlePublishGrade}
-            className="flex items-center gap-1.5 px-3.5 py-1 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-lg text-xs font-bold hover:opacity-95 shadow-md shadow-orange-500/20 transition cursor-pointer disabled:opacity-50"
+            className="flex items-center gap-1.5 px-3.5 py-1 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-lg text-xs font-bold hover:opacity-95 shadow-md shadow-orange-500/20 transition cursor-pointer disabled:opacity-50 shrink-0 whitespace-nowrap"
           >
             <Send size={11} />
             <span>{isPublishing ? 'Đang công bố...' : `Công bố điểm (${totalScore.toFixed(2)} / 10)`}</span>
@@ -1236,9 +1349,9 @@ export default function LecturerAcademicEvaluation({
       </header>
 
       {/* ==================== MAIN CONTENT AREA (WORKSPACE BODY) ==================== */}
-      <div className="flex-1 min-h-0 flex w-full overflow-hidden">
-        {/* CỘT TRÁI: CODE VIEWER / ANNOTATE (FLEX-1) */}
-        <div className="flex-1 min-h-0 flex flex-col overflow-hidden bg-white border-r border-gray-200 min-w-0">
+      <div className="grid grid-cols-1 lg:grid-cols-12 w-full max-w-full min-w-0 h-[calc(100vh-112px)] overflow-hidden bg-white">
+        {/* CỘT TRÁI: CODE VIEWER / ANNOTATE (COL-SPAN-6 / XL:COL-SPAN-7) */}
+        <div className="lg:col-span-6 xl:col-span-7 min-w-0 w-full flex flex-col h-full overflow-hidden bg-white border-r border-gray-200">
           <SubmissionFileViewer
             file={actualFile}
             onAiAnnotate={handleAiAnnotateClick}
@@ -1248,48 +1361,58 @@ export default function LecturerAcademicEvaluation({
           />
         </div>
 
-        {/* CỘT PHẢI: TAB AI DECLARATION & AUDIT / ACADEMIC GRADING */}
-        <aside className="w-[440px] lg:w-[480px] xl:w-[540px] flex flex-col min-h-0 overflow-hidden bg-white shrink-0 border-l border-slate-200">
-          {/* TAB NAVIGATION CỐ ĐỊNH */}
-          <div className="h-11 border-b border-gray-200 flex items-center px-2 shrink-0 bg-white select-none">
-            <button
-              id="tab-btn-ai"
-              type="button"
-              onClick={() => setActiveTab('ai')}
-              className={`flex-1 h-full flex items-center justify-center gap-1.5 text-xs font-bold transition cursor-pointer ${
-                activeTab === 'ai'
-                  ? 'border-b-2 border-orange-500 text-orange-600'
-                  : 'border-b-2 border-transparent text-slate-500 hover:text-slate-800'
-              }`}
-            >
-              <ShieldCheck size={14} />
-              <span>AI DECLARATION & AUDIT</span>
-            </button>
+        {/* CỘT PHẢI: TAB AI DECLARATION & AUDIT / ACADEMIC GRADING (COL-SPAN-6 / XL:COL-SPAN-5) */}
+        <aside className="lg:col-span-6 xl:col-span-5 min-w-0 w-full flex flex-col h-full border-l border-slate-200 bg-white overflow-hidden">
+          {/* TAB NAVIGATION CỐ ĐỊNH (GRID 2 CỘT 50% - 50%) */}
+          {isAiRequired ? (
+            <div className="grid grid-cols-2 w-full min-w-0 shrink-0 border-b border-slate-200 select-none bg-white">
+              <button
+                id="tab-btn-ai"
+                type="button"
+                onClick={() => setActiveTab('ai')}
+                className={`min-w-0 px-2 py-3 text-xs font-bold truncate flex items-center justify-center gap-1.5 transition cursor-pointer ${
+                  activeTab === 'ai'
+                    ? 'border-b-2 border-orange-500 text-orange-600'
+                    : 'border-b-2 border-transparent text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <ShieldCheck size={14} className="shrink-0" />
+                <span className="truncate">AI DECLARATION & AUDIT</span>
+              </button>
 
-            <button
-              id="tab-btn-grading"
-              type="button"
-              onClick={() => setActiveTab('grading')}
-              className={`flex-1 h-full flex items-center justify-center gap-1.5 text-xs font-bold transition cursor-pointer ${
-                activeTab === 'grading'
-                  ? 'border-b-2 border-indigo-600 text-indigo-600'
-                  : 'border-b-2 border-transparent text-slate-500 hover:text-slate-800'
-              }`}
-            >
-              <Bookmark size={14} />
-              <span>ACADEMIC GRADING</span>
-            </button>
-          </div>
+              <button
+                id="tab-btn-grading"
+                type="button"
+                onClick={() => setActiveTab('grading')}
+                className={`min-w-0 px-2 py-3 text-xs font-bold truncate flex items-center justify-center gap-1.5 transition cursor-pointer ${
+                  activeTab === 'grading'
+                    ? 'border-b-2 border-indigo-600 text-indigo-600'
+                    : 'border-b-2 border-transparent text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <Bookmark size={14} className="shrink-0" />
+                <span className="truncate">ACADEMIC GRADING</span>
+              </button>
+            </div>
+          ) : (
+            <div className="h-11 border-b border-gray-200 flex items-center px-4 shrink-0 bg-slate-50/70 select-none w-full min-w-0">
+              <div className="flex items-center gap-2 text-xs font-bold text-indigo-700 tracking-wide uppercase truncate">
+                <Bookmark size={14} className="text-indigo-600 shrink-0" />
+                <span className="truncate">BẢNG CHẤM ĐIỂM CHUYÊN MÔN (ACADEMIC GRADING)</span>
+              </div>
+            </div>
+          )}
 
           {/* VÙNG NỘI DUNG CUỘN RIÊNG BIỆT CHO MỖI TAB */}
           <div className="flex-1 min-h-0 overflow-hidden relative flex flex-col">
             {/* ==================== TAB 1: AI DECLARATION & AUDIT ==================== */}
-            <div
-              id="panel-ai"
-              className={`flex-1 min-h-0 flex flex-col p-4 pb-16 overflow-y-auto custom-scroll space-y-4 ${
-                activeTab === 'ai' ? '' : 'hidden'
-              }`}
-            >
+            {isAiRequired && (
+              <div
+                id="panel-ai"
+                className={`flex-1 min-h-0 w-full overflow-y-auto overflow-x-hidden p-4 pb-16 space-y-4 custom-scroll ${
+                  activeTab === 'ai' ? '' : 'hidden'
+                }`}
+              >
               {/* Header Section */}
               <div className="flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-2 text-xs font-bold text-slate-800 tracking-wide uppercase">
@@ -1311,6 +1434,21 @@ export default function LecturerAcademicEvaluation({
                   </span>
                 </div>
               </div>
+
+              {/* Thông báo nhẹ nhàng khi sinh viên chưa bổ sung khai báo AI */}
+              {isPendingAiSupplement && (
+                <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3 text-amber-900 shadow-2xs shrink-0">
+                  <AlertTriangle size={18} className="text-amber-600 shrink-0 mt-0.5" />
+                  <div className="space-y-0.5 text-xs">
+                    <div className="font-bold text-amber-800">
+                      Chưa có dữ liệu khai báo AI Audit Log
+                    </div>
+                    <div className="text-amber-700 leading-relaxed">
+                      Sinh viên đã nộp bài trước khi bật yêu cầu khai báo AI và chưa cập nhật bổ sung. Giảng viên vẫn có thể đánh giá và chấm điểm bài làm bình thường tại tab Academic Grading.
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Thanh điều hướng Scope / Phase Selector (Đặt ngay dưới tiêu đề tab) */}
               {scopes.length > 0 && (
@@ -1390,31 +1528,31 @@ export default function LecturerAcademicEvaluation({
                   </button>
                 </div>
               ) : (
-                <div className="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-xs shrink-0">
-                  <div className="max-h-[460px] overflow-x-auto overflow-y-auto custom-scroll">
-                    <table className="w-full min-w-[960px] border-collapse text-left text-xs table-fixed">
+                <div className="w-full max-w-full overflow-hidden border border-slate-200 rounded-2xl bg-white shadow-xs shrink-0">
+                  <div className="w-full max-w-full overflow-x-auto overflow-y-auto custom-scroll max-h-[460px]">
+                    <table className="w-full min-w-[690px] border-collapse text-left text-xs table-fixed">
                       <colgroup>
-                        <col className="w-[130px]" />
-                        <col className="w-[130px]" />
-                        <col className="w-[233px]" />
-                        <col className="w-[233px]" />
-                        <col className="w-[234px]" />
+                        <col className="w-[105px]" />
+                        <col className="w-[105px]" />
+                        <col className="w-[160px]" />
+                        <col className="w-[160px]" />
+                        <col className="w-[160px]" />
                       </colgroup>
                       <thead className="sticky top-0 bg-slate-50 border-b border-slate-200 text-[10px] font-bold text-slate-500 uppercase tracking-wider z-10">
                         <tr>
-                          <th className="py-3 px-3 w-[130px] border-b border-slate-200 bg-slate-50">
+                          <th className="py-2.5 px-2.5 w-[105px] border-b border-slate-200 bg-slate-50">
                             Phase / Rubric
                           </th>
-                          <th className="py-3 px-3 w-[130px] border-b border-slate-200 bg-slate-50">
+                          <th className="py-2.5 px-2.5 w-[105px] border-b border-slate-200 bg-slate-50">
                             Tool & Decision
                           </th>
-                          <th className="py-3 px-3 w-[233px] border-b border-slate-200 bg-slate-50">
+                          <th className="py-2.5 px-2.5 w-[160px] border-b border-slate-200 bg-slate-50">
                             Prompt Input
                           </th>
-                          <th className="py-3 px-3 w-[233px] border-b border-slate-200 bg-slate-50">
+                          <th className="py-2.5 px-2.5 w-[160px] border-b border-slate-200 bg-slate-50">
                             AI Response
                           </th>
-                          <th className="py-3 px-3 w-[234px] border-b border-slate-200 bg-slate-50">
+                          <th className="py-2.5 px-2.5 w-[160px] border-b border-slate-200 bg-slate-50">
                             Student Reflection / Self-Evaluation
                           </th>
                         </tr>
@@ -1527,11 +1665,12 @@ export default function LecturerAcademicEvaluation({
                 </button>
               </div>
             </div>
+            )}
 
             {/* ==================== TAB 2: ACADEMIC GRADING ==================== */}
             <div
               id="panel-grading"
-              className={`flex-1 min-h-0 flex flex-col p-4 pb-16 overflow-y-auto custom-scroll space-y-6 ${
+              className={`flex-1 min-h-0 flex flex-col p-4 pb-16 overflow-y-auto overflow-x-hidden custom-scroll space-y-6 ${
                 activeTab === 'grading' ? '' : 'hidden'
               }`}
             >
@@ -1558,12 +1697,12 @@ export default function LecturerAcademicEvaluation({
                     {isAuditingAi ? (
                       <>
                         <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        <span>AI đang thẩm định 5 tiêu chí...</span>
+                        <span>{isAiRequired ? 'AI đang thẩm định 5 tiêu chí...' : 'AI đang thẩm định điểm chuyên môn...'}</span>
                       </>
                     ) : (
                       <>
                         <Sparkles size={14} className="text-amber-300" />
-                        <span>Khớp từng tiêu chí với AI</span>
+                        <span>{isAiRequired ? 'Khớp từng tiêu chí với AI' : '✨ AI Gợi ý điểm chuyên môn'}</span>
                       </>
                     )}
                   </button>
@@ -1604,10 +1743,10 @@ export default function LecturerAcademicEvaluation({
                       </div>
                       <div>
                         <span className="font-bold text-purple-900 text-xs uppercase tracking-wide block">
-                          Kết Luận Thanh Tra & Vấn Đáp (AI Verdict)
+                          {isAiRequired ? 'Kết Luận Thanh Tra & Vấn Đáp (AI Verdict)' : 'Nhận Xét & Đánh Giá Chuyên Môn (AI Verdict)'}
                         </span>
                         <span className="text-[10px] text-purple-600/80 font-medium">
-                          Đối soát chéo & Thẩm định tự động Gemini
+                          {isAiRequired ? 'Đối soát chéo & Thẩm định tự động Gemini' : 'Thẩm định mã nguồn tự động Gemini'}
                         </span>
                       </div>
                     </div>
@@ -1834,60 +1973,62 @@ export default function LecturerAcademicEvaluation({
               </div>
 
               {/* Đánh giá liêm chính học thuật / sử dụng AI hợp lệ */}
-              <div className="space-y-2 pt-2 border-t border-slate-100 shrink-0">
-                <label className="block text-xs font-bold text-slate-800 uppercase tracking-wide">
-                  ĐÁNH GIÁ LIÊM CHÍNH AI (AI COMPLIANCE STATUS)
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      isUserModifiedRef.current = true;
-                      setAiCompliance('compliant');
-                    }}
-                    className={`py-2 px-2.5 rounded-xl border text-[11px] font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer ${
-                      aiCompliance === 'compliant'
-                        ? 'bg-emerald-50 border-emerald-300 text-emerald-800 shadow-xs'
-                        : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
-                    }`}
-                  >
-                    <Check size={12} className={aiCompliance === 'compliant' ? 'text-emerald-600' : 'text-slate-400'} />
-                    <span>Hợp lệ (Pass)</span>
-                  </button>
+              {isAiRequired && (
+                <div className="space-y-2 pt-2 border-t border-slate-100 shrink-0">
+                  <label className="block text-xs font-bold text-slate-800 uppercase tracking-wide">
+                    ĐÁNH GIÁ LIÊM CHÍNH AI (AI COMPLIANCE STATUS)
+                  </label>
+                  <div className="grid grid-cols-3 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        isUserModifiedRef.current = true;
+                        setAiCompliance('compliant');
+                      }}
+                      className={`py-2 px-2.5 rounded-xl border text-[11px] font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer ${
+                        aiCompliance === 'compliant'
+                          ? 'bg-emerald-50 border-emerald-300 text-emerald-800 shadow-xs'
+                          : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                      }`}
+                    >
+                      <Check size={12} className={aiCompliance === 'compliant' ? 'text-emerald-600' : 'text-slate-400'} />
+                      <span>Hợp lệ (Pass)</span>
+                    </button>
 
-                  <button
-                    type="button"
-                    onClick={() => {
-                      isUserModifiedRef.current = true;
-                      setAiCompliance('minor_discrepancy');
-                    }}
-                    className={`py-2 px-2.5 rounded-xl border text-[11px] font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer ${
-                      aiCompliance === 'minor_discrepancy'
-                        ? 'bg-amber-50 border-amber-300 text-amber-800 shadow-xs'
-                        : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
-                    }`}
-                  >
-                    <HelpCircle size={12} className={aiCompliance === 'minor_discrepancy' ? 'text-amber-600' : 'text-slate-400'} />
-                    <span>Cần Viva</span>
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        isUserModifiedRef.current = true;
+                        setAiCompliance('minor_discrepancy');
+                      }}
+                      className={`py-2 px-2.5 rounded-xl border text-[11px] font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer ${
+                        aiCompliance === 'minor_discrepancy'
+                          ? 'bg-amber-50 border-amber-300 text-amber-800 shadow-xs'
+                          : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                      }`}
+                    >
+                      <HelpCircle size={12} className={aiCompliance === 'minor_discrepancy' ? 'text-amber-600' : 'text-slate-400'} />
+                      <span>Cần Viva</span>
+                    </button>
 
-                  <button
-                    type="button"
-                    onClick={() => {
-                      isUserModifiedRef.current = true;
-                      setAiCompliance('violation');
-                    }}
-                    className={`py-2 px-2.5 rounded-xl border text-[11px] font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer ${
-                      aiCompliance === 'violation'
-                        ? 'bg-rose-50 border-rose-300 text-rose-800 shadow-xs'
-                        : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
-                    }`}
-                  >
-                    <AlertTriangle size={12} className={aiCompliance === 'violation' ? 'text-rose-600' : 'text-slate-400'} />
-                    <span>Nghi vấn</span>
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        isUserModifiedRef.current = true;
+                        setAiCompliance('violation');
+                      }}
+                      className={`py-2 px-2.5 rounded-xl border text-[11px] font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer ${
+                        aiCompliance === 'violation'
+                          ? 'bg-rose-50 border-rose-300 text-rose-800 shadow-xs'
+                          : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                      }`}
+                    >
+                      <AlertTriangle size={12} className={aiCompliance === 'violation' ? 'text-rose-600' : 'text-slate-400'} />
+                      <span>Nghi vấn</span>
+                    </button>
+                  </div>
                 </div>
-              </div>
+              )}
               
               <div className="space-y-2 pt-2 border-t border-slate-100 pb-2 shrink-0">
                 <label className="block text-xs font-bold text-slate-800 uppercase tracking-wide">

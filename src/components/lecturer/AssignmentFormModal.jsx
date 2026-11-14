@@ -213,6 +213,21 @@ export default function AssignmentFormModal({
         setNewMaterials((prev) => prev.filter((_, idx) => idx !== indexToRemove));
     };
 
+    const existingSubmissionsCount = Number(
+        initialData?.submission_count ??
+        initialData?.submissions_count ??
+        initialData?.submissionCount ??
+        initialData?.total_submissions ??
+        (Array.isArray(initialData?.submissions) ? initialData.submissions.length : 0)
+    ) || 0;
+
+    const isEnablingAiWithExistingSubmissions = Boolean(
+        mode === 'edit' &&
+        initialData?.ai_declaration_required === false &&
+        aiDeclarationRequired === true &&
+        existingSubmissionsCount > 0
+    );
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         // Chặn tuyệt đối mọi cú click thứ 2 ngay lập tức (kể cả trước khi React kịp re-render state)
@@ -228,6 +243,17 @@ export default function AssignmentFormModal({
         if (aiDeclarationRequired && totalWeight !== 100) {
             alert(`Tổng trọng số của các tiêu chí được bật phải đạt chính xác 100%! Hiện tại là ${totalWeight}%.`);
             return;
+        }
+
+        if (isEnablingAiWithExistingSubmissions) {
+            const confirmed = window.confirm(
+                `Lưu ý: Bài tập này đã có ${existingSubmissionsCount} bài nộp từ sinh viên.\n\n` +
+                `Khi bật yêu cầu khai báo AI Audit Log, các bài đã nộp sẽ chuyển sang trạng thái chờ sinh viên bổ sung khai báo AI (tệp bài làm của sinh viên vẫn được giữ nguyên thời gian nộp ban đầu).\n\n` +
+                `Bạn có chắc chắn muốn lưu thay đổi này không?`
+            );
+            if (!confirmed) {
+                return;
+            }
         }
 
         submitLockRef.current = true;
@@ -565,6 +591,28 @@ export default function AssignmentFormModal({
                                 </span>
                             </label>
                         </div>
+
+                        {/* Cảnh báo khi bật bổ sung AI sau khi đã có bài nộp */}
+                        {isEnablingAiWithExistingSubmissions && (
+                            <div style={{
+                                marginTop: '12px',
+                                padding: '10px 12px',
+                                borderRadius: '8px',
+                                backgroundColor: '#fffbeb',
+                                border: '1px solid #fde68a',
+                                display: 'flex',
+                                gap: '8px',
+                                alignItems: 'flex-start',
+                                fontSize: '12px',
+                                color: '#92400e',
+                                lineHeight: 1.45,
+                            }}>
+                                <AlertCircle size={16} style={{ flexShrink: 0, marginTop: '2px', color: '#d97706' }} />
+                                <div>
+                                    <strong>Lưu ý:</strong> Bài tập đã có {existingSubmissionsCount} bài nộp từ sinh viên. Khi bật yêu cầu AI Audit Log, hệ thống sẽ giữ nguyên tệp bài làm và thời gian nộp ban đầu của sinh viên, đồng thời hiển thị thông báo để sinh viên bổ sung khai báo AI.
+                                </div>
+                            </div>
+                        )}
 
                         {/* KHU VỰC CẤU HÌNH TIÊU CHÍ RUBRIC & TRỌNG SỐ (%) */}
                         {aiDeclarationRequired && (
