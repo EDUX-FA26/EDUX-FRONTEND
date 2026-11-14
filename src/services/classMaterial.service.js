@@ -10,7 +10,7 @@ const ClassMaterialService = {
         return response.data;
     },
 
-    // POST /api/classes/:classId/materials (Upload tài liệu - Lecturer/Admin)
+    // POST /api/classes/:classId/materials (Upload tài liệu - Lecturer/School Admin)
     async uploadClassMaterial(classId, formData) {
         const response = await api.post(`/classes/${classId}/materials`, formData, {
             headers: {
@@ -37,7 +37,7 @@ const ClassMaterialService = {
         return response.data;
     },
 
-    // PATCH /api/materials/classes/:id (Cập nhật metadata - Lecturer/Admin)
+    // PATCH /api/materials/classes/:id (Cập nhật metadata - Lecturer/School Admin)
     async updateMaterial(id, updateData) {
         const response = await api.patch(`/materials/classes/${id}`, updateData, {
             schoolScoped: true,
@@ -45,7 +45,7 @@ const ClassMaterialService = {
         return response.data;
     },
 
-    // DELETE /api/materials/classes/:id (Xóa tài liệu - Lecturer/Admin)
+    // DELETE /api/materials/classes/:id (Xóa tài liệu - Lecturer/School Admin)
     async deleteMaterial(id) {
         const response = await api.delete(`/materials/classes/${id}`, {
             schoolScoped: true,

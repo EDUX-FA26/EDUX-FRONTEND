@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import ClassMaterialService from '../../services/classMaterial.service';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useSchool } from '../../contexts/SchoolContext';
 import { 
     FileText, Download, Trash2, Plus, ArrowLeft, 
     UploadCloud, Calendar, User, File, AlertCircle, X, HardDrive 
@@ -20,6 +21,7 @@ export default function ClassMaterialsPage() {
     const { classId } = useParams();
     const navigate = useNavigate();
     const { t } = useLanguage();
+    const { schoolRole } = useSchool();
 
     const [materials, setMaterials] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -51,11 +53,15 @@ export default function ClassMaterialsPage() {
 
     useEffect(() => {
         fetchMaterials();
+        if (schoolRole) {
+            setUserRole(schoolRole);
+            return;
+        }
         const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
         if (storedUser?.role) {
             setUserRole(storedUser.role);
         }
-    }, [fetchMaterials]);
+    }, [fetchMaterials, schoolRole]);
 
     const handleUploadSubmit = async (e) => {
         e.preventDefault();
@@ -133,7 +139,8 @@ export default function ClassMaterialsPage() {
         );
     }
 
-    const canUpload = ['lecturer', 'admin'].includes(userRole);
+    const effectiveRole = schoolRole || userRole;
+    const canUpload = ['lecturer', 'school_admin', 'admin'].includes(effectiveRole);
 
     return (
         <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '24px', width: '100%', boxSizing: 'border-box' }}>
@@ -164,7 +171,7 @@ export default function ClassMaterialsPage() {
                                 TÀI LIỆU HỌC TẬP
                             </span>
                             <span className="badge badge-orange">
-                                {userRole === 'lecturer' ? 'Giảng viên' : userRole === 'admin' ? 'Quản trị viên' : 'Sinh viên'}
+                                {effectiveRole === 'lecturer' ? 'Giảng viên' : ['school_admin', 'admin'].includes(effectiveRole) ? 'Quản trị viên' : 'Sinh viên'}
                             </span>
                         </div>
                         <h1 style={{ fontSize: '1.5rem', fontWeight: 800, margin: 0, letterSpacing: '-0.02em', color: 'white' }}>
