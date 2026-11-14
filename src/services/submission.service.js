@@ -67,6 +67,16 @@ const SubmissionService = {
     },
 
     /**
+     * 1d. Bổ sung khai báo AI sau khi giảng viên bật AI Audit Log
+     */
+    async supplementDeclarations(assignmentId, payload = {}) {
+        const response = await api.patch(`/submissions/${assignmentId}/supplement-declarations`, payload, {
+            schoolScoped: true
+        });
+        return response.data;
+    },
+
+    /**
      * 2. Nộp bài chính thức (Submit Final)
      */
     async submitFinal(assignmentId, file, note) {

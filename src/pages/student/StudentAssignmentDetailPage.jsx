@@ -179,7 +179,7 @@ export default function StudentAssignmentDetailPage() {
             lastEditedAt: editedTime ? formatDateDMY(editedTime) : null,
             version: latestVer?.version_no || detailedSubmission?.versions?.length || submission.version || 1,
             file: submittedFile,
-            feedback: effectiveFeedback || (isGraded ? 'Bài nộp đã được chấm điểm hoàn tất.' : isDraft ? 'Bản nháp đang được lưu an toàn. Hãy bấm "Nộp bài chính thức" khi hoàn tất.' : 'Chưa có nhận xét. Bài nộp đang chờ giảng viên chấm điểm.'),
+            feedback: effectiveFeedback || (isGraded ? 'Bài nộp đã được chấm điểm hoàn tất.' : isDraft ? '' : 'Chưa có nhận xét. Bài nộp đang chờ giảng viên chấm điểm.'),
             transparencyScore: submission.transparencyScore || (parsedScopes ? 95 : null),
             declarations: parsedDeclarations,
             scopes: parsedScopes || submission.scopes,
@@ -248,9 +248,17 @@ export default function StudentAssignmentDetailPage() {
         return await SubmissionService.runSanityCheck(id, payload);
     };
 
+    // Handle Supplement AI Declarations
+    const handleSupplementDeclarations = async ({ scopes, declarations, note }) => {
+        if (!id) return null;
+        await SubmissionService.supplementDeclarations(id, { scopes, ai_declarations: declarations, note });
+        await fetchDetail();
+        return true;
+    };
+
     if (loading) {
         return (
-            <div className="max-w-7xl mx-auto p-8 space-y-6 animate-pulse">
+            <div className="w-full max-w-full min-w-0 min-h-[calc(100vh-64px)] bg-[#F8FAFC] px-6 pt-7 pb-8 space-y-6 animate-pulse">
                 <div className="h-6 bg-slate-200 rounded w-1/4"></div>
                 <div className="h-10 bg-slate-200 rounded w-1/2"></div>
                 <div className="grid grid-cols-12 gap-6">
@@ -270,6 +278,7 @@ export default function StudentAssignmentDetailPage() {
             onSaveDraftFile={handleSaveDraftFile}
             onRemoveDraftFile={handleRemoveDraftFile}
             onSaveDraftDeclarations={handleSaveDraftDeclarations}
+            onSupplementDeclarations={handleSupplementDeclarations}
             onRunSanityCheck={handleRunSanityCheck}
         />
     );
