@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState, useRef } from "react";
+import { useSchool } from "../../contexts/SchoolContext";
 import {
   getSystemReports,
   getAiUsageStats,
@@ -180,6 +181,7 @@ const styles = `
 `;
 
 export default function AdminReportsPage() {
+  const { activeSchool } = useSchool();
   const [activeTab, setActiveTab] = useState("overview");
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState("");
@@ -192,28 +194,84 @@ export default function AdminReportsPage() {
   const [auditType, setAuditType] = useState("all");
   const [auditRange, setAuditRange] = useState("all");
 
-  const loadReports = useCallback(async () => {
+  const currentSchoolIdRef = useRef(activeSchool?.id);
+  const requestGenRef = useRef(0);
+  const abortControllerRef = useRef(null);
+
+  const loadReports = useCallback(async (targetSchoolId = activeSchool?.id) => {
+    if (!targetSchoolId) {
+      setSystemStats(null);
+      setAiStats(null);
+      setAuditLogs([]);
+      setLoading(false);
+      setError("");
+      return;
+    }
+
+    currentSchoolIdRef.current = targetSchoolId;
+    const genId = ++requestGenRef.current;
+
+    // Hủy các request đang bay trước đó
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     setLoading(true);
     setError("");
-    const results = await Promise.allSettled([
-      getSystemReports(),
-      getAiUsageStats(),
-      getAuditLogs(),
-    ]);
-    const failures = [];
-    if (results[0].status === "fulfilled") setSystemStats(unwrap(results[0].value));
-    else failures.push("Tổng quan hệ thống");
-    if (results[1].status === "fulfilled") setAiStats(unwrap(results[1].value));
-    else failures.push("Thống kê AI");
-    if (results[2].status === "fulfilled") {
-      const logs = unwrap(results[2].value);
-      setAuditLogs(Array.isArray(logs) ? logs : []);
-    } else failures.push("Audit Logs");
-    setError(failures.length ? `Không tải được: ${failures.join(", ")}. Vui lòng thử tải lại.` : "");
-    setLoading(false);
-  }, []);
 
-  useEffect(() => { loadReports(); }, [loadReports]);
+    try {
+      const results = await Promise.allSettled([
+        getSystemReports({ signal: controller.signal }),
+        getAiUsageStats({ signal: controller.signal }),
+        getAuditLogs({ signal: controller.signal }),
+      ]);
+
+      // Kiểm tra race condition: chỉ cập nhật nếu vẫn ở đúng trường và đúng generation
+      if (currentSchoolIdRef.current !== targetSchoolId || requestGenRef.current !== genId) {
+        return;
+      }
+
+      const failures = [];
+      if (results[0].status === "fulfilled") setSystemStats(unwrap(results[0].value));
+      else failures.push("Tổng quan hệ thống");
+
+      if (results[1].status === "fulfilled") setAiStats(unwrap(results[1].value));
+      else failures.push("Thống kê AI");
+
+      if (results[2].status === "fulfilled") {
+        const logs = unwrap(results[2].value);
+        setAuditLogs(Array.isArray(logs) ? logs : []);
+      } else failures.push("Audit Logs");
+
+      setError(failures.length ? `Không tải được: ${failures.join(", ")}. Vui lòng thử tải lại.` : "");
+    } catch (err) {
+      if (err?.name === "CanceledError" || err?.name === "AbortError" || err?.code === "ERR_CANCELED") {
+        return;
+      }
+      if (currentSchoolIdRef.current === targetSchoolId && requestGenRef.current === genId) {
+        setError("Lỗi tải báo cáo trường học");
+      }
+    } finally {
+      if (currentSchoolIdRef.current === targetSchoolId && requestGenRef.current === genId) {
+        setLoading(false);
+      }
+    }
+  }, [activeSchool?.id]);
+
+  useEffect(() => {
+    setSystemStats(null);
+    setAiStats(null);
+    setAuditLogs([]);
+    loadReports(activeSchool?.id);
+
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, [activeSchool?.id, loadReports]);
 
   const toolItems = useMemo(() => (Array.isArray(aiStats?.tools) ? aiStats.tools : [])
     .map((item) => ({ ...item, count: asNumber(item.count) }))
@@ -243,20 +301,30 @@ export default function AdminReportsPage() {
   }, [auditLogs, auditSearch, auditStatus, auditType, auditRange]);
 
   const handleExport = async (type) => {
+    if (!activeSchool?.id) {
+      window.alert("Vui lòng chọn trường trước khi xuất báo cáo.");
+      return;
+    }
     setExporting(type);
     try {
-      const response = type === "learning" ? await exportLearningActivity() : await exportAiTransparency();
+      const response = type === "learning"
+        ? await exportLearningActivity({ signal: abortControllerRef.current?.signal })
+        : await exportAiTransparency({ signal: abortControllerRef.current?.signal });
       const payload = unwrap(response);
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `${type === "learning" ? "learning-activity" : "ai-transparency"}-${new Date().toISOString().slice(0, 10)}.json`;
+      const schoolIdentifier = activeSchool?.slug || activeSchool?.code || "school";
+      link.download = `${type === "learning" ? "learning-activity" : "ai-transparency"}-${schoolIdentifier}-${new Date().toISOString().slice(0, 10)}.json`;
       document.body.appendChild(link);
       link.click();
       link.remove();
       URL.revokeObjectURL(url);
     } catch (exportError) {
+      if (exportError?.name === "CanceledError" || exportError?.name === "AbortError") {
+        return;
+      }
       window.alert(exportError?.response?.data?.message || "Không thể xuất báo cáo. Vui lòng thử lại.");
     } finally {
       setExporting("");
