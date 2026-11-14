@@ -6,9 +6,8 @@ import {
 } from "./../services/tenantSession";
 
 const api = axios.create({
-  baseURL:
-    import.meta.env.VITE_API_URL || "/api",
-
+  baseURL: import.meta.env.VITE_API_URL || '/api',
+  timeout: 60000,
   headers: {
     "Content-Type": "application/json",
   },
@@ -62,11 +61,20 @@ api.interceptors.response.use(
 
   (error) => {
     if (error.response?.status === 401) {
-      if (window.location.pathname !== "/login") {
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("user");
-
-        window.location.replace("/login");
+      // 💡 Thêm điều kiện: CHỈ redirect nếu KHÔNG PHẢI đang ở trang login
+      if (window.location.pathname !== '/login') {
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('refresh_token');
+        localStorage.removeItem('user');
+        localStorage.removeItem('last_visited_url');
+        localStorage.removeItem('redirect_after_login');
+        localStorage.removeItem('redirectUrl');
+        localStorage.removeItem('lastPath');
+        localStorage.removeItem('student_last_subject_id');
+        sessionStorage.clear();
+        window.location.href = '/login';
       }
     }
 

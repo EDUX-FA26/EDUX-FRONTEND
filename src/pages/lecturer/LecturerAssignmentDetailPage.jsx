@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { createPortal } from 'react-dom';
-import { ChevronRight, FileText, ChevronDown, Briefcase, UploadCloud, X as XIcon, File as FileIcon, CheckCircle, AlertCircle, Sparkles, Settings, ShieldAlert, Edit3, Download, Trash2, Plus, Paperclip } from 'lucide-react';
+import { ChevronRight, FileText, ChevronDown, Briefcase, UploadCloud, X as XIcon, File as FileIcon, CheckCircle, AlertCircle, Sparkles, Settings, ShieldAlert, Edit3, Download, Trash2, Plus, Paperclip, Eye, EyeOff, Minus, Layers, RotateCw } from 'lucide-react';
 import AssignmentService from '../../services/assignment.service';
 import SubmissionService from '../../services/submission.service';
 import ClassService from '../../services/class.service';
 import GradingService from '../../services/grading.service';
 import MockSubmissionService from '../../services/mockSubmissionService';
 import { formatDateDMY } from '../../helper/dateFormat';
-import AIAuditQuickViewHover from '../../components/lecturer/AIAuditQuickViewHover';
+import AIAuditQuickViewHover, { AIAuditDetailModal } from '../../components/lecturer/AIAuditQuickViewHover';
 import AssignmentFormModal from '../../components/lecturer/AssignmentFormModal';
 
 export default function LecturerAssignmentDetailPage() {
@@ -18,6 +18,10 @@ export default function LecturerAssignmentDetailPage() {
     const [assignment, setAssignment] = useState(null);
     const [submissions, setSubmissions] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    // --- STATE DÀNH CHO MODAL XEM CHI TIẾT AI AUDIT LOG ---
+    const [selectedAuditSub, setSelectedAuditSub] = useState(null);
 
     // --- STATE DÀNH CHO MODAL CHẤM ĐIỂM ---
     const [isGradingModalOpen, setIsGradingModalOpen] = useState(false);
@@ -36,6 +40,39 @@ export default function LecturerAssignmentDetailPage() {
         if (num < 1024) return `${num} B`;
         if (num < 1048576) return `${(num / 1024).toFixed(1)} KB`;
         return `${(num / 1048576).toFixed(1)} MB`;
+    };
+
+    /**
+     * Kiểm tra điều kiện khai báo AI Audit Log
+     */
+    const isAuditDeclared = (sub) => {
+        if (!sub) return false;
+        if (typeof sub.has_declared_audit === 'boolean') return sub.has_declared_audit;
+        if (Array.isArray(sub.ai_declarations)) return sub.ai_declarations.length > 0;
+        if (sub.ai_audit_log && typeof sub.ai_audit_log === 'object') {
+            return Object.keys(sub.ai_audit_log).length > 0;
+        }
+        // Safe fallback cho local mock / dữ liệu note thô
+        const raw = sub.declarations || sub.aiAuditLog || sub.latest_note || sub.note;
+        if (raw) {
+            try {
+                const parsed = typeof raw === 'string'
+                    ? JSON.parse(raw.startsWith('Note:') ? raw.slice(5).trim() : raw)
+                    : raw;
+                if (parsed?.isDeclared && parsed?.completedCount > 0) return true;
+                if (parsed?.completedCount && parsed.completedCount > 0) return true;
+                if (Array.isArray(parsed?.scopes)) {
+                    return parsed.scopes.some(s =>
+                        s?.completedCount > 0 ||
+                        (s?.declarations && Object.values(s.declarations).some(d => (d?.prompt || d?.prompt_used) && (d?.response || d?.responseSummary)))
+                    );
+                }
+                if (parsed?.declarations && typeof parsed.declarations === 'object') {
+                    return Object.values(parsed.declarations).some(d => (d?.prompt || d?.prompt_used) && (d?.response || d?.responseSummary));
+                }
+            } catch (e) {}
+        }
+        return false;
     };
 
     const handleOpenEditModal = () => {
@@ -123,8 +160,11 @@ export default function LecturerAssignmentDetailPage() {
     }, [location.state]);
 
     const fetchDetail = async () => {
+        if (!id) return;
+        setLoading(true);
+        setError(null);
         try {
-            if (id && !id.startsWith('asm-')) {
+            if (id) {
                 const assignDataRaw = await AssignmentService.getAssignmentDetail(id);
                 const assignData = assignDataRaw.data || assignDataRaw;
 
@@ -213,8 +253,11 @@ export default function LecturerAssignmentDetailPage() {
                             feedback: effectiveFeedback,
                             rubrics: effectiveRubrics,
                             status: isGradedStatus ? 'graded' : (submission.status || 'submitted'),
-                            aiAuditLog: localGraded?.aiAuditLog || submission.aiAuditLog || null,
-                            declarations: localGraded?.aiAuditLog || submission.declarations || null,
+                            aiAuditLog: localGraded?.aiAuditLog || submission.aiAuditLog || submission.ai_audit_log || null,
+                            declarations: localGraded?.aiAuditLog || submission.declarations || submission.ai_declarations || null,
+                            has_declared_audit: submission.has_declared_audit,
+                            ai_declarations: submission.ai_declarations,
+                            ai_audit_log: submission.ai_audit_log,
                         };
                     }
 
@@ -231,6 +274,9 @@ export default function LecturerAssignmentDetailPage() {
                         score: null,
                         feedback: null,
                         grade_id: null,
+                        has_declared_audit: false,
+                        ai_declarations: [],
+                        ai_audit_log: null,
                     };
                 });
 
@@ -251,8 +297,11 @@ export default function LecturerAssignmentDetailPage() {
                         feedback: effectiveFeedback,
                         rubrics: effectiveRubrics,
                         status: isGradedStatus ? 'graded' : (sub.status || 'submitted'),
-                        aiAuditLog: localGraded?.aiAuditLog || sub.aiAuditLog || null,
-                        declarations: localGraded?.aiAuditLog || sub.declarations || null,
+                        aiAuditLog: localGraded?.aiAuditLog || sub.aiAuditLog || sub.ai_audit_log || null,
+                        declarations: localGraded?.aiAuditLog || sub.declarations || sub.ai_declarations || null,
+                        has_declared_audit: sub.has_declared_audit,
+                        ai_declarations: sub.ai_declarations,
+                        ai_audit_log: sub.ai_audit_log,
                     };
                 });
 
@@ -284,113 +333,16 @@ export default function LecturerAssignmentDetailPage() {
                     return Array.from(studentMap.values());
                 };
 
-                if (combined.length === 0 && unmatchedSubmissions.length === 0) {
-                    const mockList = await MockSubmissionService.getAllMockSubmissions();
-                    const mappedMocks = mockList.map(m => ({
-                        id: m.id,
-                        student_id: m.studentId,
-                        student_name: m.studentName,
-                        student_email: m.studentEmail,
-                        student_code: m.studentCode,
-                        status: (m.grade?.score != null || m.score != null || m.status === 'GRADED') ? 'graded' : 'submitted',
-                        submitted_at: m.submittedAt,
-                        score: m.grade?.score ?? m.score ?? null,
-                        feedback: m.grade?.feedback ?? m.feedback ?? null,
-                        grade: m.grade,
-                        rubrics: m.grade?.rubrics ?? m.rubrics ?? null,
-                        latest_files: m.file ? [m.file] : [],
-                        latest_note: m.aiAuditLog?.isDeclared ? 'AI Audit Log: 5 Rubrics Declared' : 'Manual Submission',
-                        aiAuditLog: m.aiAuditLog,
-                        declarations: m.aiAuditLog
-                    }));
-                    setSubmissions(deduplicateList(mappedMocks));
-                } else {
-                    setSubmissions(deduplicateList([
-                        ...combined,
-                        ...unmatchedSubmissions
-                    ]));
-                }
-            } else {
-                // Mock assignment fallback
-                setAssignment({
-                    id,
-                    title: titleMap[id] || `Assignment ${id}`,
-                    class_id: 'mock-1',
-                    class_code: 'SE1801',
-                    class_name: 'SE1801',
-                    subject_name: 'Server-Side development with NodeJS',
-                    course_name: 'Server-Side development with NodeJS',
-                    max_score: 10,
-                });
-                const mockList = await MockSubmissionService.getAllMockSubmissions();
-                const mappedMocks = mockList.map(m => ({
-                    id: m.id,
-                    student_id: m.studentId,
-                    student_name: m.studentName,
-                    student_email: m.studentEmail,
-                    student_code: m.studentCode,
-                    status: (m.grade?.score != null || m.status === 'GRADED') ? 'graded' : 'submitted',
-                    submitted_at: m.submittedAt,
-                    score: m.grade?.score ?? m.score ?? null,
-                    feedback: m.grade?.feedback ?? m.feedback ?? null,
-                    grade: m.grade,
-                    rubrics: m.grade?.rubrics,
-                    latest_files: m.file ? [m.file] : [],
-                    latest_note: m.aiAuditLog?.isDeclared ? 'AI Audit Log: 5 Rubrics Declared' : 'Manual Submission',
-                    aiAuditLog: m.aiAuditLog,
-                    declarations: m.aiAuditLog
-                }));
-                const deduplicateList = (list) => {
-                    const studentMap = new Map();
-                    for (const item of list) {
-                        if (!item) continue;
-                        const key = item.student_code || item.student_id || item.id;
-                        if (!key) continue;
-                        if (!studentMap.has(key)) {
-                            studentMap.set(key, item);
-                        } else {
-                            const existing = studentMap.get(key);
-                            const itemIsGraded = item.score !== null && item.score !== undefined;
-                            const existingIsGraded = existing.score !== null && existing.score !== undefined;
-                            if (!existingIsGraded && itemIsGraded) {
-                                studentMap.set(key, item);
-                            }
-                        }
-                    }
-                    return Array.from(studentMap.values());
-                };
-                setSubmissions(deduplicateList(mappedMocks));
+                setSubmissions(deduplicateList([
+                    ...combined,
+                    ...unmatchedSubmissions
+                ]));
             }
         } catch (error) {
             console.error("Failed to fetch assignment details:", error);
-            try {
-                const mockList = await MockSubmissionService.getAllMockSubmissions();
-                const mappedMocks = mockList.map(m => ({
-                    id: m.id,
-                    student_id: m.studentId,
-                    student_name: m.studentName,
-                    student_email: m.studentEmail,
-                    student_code: m.studentCode,
-                    status: (m.grade?.score != null || m.status === 'GRADED') ? 'graded' : 'submitted',
-                    submitted_at: m.submittedAt,
-                    score: m.grade?.score ?? m.score ?? null,
-                    feedback: m.grade?.feedback ?? m.feedback ?? null,
-                    grade: m.grade,
-                    rubrics: m.grade?.rubrics,
-                    latest_files: m.file ? [m.file] : [],
-                    latest_note: m.aiAuditLog?.isDeclared ? 'AI Audit Log: 5 Rubrics Declared' : 'Manual Submission',
-                    aiAuditLog: m.aiAuditLog,
-                    declarations: m.aiAuditLog
-                }));
-                const studentMap = new Map();
-                for (const item of mappedMocks) {
-                    const key = item.student_code || item.student_id || item.id;
-                    if (key && !studentMap.has(key)) {
-                        studentMap.set(key, item);
-                    }
-                }
-                setSubmissions(Array.from(studentMap.values()));
-            } catch (e) {}
+            setAssignment(null);
+            setSubmissions([]);
+            setError(error.response?.data?.message || error.message || 'Không thể tải thông tin bài tập.');
         } finally {
             setLoading(false);
         }
@@ -480,23 +432,35 @@ export default function LecturerAssignmentDetailPage() {
         }
     };
 
-    const titleMap = {
-        '2': 'Assignment 2',
-        '4': 'Assignment 4',
-        'project': 'Nộp Project',
-        '3': 'Assignment 3',
-        '1': 'Assignment 1',
-        'asm-1': 'React Fundamental Exercises',
-        'asm-2': 'State Management Project',
-        'asm-3': 'Node.js Express API',
-        'asm-4': 'MongoDB Aggregation',
-        'asm-5': 'Final Backend Architecture'
-    };
+    if (loading || !assignment) {
+        if (error) {
+            return (
+                <div className="w-full flex items-center justify-between gap-4" style={{ width: '100%', padding: '16px', backgroundColor: '#fee2e2', color: '#dc2626', border: '1px solid rgba(220, 38, 38, 0.2)', borderRadius: 'var(--radius-md)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <AlertCircle size={20} />
+                        <span>{error}</span>
+                    </div>
+                    <button className="btn btn-secondary" onClick={fetchDetail} style={{ fontSize: '12px', padding: '6px 14px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <RotateCw size={14} /> Thử lại
+                    </button>
+                </div>
+            );
+        }
 
-    const title = assignment?.title || titleMap[id] || `Assignment ${id}`;
+        return (
+            <div className="w-full flex flex-col gap-4" style={{ width: '100%', padding: '24px' }}>
+                <div className="skeleton" style={{ width: '30%', height: '24px' }}></div>
+                <div className="skeleton" style={{ width: '60%', height: '40px' }}></div>
+                <div className="skeleton" style={{ width: '100%', height: '120px' }}></div>
+                <div className="skeleton" style={{ width: '100%', height: '300px' }}></div>
+            </div>
+        );
+    }
+
+    const title = assignment?.title || 'Assignment Detail';
 
     return (
-        <div className="animate-fade-in" style={{ maxWidth: '1152px', margin: '0 auto', width: '100%', display: 'flex', flexDirection: 'column', gap: '24px', padding: '16px 0', position: 'relative' }}>
+        <div className="animate-fade-in w-full flex flex-col gap-6 relative" style={{ width: '100%' }}>
 
             {/* TOAST ALERT TỰ ĐỘNG THÔNG BÁO */}
             {toast.show && createPortal(
@@ -584,6 +548,27 @@ export default function LecturerAssignmentDetailPage() {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
                     <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--color-ink)', margin: 0, letterSpacing: '-0.5px' }}>{title}</h1>
+                    {assignment?.slot_number ? (
+                        <span style={{
+                            display: 'inline-flex', alignItems: 'center', gap: '5px',
+                            fontSize: '11px', fontWeight: '600',
+                            padding: '3px 10px', borderRadius: '16px',
+                            backgroundColor: '#fff7ed', color: '#ea580c',
+                            border: '1px solid #ffedd5'
+                        }}>
+                            <Layers size={12} /> Slot {assignment.slot_number}
+                        </span>
+                    ) : (
+                        <span style={{
+                            display: 'inline-flex', alignItems: 'center', gap: '5px',
+                            fontSize: '11px', fontWeight: '600',
+                            padding: '3px 10px', borderRadius: '16px',
+                            backgroundColor: 'var(--color-surface, #f1f5f9)', color: 'var(--color-ink-muted, #64748b)',
+                            border: '1px solid var(--color-border, #e2e8f0)'
+                        }}>
+                            Toàn khóa
+                        </span>
+                    )}
                     {assignment?.ai_declaration_required !== false ? (
                         <span style={{
                             display: 'inline-flex', alignItems: 'center', gap: '5px',
@@ -776,141 +761,218 @@ export default function LecturerAssignmentDetailPage() {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {submissions.length > 0 ? submissions.map((sub, index) => {
-                                        let files = [];
-                                        try {
-                                            if (sub.latest_files) {
-                                                files = typeof sub.latest_files === 'string' ? JSON.parse(sub.latest_files) : sub.latest_files;
-                                            }
-                                        } catch (e) { }
+                                    {(() => {
+                                        const isAiTrackingEnabled = Boolean(
+                                            assignment?.ai_declaration_required !== false &&
+                                            assignment?.ai_tracking_enabled !== false &&
+                                            assignment?.is_ai_enabled !== false
+                                        );
 
-                                        // Xác định điểm hiện tại
-                                        const currentScore = sub.score ?? sub.grade?.score;
-                                        const maxScore = assignment?.max_score || 10;
-                                        const isGraded = currentScore !== undefined && currentScore !== null;
+                                        return submissions.length > 0 ? submissions.map((sub, index) => {
+                                            let files = [];
+                                            try {
+                                                if (sub.latest_files) {
+                                                    files = typeof sub.latest_files === 'string' ? JSON.parse(sub.latest_files) : sub.latest_files;
+                                                }
+                                            } catch (e) { }
 
-                                        return (
-                                            <tr key={sub.id || index} style={{ borderBottom: '1px solid var(--color-border)' }}>
-                                                <td style={{ padding: '8px', fontWeight: 'bold' }}>
-                                                    {sub.student_name || sub.student_email || 'Unknown Student'}
-                                                    <div style={{ fontSize: '10px', color: 'var(--color-ink-muted)' }}>{sub.student_code || ''}</div>
-                                                </td>
-                                                <td style={{ padding: '8px' }}>
-                                                    {isGraded ? (
-                                                        <span className="badge" style={{ backgroundColor: 'rgba(79, 70, 229, 0.1)', color: '#4f46e5', padding: '4px 8px', fontSize: '10px', border: '1px solid #4f46e5', borderRadius: '4px', fontWeight: 'bold' }}>Graded</span>
-                                                    ) : sub.status === 'submitted' ? (
-                                                        <span className="badge" style={{ backgroundColor: 'rgba(34, 197, 94, 0.1)', color: '#16a34a', padding: '4px 8px', fontSize: '10px', border: '1px solid #16a34a', borderRadius: '4px' }}>Submitted</span>
-                                                    ) : (
-                                                        <span className="badge" style={{ backgroundColor: 'var(--color-border)', color: 'var(--color-ink-soft)', padding: '4px 8px', fontSize: '10px', borderRadius: '4px' }}>{sub.status || 'Missing'}</span>
-                                                    )}
-                                                </td>
-                                                <td style={{ padding: '8px' }}>
-                                                    {sub.submitted_at ? formatDateDMY(sub.submitted_at) : 'N/A'}
-                                                </td>
+                                            // Xác định điểm hiện tại
+                                            const currentScore = sub.score ?? sub.grade?.score;
+                                            const maxScore = assignment?.max_score || 10;
+                                            const isGraded = currentScore !== undefined && currentScore !== null;
+                                            const isSubmitted = sub.status !== 'Missing' && sub.status !== 'missing' && !String(sub.id || '').startsWith('missing-');
+                                            const hasDeclared = isSubmitted && isAuditDeclared(sub);
 
-                                                <td style={{ padding: '8px' }}>
-                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                                        {files && files.length > 0 ? files.map(file => (
-                                                            <div key={file.id} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                                                <FileIcon size={12} style={{ color: 'var(--color-primary)' }} />
-                                                                <a
-                                                                    href="#"
-                                                                    style={{ fontSize: '11px', color: 'var(--color-primary)', textDecoration: 'none', fontWeight: '500' }}
-                                                                    onClick={(e) => { e.preventDefault(); handleDownloadFile(sub.id, file.id); }}
-                                                                >
-                                                                    {file.name}
-                                                                </a>
-                                                            </div>
-                                                        )) : (
-                                                            <span style={{ fontSize: '11px', color: 'var(--color-ink-muted)' }}>-</span>
+                                            return (
+                                                <tr key={sub.id || index} style={{ borderBottom: '1px solid var(--color-border)' }}>
+                                                    <td style={{ padding: '8px', fontWeight: 'bold' }}>
+                                                        {sub.student_name || sub.student_email || 'Unknown Student'}
+                                                        <div style={{ fontSize: '10px', color: 'var(--color-ink-muted)' }}>{sub.student_code || ''}</div>
+                                                    </td>
+                                                    <td style={{ padding: '8px' }}>
+                                                        {isGraded ? (
+                                                            <span className="badge" style={{ backgroundColor: 'rgba(79, 70, 229, 0.1)', color: '#4f46e5', padding: '4px 8px', fontSize: '10px', border: '1px solid #4f46e5', borderRadius: '4px', fontWeight: 'bold' }}>Graded</span>
+                                                        ) : sub.status === 'submitted' ? (
+                                                            <span className="badge" style={{ backgroundColor: 'rgba(34, 197, 94, 0.1)', color: '#16a34a', padding: '4px 8px', fontSize: '10px', border: '1px solid #16a34a', borderRadius: '4px' }}>Submitted</span>
+                                                        ) : (
+                                                            <span className="badge" style={{ backgroundColor: 'var(--color-border)', color: 'var(--color-ink-soft)', padding: '4px 8px', fontSize: '10px', borderRadius: '4px' }}>{sub.status || 'Missing'}</span>
                                                         )}
-                                                        {/* Ẩn dòng JSON thô Note: {"declarations":...; chỉ hiển thị nếu là text note thuần tuý */}
-                                                        {sub.latest_note && !sub.latest_note.includes('"declarations"') && !sub.latest_note.trim().startsWith('{') && (
-                                                            <div style={{ fontSize: '10px', color: 'var(--color-ink-soft)', fontStyle: 'italic', marginTop: '4px', maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                                                Note: {sub.latest_note}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </td>
+                                                    </td>
+                                                    <td style={{ padding: '8px' }}>
+                                                        {sub.submitted_at ? formatDateDMY(sub.submitted_at) : 'N/A'}
+                                                    </td>
 
-                                                {/* CỘT AI AUDIT: NÚT ICON CON MẮT & HOVER QUICK VIEW */}
-                                                <td style={{ padding: '8px', textAlign: 'center' }}>
-                                                    <AIAuditQuickViewHover
-                                                        declarationData={sub.declarations || sub.aiAuditLog || sub.note || sub.latest_note}
-                                                        studentName={sub.student_name}
-                                                        studentCode={sub.student_code}
-                                                    />
-                                                </td>
-
-                                                {/* CỘT HIỂN THỊ ĐIỂM SỐ */}
-                                                <td style={{ padding: '8px' }}>
-                                                    {isGraded ? (
-                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                                            <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-                                                                <span style={{ fontWeight: 'bold', color: '#4f46e5', fontSize: '13px' }}>
-                                                                    {Number(currentScore).toFixed(2)}
-                                                                </span>
-                                                                <span style={{ fontSize: '10px', color: 'var(--color-ink-muted)' }}>
-                                                                    / {maxScore}
-                                                                </span>
-                                                            </div>
-                                                            {sub.rubrics && (
-                                                                <span style={{ fontSize: '9px', color: '#6366f1', fontWeight: '600' }}>
-                                                                    5 Rubrics mapped
-                                                                </span>
+                                                    <td style={{ padding: '8px' }}>
+                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                                            {files && files.length > 0 ? files.map(file => (
+                                                                <div key={file.id} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                                    <FileIcon size={12} style={{ color: 'var(--color-primary)' }} />
+                                                                    <a
+                                                                        href="#"
+                                                                        style={{ fontSize: '11px', color: 'var(--color-primary)', textDecoration: 'none', fontWeight: '500' }}
+                                                                        onClick={(e) => { e.preventDefault(); handleDownloadFile(sub.id, file.id); }}
+                                                                    >
+                                                                        {file.name}
+                                                                    </a>
+                                                                </div>
+                                                            )) : (
+                                                                <span style={{ fontSize: '11px', color: 'var(--color-ink-muted)' }}>-</span>
                                                             )}
-                                                            {sub.feedback && (
-                                                                <span style={{ fontSize: '10px', color: 'var(--color-ink-muted)', maxWidth: '140px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={sub.feedback}>
-                                                                    {sub.feedback}
-                                                                </span>
+                                                            {/* Ẩn dòng JSON thô Note: {"declarations":...; chỉ hiển thị nếu là text note thuần tuý */}
+                                                            {sub.latest_note && !sub.latest_note.includes('"declarations"') && !sub.latest_note.trim().startsWith('{') && (
+                                                                <div style={{ fontSize: '10px', color: 'var(--color-ink-soft)', fontStyle: 'italic', marginTop: '4px', maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                                    Note: {sub.latest_note}
+                                                                </div>
                                                             )}
                                                         </div>
-                                                    ) : (
-                                                        <span style={{ color: 'var(--color-ink-muted)', fontSize: '11px' }}>Chưa chấm</span>
-                                                    )}
-                                                </td>
+                                                    </td>
 
-                                                {/* CỘT THAO TÁC */}
-                                                <td style={{ padding: '8px' }}>
-                                                    <button
-                                                        className="btn btn-primary"
-                                                        style={{
-                                                            padding: '4px 12px',
-                                                            fontSize: '10px',
-                                                            opacity: sub.status === 'Missing' ? 0.5 : 1,
-                                                            cursor: sub.status === 'Missing' ? 'not-allowed' : 'pointer',
-                                                            backgroundColor: isGraded ? 'var(--color-border)' : undefined,
-                                                            color: isGraded ? 'var(--color-ink)' : undefined
-                                                        }}
-                                                        disabled={sub.status === 'Missing'}
-                                                        onClick={() => {
-                                                            navigate(`/lecturer/assignments/${id}/submissions/${sub.id}/grade`, {
-                                                                state: {
-                                                                    ...sub,
-                                                                    class_id: assignment?.class_id,
-                                                                    classId: assignment?.class_id,
-                                                                    className: assignment?.class_name || assignment?.class_code,
-                                                                    classCode: assignment?.class_code,
-                                                                    courseName: assignment?.subject_name || assignment?.course_name || assignment?.class_name,
-                                                                    courseTitle: assignment?.subject_name || assignment?.course_name || assignment?.class_name,
-                                                                    subjectName: assignment?.subject_name,
-                                                                    subjectCode: assignment?.subject_code,
-                                                                    assignmentTitle: assignment?.title,
-                                                                    assignmentId: id,
-                                                                }
-                                                            });
-                                                        }}
-                                                    >
-                                                        {isGraded ? 'Sửa điểm' : 'Grade'}
-                                                    </button>
-                                                </td>
+                                                    {/* 5. CỘT AI AUDIT (CHÍNH LÀ NƠI CHỨA ICON CON MẮT) */}
+                                                    <td style={{ padding: '8px', textAlign: 'center' }}>
+                                                        {!isAiTrackingEnabled ? (
+                                                            // 1. Bài tập không yêu cầu AI Audit
+                                                            <span 
+                                                                title="Bài tập không yêu cầu khai báo AI Audit" 
+                                                                className="text-slate-300 inline-flex items-center justify-center cursor-default"
+                                                                style={{ color: '#cbd5e1', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                                                            >
+                                                                <Minus className="w-4 h-4" size={16} />
+                                                            </span>
+                                                        ) : !isSubmitted ? (
+                                                            // 2. Sinh viên chưa nộp bài
+                                                            <button
+                                                                type="button"
+                                                                disabled
+                                                                title="Sinh viên chưa nộp bài"
+                                                                className="w-7 h-7 inline-flex items-center justify-center rounded-full bg-slate-50 text-slate-300 opacity-30 cursor-not-allowed"
+                                                                style={{
+                                                                    width: '28px',
+                                                                    height: '28px',
+                                                                    borderRadius: '50%',
+                                                                    display: 'inline-flex',
+                                                                    alignItems: 'center',
+                                                                    justifyContent: 'center',
+                                                                    border: '1px solid #e2e8f0',
+                                                                    opacity: 0.3,
+                                                                    cursor: 'not-allowed',
+                                                                }}
+                                                            >
+                                                                <Eye className="w-4 h-4" size={15} />
+                                                            </button>
+                                                        ) : !hasDeclared ? (
+                                                            // 3. Đã nộp bài nhưng không dùng / không khai báo AI
+                                                            <button
+                                                                type="button"
+                                                                disabled
+                                                                title="Sinh viên không khai báo sử dụng AI"
+                                                                className="w-7 h-7 inline-flex items-center justify-center rounded-full bg-slate-50 text-slate-400 opacity-40 cursor-not-allowed"
+                                                                style={{
+                                                                    width: '28px',
+                                                                    height: '28px',
+                                                                    borderRadius: '50%',
+                                                                    display: 'inline-flex',
+                                                                    alignItems: 'center',
+                                                                    justifyContent: 'center',
+                                                                    border: '1px solid #e2e8f0',
+                                                                    opacity: 0.4,
+                                                                    cursor: 'not-allowed',
+                                                                }}
+                                                            >
+                                                                <Eye className="w-4 h-4" size={15} />
+                                                            </button>
+                                                        ) : (
+                                                            // 4. Đã khai báo AI đầy đủ
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setSelectedAuditSub(sub)}
+                                                                title="Xem chi tiết khai báo AI Audit"
+                                                                className="w-7 h-7 inline-flex items-center justify-center rounded-full bg-slate-100 text-slate-600 hover:text-purple-600 hover:bg-purple-50 transition cursor-pointer"
+                                                                style={{
+                                                                    width: '28px',
+                                                                    height: '28px',
+                                                                    borderRadius: '50%',
+                                                                    display: 'inline-flex',
+                                                                    alignItems: 'center',
+                                                                    justifyContent: 'center',
+                                                                    border: '1px solid #e2e8f0',
+                                                                    cursor: 'pointer',
+                                                                }}
+                                                            >
+                                                                <Eye className="w-4 h-4" size={15} />
+                                                            </button>
+                                                        )}
+                                                    </td>
+
+                                                    {/* CỘT HIỂN THỊ ĐIỂM SỐ */}
+                                                    <td style={{ padding: '8px' }}>
+                                                        {isGraded ? (
+                                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                                                <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                                                                    <span style={{ fontWeight: 'bold', color: '#4f46e5', fontSize: '13px' }}>
+                                                                        {Number(currentScore).toFixed(2)}
+                                                                    </span>
+                                                                    <span style={{ fontSize: '10px', color: 'var(--color-ink-muted)' }}>
+                                                                        / {maxScore}
+                                                                    </span>
+                                                                </div>
+                                                                {sub.rubrics && (
+                                                                    <span style={{ fontSize: '9px', color: '#6366f1', fontWeight: '600' }}>
+                                                                        5 Rubrics mapped
+                                                                    </span>
+                                                                )}
+                                                                {sub.feedback && (
+                                                                    <span style={{ fontSize: '10px', color: 'var(--color-ink-muted)', maxWidth: '140px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={sub.feedback}>
+                                                                        {sub.feedback}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        ) : (
+                                                            <span style={{ color: 'var(--color-ink-muted)', fontSize: '11px' }}>Chưa chấm</span>
+                                                        )}
+                                                    </td>
+
+                                                    {/* CỘT THAO TÁC */}
+                                                    <td style={{ padding: '8px' }}>
+                                                        <button
+                                                            className="btn btn-primary"
+                                                            style={{
+                                                                padding: '4px 12px',
+                                                                fontSize: '10px',
+                                                                opacity: sub.status === 'Missing' ? 0.5 : 1,
+                                                                cursor: sub.status === 'Missing' ? 'not-allowed' : 'pointer',
+                                                                backgroundColor: isGraded ? 'var(--color-border)' : undefined,
+                                                                color: isGraded ? 'var(--color-ink)' : undefined
+                                                            }}
+                                                            disabled={sub.status === 'Missing'}
+                                                            onClick={() => {
+                                                                navigate(`/lecturer/assignments/${id}/submissions/${sub.id}/grade`, {
+                                                                    state: {
+                                                                        ...sub,
+                                                                        class_id: assignment?.class_id,
+                                                                        classId: assignment?.class_id,
+                                                                        className: assignment?.class_name || assignment?.class_code,
+                                                                        classCode: assignment?.class_code,
+                                                                        courseName: assignment?.subject_name || assignment?.course_name || assignment?.class_name,
+                                                                        courseTitle: assignment?.subject_name || assignment?.course_name || assignment?.class_name,
+                                                                        subjectName: assignment?.subject_name,
+                                                                        subjectCode: assignment?.subject_code,
+                                                                        assignmentTitle: assignment?.title,
+                                                                        assignmentId: id,
+                                                                    }
+                                                                });
+                                                            }}
+                                                        >
+                                                            {isGraded ? 'Sửa điểm' : 'Grade'}
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        }) : (
+                                            <tr>
+                                                <td colSpan="7" style={{ padding: '16px', textAlign: 'center', color: 'var(--color-ink-muted)' }}>No submissions yet.</td>
                                             </tr>
-                                        )
-                                    }) : (
-                                        <tr>
-                                            <td colSpan="7" style={{ padding: '16px', textAlign: 'center', color: 'var(--color-ink-muted)' }}>No submissions yet.</td>
-                                        </tr>
-                                    )}
+                                        );
+                                    })()}
                                 </tbody>
                             </table>
                         </div>
@@ -1005,9 +1067,28 @@ export default function LecturerAssignmentDetailPage() {
                     onClose={() => setIsEditModalOpen(false)}
                     mode="edit"
                     initialData={assignment}
+                    classId={assignment?.class_id || assignment?.classId}
                     onSubmit={handleSaveEdit}
                     isSubmitting={isSavingEdit}
                     onDeleteExistingMaterial={handleDeleteMaterial}
+                />
+            )}
+
+            {/* MODAL CHI TIẾT KHAI BÁO AI AUDIT LOG (5 TIÊU CHÍ RUBRICS) */}
+            {selectedAuditSub && (
+                <AIAuditDetailModal
+                    isOpen={Boolean(selectedAuditSub)}
+                    onClose={() => setSelectedAuditSub(null)}
+                    declarationData={
+                        selectedAuditSub.declarations ||
+                        selectedAuditSub.ai_declarations ||
+                        selectedAuditSub.aiAuditLog ||
+                        selectedAuditSub.ai_audit_log ||
+                        selectedAuditSub.latest_note ||
+                        selectedAuditSub.note
+                    }
+                    studentName={selectedAuditSub.student_name}
+                    studentCode={selectedAuditSub.student_code}
                 />
             )}
         </div>

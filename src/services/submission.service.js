@@ -116,7 +116,8 @@ const SubmissionService = {
 
     async auditRubric(submissionId, payload = {}) {
         const response = await api.post(`/submissions/${submissionId}/ai-rubric`, payload, {
-            schoolScoped: true
+            schoolScoped: true,
+            timeout: 60000 // Tối thiểu 60000ms (60 giây), tránh bị ngắt kết nối giữa chừng
         });
         return response.data;
     },
@@ -126,7 +127,8 @@ const SubmissionService = {
      */
     async runSanityCheck(assignmentId, payload = {}) {
         const response = await api.post(`/submissions/${assignmentId}/sanity-check`, payload, {
-            schoolScoped: true
+            schoolScoped: true,
+            timeout: 60000 // Tối thiểu 60000ms (60 giây)
         });
         return response.data;
     },

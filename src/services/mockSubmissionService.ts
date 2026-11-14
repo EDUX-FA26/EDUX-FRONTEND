@@ -315,6 +315,7 @@ const defaultMockDatabase: Record<string, Submission> = {
       fileType: 'zip',
       extractedTree: MOCK_ZIP_TREE_CASE_1
     },
+    has_declared_audit: true,
     aiAuditLog: MOCK_AI_AUDIT_LOG_FULL,
     grade: null,
     aiRiskLevel: 'low',
@@ -338,6 +339,7 @@ const defaultMockDatabase: Record<string, Submission> = {
       mimeType: 'application/pdf',
       fileType: 'pdf'
     },
+    has_declared_audit: false,
     aiAuditLog: null, // Không khai báo AI
     grade: null,
     aiRiskLevel: 'low',
@@ -362,6 +364,7 @@ const defaultMockDatabase: Record<string, Submission> = {
       fileType: 'zip',
       extractedTree: MOCK_ZIP_TREE_CASE_1
     },
+    has_declared_audit: true,
     aiAuditLog: MOCK_AI_AUDIT_LOG_FULL,
     grade: {
       score: 8.5,

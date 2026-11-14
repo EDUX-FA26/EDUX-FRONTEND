@@ -241,7 +241,7 @@ export default function SubmissionFileViewer({
   // =========================================================================
   if (file.fileType === 'pdf' || file.name.endsWith('.pdf')) {
     return (
-      <div className={`flex-1 flex flex-col bg-white overflow-hidden ${className}`}>
+      <div className={`flex-1 min-h-0 flex flex-col bg-white overflow-hidden ${className}`}>
         {/* Header bar */}
         <div className="h-12 border-b border-slate-200 px-5 flex items-center justify-between bg-white shrink-0">
           <div className="flex items-center gap-2 font-bold text-xs text-slate-800">
@@ -292,7 +292,7 @@ export default function SubmissionFileViewer({
     const codeLines = selectedFile?.content ? selectedFile.content.split('\n') : ['// Chọn một file trong cây thư mục bên trái để xem nội dung'];
 
     return (
-      <div className={`flex-1 flex flex-col bg-white overflow-hidden ${className}`}>
+      <div className={`flex-1 min-h-0 flex flex-col bg-white overflow-hidden ${className}`}>
         {/* Top Action Bar */}
         <div className="h-12 border-b border-slate-200 px-5 flex items-center justify-between bg-white shrink-0">
           <div className="flex items-center gap-2 font-bold text-xs text-slate-800">
@@ -347,9 +347,9 @@ export default function SubmissionFileViewer({
         )}
 
         {/* Body Split Pane: Left = GitHub File Tree | Right = Code Preview */}
-        <div className="flex-1 flex overflow-hidden">
+        <div className="flex-1 min-h-0 flex overflow-hidden">
           {/* CỘT TRÁI CON: FILE TREE VIEW (GITHUB STYLE) */}
-          <aside className="w-64 border-r border-slate-200 bg-slate-50/70 flex flex-col shrink-0 select-none">
+          <aside className="w-64 border-r border-slate-200 bg-slate-50/70 flex flex-col min-h-0 shrink-0 select-none">
             {/* Search filter in tree */}
             <div className="p-2 border-b border-slate-200 bg-white">
               <div className="relative">
@@ -365,7 +365,7 @@ export default function SubmissionFileViewer({
             </div>
 
             {/* Tree nodes list */}
-            <div className="flex-1 overflow-y-auto custom-scroll p-1.5 text-xs">
+            <div className="flex-1 min-h-0 overflow-y-auto custom-scroll p-1.5 pb-8 text-xs">
               {isLoadingZip ? (
                 <div className="p-4 text-center text-slate-400 text-xs">
                   Đang giải nén cấu trúc file...
@@ -392,7 +392,7 @@ export default function SubmissionFileViewer({
           </aside>
 
           {/* CỘT PHẢI CON: CODE CONTENT VIEWER */}
-          <div className="flex-1 flex flex-col bg-white overflow-hidden">
+          <div className="flex-1 min-h-0 flex flex-col bg-white overflow-hidden">
             {/* Selected File Breadcrumb Bar */}
             <div className="h-9 border-b border-slate-200 px-4 flex items-center justify-between bg-slate-50/50 text-xs shrink-0">
               <div className="flex items-center gap-1.5 text-slate-600 font-mono text-[11px] truncate">
@@ -423,7 +423,7 @@ export default function SubmissionFileViewer({
             </div>
 
             {/* Code Lines Display */}
-            <div className="flex-1 p-4 font-mono text-xs text-slate-700 bg-white overflow-y-auto custom-scroll leading-relaxed select-text">
+            <div className="flex-1 min-h-0 p-4 pb-12 font-mono text-xs text-slate-700 bg-white overflow-y-auto custom-scroll leading-relaxed select-text">
               {codeLines.map((line, idx) => {
                 const lineNum = idx + 1;
                 const isAnnotated =
@@ -461,7 +461,7 @@ export default function SubmissionFileViewer({
   const textLines = effectiveContent.split('\n');
 
   return (
-    <div className={`flex-1 flex flex-col bg-white overflow-hidden ${className}`}>
+    <div className={`flex-1 min-h-0 flex flex-col bg-white overflow-hidden ${className}`}>
       {/* Header bar */}
       <div className="h-12 border-b border-slate-200 px-5 flex items-center justify-between bg-white shrink-0">
         <div className="flex items-center gap-2 font-bold text-xs text-slate-800">
@@ -495,7 +495,7 @@ export default function SubmissionFileViewer({
       </div>
 
       {/* Code Text Content */}
-      <div className="flex-1 p-5 font-mono text-xs text-slate-700 bg-white overflow-y-auto custom-scroll leading-relaxed select-text">
+      <div className="flex-1 min-h-0 p-5 pb-12 font-mono text-xs text-slate-700 bg-white overflow-y-auto custom-scroll leading-relaxed select-text">
         {textLines.map((line, idx) => (
           <div key={idx + 1} className="flex gap-4 hover:bg-slate-50 px-1 py-0.5 rounded">
             <span className="text-slate-400 select-none w-8 text-right shrink-0">{idx + 1}</span>

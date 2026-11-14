@@ -120,6 +120,7 @@ export default function LecturerGradingPage() {
                 classId: assign.class_id || assign.classId || stateData?.class_id || stateData?.classId,
                 assignmentId: assignmentId || assign.id,
                 subjectId: resolvedSubjectId,
+                rubric_configs: assign.rubric_configs,
               });
 
               if (resolvedSubjectId) {
@@ -230,7 +231,7 @@ export default function LecturerGradingPage() {
               } else if (subData.ai_evaluation_data || subData.ai_rubric_scores) {
                 // Chưa chấm điểm thủ công nhưng đã có bản ghi Snapshot AI Evaluation lưu trong DB
                 const aiScores = subData.ai_rubric_scores || subData.ai_evaluation_data?.rubric_scores;
-                if (aiScores && aiScores.abstraction !== undefined) {
+                if (aiScores) {
                   setInitialScores(aiScores);
                 }
                 if (subData.ai_overall_verdict || subData.ai_evaluation_data?.overall_verdict) {
@@ -740,10 +741,11 @@ export default function LecturerGradingPage() {
   }
 
   return (
-    <div className="flex-1 flex flex-col h-full w-full overflow-hidden m-0 p-0">
+    <div className="flex-1 min-h-0 flex flex-col h-full w-full overflow-hidden m-0 p-0">
       <LecturerAcademicEvaluation
         student={studentInfo}
         courseInfo={courseInfo}
+        rubricConfigs={(courseInfo as any)?.rubric_configs || (courseInfo as any)?.rubricConfigs}
         submissionFile={submissionFile}
         file={currentFile}
         aiDeclarations={aiDeclarations}

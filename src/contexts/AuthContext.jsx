@@ -1,11 +1,5 @@
-
-import React, {
-  createContext,
-  useContext,
-  useState,
-  useCallback,
-} from "react";
-
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   login as loginApi,
   googleLogin as googleLoginApi,
@@ -15,10 +9,13 @@ import {
 import {
   clearActiveSchoolId,
 } from "../services/tenantSession";
+import { ROLE_HOME } from '../config/constants';
+import { getHomeRouteByRole } from '../config/roles.config';
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
+  const navigate = useNavigate();
   const [user, setUser] = useState(() => {
     try {
       const stored = localStorage.getItem("user");
@@ -36,6 +33,16 @@ export function AuthProvider({ children }) {
   const [error, setError] = useState(null);
 
   const isAuthenticated = Boolean(user && accessToken);
+
+  const clearAdvisorAutoPopupKeys = () => {
+    try {
+      Object.keys(sessionStorage).forEach((k) => {
+        if (k.startsWith('art_ai_advisor_auto_')) {
+          sessionStorage.removeItem(k);
+        }
+      });
+    } catch {}
+  };
 
   const saveSession = useCallback((session) => {
     if (!session?.accessToken || !session?.user) {

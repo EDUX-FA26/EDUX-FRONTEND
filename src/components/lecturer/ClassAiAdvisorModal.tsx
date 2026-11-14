@@ -7,7 +7,9 @@ import {
   Lightbulb, 
   X, 
   RotateCcw,
-  History
+  History,
+  Bell,
+  BellOff
 } from 'lucide-react';
 
 interface AdvisoryOverview {
@@ -19,6 +21,10 @@ interface AdvisoryItem {
   id: string;
   assignment_id: string;
   assignment_title: string;
+  type?: 'assignment' | 'lab' | string;
+  deadline?: string;
+  deadline_formatted?: string;
+  dropdown_label?: string;
   mode?: 'PROGRESS_REMINDER' | 'DEEP_TECHNICAL' | string;
   is_latest: boolean;
   generated_at: string;
@@ -40,6 +46,8 @@ interface ClassAiAdvisorModalProps {
   advisorData: ClassAiAdvisorData | null;
   onRefresh: () => Promise<void>;
   isRefreshing: boolean;
+  isAutoPopupEnabled?: boolean;
+  onToggleAutoPopup?: (nextValue: boolean) => void;
 }
 
 export const ClassAiAdvisorModal: React.FC<ClassAiAdvisorModalProps> = ({
@@ -47,7 +55,9 @@ export const ClassAiAdvisorModal: React.FC<ClassAiAdvisorModalProps> = ({
   onClose,
   advisorData,
   onRefresh,
-  isRefreshing
+  isRefreshing,
+  isAutoPopupEnabled = true,
+  onToggleAutoPopup,
 }) => {
   const [selectedId, setSelectedId] = useState<string>('');
 
@@ -68,20 +78,48 @@ export const ClassAiAdvisorModal: React.FC<ClassAiAdvisorModalProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
-  if (!isOpen || !advisorData?.has_data || !advisorData?.advisories?.length) return null;
+  if (!isOpen) return null;
+
+  if (!advisorData?.has_data || !advisorData?.advisories?.length) {
+    return (
+      <div 
+        className="fixed top-16 right-0 bottom-0 left-0 z-50 flex items-center justify-center p-4 md:p-6 bg-slate-900/40 backdrop-blur-xs transition-all animate-fadeIn"
+        onClick={onClose}
+      >
+        <div 
+          className="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-purple-100 p-8 flex flex-col items-center justify-center text-center space-y-4 my-auto animate-scaleUp"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {isRefreshing ? (
+            <>
+              <div className="w-10 h-10 border-3 border-purple-600 border-t-transparent rounded-full animate-spin" />
+              <div className="text-sm font-bold text-slate-800">Đang tổng hợp dữ liệu lớp học qua Gemini...</div>
+              <p className="text-xs text-slate-500">Hệ thống đang đối soát dữ liệu bài nộp và lưu snapshot mới vào cơ sở dữ liệu.</p>
+            </>
+          ) : (
+            <>
+              <div className="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center">
+                <Bot className="w-6 h-6" />
+              </div>
+              <div className="text-sm font-bold text-slate-800">Chưa có khuyến nghị AI cho lớp này</div>
+              <p className="text-xs text-slate-500">Lớp học chưa có bài tập hoặc chưa có dữ liệu bài nộp từ sinh viên để tổng hợp khuyến nghị.</p>
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition cursor-pointer"
+              >
+                Đóng
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   const currentItem = advisorData.advisories.find((item: AdvisoryItem) => item.id === selectedId) || advisorData.advisories[0];
   const isLatest = currentItem.id === advisorData.advisories[0].id;
   const isProgressReminder = currentItem.mode === 'PROGRESS_REMINDER';
-
-  const rawTransparency = currentItem.class_overview?.avg_ai_transparency;
-  const hasAvgTransparency = Boolean(
-    rawTransparency &&
-    rawTransparency !== 'null' &&
-    rawTransparency !== 'N/A' &&
-    !String(rawTransparency).toLowerCase().includes('đang cập nhật') &&
-    !String(rawTransparency).toLowerCase().includes('chưa có dữ liệu')
-  );
 
   const formattedDate = currentItem.generated_at
     ? new Date(currentItem.generated_at).toLocaleDateString('vi-VN', {
@@ -121,50 +159,87 @@ export const ClassAiAdvisorModal: React.FC<ClassAiAdvisorModalProps> = ({
                     <History className="w-3 h-3" /> Lịch sử lưu trữ{formattedDate ? ` - ${formattedDate}` : ''}
                   </span>
                 )}
-                {isProgressReminder ? (
+                {isProgressReminder && (
                   <span className="text-[11px] font-medium text-amber-800 bg-amber-100/90 border border-amber-300 px-2 py-0.5 rounded-full flex items-center gap-1">
                     <span>⚠️</span> Đôn đốc tiến độ
-                  </span>
-                ) : (
-                  <span className="text-[11px] font-medium text-indigo-800 bg-indigo-100/90 border border-indigo-300 px-2 py-0.5 rounded-full flex items-center gap-1">
-                    <span>🔬</span> Phân tích chuyên sâu
                   </span>
                 )}
               </div>
               <p className="text-xs text-slate-500 mt-0.5">
                 Tổng hợp bài tập: <span className="font-medium text-slate-700">{currentItem.assignment_title}</span>
+                {currentItem.deadline_formatted && (
+                  <span className="text-slate-400 ml-1.5 font-normal">
+                    (Hạn nộp: {currentItem.deadline_formatted})
+                  </span>
+                )}
               </p>
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition"
-            title="Đóng cửa sổ"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Nút Icon Notification Bật/Tắt tự động nhắc nhở cho riêng lớp này */}
+            {onToggleAutoPopup && (
+              <button
+                type="button"
+                onClick={() => onToggleAutoPopup(!isAutoPopupEnabled)}
+                title={
+                  isAutoPopupEnabled
+                    ? 'Đang bật tự động nhắc nhở lớp này (Bấm để tắt)'
+                    : 'Đã tắt tự động nhắc nhở lớp này (Bấm để bật lại)'
+                }
+                className={`p-2 rounded-xl border transition-all duration-150 flex items-center justify-center cursor-pointer ${
+                  isAutoPopupEnabled
+                    ? 'bg-orange-50 border-orange-200 text-orange-600 hover:bg-orange-100 shadow-2xs'
+                    : 'bg-slate-100 border-slate-200 text-slate-400 hover:bg-slate-200/70'
+                }`}
+              >
+                {isAutoPopupEnabled ? (
+                  <Bell className="w-4 h-4 fill-orange-500/20" />
+                ) : (
+                  <BellOff className="w-4 h-4" />
+                )}
+              </button>
+            )}
+
+            {/* Nút đóng Sub-window [X] */}
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-2 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100 transition cursor-pointer"
+              title="Đóng cửa sổ"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Toolbar: History Selector & Re-run */}
         <div className="px-6 py-2.5 bg-slate-50/60 border-b border-slate-100 flex items-center justify-between gap-3 text-xs">
-          <div className="flex items-center gap-2">
-            <span className="text-slate-500 font-medium">Chọn bài tập / Slot:</span>
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-slate-500 font-medium shrink-0">Chọn bài tập / Slot:</span>
             {advisorData.advisories.length > 1 ? (
               <select
                 value={selectedId}
                 onChange={(e) => setSelectedId(e.target.value)}
-                className="font-medium text-slate-700 bg-white border border-slate-200 rounded-md px-2.5 py-1 focus:outline-none focus:ring-1 focus:ring-purple-500 shadow-xs cursor-pointer"
+                className="font-medium text-slate-700 bg-white border border-slate-200 rounded-md px-2.5 py-1 focus:outline-none focus:ring-1 focus:ring-purple-500 shadow-xs cursor-pointer text-xs max-w-[360px] truncate"
               >
-                {advisorData.advisories.map((adv: AdvisoryItem, index: number) => (
-                  <option key={adv.id} value={adv.id}>
-                    {index === 0 ? `📍 Mới nhất: ${adv.assignment_title}` : `🕒 ${adv.assignment_title}`}
-                  </option>
-                ))}
+                {advisorData.advisories.map((adv: AdvisoryItem, index: number) => {
+                  const label = adv.dropdown_label || (
+                    adv.deadline_formatted
+                      ? `[${adv.type === 'lab' ? 'Lab' : 'Bài tập'}] ${adv.assignment_title} - Hạn: ${adv.deadline_formatted}`
+                      : adv.assignment_title
+                  );
+                  return (
+                    <option key={adv.id} value={adv.id}>
+                      {index === 0 ? `📍 Mới nhất: ${label}` : `🕒 ${label}`}
+                    </option>
+                  );
+                })}
               </select>
             ) : (
-              <span className="font-medium text-slate-700">{currentItem.assignment_title}</span>
+              <span className="font-medium text-slate-700 truncate">
+                {currentItem.dropdown_label || currentItem.assignment_title}
+              </span>
             )}
           </div>
 
@@ -173,7 +248,7 @@ export const ClassAiAdvisorModal: React.FC<ClassAiAdvisorModalProps> = ({
               type="button"
               onClick={onRefresh}
               disabled={isRefreshing}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 text-slate-600 hover:text-purple-700 hover:bg-purple-50 rounded-md transition disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 text-slate-600 hover:text-purple-700 hover:bg-purple-50 rounded-md transition disabled:opacity-50 cursor-pointer shrink-0"
               title="Phân tích lại dữ liệu mới nhất"
             >
               <RotateCcw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-purple-600' : ''}`} />
@@ -184,33 +259,17 @@ export const ClassAiAdvisorModal: React.FC<ClassAiAdvisorModalProps> = ({
 
         {/* Content Body (Scrollable) */}
         <div className="p-6 overflow-y-auto space-y-4">
-          {/* 1. Thống kê vĩ mô */}
-          <div className={`grid gap-3 ${hasAvgTransparency ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'}`}>
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-                <Users className="w-4 h-4" />
-              </div>
-              <div className="text-xs">
-                <div className="text-slate-500 font-medium">Tỷ lệ nộp bài</div>
-                <div className="text-slate-800 font-semibold mt-0.5">
-                  {currentItem.class_overview?.submission_rate_text || 'Chưa có thông tin nộp bài'}
-                </div>
+          {/* 1. Thống kê vĩ mô: Tỷ lệ hoàn thành bài nộp */}
+          <div className="w-full p-3.5 bg-slate-50/80 rounded-xl border border-slate-100 flex items-center gap-3.5">
+            <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+              <Users className="w-5 h-5" />
+            </div>
+            <div className="text-xs">
+              <div className="text-slate-500 font-medium">Tỷ lệ hoàn thành bài nộp</div>
+              <div className="text-slate-800 font-semibold text-sm mt-0.5">
+                {currentItem.class_overview?.submission_rate_text || 'Chưa có thông tin nộp bài'}
               </div>
             </div>
-
-            {hasAvgTransparency && (
-              <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
-                  <Sparkles className="w-4 h-4" />
-                </div>
-                <div className="text-xs">
-                  <div className="text-slate-500 font-medium">Minh bạch AI trung bình</div>
-                  <div className="text-slate-800 font-semibold mt-0.5">
-                    {rawTransparency}
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
 
           {/* 2. Cụm lỗi kỹ thuật */}
@@ -267,7 +326,7 @@ export const ClassAiAdvisorModal: React.FC<ClassAiAdvisorModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg transition shadow-xs"
+            className="px-4 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg transition shadow-xs cursor-pointer"
           >
             Đóng
           </button>

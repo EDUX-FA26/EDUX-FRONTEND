@@ -1,15 +1,21 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import ClassService from '../../services/class.service';
+import AssignmentService from '../../services/assignment.service';
 import {
     ChevronRight, Clock, Folder, FilePenLine, RotateCw, Calendar, Code, AlertCircle,
     Users,
     Flame,
-    FolderKanban
+    FolderKanban,
+    FileText,
+    Eye,
+    Layers,
+    Briefcase
 } from 'lucide-react';
 import ProjectWorkspace from
     '../../components/student/ProjectWorkspace';
 import AssignmentSubwindowModal from '../../components/student/AssignmentSubwindowModal';
+import AssignmentDescriptionModal from '../../components/common/AssignmentDescriptionModal';
 import { createPortal } from 'react-dom';
 
 export default function StudentClassDetailPage() {
@@ -27,6 +33,10 @@ export default function StudentClassDetailPage() {
     const [isMembersModalOpen, setIsMembersModalOpen] = useState(false);
     const [members, setMembers] = useState([]);
     const [loadingMembers, setLoadingMembers] = useState(false);
+
+    // States cho Slot Assignment và Description Modal
+    const [classAssignments, setClassAssignments] = useState([]);
+    const [selectedDescAssignment, setSelectedDescAssignment] = useState(null);
 
     // Hàm gọi API lấy danh sách học viên
     const handleOpenMembersModal = async () => {
@@ -54,60 +64,32 @@ export default function StudentClassDetailPage() {
             setClassData(cData);
 
             const sData = slotsRes?.data || slotsRes || [];
-            let parsedSlots = Array.isArray(sData) ? sData : sData.data || [];
-
-            if (parsedSlots.length < 20) {
-                const existingLength = parsedSlots.length;
-                const mockSlots = Array.from({ length: 20 - existingLength }, (_, i) => {
-                    const slotNum = existingLength + i + 1;
-                    return {
-                        id: `mock-slot-${slotNum}`,
-                        _id: `mock-slot-${slotNum}`,
-                        slot_number: slotNum,
-                        date: new Date(Date.now() + i * 86400000).toISOString(),
-                        time: slotNum % 2 === 0 ? '12:30 - 14:45' : '15:00 - 17:15',
-                        title: `Session ${slotNum}: Introduction and Concepts`,
-                        content: `Detailed content for session ${slotNum}`
-                    };
-                });
-                parsedSlots = [...parsedSlots, ...mockSlots];
-            }
-
-
-
+            const parsedSlots = Array.isArray(sData) ? sData : sData.data || [];
 
             setSlots(parsedSlots);
 
+            // Fetch class assignments để đồng bộ vào từng Slot
+            try {
+                const asgRes = await AssignmentService.getClassAssignments(classId);
+                const aData = asgRes?.data || asgRes || [];
+                setClassAssignments(Array.isArray(aData) ? aData : aData.data || []);
+            } catch (aErr) {
+                console.warn('Failed to load class assignments for student:', aErr);
+            }
+
             if (parsedSlots.length > 0) {
-                setSelectedSlotId(parsedSlots[0].id || parsedSlots[0]._id);
+                setSelectedSlotId(prev => prev && parsedSlots.some(s => (s.id || s._id) === prev) ? prev : (parsedSlots[0].id || parsedSlots[0]._id));
+            } else {
+                setSelectedSlotId(null);
             }
 
             setError(null);
         } catch (err) {
-            // Fallback to mock data if API fails or if it's a mock class
-            setClassData({
-                id: classId,
-                subject_code: classId === 'mock-2' ? 'SWD392' : classId === 'mock-3' ? 'MMA301' : 'PRJ301',
-                subject_name: classId === 'mock-2' ? 'Software Architecture and Design' : classId === 'mock-3' ? 'Mobile Application Development' : 'Java Web Application Development',
-                class_code: 'SE20A09',
-                class_name: 'SE20A09',
-                owner_name: 'LoiNX',
-                lecturer_name: 'LoiNX'
-            });
-
-            const mockSlots = Array.from({ length: 20 }, (_, i) => ({
-                id: `mock-slot-${i + 1}`,
-                _id: `mock-slot-${i + 1}`,
-                slot_number: i + 1,
-                date: new Date(Date.now() + i * 86400000).toISOString(),
-                time: i % 2 === 0 ? '12:30 - 14:45' : '15:00 - 17:15',
-                title: `Session ${i + 1}: Introduction and Concepts`,
-                content: `Detailed content for session ${i + 1}`
-            }));
-
-            setSlots(mockSlots);
-            setSelectedSlotId(mockSlots[0].id);
-            setError(null); // Clear error since we are using mock data
+            console.error('Failed to fetch class details for student:', err);
+            setClassData(null);
+            setSlots([]);
+            setSelectedSlotId(null);
+            setError(err.response?.data?.message || err.message || 'Không thể tải thông tin lớp học.');
         } finally {
             setLoading(false);
         }
@@ -121,9 +103,23 @@ export default function StudentClassDetailPage() {
         setSelectedSlotId(slotId);
     };
 
-    if (loading) {
+    if (loading || !classData) {
+        if (error) {
+            return (
+                <div className="w-full flex items-center justify-between gap-4" style={{ width: '100%', padding: '16px', backgroundColor: '#fee2e2', color: '#dc2626', border: '1px solid rgba(220, 38, 38, 0.2)', borderRadius: 'var(--radius-md)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <AlertCircle size={20} />
+                        <span>{error}</span>
+                    </div>
+                    <button className="btn btn-secondary" onClick={fetchData} style={{ fontSize: '12px', padding: '6px 14px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <RotateCw size={14} /> Thử lại
+                    </button>
+                </div>
+            );
+        }
+
         return (
-            <div style={{ maxWidth: '1152px', margin: '0 auto', width: '100%', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div className="w-full flex flex-col gap-4" style={{ width: '100%' }}>
                 <div className="skeleton" style={{ width: '33%', height: '24px' }}></div>
                 <div className="skeleton" style={{ width: '66%', height: '48px' }}></div>
                 <div style={{ display: 'grid', gridTemplateColumns: '2fr 3fr 7fr', gap: '20px', marginTop: '8px' }}>
@@ -135,24 +131,13 @@ export default function StudentClassDetailPage() {
         );
     }
 
-    if (error) {
-        return (
-            <div style={{ maxWidth: '1152px', margin: '0 auto', padding: '16px', backgroundColor: '#fee2e2', color: '#dc2626', border: '1px solid rgba(220, 38, 38, 0.2)', borderRadius: 'var(--radius-md)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <AlertCircle size={20} />
-                <span>{error}</span>
-            </div>
-        );
-    }
-
-    if (!classData) return null;
-
     const selectedSlot = slots.find(s => (s.id || s._id) === selectedSlotId);
 
     const totalPages = Math.ceil(slots.length / 10);
     const displayedSlots = viewAll ? slots : slots.slice((currentPage - 1) * 10, currentPage * 10);
 
     return (
-        <div className="animate-fade-in" style={{ maxWidth: '1152px', margin: '0 auto', width: '100%', display: 'flex', flexDirection: 'column', gap: '16px', position: 'relative' }}>
+        <div className="animate-fade-in w-full flex flex-col gap-4 relative" style={{ width: '100%' }}>
             {/* Breadcrumb */}
             <nav style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'var(--color-ink-muted)' }}>
                 <Link to="/student/classes" style={{ textDecoration: 'none', color: 'var(--color-ink-muted)' }} onMouseEnter={(e) => e.target.style.textDecoration = 'underline'} onMouseLeave={(e) => e.target.style.textDecoration = 'none'}>My Courses</Link>
@@ -338,10 +323,69 @@ export default function StudentClassDetailPage() {
                                 </div>
 
                                 {(!selectedSlot.title && !selectedSlot.content) && (
-                                    <div style={{ marginTop: '32px', fontSize: '12px', color: 'var(--color-ink-muted)', textAlign: 'center' }}>
+                                    <div style={{ marginTop: '16px', fontSize: '12px', color: 'var(--color-ink-muted)', textAlign: 'center' }}>
                                         This slot has no specific detailed content yet.
                                     </div>
                                 )}
+
+                                {/* Danh sách bài tập được gắn cho Slot này (Student View) */}
+                                {(() => {
+                                    const currentSlotAssignments = (selectedSlot?.assignments && Array.isArray(selectedSlot.assignments) && selectedSlot.assignments.length > 0)
+                                        ? selectedSlot.assignments
+                                        : classAssignments.filter(a => (a.slot_id && (a.slot_id === selectedSlot?.id || a.slot_id === selectedSlot?._id)) || (a.session_id && (a.session_id === selectedSlot?.id || a.session_id === selectedSlot?._id)));
+                                    return (
+                                        <div style={{ marginTop: '20px' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                                <h5 style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--color-ink)', display: 'flex', alignItems: 'center', gap: '6px', margin: 0 }}>
+                                                    <FileText size={14} className="text-orange-500" />
+                                                    <span>Bài tập của buổi học (Slot {selectedSlot.slot_number || slots.findIndex(s => s === selectedSlot) + 1})</span>
+                                                </h5>
+                                                <span style={{ fontSize: '11px', color: 'var(--color-ink-muted)' }}>
+                                                    {currentSlotAssignments.length} bài tập
+                                                </span>
+                                            </div>
+
+                                            {currentSlotAssignments.length === 0 ? (
+                                                <div style={{ padding: '12px', borderRadius: '8px', border: '1px dashed var(--color-border)', backgroundColor: 'var(--color-surface)', fontSize: '11px', color: 'var(--color-ink-muted)', textAlign: 'center' }}>
+                                                    Không có bài tập nào được giao riêng trong buổi học này.
+                                                </div>
+                                            ) : (
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                    {currentSlotAssignments.map(asg => (
+                                                        <div key={asg.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--color-border)', backgroundColor: '#fff', gap: '10px' }}>
+                                                            <div style={{ flex: 1, minWidth: 0 }}>
+                                                                <div style={{ fontWeight: '600', fontSize: '12px', color: 'var(--color-ink)' }}>
+                                                                    {asg.title}
+                                                                </div>
+                                                                <div
+                                                                    onClick={() => setSelectedDescAssignment(asg)}
+                                                                    className="cursor-pointer hover:text-orange-600 transition flex items-center gap-1 group text-[11px] text-slate-500 mt-1"
+                                                                >
+                                                                    <span className="line-clamp-1 group-hover:text-orange-600">
+                                                                        {asg.description || asg.content || 'Xem mô tả...'}
+                                                                    </span>
+                                                                    <Eye size={12} className="text-slate-400 group-hover:text-orange-500 shrink-0" />
+                                                                </div>
+                                                            </div>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+                                                                <span style={{ fontSize: '10px', color: 'var(--color-ink-muted)' }}>
+                                                                    {asg.deadline ? new Date(asg.deadline).toLocaleDateString('vi-VN') : ''}
+                                                                </span>
+                                                                <button
+                                                                    onClick={() => navigate(`/student/assignments/${asg.id}`)}
+                                                                    className="btn btn-primary"
+                                                                    style={{ padding: '4px 8px', fontSize: '11px', height: '24px' }}
+                                                                >
+                                                                    Làm bài
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })()}
                             </>
                         ) : (
                             <div style={{ marginTop: '32px', fontSize: '12px', color: 'var(--color-ink-muted)', textAlign: 'center' }}>
@@ -372,8 +416,20 @@ export default function StudentClassDetailPage() {
                     isOpen={isAssignmentModalOpen}
                     onClose={() => setIsAssignmentModalOpen(false)}
                     classId={classId}
+                    classCode={classData?.class_code || classData?.class_name}
+                    role="student"
                 />,
                 document.body
+            )}
+
+            {/* Sub-window xem trọn vẹn Description bài tập (Student View) */}
+            {selectedDescAssignment && (
+                <AssignmentDescriptionModal
+                    isOpen={!!selectedDescAssignment}
+                    onClose={() => setSelectedDescAssignment(null)}
+                    assignment={selectedDescAssignment}
+                    onOpenAssignment={(id) => navigate(`/student/assignments/${id}`)}
+                />
             )}
 
             {/* Modal Class Members */}

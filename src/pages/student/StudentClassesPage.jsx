@@ -221,14 +221,12 @@ const filteredClasses = useMemo(() => {
 
 return (
     <div
-        className="animate-fade-in"
+        className="animate-fade-in w-full px-0"
         style={{
-            maxWidth: "1152px",
-            margin: "0 auto",
+            width: "100%",
             display: "flex",
             flexDirection: "column",
             gap: "20px",
-            width: "100%",
         }}
     >
         {/* Header */}

@@ -15,10 +15,15 @@ export type AiTool =
   | 'Other';
 
 export type AiDecision =
-  | 'Fully Accepted'
+  | 'Accepted Directly'
   | 'Partially Modified'
+  | 'Heavily Modified'
+  | 'Rejected / Reference Only'
+  | 'Fully Accepted'
   | 'Heavily Adapted'
-  | 'Rejected';
+  | 'Rejected'
+  | ''
+  | string;
 
 export type SubmissionStatus =
   | 'NOT_SUBMITTED'
@@ -81,11 +86,11 @@ export interface SubmissionFile {
  * Thang điểm 2.0 cho mỗi tiêu chí (Tổng cộng: 10.0)
  */
 export interface RubricScores {
-  abstraction: number;       // Problem Abstraction & Decomposition (Tối đa: 2.0)
-  implementation: number;    // Implementation & Code Quality (Tối đa: 3.0)
-  verification: number;      // Functionality & Verification (Tối đa: 2.5)
-  ai_interaction: number;    // AI Interaction Quality & Audit Alignment (Tối đa: 1.5)
-  reflection: number;        // Reflection & Oral Defense Ownership (Tối đa: 1.0)
+  abstraction?: number;       // Problem Abstraction & Decomposition (Tối đa: 2.0)
+  implementation?: number;    // Implementation & Code Quality (Tối đa: 3.0)
+  verification?: number;      // Functionality & Verification (Tối đa: 2.5)
+  ai_interaction?: number;    // AI Interaction Quality & Audit Alignment (Tối đa: 1.5)
+  reflection?: number;        // Reflection & Oral Defense Ownership (Tối đa: 1.0)
   decomposition?: number;    // Tương thích ngược
   pattern?: number;
   algorithmic?: number;
@@ -108,6 +113,8 @@ export interface AuditIntegrity {
   reflection_depth: 'High' | 'Medium' | 'Low' | 'Suspicious' | string;
   penalty_applied: boolean;
   penalty_reason?: string;
+  risk_level?: string;
+  riskLevel?: string;
 }
 
 /**
@@ -149,6 +156,7 @@ export interface Submission {
   lastUpdatedAt?: string | null;
   version?: number;
   file: SubmissionFile | null;
+  has_declared_audit?: boolean;
   aiAuditLog: AiAuditDeclaration | null;
   grade: SubmissionGrade | null;
   aiRiskLevel?: AiRiskLevel;

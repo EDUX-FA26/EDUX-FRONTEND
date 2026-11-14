@@ -2,15 +2,22 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import ClassService from '../../services/class.service';
+import AssignmentService from '../../services/assignment.service';
 import {
     ChevronRight, Clock, Folder, FilePenLine, RotateCw, Calendar, Code, AlertCircle, Users,
     Flame,
     Download,
     Sparkles,
-    Bot
+    Bot,
+    Briefcase,
+    Eye,
+    Layers
 } from 'lucide-react';
-import { PlusCircle, FileText, Upload } from 'lucide-react';
+import { PlusCircle, FileText, Upload, Trash2 } from 'lucide-react';
 import AssignmentSubwindowModal from '../../components/student/AssignmentSubwindowModal';
+import AssignmentFormModal from '../../components/lecturer/AssignmentFormModal';
+import AssignmentDescriptionModal from '../../components/common/AssignmentDescriptionModal';
+import ConfirmDeleteAssignmentModal from '../../components/common/ConfirmDeleteAssignmentModal';
 import ClassMembersModal from "../../components/lecturer/ClassMembersModal";
 import { ClassAiAdvisorModal } from '../../components/lecturer/ClassAiAdvisorModal';
 export default function LecturerClassDetailPage() {
@@ -27,30 +34,89 @@ export default function LecturerClassDetailPage() {
     const [isAssignmentModalOpen, setIsAssignmentModalOpen] = useState(false);
     const [isMembersModalOpen, setIsMembersModalOpen] = useState(false);
 
+    // States cho Slot Assignment và Description Modal
+    const [classAssignments, setClassAssignments] = useState([]);
+    const [selectedDescAssignment, setSelectedDescAssignment] = useState(null);
+    const [slotCreateTargetId, setSlotCreateTargetId] = useState(null);
+    const [isSlotCreateModalOpen, setIsSlotCreateModalOpen] = useState(false);
+    const [assignmentToDelete, setAssignmentToDelete] = useState(null);
+    const [isDeletingAssignment, setIsDeletingAssignment] = useState(false);
+    const [isSlotCreating, setIsSlotCreating] = useState(false);
+    const slotSubmitLockRef = useRef(false);
+
+    const handleCreateSlotAssignment = async (formData) => {
+        if (slotSubmitLockRef.current || isSlotCreating) return;
+        slotSubmitLockRef.current = true;
+        setIsSlotCreating(true);
+
+        try {
+            formData.append('class_id', classId);
+            await AssignmentService.createAssignment(formData);
+            setIsSlotCreateModalOpen(false);
+            await fetchData();
+            slotSubmitLockRef.current = false;
+            setIsSlotCreating(false);
+        } catch (err) {
+            slotSubmitLockRef.current = false;
+            setIsSlotCreating(false);
+            alert(err.response?.data?.message || 'Lỗi tạo bài tập');
+            throw err;
+        }
+    };
+
+    const handleConfirmDeleteAssignment = async (assignmentId, force = false) => {
+        setIsDeletingAssignment(true);
+        try {
+            await AssignmentService.deleteAssignment(assignmentId, force);
+            setAssignmentToDelete(null);
+            await fetchData();
+        } finally {
+            setIsDeletingAssignment(false);
+        }
+    };
+
     // States cho AI Class Advisor Subwindow
     const [advisorData, setAdvisorData] = useState(null);
     const [isAdvisorModalOpen, setIsAdvisorModalOpen] = useState(false);
     const [isRefreshingAdvisor, setIsRefreshingAdvisor] = useState(false);
+    const [isLoadingAdvisor, setIsLoadingAdvisor] = useState(false);
+
+    // Đọc trạng thái bật/tắt tự động popup của riêng lớp hiện tại (mặc định là true nếu chưa từng tắt trong phiên này)
+    const [isAutoPopupEnabled, setIsAutoPopupEnabled] = useState(() => {
+        if (!classId) return true;
+        const saved = sessionStorage.getItem(`art_ai_advisor_auto_${classId}`);
+        return saved === null ? true : saved === 'true';
+    });
 
     // Fetch dữ liệu AI Class Advisor
     const fetchAdvisorData = useCallback(async () => {
         if (!classId) return;
         try {
+            setIsLoadingAdvisor(true);
             const res = await ClassService.getClassAiAdvisor(classId);
-            const payload = res?.data || res;
-            if (payload && payload.has_data && payload.advisories?.length) {
+            const payload = res?.advisories ? res : (res?.data || res);
+            if (payload && payload.has_data && Array.isArray(payload.advisories) && payload.advisories.length > 0) {
                 setAdvisorData(payload);
             } else {
-                setAdvisorData(null);
+                setAdvisorData({ has_data: false, advisories: [] });
             }
         } catch (err) {
             console.warn('Could not fetch AI Advisor data:', err);
-            setAdvisorData(null);
+            setAdvisorData({ has_data: false, advisories: [] });
+        } finally {
+            setIsLoadingAdvisor(false);
         }
     }, [classId]);
 
     const handleOpenAdvisorModal = () => {
+        if (!advisorData || !advisorData.has_data) {
+            fetchAdvisorData();
+        }
         setIsAdvisorModalOpen(true);
+    };
+
+    const handleCloseAdvisorModal = () => {
+        setIsAdvisorModalOpen(false);
     };
 
     const handleRefreshAdvisor = async () => {
@@ -95,63 +161,44 @@ export default function LecturerClassDetailPage() {
             setClassData(cData);
 
             const sData = slotsRes?.data || slotsRes || [];
-            let parsedSlots = Array.isArray(sData) ? sData : sData.data || [];
-
-            if (parsedSlots.length < 20) {
-                const existingLength = parsedSlots.length;
-                const mockSlots = Array.from({ length: 20 - existingLength }, (_, i) => {
-                    const slotNum = existingLength + i + 1;
-                    return {
-                        id: `mock-slot-${slotNum}`,
-                        _id: `mock-slot-${slotNum}`,
-                        slot_number: slotNum,
-                        date: new Date(Date.now() + i * 86400000).toISOString(),
-                        time: slotNum % 2 === 0 ? '12:30 - 14:45' : '15:00 - 17:15',
-                        title: `Session ${slotNum}: Introduction and Concepts`,
-                        content: `Detailed content for session ${slotNum}`
-                    };
-                });
-                parsedSlots = [...parsedSlots, ...mockSlots];
-            }
-
-
-
+            const parsedSlots = Array.isArray(sData) ? sData : sData.data || [];
 
             setSlots(parsedSlots);
 
+            // Fetch class assignments để đồng bộ vào từng Slot
+            try {
+                const asgRes = await AssignmentService.getClassAssignments(classId);
+                const aData = asgRes?.data || asgRes || [];
+                setClassAssignments(Array.isArray(aData) ? aData : aData.data || []);
+            } catch (aErr) {
+                console.warn('Failed to load class assignments:', aErr);
+            }
+
             if (parsedSlots.length > 0) {
-                setSelectedSlotId(parsedSlots[0].id || parsedSlots[0]._id);
+                setSelectedSlotId(prev => prev && parsedSlots.some(s => (s.id || s._id) === prev) ? prev : (parsedSlots[0].id || parsedSlots[0]._id));
+            } else {
+                setSelectedSlotId(null);
             }
 
             setError(null);
         } catch (err) {
-            // Fallback to mock data if API fails or if it's a mock class
-            setClassData({
-                id: classId,
-                subject_code: classId === 'mock-2' ? 'SWD392' : classId === 'mock-3' ? 'MMA301' : 'PRJ301',
-                subject_name: classId === 'mock-2' ? 'Software Architecture and Design' : classId === 'mock-3' ? 'Mobile Application Development' : 'Java Web Application Development',
-                class_code: 'SE20A09',
-                class_name: 'SE20A09',
-                owner_name: 'LoiNX',
-                lecturer_name: 'LoiNX'
-            });
-
-            const mockSlots = Array.from({ length: 20 }, (_, i) => ({
-                id: `mock-slot-${i + 1}`,
-                _id: `mock-slot-${i + 1}`,
-                slot_number: i + 1,
-                date: new Date(Date.now() + i * 86400000).toISOString(),
-                time: i % 2 === 0 ? '12:30 - 14:45' : '15:00 - 17:15',
-                title: `Session ${i + 1}: Introduction and Concepts`,
-                content: `Detailed content for session ${i + 1}`
-            }));
-
-            setSlots(mockSlots);
-            setSelectedSlotId(mockSlots[0].id);
-            setError(null); // Clear error since we are using mock data
+            console.error('Failed to fetch class details:', err);
+            setClassData(null);
+            setSlots([]);
+            setSelectedSlotId(null);
+            setError(err.response?.data?.message || err.message || 'Không thể tải thông tin lớp học.');
         } finally {
             setLoading(false);
         }
+    }, [classId]);
+
+    // Đồng bộ lại state khi chuyển sang classId khác (ngăn chặn race condition giữa các lớp)
+    useEffect(() => {
+        if (!classId) return;
+        const saved = sessionStorage.getItem(`art_ai_advisor_auto_${classId}`);
+        setIsAutoPopupEnabled(saved === null ? true : saved === 'true');
+        setIsAdvisorModalOpen(false);
+        setAdvisorData(null);
     }, [classId]);
 
     useEffect(() => {
@@ -159,12 +206,24 @@ export default function LecturerClassDetailPage() {
         fetchAdvisorData();
     }, [fetchData, fetchAdvisorData]);
 
-    // Khi lấy được dữ liệu advisorData và has_data === true, tự động mở popup
+    // Kích hoạt tự động mở popup nếu: (1) Lớp có dữ liệu Advisor VÀ (2) Công tắc tự động của lớp đang BẬT
     useEffect(() => {
-        if (advisorData?.has_data && advisorData?.advisories?.length > 0) {
+        if (
+            !isLoadingAdvisor &&
+            advisorData?.has_data &&
+            Array.isArray(advisorData?.advisories) &&
+            advisorData.advisories.length > 0 &&
+            isAutoPopupEnabled
+        ) {
             setIsAdvisorModalOpen(true);
         }
-    }, [classId, advisorData]);
+    }, [classId, advisorData, isLoadingAdvisor, isAutoPopupEnabled]);
+
+    // Hàm xử lý khi giảng viên gạt công tắc Bật/Tắt
+    const handleToggleAutoPopup = (nextValue) => {
+        setIsAutoPopupEnabled(nextValue);
+        sessionStorage.setItem(`art_ai_advisor_auto_${classId}`, String(nextValue));
+    };
 
     const handleFullRefresh = () => {
         fetchData();
@@ -175,9 +234,23 @@ export default function LecturerClassDetailPage() {
         setSelectedSlotId(slotId);
     };
 
-    if (loading) {
+    if (loading || !classData) {
+        if (error) {
+            return (
+                <div className="w-full flex items-center justify-between gap-4" style={{ width: '100%', padding: '16px', backgroundColor: '#fee2e2', color: '#dc2626', border: '1px solid rgba(220, 38, 38, 0.2)', borderRadius: 'var(--radius-md)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <AlertCircle size={20} />
+                        <span>{error}</span>
+                    </div>
+                    <button className="btn btn-secondary" onClick={handleFullRefresh} style={{ fontSize: '12px', padding: '6px 14px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <RotateCw size={14} /> Thử lại
+                    </button>
+                </div>
+            );
+        }
+
         return (
-            <div style={{ maxWidth: '1152px', margin: '0 auto', width: '100%', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div className="w-full flex flex-col gap-4" style={{ width: '100%' }}>
                 <div className="skeleton" style={{ width: '33%', height: '24px' }}></div>
                 <div className="skeleton" style={{ width: '66%', height: '48px' }}></div>
                 <div style={{ display: 'grid', gridTemplateColumns: '2fr 3fr 7fr', gap: '20px', marginTop: '8px' }}>
@@ -189,24 +262,13 @@ export default function LecturerClassDetailPage() {
         );
     }
 
-    if (error) {
-        return (
-            <div style={{ maxWidth: '1152px', margin: '0 auto', padding: '16px', backgroundColor: '#fee2e2', color: '#dc2626', border: '1px solid rgba(220, 38, 38, 0.2)', borderRadius: 'var(--radius-md)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <AlertCircle size={20} />
-                <span>{error}</span>
-            </div>
-        );
-    }
-
-    if (!classData) return null;
-
     const selectedSlot = slots.find(s => (s.id || s._id) === selectedSlotId);
 
     const totalPages = Math.ceil(slots.length / 10);
     const displayedSlots = viewAll ? slots : slots.slice((currentPage - 1) * 10, currentPage * 10);
 
     return (
-        <div className="animate-fade-in" style={{ maxWidth: '1152px', margin: '0 auto', width: '100%', display: 'flex', flexDirection: 'column', gap: '16px', position: 'relative' }}>
+        <div className="animate-fade-in w-full flex flex-col gap-4 relative" style={{ width: '100%' }}>
             {/* Breadcrumb */}
             <nav style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'var(--color-ink-muted)' }}>
                 <Link to="/lecturer/classes" style={{ textDecoration: 'none', color: 'var(--color-ink-muted)' }} onMouseEnter={(e) => e.target.style.textDecoration = 'underline'} onMouseLeave={(e) => e.target.style.textDecoration = 'none'}>My Teaching Courses</Link>
@@ -224,19 +286,22 @@ export default function LecturerClassDetailPage() {
                             {classData.subject_name || classData.name || 'Unnamed Class'}
                         </h1>
 
-                        {/* Trigger Button Advisor: Hover hoặc Click mở thẳng Modal */}
-                        {advisorData && advisorData.has_data && advisorData.advisories?.length > 0 && (
-                            <button
-                                type="button"
-                                onMouseEnter={() => setIsAdvisorModalOpen(true)}
-                                onClick={() => setIsAdvisorModalOpen(true)}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200/80 rounded-lg transition shadow-xs hover:shadow-sm cursor-pointer group"
-                                title="Xem khuyến nghị giảng dạy AI cho buổi học (Advisor)"
-                            >
-                                <Bot className="w-4 h-4 text-purple-600 transition-transform group-hover:scale-110" />
-                                <span>Advisor</span>
-                            </button>
-                        )}
+                        {/* Trigger Button Advisor: BẮT BUỘC luôn hiển thị ở Header cạnh tên môn học */}
+                        <button
+                            type="button"
+                            onClick={handleOpenAdvisorModal}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200/80 rounded-lg transition shadow-xs hover:shadow-sm cursor-pointer group"
+                            title="Xem khuyến nghị giảng dạy AI cho buổi học (Advisor)"
+                        >
+                            <Bot className="w-4 h-4 text-purple-600 transition-transform group-hover:scale-110" />
+                            <span>Advisor</span>
+                            {advisorData?.has_data && (
+                                <span className="flex h-2 w-2 relative">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-purple-600"></span>
+                                </span>
+                            )}
+                        </button>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px' }}>
                         <span style={{ color: 'var(--color-primary-dark)', fontWeight: 'bold' }}>{classData.subject_code || 'CODE'}</span>
@@ -400,17 +465,95 @@ export default function LecturerClassDetailPage() {
                                 </div>
 
                                 {(!selectedSlot.title && !selectedSlot.content) && (
-                                    <div style={{ marginTop: '32px', fontSize: '12px', color: 'var(--color-ink-muted)', textAlign: 'center' }}>
+                                    <div style={{ marginTop: '16px', fontSize: '12px', color: 'var(--color-ink-muted)', textAlign: 'center' }}>
                                         This slot has no specific detailed content yet.
                                     </div>
                                 )}
 
-                                <div style={{ display: 'flex', gap: '8px', marginTop: '32px', justifyContent: 'center' }}>
+                                {/* Danh sách bài tập được gắn cho Slot này */}
+                                {(() => {
+                                    const currentSlotAssignments = (selectedSlot?.assignments && Array.isArray(selectedSlot.assignments) && selectedSlot.assignments.length > 0)
+                                        ? selectedSlot.assignments
+                                        : classAssignments.filter(a => (a.slot_id && (a.slot_id === selectedSlot?.id || a.slot_id === selectedSlot?._id)) || (a.session_id && (a.session_id === selectedSlot?.id || a.session_id === selectedSlot?._id)));
+                                    return (
+                                        <div style={{ marginTop: '20px' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                                <h5 style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--color-ink)', display: 'flex', alignItems: 'center', gap: '6px', margin: 0 }}>
+                                                    <FileText size={14} className="text-orange-500" />
+                                                    <span>Bài tập của buổi học (Slot {selectedSlot.slot_number || slots.findIndex(s => s === selectedSlot) + 1})</span>
+                                                </h5>
+                                                <span style={{ fontSize: '11px', color: 'var(--color-ink-muted)' }}>
+                                                    {currentSlotAssignments.length} bài tập
+                                                </span>
+                                            </div>
+
+                                            {currentSlotAssignments.length === 0 ? (
+                                                <div style={{ padding: '12px', borderRadius: '8px', border: '1px dashed var(--color-border)', backgroundColor: 'var(--color-surface)', fontSize: '11px', color: 'var(--color-ink-muted)', textAlign: 'center' }}>
+                                                    Chưa có bài tập nào được gắn riêng cho Slot này.
+                                                </div>
+                                            ) : (
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                    {currentSlotAssignments.map(asg => (
+                                                        <div key={asg.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--color-border)', backgroundColor: '#fff', gap: '10px' }}>
+                                                            <div style={{ flex: 1, minWidth: 0 }}>
+                                                                <div style={{ fontWeight: '600', fontSize: '12px', color: 'var(--color-ink)' }}>
+                                                                    {asg.title}
+                                                                </div>
+                                                                <div
+                                                                    onClick={() => setSelectedDescAssignment(asg)}
+                                                                    className="cursor-pointer hover:text-orange-600 transition flex items-center gap-1 group text-[11px] text-slate-500 mt-1"
+                                                                >
+                                                                    <span className="line-clamp-1 group-hover:text-orange-600">
+                                                                        {asg.description || asg.content || 'Xem mô tả...'}
+                                                                    </span>
+                                                                    <Eye size={12} className="text-slate-400 group-hover:text-orange-500 shrink-0" />
+                                                                </div>
+                                                            </div>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+                                                                <span style={{ fontSize: '10px', color: 'var(--color-ink-muted)' }}>
+                                                                    {asg.deadline ? new Date(asg.deadline).toLocaleDateString('vi-VN') : ''}
+                                                                </span>
+                                                                <button
+                                                                    onClick={() => navigate(`/lecturer/assignments/${asg.id}`)}
+                                                                    className="btn btn-primary"
+                                                                    style={{ padding: '4px 8px', fontSize: '11px', height: '24px' }}
+                                                                >
+                                                                    Open
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        setAssignmentToDelete(asg);
+                                                                    }}
+                                                                    className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition cursor-pointer"
+                                                                    title="Xóa bài tập này"
+                                                                    aria-label="Xóa bài tập"
+                                                                >
+                                                                    <Trash2 size={13} />
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })()}
+
+                                <div style={{ display: 'flex', gap: '8px', marginTop: '24px', justifyContent: 'center' }}>
                                     <button className="btn btn-primary" style={{ padding: '0 12px', height: '32px', fontSize: '12px', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', gap: '6px' }} onClick={() => alert('Create Test')}>
                                         <PlusCircle size={14} /> Create Test
                                     </button>
-                                    <button className="btn btn-secondary" style={{ padding: '0 12px', height: '32px', fontSize: '12px', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', gap: '6px' }} onClick={() => alert('Assignment')}>
-                                        <FileText size={14} /> Assignment
+                                    <button
+                                        className="btn btn-secondary"
+                                        style={{ padding: '0 12px', height: '32px', fontSize: '12px', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', gap: '6px' }}
+                                        onClick={() => {
+                                            setSlotCreateTargetId(selectedSlot.id || selectedSlot._id);
+                                            setIsSlotCreateModalOpen(true);
+                                        }}
+                                    >
+                                        <FileText size={14} /> + Thêm bài tập
                                     </button>
                                     <button className="btn btn-secondary" style={{ padding: '0 12px', height: '32px', fontSize: '12px', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', gap: '6px' }} onClick={() => alert('Upload Material')}>
                                         <Upload size={14} /> Upload Material
@@ -440,7 +583,7 @@ export default function LecturerClassDetailPage() {
                 </div>
             </div>
 
-            {/* Assignment Modal */}
+            {/* Assignment Modal (Global List) */}
             {isAssignmentModalOpen && createPortal(
                 <AssignmentSubwindowModal
                     isOpen={isAssignmentModalOpen}
@@ -448,8 +591,51 @@ export default function LecturerClassDetailPage() {
                     classId={classId}
                     classCode={classData?.class_code || classData?.class_name}
                     role="lecturer"
+                    onAssignmentCreated={fetchData}
                 />,
                 document.body
+            )}
+
+            {/* Sub-window xem trọn vẹn Description bài tập */}
+            {selectedDescAssignment && (
+                <AssignmentDescriptionModal
+                    isOpen={!!selectedDescAssignment}
+                    onClose={() => setSelectedDescAssignment(null)}
+                    assignment={selectedDescAssignment}
+                    onOpenAssignment={(id) => navigate(`/lecturer/assignments/${id}`)}
+                />
+            )}
+
+            {/* Modal tạo bài tập trực tiếp từ Slot */}
+            {isSlotCreateModalOpen && (
+                <AssignmentFormModal
+                    isOpen={isSlotCreateModalOpen}
+                    onClose={() => {
+                        if (!isSlotCreating) {
+                            slotSubmitLockRef.current = false;
+                            setIsSlotCreating(false);
+                            setIsSlotCreateModalOpen(false);
+                        }
+                    }}
+                    mode="create"
+                    classId={classId}
+                    initialSlotId={slotCreateTargetId}
+                    slots={slots}
+                    onSubmit={handleCreateSlotAssignment}
+                    isSubmitting={isSlotCreating}
+                    customTitle={`Tạo bài tập cho Slot ${selectedSlot?.slot_number || ''} - Lớp ${classData?.class_code || ''}`}
+                />
+            )}
+
+            {/* Modal Xác nhận Xóa Bài tập */}
+            {assignmentToDelete && (
+                <ConfirmDeleteAssignmentModal
+                    isOpen={Boolean(assignmentToDelete)}
+                    onClose={() => setAssignmentToDelete(null)}
+                    assignment={assignmentToDelete}
+                    onConfirm={handleConfirmDeleteAssignment}
+                    isDeleting={isDeletingAssignment}
+                />
             )}
 
             <ClassMembersModal
@@ -464,10 +650,12 @@ export default function LecturerClassDetailPage() {
                 <ClassAiAdvisorModal
                     classId={classId}
                     isOpen={isAdvisorModalOpen}
-                    onClose={() => setIsAdvisorModalOpen(false)}
+                    onClose={handleCloseAdvisorModal}
                     advisorData={advisorData}
                     onRefresh={handleRefreshAdvisor}
-                    isRefreshing={isRefreshingAdvisor}
+                    isRefreshing={isRefreshingAdvisor || isLoadingAdvisor}
+                    isAutoPopupEnabled={isAutoPopupEnabled}
+                    onToggleAutoPopup={handleToggleAutoPopup}
                 />,
                 document.body
             )}

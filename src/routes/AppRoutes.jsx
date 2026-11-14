@@ -2,6 +2,7 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import ProtectedRoute from './SchoolProtectedRoute';
 import { useAuth } from '../contexts/AuthContext';
+import { getHomeRouteByRole } from '../config/roles.config';
 
 // Pages
 import LoginPage from '../pages/auth/LoginPage';

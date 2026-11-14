@@ -60,6 +60,13 @@ const AssignmentService = {
             { schoolScoped: true }
         );
         return response.data;
+    },
+
+    async deleteAssignment(assignmentId, force = false) {
+        const response = await api.delete(`/assignments/${assignmentId}`, {
+            params: force ? { force: true } : {}
+        });
+        return response.data;
     }
 };
 
