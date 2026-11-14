@@ -32,3 +32,18 @@ export async function verifySchoolContext(
 
   return response.data;
 }
+
+export async function getSchoolSettings() {
+  const response = await api.get("/schools/settings", { schoolScoped: true });
+  return response.data;
+}
+
+export async function completeSchoolSetup(payload) {
+  const response = await api.put("/schools/setup", payload, { schoolScoped: true });
+  return response.data;
+}
+
+export async function updateSchoolSettings(payload) {
+  const response = await api.patch("/schools/settings", payload, { schoolScoped: true });
+  return response.data;
+}

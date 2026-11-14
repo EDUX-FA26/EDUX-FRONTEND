@@ -8,6 +8,8 @@ export const ROLES = {
   STUDENT: 'student',
   LECTURER: 'lecturer',
   ADMIN: 'admin',
+  SUPERADMIN: 'superadmin',
+  MANAGER: 'manager',
 };
 
 export const ROLE_HOME = {
@@ -17,6 +19,10 @@ export const ROLE_HOME = {
   STUDENT: '/student/dashboard',
   LECTURER: '/lecturer/dashboard',
   ADMIN: '/admin/dashboard',
+  superadmin: '/platform',
+  manager: '/manager/dashboard',
+  SUPERADMIN: '/platform',
+  MANAGER: '/manager/dashboard',
 };
 
 export { ROLE_HOME_ROUTES, getHomeRouteByRole };

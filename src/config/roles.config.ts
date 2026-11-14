@@ -4,6 +4,8 @@ export const ROLE_HOME_ROUTES: Record<string, string> = {
   ADMIN: '/admin/dashboard',         // Path mục "Tổng quan" của Admin trong AppRoutes.jsx
   LECTURER: '/lecturer/dashboard',   // Path mục "Tổng quan" của Lecturer trong AppRoutes.jsx
   STUDENT: '/student/dashboard',     // Path mục "Tổng quan" của Student trong AppRoutes.jsx
+  SUPERADMIN: '/platform',
+  MANAGER: '/manager/dashboard',
   // Dễ dàng mở rộng thêm các role mới trong tương lai:
   // TEACHING_ASSISTANT: '/ta/dashboard',
   // DEPARTMENT_HEAD: '/head/dashboard',

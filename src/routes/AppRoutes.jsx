@@ -13,6 +13,8 @@ import LecturerDashboard from '../pages/lecturer/DashboardPage';
 import LecturerFlashcardsPage from '../pages/lecturer/LecturerFlashcardsPage';
 import LecturerFlashclassSelectPage from '../pages/lecturer/LecturerFlashclassSelectPage';
 import AdminDashboard from '../pages/admin/DashboardPage';
+import SchoolSettingsPage from "../pages/admin/SchoolSettingsPage";
+import SchoolSetupPage from "../pages/admin/SchoolSetupPage";
 import UserManagementPage from '../pages/admin/UserManagementPage';
 import ClassManagementPage from '../pages/admin/ClassManagementPage';
 import SystemLogsPage from '../pages/admin/SystemLogsPage';
@@ -54,17 +56,29 @@ import SchoolSelectionPage
   from '../pages/schools/SchoolSelectionPage';
 import PlatformDashboardPage from
   "../pages/platform/PlatformDashboardPage.jsx";
+import ManagerDashboardPage from "../pages/manager/ManagerDashboardPage.jsx";
+import PlatformProtectedRoute from "./PlatformProtectedRoute";
 
 function RootRedirect() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
 
   const {
-    schoolRole,
+    schoolRole, currentSchool,
     status,
   } = useSchool();
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
+  }
+
+  // Platform accounts do not need, and must not be forced to select, a
+  // school membership before entering their own console.
+  if (user?.platform_role === ROLES.SUPERADMIN) {
+    return <Navigate to="/platform" replace />;
+  }
+
+  if (user?.platform_role === ROLES.MANAGER) {
+    return <Navigate to="/manager/dashboard" replace />;
   }
 
   if (
@@ -89,6 +103,10 @@ function RootRedirect() {
       ? ROLES.ADMIN
       : schoolRole;
 
+  if (uiRole === ROLES.ADMIN && !currentSchool?.setupCompleted) {
+    return <Navigate to="/admin/school-setup" replace />;
+  }
+
   const destination = ROLE_HOME[uiRole];
 
   if (!destination) {
@@ -109,7 +127,11 @@ export default function AppRoutes() {
       {/* Public */}
       <Route
         path="/platform"
-        element={<PlatformDashboardPage />}
+        element={<PlatformProtectedRoute allowedRoles={[ROLES.SUPERADMIN]}><PlatformDashboardPage /></PlatformProtectedRoute>}
+      />
+      <Route
+        path="/manager/dashboard"
+        element={<PlatformProtectedRoute allowedRoles={[ROLES.MANAGER]}><ManagerDashboardPage /></PlatformProtectedRoute>}
       />
       <Route path="/login" element={<LoginPage />} />
 
@@ -227,6 +249,8 @@ export default function AppRoutes() {
         <Route path="subjects" element={<SubjectManagementPage />} />
         <Route path="search" element={<SearchPage />} />
         <Route path="logs" element={<SystemLogsPage />} />
+        <Route path="school-setup" element={<SchoolSetupPage />} />
+        <Route path="school-settings" element={<SchoolSettingsPage />} />
         <Route index element={<Navigate to="dashboard" replace />} />
       </Route>
 
