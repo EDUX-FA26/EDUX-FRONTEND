@@ -32,8 +32,9 @@ const AssignmentService = {
         return response.data;
     },
 
-    async deleteAssignment(assignmentId) {
+    async deleteAssignment(assignmentId, force = false) {
         const response = await api.delete(`/assignments/${assignmentId}`, {
+            params: force ? { force: true } : {},
             schoolScoped: true,
         });
         return response.data;
@@ -59,13 +60,6 @@ const AssignmentService = {
             `/assignments/${assignmentId}/materials/${materialId}`,
             { schoolScoped: true }
         );
-        return response.data;
-    },
-
-    async deleteAssignment(assignmentId, force = false) {
-        const response = await api.delete(`/assignments/${assignmentId}`, {
-            params: force ? { force: true } : {}
-        });
         return response.data;
     }
 };
