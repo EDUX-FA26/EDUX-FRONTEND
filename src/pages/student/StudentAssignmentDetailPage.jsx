@@ -179,7 +179,7 @@ export default function StudentAssignmentDetailPage() {
             lastEditedAt: editedTime ? formatDateDMY(editedTime) : null,
             version: latestVer?.version_no || detailedSubmission?.versions?.length || submission.version || 1,
             file: submittedFile,
-            feedback: effectiveFeedback || (isGraded ? 'Bài nộp đã được chấm điểm hoàn tất.' : isDraft ? 'Bản nháp đang được lưu an toàn. Hãy bấm "Nộp bài chính thức" khi hoàn tất.' : 'Chưa có nhận xét. Bài nộp đang chờ giảng viên chấm điểm.'),
+            feedback: effectiveFeedback || (isGraded ? 'Bài nộp đã được chấm điểm hoàn tất.' : isDraft ? '' : 'Chưa có nhận xét. Bài nộp đang chờ giảng viên chấm điểm.'),
             transparencyScore: submission.transparencyScore || (parsedScopes ? 95 : null),
             declarations: parsedDeclarations,
             scopes: parsedScopes || submission.scopes,
