@@ -58,6 +58,7 @@ import PlatformDashboardPage from
   "../pages/platform/PlatformDashboardPage.jsx";
 import ManagerDashboardPage from "../pages/manager/ManagerDashboardPage.jsx";
 import PlatformProtectedRoute from "./PlatformProtectedRoute";
+import ManagersPage from "../pages/superadmin/ManagersPage";
 
 function RootRedirect() {
   const { isAuthenticated, user } = useAuth();
@@ -74,7 +75,7 @@ function RootRedirect() {
   // Platform accounts do not need, and must not be forced to select, a
   // school membership before entering their own console.
   if (user?.platform_role === ROLES.SUPERADMIN) {
-    return <Navigate to="/platform" replace />;
+    return <Navigate to="/superadmin/dashboard" replace />;
   }
 
   if (user?.platform_role === ROLES.MANAGER) {
@@ -103,7 +104,14 @@ function RootRedirect() {
       ? ROLES.ADMIN
       : schoolRole;
 
-  if (uiRole === ROLES.ADMIN && !currentSchool?.setupCompleted) {
+  // Existing schools remain usable during the SaaS migration. Initial setup is
+  // only mandatory for a tenant that the Manager explicitly created in the
+  // pending_setup lifecycle state.
+  if (
+    uiRole === ROLES.ADMIN &&
+    currentSchool?.schoolStatus === "pending_setup" &&
+    !currentSchool?.setupCompleted
+  ) {
     return <Navigate to="/admin/school-setup" replace />;
   }
 
@@ -126,9 +134,14 @@ export default function AppRoutes() {
     <Routes>
       {/* Public */}
       <Route
-        path="/platform"
+        path="/superadmin/dashboard"
         element={<PlatformProtectedRoute allowedRoles={[ROLES.SUPERADMIN]}><PlatformDashboardPage /></PlatformProtectedRoute>}
       />
+      <Route
+        path="/superadmin/managers"
+        element={<PlatformProtectedRoute allowedRoles={[ROLES.SUPERADMIN]}><ManagersPage /></PlatformProtectedRoute>}
+      />
+      <Route path="/platform" element={<Navigate to="/superadmin/dashboard" replace />} />
       <Route
         path="/manager/dashboard"
         element={<PlatformProtectedRoute allowedRoles={[ROLES.MANAGER]}><ManagerDashboardPage /></PlatformProtectedRoute>}

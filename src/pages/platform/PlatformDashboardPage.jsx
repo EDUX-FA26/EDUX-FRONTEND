@@ -335,11 +335,11 @@ export default function PlatformDashboardPage() {
 
                     <div className="flex flex-wrap items-center gap-2">
                         <Link
-                            to="/select-school"
+                            to="/superadmin/managers"
                             className="inline-flex items-center gap-2 rounded-xl border border-[#f0e0d5] bg-[#fff8f3] px-3 py-2.5 text-sm font-semibold text-[#a45219] transition hover:bg-[#ffecdf] sm:px-4"
                         >
-                            <GraduationCap size={18} />
-                            <span>Không gian trường</span>
+                            <Users size={18} />
+                            <span>Quản lý Manager</span>
                             <ArrowRight size={15} />
                         </Link>
 
@@ -415,7 +415,7 @@ export default function PlatformDashboardPage() {
                         </a>
 
                         <Link
-                            to="/select-school"
+                            to="/superadmin/managers"
                             className="flex items-center gap-3 rounded-xl px-4 py-3.5 text-sm font-semibold transition hover:bg-[#fff3eb]"
                             style={{
                                 color: "#5d697e",
@@ -427,7 +427,7 @@ export default function PlatformDashboardPage() {
                                 style={{ flexShrink: 0, color: "#f97320" }}
                             />
                             <span style={{ color: "#5d697e" }}>
-                                School Workspace
+                                Managers
                             </span>
                         </Link>
 

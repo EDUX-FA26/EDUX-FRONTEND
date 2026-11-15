@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 
 import { useAuth } from "../../contexts/AuthContext";
+import { ROLE_HOME } from "../../config/constants";
 import { useSchool } from "../../contexts/SchoolContext";
 
 // ============================================
@@ -53,7 +54,7 @@ function getRoleConfig(role) {
 // ============================================
 
 export default function SchoolSelectionPage() {
-  const { isAuthenticated, logout } = useAuth();
+  const { isAuthenticated, logout, user } = useAuth();
 
   const {
     schools = [],
@@ -80,6 +81,12 @@ export default function SchoolSelectionPage() {
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
+  }
+
+  // Platform accounts are deliberately not school members and must never be
+  // taken to the tenant selector.
+  if (user?.platform_role) {
+    return <Navigate to={ROLE_HOME[user.platform_role] || "/"} replace />;
   }
 
   // Keep existing single-school behavior

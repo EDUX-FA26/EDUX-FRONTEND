@@ -19,9 +19,9 @@ export const ROLE_HOME = {
   STUDENT: '/student/dashboard',
   LECTURER: '/lecturer/dashboard',
   ADMIN: '/admin/dashboard',
-  superadmin: '/platform',
+  superadmin: '/superadmin/dashboard',
   manager: '/manager/dashboard',
-  SUPERADMIN: '/platform',
+  SUPERADMIN: '/superadmin/dashboard',
   MANAGER: '/manager/dashboard',
 };
 

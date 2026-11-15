@@ -37,12 +37,11 @@ export default function PlatformAdminMenuItem({
       .then((response) => {
         if (!active) return;
 
-        const platformAdmin =
-          response.data?.platformAdmin;
+        const platformAdmin = response.data?.platformAdmin || response.data?.data;
 
         setIsPlatformAdmin(
           response.data?.success === true &&
-          platformAdmin?.role === "platform_admin" &&
+          ["superadmin", "manager"].includes(platformAdmin?.role) &&
           platformAdmin?.userId === user.id
         );
       })
@@ -64,7 +63,7 @@ export default function PlatformAdminMenuItem({
 
   return (
     <Link
-      to="/platform"
+      to={user?.platform_role === "manager" ? "/manager/dashboard" : "/superadmin/dashboard"}
       onClick={onNavigate}
       className="
         flex w-full items-center gap-3
