@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import ClassService from '../../services/class.service';
 import AssignmentService from '../../services/assignment.service';
+import SlotHistoriesModal from '../../components/modals/SlotHistoriesModal';
 import {
     ChevronRight, Clock, Folder, FilePenLine, RotateCw, Calendar, Code, AlertCircle, Users,
     Flame,
@@ -23,6 +24,7 @@ import { ClassAiAdvisorModal } from '../../components/lecturer/ClassAiAdvisorMod
 export default function LecturerClassDetailPage() {
     const { classId } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
 
     const [classData, setClassData] = useState(null);
     const [slots, setSlots] = useState([]);
@@ -33,6 +35,7 @@ export default function LecturerClassDetailPage() {
     const [viewAll, setViewAll] = useState(false);
     const [isAssignmentModalOpen, setIsAssignmentModalOpen] = useState(false);
     const [isMembersModalOpen, setIsMembersModalOpen] = useState(false);
+    const [isSlotHistoriesModalOpen, setIsSlotHistoriesModalOpen] = useState(false);
 
     // States cho Slot Assignment và Description Modal
     const [classAssignments, setClassAssignments] = useState([]);
@@ -175,7 +178,23 @@ export default function LecturerClassDetailPage() {
             }
 
             if (parsedSlots.length > 0) {
-                setSelectedSlotId(prev => prev && parsedSlots.some(s => (s.id || s._id) === prev) ? prev : (parsedSlots[0].id || parsedSlots[0]._id));
+                const targetSlotId = location.state?.slotId;
+                const targetSlotNumber = location.state?.slotNumber;
+                let foundIdx = -1;
+                if (targetSlotId && parsedSlots.some(s => (s.id || s._id) === targetSlotId)) {
+                    foundIdx = parsedSlots.findIndex(s => (s.id || s._id) === targetSlotId);
+                    setSelectedSlotId(targetSlotId);
+                } else if (targetSlotNumber && parsedSlots.some(s => s.slot_number === targetSlotNumber)) {
+                    foundIdx = parsedSlots.findIndex(s => s.slot_number === targetSlotNumber);
+                    const match = parsedSlots[foundIdx];
+                    setSelectedSlotId(match.id || match._id);
+                } else {
+                    setSelectedSlotId(prev => prev && parsedSlots.some(s => (s.id || s._id) === prev) ? prev : (parsedSlots[0].id || parsedSlots[0]._id));
+                }
+
+                if (foundIdx >= 0) {
+                    setCurrentPage(Math.floor(foundIdx / 10) + 1);
+                }
             } else {
                 setSelectedSlotId(null);
             }
@@ -190,7 +209,27 @@ export default function LecturerClassDetailPage() {
         } finally {
             setLoading(false);
         }
-    }, [classId]);
+    }, [classId, location.state]);
+
+    // Lắng nghe thay đổi slot khi điều hướng từ modal trong cùng trang
+    useEffect(() => {
+        if (location.state && slots.length > 0) {
+            const targetSlotId = location.state.slotId;
+            const targetSlotNumber = location.state.slotNumber;
+            let foundIdx = -1;
+            if (targetSlotId && slots.some(s => (s.id || s._id) === targetSlotId)) {
+                foundIdx = slots.findIndex(s => (s.id || s._id) === targetSlotId);
+                setSelectedSlotId(targetSlotId);
+            } else if (targetSlotNumber && slots.some(s => s.slot_number === targetSlotNumber)) {
+                foundIdx = slots.findIndex(s => s.slot_number === targetSlotNumber);
+                const match = slots[foundIdx];
+                if (match) setSelectedSlotId(match.id || match._id);
+            }
+            if (foundIdx >= 0) {
+                setCurrentPage(Math.floor(foundIdx / 10) + 1);
+            }
+        }
+    }, [location.state, slots]);
 
     // Đồng bộ lại state khi chuyển sang classId khác (ngăn chặn race condition giữa các lớp)
     useEffect(() => {
@@ -315,7 +354,12 @@ export default function LecturerClassDetailPage() {
 
             {/* Action Buttons Bar */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginTop: '4px' }}>
-                <button className="btn btn-secondary" style={{ padding: '0 12px', height: '32px', fontSize: '12px', borderRadius: 'var(--radius-sm)' }}>
+                <button
+                    type="button"
+                    onClick={() => setIsSlotHistoriesModalOpen(true)}
+                    className="btn btn-secondary cursor-pointer"
+                    style={{ padding: '0 12px', height: '32px', fontSize: '12px', borderRadius: 'var(--radius-sm)' }}
+                >
                     <Clock size={14} /> Slot histories
                 </button>
                 <button className="btn" onClick={() => navigate(`/lecturer/classes/${classId}/materials`)} style={{ backgroundColor: 'var(--color-accent-teal)', color: '#fff', padding: '0 12px', height: '32px', fontSize: '12px', borderRadius: 'var(--radius-sm)' }}>
@@ -659,6 +703,43 @@ export default function LecturerClassDetailPage() {
                 />,
                 document.body
             )}
+
+            {/* Modal Slot Histories */}
+            <SlotHistoriesModal
+                isOpen={isSlotHistoriesModalOpen}
+                onClose={() => setIsSlotHistoriesModalOpen(false)}
+                role="lecturer"
+                onSelectSlot={(cls, slot, slotNumber) => {
+                    setIsSlotHistoriesModalOpen(false);
+                    if (cls.id === classId) {
+                        let targetId = slot?.id;
+                        let targetIdx = -1;
+                        if (targetId) {
+                            targetIdx = slots.findIndex(s => (s.id || s._id) === targetId);
+                        }
+                        if (targetIdx === -1) {
+                            targetIdx = slots.findIndex(s => s.slot_number === slotNumber);
+                            if (targetIdx >= 0) targetId = slots[targetIdx].id || slots[targetIdx]._id;
+                        }
+                        if (targetId) {
+                            setSelectedSlotId(targetId);
+                            if (targetIdx >= 0) {
+                                setCurrentPage(Math.floor(targetIdx / 10) + 1);
+                            }
+                        }
+                    } else {
+                        navigate(`/lecturer/classes/${cls.id}`, { state: { slotId: slot?.id, slotNumber } });
+                    }
+                }}
+                onSelectClass={(cls) => {
+                    setIsSlotHistoriesModalOpen(false);
+                    if (cls.id === classId) {
+                        fetchData();
+                    } else {
+                        navigate(`/lecturer/classes/${cls.id}`);
+                    }
+                }}
+            />
         </div>
     );
 }

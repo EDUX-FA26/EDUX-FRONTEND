@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import ClassService from '../../services/class.service';
 import AssignmentService from '../../services/assignment.service';
+import SlotHistoriesModal from '../../components/modals/SlotHistoriesModal';
 import {
     ChevronRight, Clock, Folder, FilePenLine, RotateCw, Calendar, Code, AlertCircle,
     Users,
@@ -21,6 +22,7 @@ import { createPortal } from 'react-dom';
 export default function StudentClassDetailPage() {
     const { classId } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
 
     const [classData, setClassData] = useState(null);
     const [slots, setSlots] = useState([]);
@@ -31,6 +33,7 @@ export default function StudentClassDetailPage() {
     const [viewAll, setViewAll] = useState(false);
     const [isAssignmentModalOpen, setIsAssignmentModalOpen] = useState(false);
     const [isMembersModalOpen, setIsMembersModalOpen] = useState(false);
+    const [isSlotHistoriesOpen, setIsSlotHistoriesOpen] = useState(false);
     const [members, setMembers] = useState([]);
     const [loadingMembers, setLoadingMembers] = useState(false);
 
@@ -78,7 +81,23 @@ export default function StudentClassDetailPage() {
             }
 
             if (parsedSlots.length > 0) {
-                setSelectedSlotId(prev => prev && parsedSlots.some(s => (s.id || s._id) === prev) ? prev : (parsedSlots[0].id || parsedSlots[0]._id));
+                const targetSlotId = location.state?.slotId;
+                const targetSlotNumber = location.state?.slotNumber;
+                let foundIdx = -1;
+                if (targetSlotId && parsedSlots.some(s => (s.id || s._id) === targetSlotId)) {
+                    foundIdx = parsedSlots.findIndex(s => (s.id || s._id) === targetSlotId);
+                    setSelectedSlotId(targetSlotId);
+                } else if (targetSlotNumber && parsedSlots.some(s => s.slot_number === targetSlotNumber)) {
+                    foundIdx = parsedSlots.findIndex(s => s.slot_number === targetSlotNumber);
+                    const match = parsedSlots[foundIdx];
+                    setSelectedSlotId(match.id || match._id);
+                } else {
+                    setSelectedSlotId(prev => prev && parsedSlots.some(s => (s.id || s._id) === prev) ? prev : (parsedSlots[0].id || parsedSlots[0]._id));
+                }
+
+                if (foundIdx >= 0) {
+                    setCurrentPage(Math.floor(foundIdx / 10) + 1);
+                }
             } else {
                 setSelectedSlotId(null);
             }
@@ -93,11 +112,31 @@ export default function StudentClassDetailPage() {
         } finally {
             setLoading(false);
         }
-    }, [classId]);
+    }, [classId, location.state]);
 
     useEffect(() => {
         fetchData();
     }, [fetchData]);
+
+    // Lắng nghe thay đổi slot khi điều hướng từ modal trong cùng trang
+    useEffect(() => {
+        if (location.state && slots.length > 0) {
+            const targetSlotId = location.state.slotId;
+            const targetSlotNumber = location.state.slotNumber;
+            let foundIdx = -1;
+            if (targetSlotId && slots.some(s => (s.id || s._id) === targetSlotId)) {
+                foundIdx = slots.findIndex(s => (s.id || s._id) === targetSlotId);
+                setSelectedSlotId(targetSlotId);
+            } else if (targetSlotNumber && slots.some(s => s.slot_number === targetSlotNumber)) {
+                foundIdx = slots.findIndex(s => s.slot_number === targetSlotNumber);
+                const match = slots[foundIdx];
+                if (match) setSelectedSlotId(match.id || match._id);
+            }
+            if (foundIdx >= 0) {
+                setCurrentPage(Math.floor(foundIdx / 10) + 1);
+            }
+        }
+    }, [location.state, slots]);
 
     const handleSlotClick = (slotId) => {
         setSelectedSlotId(slotId);
@@ -165,7 +204,12 @@ export default function StudentClassDetailPage() {
 
             {/* Action Buttons Bar */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginTop: '4px' }}>
-                <button className="btn btn-secondary" style={{ padding: '0 12px', height: '32px', fontSize: '12px', borderRadius: 'var(--radius-sm)' }}>
+                <button
+                    type="button"
+                    onClick={() => setIsSlotHistoriesOpen(true)}
+                    className="btn btn-secondary cursor-pointer"
+                    style={{ padding: '0 12px', height: '32px', fontSize: '12px', borderRadius: 'var(--radius-sm)' }}
+                >
                     <Clock size={14} /> Slot histories
                 </button>
                 <button className="btn" onClick={() => navigate(`/student/classes/${classId}/materials`)} style={{ backgroundColor: 'var(--color-accent-teal)', color: '#fff', padding: '0 12px', height: '32px', fontSize: '12px', borderRadius: 'var(--radius-sm)' }}>
@@ -528,6 +572,43 @@ export default function StudentClassDetailPage() {
                 </div>,
                 document.body
             )}
+
+            {/* Modal Slot Histories */}
+            <SlotHistoriesModal
+                isOpen={isSlotHistoriesOpen}
+                onClose={() => setIsSlotHistoriesOpen(false)}
+                role="student"
+                onSelectSlot={(cls, slot, slotNumber) => {
+                    setIsSlotHistoriesOpen(false);
+                    if (cls.id === classId) {
+                        let targetId = slot?.id;
+                        let targetIdx = -1;
+                        if (targetId) {
+                            targetIdx = slots.findIndex(s => (s.id || s._id) === targetId);
+                        }
+                        if (targetIdx === -1) {
+                            targetIdx = slots.findIndex(s => s.slot_number === slotNumber);
+                            if (targetIdx >= 0) targetId = slots[targetIdx].id || slots[targetIdx]._id;
+                        }
+                        if (targetId) {
+                            setSelectedSlotId(targetId);
+                            if (targetIdx >= 0) {
+                                setCurrentPage(Math.floor(targetIdx / 10) + 1);
+                            }
+                        }
+                    } else {
+                        navigate(`/student/classes/${cls.id}`, { state: { slotId: slot?.id, slotNumber } });
+                    }
+                }}
+                onSelectClass={(cls) => {
+                    setIsSlotHistoriesOpen(false);
+                    if (cls.id === classId) {
+                        fetchData();
+                    } else {
+                        navigate(`/student/classes/${cls.id}`);
+                    }
+                }}
+            />
         </div>
     );
 }

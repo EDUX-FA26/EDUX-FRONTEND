@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Danh sách slot theo lớp - Subwindow Mockup</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        /* Thanh cuộn tinh chỉnh cho subwindow */
+        .custom-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .custom-scroll::-webkit-scrollbar-track {
+            background: #f8fafc;
+            border-radius: 8px;
+        }
+
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 8px;
+        }
+
+        .custom-scroll::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+
+<body class="bg-slate-900/50 backdrop-blur-[2px] min-h-screen flex items-center justify-center p-4">
+
+    <!-- ==================== SUBWINDOW MODAL: DANH SÁCH SLOT THEO LỚP ==================== -->
+    <div id="slot-modal"
+        class="bg-white w-full max-w-4xl rounded-3xl shadow-2xl border border-slate-100 flex flex-col overflow-hidden transition-all">
+
+        <!-- 1. MODAL HEADER -->
+        <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between shrink-0 bg-white">
+            <div class="flex items-center gap-3.5">
+                <!-- Icon Cam Bo Góc -->
+                <div
+                    class="w-11 h-11 rounded-2xl bg-orange-500 text-white flex items-center justify-center text-lg shadow-md shadow-orange-500/20 shrink-0">
+                    <i class="fa-regular fa-calendar-check"></i>
+                </div>
+                <div>
+                    <h2 class="text-base font-bold text-slate-800 leading-snug">Danh sách slot theo lớp</h2>
+                    <p class="text-xs text-slate-400 mt-0.5">Theo dõi lớp học và truy cập nhanh từng buổi học</p>
+                </div>
+            </div>
+
+            <!-- Thống kê nhanh & Nút đóng X -->
+            <div class="flex items-center gap-3">
+                <div
+                    class="hidden sm:flex items-center border border-slate-200 rounded-xl px-3.5 py-1.5 text-xs font-semibold text-slate-600 bg-slate-50/50">
+                    <span>5 lớp</span>
+                    <span class="mx-2.5 text-slate-300">|</span>
+                    <span>72 slot</span>
+                </div>
+
+                <button onclick="closeModal()"
+                    class="w-8 h-8 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 flex items-center justify-center transition">
+                    <i class="fa-solid fa-xmark text-base"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- 2. MODAL BODY (VÙNG CUỘN DANH SÁCH LỚP) -->
+        <div id="classes-container" class="p-6 overflow-y-auto max-h-[64vh] custom-scroll space-y-4 bg-[#fcfcfd]">
+            <!-- Các card lớp học sẽ được render tự động từ JS bên dưới để đảm bảo đủ 5 lớp & 72 slot -->
+        </div>
+
+        <!-- 3. MODAL FOOTER -->
+        <div
+            class="px-6 py-3.5 border-t border-slate-100 bg-white flex items-center justify-between text-xs text-slate-500 shrink-0">
+            <div>
+                Đang hiển thị <span class="font-bold text-slate-800" id="display-count">5 lớp</span>
+            </div>
+
+            <div class="flex items-center gap-2.5">
+                <span>Số lớp hiển thị</span>
+                <select onchange="handleLimitChange(this.value)"
+                    class="border border-slate-200 rounded-lg px-2.5 py-1 text-slate-700 font-semibold bg-white outline-none focus:border-orange-500 cursor-pointer">
+                    <option value="5" selected>5</option>
+                    <option value="3">3</option>
+                    <option value="10">10</option>
+                </select>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ==================== JAVASCRIPT RENDER & TƯƠNG TÁC ==================== -->
+    <script>
+        // Dữ liệu khớp với ảnh mockup (Tổng cộng 5 lớp = 10 + 10 + 20 + 20 + 12 = 72 slots)
+        const CLASSES_DATA = [
+            {
+                code: "HCM202",
+                semesterTag: "[FALL2026]",
+                title: "Ho Chi Minh Ideology - Tư tưởng Hồ Chí Minh",
+                className: "SE18D09",
+                semester: "Fall2026",
+                totalSlots: 10
+            },
+            {
+                code: "MLN122",
+                semesterTag: "[SUMMER2026]",
+                title: "Political economics of Marxism – Leninism - Kinh tế chính trị Mác - ...",
+                className: "SE18D01",
+                semester: "Summer2026",
+                totalSlots: 10
+            },
+            {
+                code: "PRM393",
+                semesterTag: "[SUMMER2026]",
+                title: "Mobile Programming_Lập trình di động",
+                className: "SE18D01",
+                semester: "Summer2026",
+                totalSlots: 20
+            },
+            {
+                code: "SDN302",
+                semesterTag: "[SPRING2026]",
+                title: "Server-Side development with NodeJS, Express, and MongoDB",
+                className: "SE18D01",
+                semester: "Spring2026",
+                totalSlots: 20
+            },
+            {
+                code: "EXE101",
+                semesterTag: "[SPRING2026]",
+                title: "Experiential Entrepreneurship 1 - Trải nghiệm khởi nghiệp 1",
+                className: "SE18D04",
+                semester: "Spring2026",
+                totalSlots: 12
+            }
+        ];
+
+        function renderClasses(limit = 5) {
+            const container = document.getElementById('classes-container');
+            const sliced = CLASSES_DATA.slice(0, limit);
+            document.getElementById('display-count').innerText = `${sliced.length} lớp`;
+
+            container.innerHTML = sliced.map(cls => {
+                // Tạo dãy nút số slot từ 1 đến totalSlots
+                let slotButtons = '';
+                for (let i = 1; i <= cls.totalSlots; i++) {
+                    slotButtons += `
+            <button 
+              onclick="alert('Truy cập nhanh: ${cls.code} (${cls.className}) - Slot ${i}')"
+              class="w-7 h-7 rounded-lg border border-slate-200/90 bg-white hover:border-orange-500 hover:bg-orange-50 hover:text-orange-600 text-slate-600 text-[11px] font-semibold flex items-center justify-center transition shrink-0">
+              ${i}
+            </button>
+          `;
+                }
+
+                return `
+          <div class="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-2xs hover:border-slate-300 transition space-y-4">
+            
+            <!-- Hàng trên: Thông tin môn, Lớp, Học kỳ, Nút Xem lớp -->
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <!-- Trái: Mã môn & Tên môn -->
+              <div class="flex-1 min-w-0">
+                <div class="inline-flex items-center gap-1.5 bg-slate-100/80 border border-slate-200/60 px-2.5 py-0.5 rounded-md text-[10px] font-bold text-slate-600 tracking-wide">
+                  <span>${cls.code}</span>
+                  <span class="text-slate-400">••</span>
+                  <span>${cls.semesterTag}</span>
+                </div>
+                <h3 class="text-sm font-bold text-slate-800 mt-1.5 truncate" title="${cls.title}">
+                  ${cls.title}
+                </h3>
+              </div>
+
+              <!-- Phải: Cột Lớp, Học kỳ & Nút Xem lớp -->
+              <div class="flex items-center justify-between md:justify-end gap-6 shrink-0">
+                <div>
+                  <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">LỚP</div>
+                  <div class="text-xs font-bold text-slate-700 mt-0.5">${cls.className}</div>
+                </div>
+
+                <div>
+                  <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">HỌC KỲ</div>
+                  <div class="text-xs font-bold text-slate-700 mt-0.5">${cls.semester}</div>
+                </div>
+
+                <button 
+                  onclick="alert('Mở chi tiết lớp: ${cls.className} (${cls.code})')"
+                  class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition shadow-2xs">
+                  <span>Xem lớp</span>
+                  <i class="fa-solid fa-arrow-right text-[10px] text-slate-500"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Hàng dưới: Danh sách nút Slot -->
+            <div class="pt-3.5 border-t border-slate-100 flex items-start gap-3">
+              <div class="flex items-center gap-2 text-xs text-slate-500 font-medium shrink-0 pt-1">
+                <i class="fa-regular fa-calendar text-slate-400"></i>
+                <span>Danh sách slot</span>
+                <span class="bg-slate-100 text-slate-600 font-bold text-[10px] px-2 py-0.5 rounded-full">
+                  ${cls.totalSlots}
+                </span>
+              </div>
+
+              <!-- Grid các ô số Slot tự xuống dòng -->
+              <div class="flex flex-wrap gap-1.5">
+                ${slotButtons}
+              </div>
+            </div>
+
+          </div>
+        `;
+            }).join('');
+        }
+
+        function handleLimitChange(val) {
+            renderClasses(parseInt(val, 10));
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('slot-modal');
+            modal.style.transform = 'scale(0.96)';
+            modal.style.opacity = '0';
+            setTimeout(() => {
+                modal.style.display = 'none';
+            }, 150);
+        }
+
+        // Khởi tạo hiển thị 5 lớp khi mở trang
+        renderClasses(5);
+    </script>
+</body>
+
+</html>
