@@ -2045,3 +2045,40 @@ main[style*="backdrop-filter"] p {
     width: 100%;
   }
 }
+/* Stitch forum desktop geometry: keep the feed and utility rail aligned like the reference. */
+.forum-page-stitch {
+  background: #fdf9f6 !important;
+}
+.forum-page-stitch > div {
+  max-width: 1224px !important;
+  grid-template-columns: minmax(0, 840px) minmax(300px, 360px) !important;
+  justify-content: center;
+}
+.forum-page-stitch > div > section {
+  width: 840px !important;
+  max-width: 840px !important;
+}
+.forum-page-stitch article img {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  border-radius: 7px;
+  display: block;
+}
+.forum-page-stitch article h2 {
+  margin: 9px 0 0;
+  font-size: 19px;
+  line-height: 1.35;
+}
+.forum-page-stitch article > div:first-of-type > span {
+  padding: 3px 7px;
+  border-radius: 5px;
+  background: #e8f4ff;
+  color: #075985;
+  font-size: 10px;
+  font-weight: 700;
+}
+@media (max-width: 1280px) {
+  .forum-page-stitch > div { grid-template-columns: minmax(0, 1fr) 300px !important; }
+  .forum-page-stitch > div > section { width: auto !important; max-width: none !important; }
+}
