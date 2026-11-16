@@ -101,7 +101,8 @@ export default function DashboardLayout() {
   const isGradePage = location.pathname.includes('/grade');
   const isFocusRoom = location.pathname.startsWith('/student/focus');
   const isStudentAssignment = location.pathname.startsWith('/student/assignments');
-  const isClassesPage = location.pathname === '/lecturer/classes' || location.pathname === '/student/classes' || location.pathname === '/lecturer/classes/' || location.pathname === '/student/classes/';
+  const isClassesPage = location.pathname.startsWith('/lecturer/classes') || location.pathname.startsWith('/student/classes');
+  const isClassesLockedPage = /^\/(lecturer|student)\/classes(?:\/[^/]+)?\/?$/.test(location.pathname);
 
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -832,7 +833,7 @@ export default function DashboardLayout() {
         <main
           className={`flex-1 min-w-0 w-full overflow-x-hidden ${isGradePage ? 'dashboard-layout__main--grade' : ''}`}
           style={
-            isFocusRoom || isGradePage || isClassesPage
+            isFocusRoom || isGradePage || isClassesLockedPage
               ? {
                 flex: 1,
                 width: '100%',
