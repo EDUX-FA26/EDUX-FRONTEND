@@ -37,6 +37,7 @@ import ForumPage from '../pages/forum/ForumPageStitch';
 import ForumPostPage from '../pages/forum/ForumPostPage';
 import ForumCreatePage from '../pages/forum/ForumCreatePage';
 import NotificationCenterPage from '../pages/notifications/NotificationCenterPage';
+import LecturerProjectsPage from '../pages/lecturer/LecturerProjectsPage';
 
 // Layouts
 import DashboardLayout from '../layouts/DashboardLayout';
@@ -59,6 +60,7 @@ import PlatformDashboardPage from
 import ManagerDashboardPage from "../pages/manager/ManagerDashboardPage.jsx";
 import PlatformProtectedRoute from "./PlatformProtectedRoute";
 import ManagersPage from "../pages/superadmin/ManagersPage";
+import EduxLoadingScreen from "../components/common/EduxLoadingScreen";
 
 function RootRedirect() {
   const { isAuthenticated, user } = useAuth();
@@ -87,9 +89,10 @@ function RootRedirect() {
     status === "idle"
   ) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p>Đang chuẩn bị EDUX...</p>
-      </div>
+      <EduxLoadingScreen
+        title="Đang chuẩn bị EDUX"
+        description="Hệ thống đang xác định không gian học tập và chuyển bạn đến trang phù hợp."
+      />
     );
   }
 
@@ -200,6 +203,10 @@ export default function AppRoutes() {
           </ProtectedRoute>
         }
       >
+        <Route
+          path="/lecturer/classes/:classId/projects"
+          element={<LecturerProjectsPage />}
+        />
         <Route path="dashboard" element={<LecturerDashboard />} />
         {/* Bước 1: chọn môn học */}
         <Route path="flashcards" element={<LecturerFlashclassSelectPage />} />

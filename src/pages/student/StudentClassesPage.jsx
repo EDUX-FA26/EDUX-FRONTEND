@@ -184,454 +184,475 @@ export default function StudentClassesPage() {
         await Promise.all([fetchSemesters(), fetchClasses()]);
     };
 
-const groupedSemesters = useMemo(() => {
-    return semesters.reduce((groups, semester) => {
-        const group = getSemesterGroup(semester);
 
-        if (!groups[group]) {
-            groups[group] = [];
-        }
+    const groupedSemesters = useMemo(() => {
+        const groups = semesters.reduce((acc, semester) => {
+            const group = getSemesterGroup(semester);
 
-        groups[group].push(semester);
+            if (!acc[group]) {
+                acc[group] = [];
+            }
+
+            acc[group].push(semester);
+
+            return acc;
+        }, {});
+
+        // Lấy năm từ code hoặc tên Semester.
+        // Ví dụ: FALL2026, Fall 2026.
+        const getSemesterYear = (semester) => {
+            const text = `${semester.code || ""} ${semester.name || ""}`;
+            const match = text.match(/(?:19|20)\d{2}/);
+
+            return match ? Number(match[0]) : 0;
+        };
+
+        // Sắp xếp năm mới nhất lên đầu trong từng nhóm.
+        Object.values(groups).forEach((items) => {
+            items.sort(
+                (a, b) =>
+                    getSemesterYear(b) - getSemesterYear(a)
+            );
+        });
 
         return groups;
-    }, {});
-}, [semesters]);
+    }, [semesters]);
 
-const filteredClasses = useMemo(() => {
-    const keyword = search.trim().toLowerCase();
 
-    if (!keyword) return classes;
+    const filteredClasses = useMemo(() => {
+        const keyword = search.trim().toLowerCase();
 
-    return classes.filter((course) => {
-        return [
-            course.subject_code,
-            course.subject_name,
-            course.name,
-            course.class_code,
-            course.class_name,
-            course.lecturer_name,
-        ]
-            .filter(Boolean)
-            .some((value) =>
-                String(value).toLowerCase().includes(keyword)
-            );
-    });
-}, [classes, search]);
+        if (!keyword) return classes;
 
-return (
-    <div
-        className="animate-fade-in w-full px-0"
-        style={{
-            width: "100%",
-            display: "flex",
-            flexDirection: "column",
-            gap: "20px",
-        }}
-    >
-        {/* Header */}
+        return classes.filter((course) => {
+            return [
+                course.subject_code,
+                course.subject_name,
+                course.name,
+                course.class_code,
+                course.class_name,
+                course.lecturer_name,
+            ]
+                .filter(Boolean)
+                .some((value) =>
+                    String(value).toLowerCase().includes(keyword)
+                );
+        });
+    }, [classes, search]);
+
+    return (
         <div
+            className="animate-fade-in w-full px-0"
             style={{
+                width: "100%",
                 display: "flex",
-                alignItems: "flex-end",
-                justifyContent: "space-between",
-                marginTop: "8px",
+                flexDirection: "column",
+                gap: "20px",
             }}
         >
-            <div>
-                <p
-                    style={{
-                        fontSize: "12px",
-                        color: "var(--color-ink-muted)",
-                        marginBottom: "4px",
-                    }}
-                >
-                    Welcome back, Student
-                </p>
-
-                <h1
-                    style={{
-                        fontSize: "24px",
-                        fontWeight: "bold",
-                        color: "var(--color-ink)",
-                        margin: 0,
-                    }}
-                >
-                    My Courses
-                </h1>
-            </div>
-
-            <button
-                className="btn btn-secondary"
-                onClick={handleRefresh}
-                disabled={loading || semestersLoading}
-                style={{
-                    height: "36px",
-                    fontSize: "13px",
-                    padding: "0 12px",
-                }}
-            >
-                <RotateCw size={16} />
-                Refresh
-            </button>
-        </div>
-
-        <div
-            style={{
-                display: "flex",
-                gap: "24px",
-                alignItems: "flex-start",
-                flexWrap: "wrap",
-            }}
-        >
-            {/* Semester Sidebar */}
+            {/* Header */}
             <div
-                className="card"
                 style={{
-                    width: "180px",
-                    padding: "16px",
-                    flexShrink: 0,
                     display: "flex",
-                    flexDirection: "column",
-                    gap: "16px",
+                    alignItems: "flex-end",
+                    justifyContent: "space-between",
+                    marginTop: "8px",
                 }}
             >
-                <div
-                    style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        borderBottom: "1px solid var(--color-border)",
-                        paddingBottom: "8px",
-                    }}
-                >
-                    <span
+                <div>
+                    <p
                         style={{
-                            fontWeight: "600",
-                            fontSize: "14px",
-                            color: "var(--color-ink)",
+                            fontSize: "12px",
+                            color: "var(--color-ink-muted)",
+                            marginBottom: "4px",
                         }}
                     >
-                        Semesters
-                    </span>
+                        Welcome back, Student
+                    </p>
 
-                    <span className="badge badge-teal">
-                        {semesters.length}
-                    </span>
+                    <h1
+                        style={{
+                            fontSize: "24px",
+                            fontWeight: "bold",
+                            color: "var(--color-ink)",
+                            margin: 0,
+                        }}
+                    >
+                        My Courses
+                    </h1>
                 </div>
 
-                <div
+                <button
+                    className="btn btn-secondary"
+                    onClick={handleRefresh}
+                    disabled={loading || semestersLoading}
                     style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: "8px",
+                        height: "36px",
+                        fontSize: "13px",
+                        padding: "0 12px",
                     }}
                 >
-                    {semestersLoading ? (
-                        <div className="skeleton" style={{ height: 120 }} />
-                    ) : semesterError ? (
-                        <div
-                            style={{
-                                fontSize: "12px",
-                                color: "#dc2626",
-                            }}
-                        >
-                            {semesterError}
-                        </div>
-                    ) : semesters.length === 0 ? (
-                        <p
-                            style={{
-                                fontSize: "12px",
-                                color: "var(--color-ink-muted)",
-                            }}
-                        >
-                            Chưa có học kỳ nào.
-                        </p>
-                    ) : (
-                        Object.entries(groupedSemesters).map(
-                            ([groupName, items]) => (
-                                <div key={groupName}>
-                                    <div
-                                        style={{
-                                            fontSize: "10px",
-                                            color: "var(--color-ink-soft)",
-                                            fontWeight: "bold",
-                                            textTransform: "uppercase",
-                                            letterSpacing: "1px",
-                                            marginBottom: "8px",
-                                        }}
-                                    >
-                                        {groupName}
-                                    </div>
-
-                                    <div
-                                        style={{
-                                            display: "flex",
-                                            flexDirection: "column",
-                                            gap: "6px",
-                                        }}
-                                    >
-                                        {items.map((semester) => {
-                                            const selected =
-                                                activeSemester === semester.code;
-
-                                            return (
-                                                <button
-                                                    key={semester.id}
-                                                    type="button"
-                                                    onClick={() =>
-                                                        handleSemesterChange(semester.code)
-                                                    }
-                                                    style={{
-                                                        border: "none",
-                                                        textAlign: "left",
-                                                        padding: "8px 12px",
-                                                        borderRadius: "var(--radius-sm)",
-                                                        cursor: "pointer",
-                                                        fontWeight: selected ? "600" : "500",
-                                                        fontSize: "13px",
-                                                        transition: "0.2s",
-                                                        backgroundColor: selected
-                                                            ? "var(--color-primary)"
-                                                            : "transparent",
-                                                        color: selected
-                                                            ? "#fff"
-                                                            : "var(--color-ink)",
-                                                    }}
-                                                >
-                                                    <div>{getSemesterLabel(semester)}</div>
-
-                                                    {semester.is_current && (
-                                                        <div
-                                                            style={{
-                                                                fontSize: "10px",
-                                                                opacity: 0.8,
-                                                                marginTop: "3px",
-                                                            }}
-                                                        >
-                                                            Current
-                                                        </div>
-                                                    )}
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-                            )
-                        )
-                    )}
-                </div>
+                    <RotateCw size={16} />
+                    Refresh
+                </button>
             </div>
 
-            {/* Classes */}
-            <div style={{ flex: 1, minWidth: 0 }}>
+            <div
+                style={{
+                    display: "flex",
+                    gap: "24px",
+                    alignItems: "flex-start",
+                    flexWrap: "wrap",
+                }}
+            >
+                {/* Semester Sidebar */}
                 <div
+                    className="card"
                     style={{
+                        width: "180px",
+                        padding: "16px",
+                        flexShrink: 0,
                         display: "flex",
-                        justifyContent: "flex-end",
-                        marginBottom: "20px",
+                        flexDirection: "column",
+                        gap: "16px",
                     }}
                 >
                     <div
                         style={{
-                            position: "relative",
-                            width: "280px",
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            borderBottom: "1px solid var(--color-border)",
+                            paddingBottom: "8px",
                         }}
                     >
-                        <Search
-                            size={16}
+                        <span
                             style={{
-                                position: "absolute",
-                                left: "12px",
-                                top: "50%",
-                                transform: "translateY(-50%)",
-                                color: "var(--color-ink-soft)",
+                                fontWeight: "600",
+                                fontSize: "14px",
+                                color: "var(--color-ink)",
                             }}
-                        />
+                        >
+                            Semesters
+                        </span>
 
-                        <input
-                            type="text"
-                            className="input"
-                            placeholder="Search courses..."
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            style={{ paddingLeft: "36px" }}
-                        />
+                        <span className="badge badge-teal">
+                            {semesters.length}
+                        </span>
+                    </div>
+
+                    <div
+                        style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: "8px",
+                        }}
+                    >
+                        {semestersLoading ? (
+                            <div className="skeleton" style={{ height: 120 }} />
+                        ) : semesterError ? (
+                            <div
+                                style={{
+                                    fontSize: "12px",
+                                    color: "#dc2626",
+                                }}
+                            >
+                                {semesterError}
+                            </div>
+                        ) : semesters.length === 0 ? (
+                            <p
+                                style={{
+                                    fontSize: "12px",
+                                    color: "var(--color-ink-muted)",
+                                }}
+                            >
+                                Chưa có học kỳ nào.
+                            </p>
+                        ) : (
+                            Object.entries(groupedSemesters).map(
+                                ([groupName, items]) => (
+                                    <div key={groupName}>
+                                        <div
+                                            style={{
+                                                fontSize: "10px",
+                                                color: "var(--color-ink-soft)",
+                                                fontWeight: "bold",
+                                                textTransform: "uppercase",
+                                                letterSpacing: "1px",
+                                                marginBottom: "8px",
+                                            }}
+                                        >
+                                            {groupName}
+                                        </div>
+
+                                        <div
+                                            style={{
+                                                display: "flex",
+                                                flexDirection: "column",
+                                                gap: "6px",
+                                            }}
+                                        >
+                                            {items.map((semester) => {
+                                                const selected =
+                                                    activeSemester === semester.code;
+
+                                                return (
+                                                    <button
+                                                        key={semester.id}
+                                                        type="button"
+                                                        onClick={() =>
+                                                            handleSemesterChange(semester.code)
+                                                        }
+                                                        style={{
+                                                            border: "none",
+                                                            textAlign: "left",
+                                                            padding: "8px 12px",
+                                                            borderRadius: "var(--radius-sm)",
+                                                            cursor: "pointer",
+                                                            fontWeight: selected ? "600" : "500",
+                                                            fontSize: "13px",
+                                                            transition: "0.2s",
+                                                            backgroundColor: selected
+                                                                ? "var(--color-primary)"
+                                                                : "transparent",
+                                                            color: selected
+                                                                ? "#fff"
+                                                                : "var(--color-ink)",
+                                                        }}
+                                                    >
+                                                        <div>{getSemesterLabel(semester)}</div>
+
+                                                        {semester.is_current && (
+                                                            <div
+                                                                style={{
+                                                                    fontSize: "10px",
+                                                                    opacity: 0.8,
+                                                                    marginTop: "3px",
+                                                                }}
+                                                            >
+                                                                Current
+                                                            </div>
+                                                        )}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                )
+                            )
+                        )}
                     </div>
                 </div>
 
-                <div
-                    style={{
-                        display: "grid",
-                        gridTemplateColumns:
-                            "repeat(auto-fill, minmax(280px, 1fr))",
-                        gap: "20px",
-                    }}
-                >
-                    {loading || semestersLoading ? (
-                        <>
-                            <div
-                                className="skeleton"
-                                style={{ height: "200px" }}
-                            />
-                            <div
-                                className="skeleton"
-                                style={{ height: "200px" }}
-                            />
-                            <div
-                                className="skeleton"
-                                style={{ height: "200px" }}
-                            />
-                        </>
-                    ) : error || semesterError ? (
+                {/* Classes */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                    <div
+                        style={{
+                            display: "flex",
+                            justifyContent: "flex-end",
+                            marginBottom: "20px",
+                        }}
+                    >
                         <div
                             style={{
-                                gridColumn: "1 / -1",
-                                padding: "16px",
-                                backgroundColor: "#fee2e2",
-                                color: "#dc2626",
-                                borderRadius: "var(--radius-md)",
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "8px",
+                                position: "relative",
+                                width: "280px",
                             }}
                         >
-                            <AlertCircle size={20} />
-                            <span>{semesterError || error}</span>
-                        </div>
-                    ) : filteredClasses.length === 0 ? (
-                        <div
-                            className="card"
-                            style={{
-                                gridColumn: "1 / -1",
-                                padding: "48px 12px",
-                                textAlign: "center",
-                                color: "var(--color-ink-muted)",
-                            }}
-                        >
-                            <FolderOpen
-                                size={48}
+                            <Search
+                                size={16}
                                 style={{
-                                    margin: "0 auto 12px",
-                                    opacity: 0.2,
+                                    position: "absolute",
+                                    left: "12px",
+                                    top: "50%",
+                                    transform: "translateY(-50%)",
+                                    color: "var(--color-ink-soft)",
                                 }}
                             />
 
-                            <p
+                            <input
+                                type="text"
+                                className="input"
+                                placeholder="Search courses..."
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                style={{ paddingLeft: "36px" }}
+                            />
+                        </div>
+                    </div>
+
+                    <div
+                        style={{
+                            display: "grid",
+                            gridTemplateColumns:
+                                "repeat(auto-fill, minmax(280px, 1fr))",
+                            gap: "20px",
+                        }}
+                    >
+                        {loading || semestersLoading ? (
+                            <>
+                                <div
+                                    className="skeleton"
+                                    style={{ height: "200px" }}
+                                />
+                                <div
+                                    className="skeleton"
+                                    style={{ height: "200px" }}
+                                />
+                                <div
+                                    className="skeleton"
+                                    style={{ height: "200px" }}
+                                />
+                            </>
+                        ) : error || semesterError ? (
+                            <div
                                 style={{
-                                    fontSize: "14px",
-                                    fontWeight: "500",
+                                    gridColumn: "1 / -1",
+                                    padding: "16px",
+                                    backgroundColor: "#fee2e2",
+                                    color: "#dc2626",
+                                    borderRadius: "var(--radius-md)",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "8px",
                                 }}
                             >
-                                {search
-                                    ? "Không tìm thấy lớp học phù hợp."
-                                    : "Không tìm thấy lớp học nào trong học kỳ này."}
-                            </p>
-                        </div>
-                    ) : (
-                        filteredClasses.map((course) => (
+                                <AlertCircle size={20} />
+                                <span>{semesterError || error}</span>
+                            </div>
+                        ) : filteredClasses.length === 0 ? (
                             <div
                                 className="card"
-                                key={course.id || course._id}
                                 style={{
-                                    padding: "20px",
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    gap: "16px",
+                                    gridColumn: "1 / -1",
+                                    padding: "48px 12px",
+                                    textAlign: "center",
+                                    color: "var(--color-ink-muted)",
                                 }}
                             >
-                                <div
+                                <FolderOpen
+                                    size={48}
                                     style={{
+                                        margin: "0 auto 12px",
+                                        opacity: 0.2,
+                                    }}
+                                />
+
+                                <p
+                                    style={{
+                                        fontSize: "14px",
+                                        fontWeight: "500",
+                                    }}
+                                >
+                                    {search
+                                        ? "Không tìm thấy lớp học phù hợp."
+                                        : "Không tìm thấy lớp học nào trong học kỳ này."}
+                                </p>
+                            </div>
+                        ) : (
+                            filteredClasses.map((course) => (
+                                <div
+                                    className="card"
+                                    key={course.id || course._id}
+                                    style={{
+                                        padding: "20px",
                                         display: "flex",
-                                        justifyContent: "space-between",
-                                        alignItems: "center",
+                                        flexDirection: "column",
+                                        gap: "16px",
                                     }}
                                 >
                                     <div
                                         style={{
-                                            padding: "4px 10px",
-                                            borderRadius: "var(--radius-sm)",
-                                            backgroundColor: "var(--color-primary-bg)",
-                                            color: "var(--color-primary-dark)",
-                                            fontWeight: "bold",
-                                            fontSize: "12px",
+                                            display: "flex",
+                                            justifyContent: "space-between",
+                                            alignItems: "center",
                                         }}
                                     >
-                                        {course.subject_code || "CODE"}
+                                        <div
+                                            style={{
+                                                padding: "4px 10px",
+                                                borderRadius: "var(--radius-sm)",
+                                                backgroundColor: "var(--color-primary-bg)",
+                                                color: "var(--color-primary-dark)",
+                                                fontWeight: "bold",
+                                                fontSize: "12px",
+                                            }}
+                                        >
+                                            {course.subject_code || "CODE"}
+                                        </div>
                                     </div>
-                                </div>
 
-                                <div>
-                                    <h3
-                                        style={{
-                                            fontSize: "16px",
-                                            fontWeight: "bold",
-                                            margin: "4px 0",
-                                            color: "var(--color-ink)",
-                                            lineHeight: "1.4",
-                                        }}
-                                    >
-                                        {course.subject_name || course.name}
-                                    </h3>
+                                    <div>
+                                        <h3
+                                            style={{
+                                                fontSize: "16px",
+                                                fontWeight: "bold",
+                                                margin: "4px 0",
+                                                color: "var(--color-ink)",
+                                                lineHeight: "1.4",
+                                            }}
+                                        >
+                                            {course.subject_name || course.name}
+                                        </h3>
 
-                                    <p
-                                        style={{
-                                            fontSize: "12px",
-                                            color: "var(--color-ink-muted)",
-                                        }}
-                                    >
-                                        Class:{" "}
-                                        <strong>
-                                            {course.class_code ||
-                                                course.class_name ||
-                                                "N/A"}
-                                        </strong>
-                                        {" | "}
-                                        GV:{" "}
-                                        <strong>
-                                            {course.lecturer_name || "Chưa cập nhật"}
-                                        </strong>
-                                    </p>
-                                </div>
+                                        <p
+                                            style={{
+                                                fontSize: "12px",
+                                                color: "var(--color-ink-muted)",
+                                            }}
+                                        >
+                                            Class:{" "}
+                                            <strong>
+                                                {course.class_code ||
+                                                    course.class_name ||
+                                                    "N/A"}
+                                            </strong>
+                                            {" | "}
+                                            GV:{" "}
+                                            <strong>
+                                                {course.lecturer_name || "Chưa cập nhật"}
+                                            </strong>
+                                        </p>
+                                    </div>
 
-                                <div
-                                    onClick={() =>
-                                        navigate(
-                                            `/student/classes/${course.id || course._id}`
-                                        )
-                                    }
-                                    style={{
-                                        marginTop: "auto",
-                                        paddingTop: "16px",
-                                        borderTop: "1px solid var(--color-border)",
-                                        display: "flex",
-                                        alignItems: "center",
-                                        justifyContent: "space-between",
-                                        fontSize: "13px",
-                                        fontWeight: "600",
-                                        color: "var(--color-ink-muted)",
-                                        cursor: "pointer",
-                                    }}
-                                >
-                                    <span
+                                    <div
+                                        onClick={() =>
+                                            navigate(
+                                                `/student/classes/${course.id || course._id}`
+                                            )
+                                        }
                                         style={{
+                                            marginTop: "auto",
+                                            paddingTop: "16px",
+                                            borderTop: "1px solid var(--color-border)",
                                             display: "flex",
                                             alignItems: "center",
-                                            gap: "6px",
+                                            justifyContent: "space-between",
+                                            fontSize: "13px",
+                                            fontWeight: "600",
+                                            color: "var(--color-ink-muted)",
+                                            cursor: "pointer",
                                         }}
                                     >
-                                        <FolderOpen size={16} />
-                                        Vào lớp học
-                                    </span>
+                                        <span
+                                            style={{
+                                                display: "flex",
+                                                alignItems: "center",
+                                                gap: "6px",
+                                            }}
+                                        >
+                                            <FolderOpen size={16} />
+                                            Vào lớp học
+                                        </span>
 
-                                    <ArrowRight size={16} />
+                                        <ArrowRight size={16} />
+                                    </div>
                                 </div>
-                            </div>
-                        ))
-                    )}
+                            ))
+                        )}
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-);
+    );
 }

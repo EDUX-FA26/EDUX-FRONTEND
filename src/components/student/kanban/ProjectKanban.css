@@ -1199,3 +1199,24 @@
 .pk-task-modal__back:hover {
     color: #d95613;
 }
+
+/* ==========================================
+   KANBAN BOARD — DARK MODE TITLE
+========================================== */
+
+:is(
+    html.dark,
+    body.dark,
+    [data-theme="dark"]
+) .pk-header h2 {
+    color: #f5eee8;
+}
+
+/* Mô tả bên dưới tiêu đề */
+:is(
+    html.dark,
+    body.dark,
+    [data-theme="dark"]
+) .pk-header p {
+    color: #b9aaa0;
+}
