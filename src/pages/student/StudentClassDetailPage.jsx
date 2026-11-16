@@ -11,12 +11,19 @@ import {
     FileText,
     Eye,
     Layers,
-    Briefcase
+    Briefcase,
+    Download,
+    Image as ImageIcon,
+    Archive,
+    FileCode,
+    File
 } from 'lucide-react';
 import ProjectWorkspace from
     '../../components/student/ProjectWorkspace';
 import AssignmentSubwindowModal from '../../components/student/AssignmentSubwindowModal';
 import AssignmentDescriptionModal from '../../components/common/AssignmentDescriptionModal';
+import MaterialPreviewModal, { formatBytes } from '../../components/modals/MaterialPreviewModal';
+import ClassMaterialService from '../../services/classMaterial.service';
 import { createPortal } from 'react-dom';
 
 export default function StudentClassDetailPage() {
@@ -40,6 +47,76 @@ export default function StudentClassDetailPage() {
     // States cho Slot Assignment và Description Modal
     const [classAssignments, setClassAssignments] = useState([]);
     const [selectedDescAssignment, setSelectedDescAssignment] = useState(null);
+
+    // States cho Slot Materials Preview
+    const [selectedPreviewMaterial, setSelectedPreviewMaterial] = useState(null);
+
+    useEffect(() => {
+        if (!selectedSlotId) return;
+        let isCurrent = true;
+        ClassMaterialService.getSlotMaterials(selectedSlotId, classId)
+            .then(res => {
+                if (!isCurrent) return;
+                const list = res?.data || res || [];
+                setSlots(prev => prev.map(s => ((s.id || s._id) === selectedSlotId ? { ...s, materials: list } : s)));
+            })
+            .catch(err => {
+                console.warn('Could not refresh slot materials:', err);
+            });
+        return () => { isCurrent = false; };
+    }, [selectedSlotId, classId]);
+
+    const getMaterialFileIcon = (fileName = '', fileType = '') => {
+        const ext = fileName.split('.').pop()?.toLowerCase() || '';
+        const mime = (fileType || '').toLowerCase();
+        if (mime.includes('pdf') || ext === 'pdf') {
+            return <FileText size={16} className="text-rose-500" />;
+        }
+        if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext) || mime.startsWith('image/')) {
+            return <ImageIcon size={16} className="text-purple-500" />;
+        }
+        if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext)) {
+            return <Archive size={16} className="text-amber-500" />;
+        }
+        if (['doc', 'docx'].includes(ext)) {
+            return <FileText size={16} className="text-blue-500" />;
+        }
+        if (['ppt', 'pptx'].includes(ext)) {
+            return <FileText size={16} className="text-orange-500" />;
+        }
+        if (['xls', 'xlsx'].includes(ext)) {
+            return <FileText size={16} className="text-emerald-500" />;
+        }
+        if (['js', 'ts', 'jsx', 'tsx', 'py', 'java', 'html', 'css', 'json', 'txt', 'md'].includes(ext) || mime.startsWith('text/')) {
+            return <FileCode size={16} className="text-emerald-500" />;
+        }
+        return <File size={16} className="text-slate-500" />;
+    };
+
+    const handleDirectDownload = async (mat, e) => {
+        if (e) e.stopPropagation();
+        try {
+            let url = mat.download_url || mat.url;
+            if (!url && mat.id) {
+                const res = await ClassMaterialService.downloadMaterial(mat.id);
+                const data = res.data || res;
+                url = data.download_url || data.url;
+            }
+            if (url) {
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = mat.file_name || 'download';
+                link.target = '_blank';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                return;
+            }
+        } catch (err) {
+            console.warn('Direct download fetch failed, opening preview modal:', err);
+        }
+        setSelectedPreviewMaterial(mat);
+    };
 
     // Hàm gọi API lấy danh sách học viên
     const handleOpenMembersModal = async () => {
@@ -441,6 +518,91 @@ export default function StudentClassDetailPage() {
                                         </div>
                                     );
                                 })()}
+
+                                {/* Danh sách tài liệu học tập của Slot này */}
+                                {(() => {
+                                    const currentSlotMaterials = Array.isArray(selectedSlot?.materials) ? selectedSlot.materials : [];
+                                    const slotNum = selectedSlot.slot_number || selectedSlot.slotNumber || slots.findIndex(s => s === selectedSlot) + 1;
+                                    return (
+                                        <div style={{ marginTop: '20px' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                                <h5 style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--color-ink)', display: 'flex', alignItems: 'center', gap: '6px', margin: 0 }}>
+                                                    <Folder size={14} className="text-orange-500" />
+                                                    <span>Tài liệu học tập của buổi học (Slot {slotNum})</span>
+                                                </h5>
+                                                <span style={{ fontSize: '11px', color: 'var(--color-ink-muted)' }}>
+                                                    {currentSlotMaterials.length} tài liệu
+                                                </span>
+                                            </div>
+
+                                            {currentSlotMaterials.length === 0 ? (
+                                                <div style={{ padding: '12px', borderRadius: '8px', border: '1px dashed var(--color-border)', backgroundColor: 'var(--color-surface)', fontSize: '11px', color: 'var(--color-ink-muted)', textAlign: 'center' }}>
+                                                    Chưa có tài liệu học tập nào được đính kèm cho Slot này.
+                                                </div>
+                                            ) : (
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                    {currentSlotMaterials.map(mat => (
+                                                        <div
+                                                            key={mat.id}
+                                                            onClick={() => setSelectedPreviewMaterial(mat)}
+                                                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--color-border)', backgroundColor: '#fff', gap: '10px' }}
+                                                            className="cursor-pointer hover:border-orange-300 hover:shadow-2xs transition group"
+                                                        >
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0, flex: 1 }}>
+                                                                <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: '#f8fafc', border: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                                                    {getMaterialFileIcon(mat.file_name, mat.file_type)}
+                                                                </div>
+                                                                <div style={{ minWidth: 0, flex: 1 }}>
+                                                                    <div style={{ fontWeight: '600', fontSize: '12px', color: 'var(--color-ink)' }} className="group-hover:text-orange-600 transition truncate" title={mat.title || mat.file_name}>
+                                                                        {mat.title || mat.file_name}
+                                                                    </div>
+                                                                    <div style={{ fontSize: '10px', color: 'var(--color-ink-muted)', display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
+                                                                        <span className="truncate">{mat.file_name}</span>
+                                                                        <span>•</span>
+                                                                        <span className="shrink-0">{formatBytes(mat.file_size)}</span>
+                                                                        {mat.created_at && (
+                                                                            <>
+                                                                                <span>•</span>
+                                                                                <span className="shrink-0">{new Date(mat.created_at).toLocaleDateString('vi-VN')}</span>
+                                                                            </>
+                                                                        )}
+                                                                    </div>
+                                                                    {mat.description && (
+                                                                        <div className="text-[10px] text-slate-400 truncate mt-0.5">
+                                                                            {mat.description}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        setSelectedPreviewMaterial(mat);
+                                                                    }}
+                                                                    className="p-1.5 text-slate-500 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition cursor-pointer"
+                                                                    title="Xem trực tiếp tài liệu"
+                                                                >
+                                                                    <Eye size={14} />
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={(e) => handleDirectDownload(mat, e)}
+                                                                    className="p-1.5 text-slate-500 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition cursor-pointer"
+                                                                    title="Tải xuống tài liệu"
+                                                                >
+                                                                    <Download size={14} />
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })()}
                             </>
                         ) : (
                             <div style={{ marginTop: '32px', fontSize: '12px', color: 'var(--color-ink-muted)', textAlign: 'center' }}>
@@ -619,6 +781,15 @@ export default function StudentClassDetailPage() {
                     }
                 }}
             />
+
+            {/* Modal Xem trước tài liệu học tập */}
+            {selectedPreviewMaterial && (
+                <MaterialPreviewModal
+                    isOpen={Boolean(selectedPreviewMaterial)}
+                    onClose={() => setSelectedPreviewMaterial(null)}
+                    material={selectedPreviewMaterial}
+                />
+            )}
         </div>
     );
 }

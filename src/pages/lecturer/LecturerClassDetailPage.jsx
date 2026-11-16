@@ -12,7 +12,11 @@ import {
     Bot,
     Briefcase,
     Eye,
-    Layers
+    Layers,
+    Image as ImageIcon,
+    Archive,
+    FileCode,
+    File
 } from 'lucide-react';
 import { PlusCircle, FileText, Upload, Trash2 } from 'lucide-react';
 import AssignmentSubwindowModal from '../../components/student/AssignmentSubwindowModal';
@@ -21,6 +25,9 @@ import AssignmentDescriptionModal from '../../components/common/AssignmentDescri
 import ConfirmDeleteAssignmentModal from '../../components/common/ConfirmDeleteAssignmentModal';
 import ClassMembersModal from "../../components/lecturer/ClassMembersModal";
 import { ClassAiAdvisorModal } from '../../components/lecturer/ClassAiAdvisorModal';
+import UploadSlotMaterialModal, { formatBytes } from '../../components/modals/UploadSlotMaterialModal';
+import MaterialPreviewModal from '../../components/modals/MaterialPreviewModal';
+import ClassMaterialService from '../../services/classMaterial.service';
 export default function LecturerClassDetailPage() {
     const { classId } = useParams();
     const navigate = useNavigate();
@@ -46,6 +53,104 @@ export default function LecturerClassDetailPage() {
     const [isDeletingAssignment, setIsDeletingAssignment] = useState(false);
     const [isSlotCreating, setIsSlotCreating] = useState(false);
     const slotSubmitLockRef = useRef(false);
+
+    // States cho Slot Materials & Preview
+    const [isUploadMaterialModalOpen, setIsUploadMaterialModalOpen] = useState(false);
+    const [selectedPreviewMaterial, setSelectedPreviewMaterial] = useState(null);
+    const [materialToDelete, setMaterialToDelete] = useState(null);
+    const [isDeletingMaterial, setIsDeletingMaterial] = useState(false);
+
+    const refreshSlotMaterials = useCallback(async (targetSlotId) => {
+        if (!targetSlotId) return;
+        try {
+            const res = await ClassMaterialService.getSlotMaterials(targetSlotId, classId);
+            const list = res?.data || res || [];
+            setSlots(prev => prev.map(s => ((s.id || s._id) === targetSlotId ? { ...s, materials: list } : s)));
+        } catch (err) {
+            console.warn('Failed to refresh slot materials:', err);
+        }
+    }, [classId]);
+
+    useEffect(() => {
+        if (selectedSlotId) {
+            refreshSlotMaterials(selectedSlotId);
+        }
+    }, [selectedSlotId, refreshSlotMaterials]);
+
+    const handleDeleteMaterial = async () => {
+        if (!materialToDelete || isDeletingMaterial) return;
+        try {
+            setIsDeletingMaterial(true);
+            await ClassMaterialService.deleteSlotMaterial(materialToDelete.id);
+            setSlots(prev => prev.map(s => {
+                if (s.materials && Array.isArray(s.materials)) {
+                    return {
+                        ...s,
+                        materials: s.materials.filter(m => m.id !== materialToDelete.id)
+                    };
+                }
+                return s;
+            }));
+            setMaterialToDelete(null);
+        } catch (err) {
+            console.error('Failed to delete material:', err);
+            alert('Không thể xóa tài liệu: ' + (err.response?.data?.message || err.message));
+        } finally {
+            setIsDeletingMaterial(false);
+        }
+    };
+
+    const getMaterialFileIcon = (fileName = '', fileType = '') => {
+        const ext = fileName.split('.').pop()?.toLowerCase() || '';
+        const mime = (fileType || '').toLowerCase();
+        if (mime.includes('pdf') || ext === 'pdf') {
+            return <FileText size={16} className="text-rose-500" />;
+        }
+        if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext) || mime.startsWith('image/')) {
+            return <ImageIcon size={16} className="text-purple-500" />;
+        }
+        if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext)) {
+            return <Archive size={16} className="text-amber-500" />;
+        }
+        if (['doc', 'docx'].includes(ext)) {
+            return <FileText size={16} className="text-blue-500" />;
+        }
+        if (['ppt', 'pptx'].includes(ext)) {
+            return <FileText size={16} className="text-orange-500" />;
+        }
+        if (['xls', 'xlsx'].includes(ext)) {
+            return <FileText size={16} className="text-emerald-500" />;
+        }
+        if (['js', 'ts', 'jsx', 'tsx', 'py', 'java', 'html', 'css', 'json', 'txt', 'md'].includes(ext) || mime.startsWith('text/')) {
+            return <FileCode size={16} className="text-emerald-500" />;
+        }
+        return <File size={16} className="text-slate-500" />;
+    };
+
+    const handleDirectDownload = async (mat, e) => {
+        if (e) e.stopPropagation();
+        try {
+            let url = mat.download_url || mat.url;
+            if (!url && mat.id) {
+                const res = await ClassMaterialService.downloadMaterial(mat.id);
+                const data = res.data || res;
+                url = data.download_url || data.url;
+            }
+            if (url) {
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = mat.file_name || 'download';
+                link.target = '_blank';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                return;
+            }
+        } catch (err) {
+            console.warn('Direct download fetch failed, opening preview modal:', err);
+        }
+        setSelectedPreviewMaterial(mat);
+    };
 
     const handleCreateSlotAssignment = async (formData) => {
         if (slotSubmitLockRef.current || isSlotCreating) return;
@@ -596,22 +701,122 @@ export default function LecturerClassDetailPage() {
                                     );
                                 })()}
 
-                                <div style={{ display: 'flex', gap: '8px', marginTop: '24px', justifyContent: 'center' }}>
-                                    <button className="btn btn-primary" style={{ padding: '0 12px', height: '32px', fontSize: '12px', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', gap: '6px' }} onClick={() => alert('Create Test')}>
-                                        <PlusCircle size={14} /> Create Test
-                                    </button>
+                                {(() => {
+                                    const currentSlotMaterials = Array.isArray(selectedSlot?.materials) ? selectedSlot.materials : [];
+                                    const slotNum = selectedSlot.slot_number || slots.findIndex(s => s === selectedSlot) + 1;
+                                    return (
+                                        <div style={{ marginTop: '20px' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                                <h5 style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--color-ink)', display: 'flex', alignItems: 'center', gap: '6px', margin: 0 }}>
+                                                    <Folder size={14} className="text-orange-500" />
+                                                    <span>Tài liệu học tập của buổi học (Slot {slotNum})</span>
+                                                </h5>
+                                                <span style={{ fontSize: '11px', color: 'var(--color-ink-muted)' }}>
+                                                    {currentSlotMaterials.length} tài liệu
+                                                </span>
+                                            </div>
+
+                                            {currentSlotMaterials.length === 0 ? (
+                                                <div style={{ padding: '12px', borderRadius: '8px', border: '1px dashed var(--color-border)', backgroundColor: 'var(--color-surface)', fontSize: '11px', color: 'var(--color-ink-muted)', textAlign: 'center' }}>
+                                                    Chưa có tài liệu nào được tải lên cho buổi học này.
+                                                </div>
+                                            ) : (
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                    {currentSlotMaterials.map(mat => (
+                                                        <div
+                                                            key={mat.id}
+                                                            onClick={() => setSelectedPreviewMaterial(mat)}
+                                                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--color-border)', backgroundColor: '#fff', gap: '10px' }}
+                                                            className="cursor-pointer hover:border-orange-300 hover:shadow-2xs transition group"
+                                                        >
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0, flex: 1 }}>
+                                                                <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: '#f8fafc', border: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                                                    {getMaterialFileIcon(mat.file_name, mat.file_type)}
+                                                                </div>
+                                                                <div style={{ minWidth: 0, flex: 1 }}>
+                                                                    <div style={{ fontWeight: '600', fontSize: '12px', color: 'var(--color-ink)' }} className="group-hover:text-orange-600 transition truncate" title={mat.title || mat.file_name}>
+                                                                        {mat.title || mat.file_name}
+                                                                    </div>
+                                                                    <div style={{ fontSize: '10px', color: 'var(--color-ink-muted)', display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
+                                                                        <span className="truncate">{mat.file_name}</span>
+                                                                        <span>•</span>
+                                                                        <span className="shrink-0">{formatBytes(mat.file_size)}</span>
+                                                                        {mat.created_at && (
+                                                                            <>
+                                                                                <span>•</span>
+                                                                                <span className="shrink-0">{new Date(mat.created_at).toLocaleDateString('vi-VN')}</span>
+                                                                            </>
+                                                                        )}
+                                                                    </div>
+                                                                    {mat.description && (
+                                                                        <div className="text-[10px] text-slate-400 truncate mt-0.5">
+                                                                            {mat.description}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        setSelectedPreviewMaterial(mat);
+                                                                    }}
+                                                                    className="p-1.5 text-slate-500 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition cursor-pointer"
+                                                                    title="Xem trực tiếp tài liệu"
+                                                                >
+                                                                    <Eye size={14} />
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={(e) => handleDirectDownload(mat, e)}
+                                                                    className="p-1.5 text-slate-500 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition cursor-pointer"
+                                                                    title="Tải xuống tài liệu"
+                                                                >
+                                                                    <Download size={14} />
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        setMaterialToDelete(mat);
+                                                                    }}
+                                                                    className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition cursor-pointer"
+                                                                    title="Xóa tài liệu này"
+                                                                >
+                                                                    <Trash2 size={13} />
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })()}
+
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginTop: '24px' }}>
                                     <button
-                                        className="btn btn-secondary"
-                                        style={{ padding: '0 12px', height: '32px', fontSize: '12px', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', gap: '6px' }}
+                                        type="button"
                                         onClick={() => {
                                             setSlotCreateTargetId(selectedSlot.id || selectedSlot._id);
                                             setIsSlotCreateModalOpen(true);
                                         }}
+                                        className="bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-xl px-4 py-2.5 text-xs flex items-center gap-2 shadow-sm transition cursor-pointer"
                                     >
-                                        <FileText size={14} /> + Thêm bài tập
+                                        <PlusCircle size={15} />
+                                        <span>+ Create Assignment</span>
                                     </button>
-                                    <button className="btn btn-secondary" style={{ padding: '0 12px', height: '32px', fontSize: '12px', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', gap: '6px' }} onClick={() => alert('Upload Material')}>
-                                        <Upload size={14} /> Upload Material
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setIsUploadMaterialModalOpen(true);
+                                        }}
+                                        className="bg-white border border-slate-200 hover:border-orange-300 hover:bg-orange-50/50 text-slate-700 font-semibold rounded-xl px-4 py-2.5 text-xs flex items-center gap-2 shadow-2xs transition cursor-pointer"
+                                    >
+                                        <Upload size={15} className="text-orange-500" />
+                                        <span>Upload Material</span>
                                     </button>
                                 </div>
                             </>
@@ -750,6 +955,77 @@ export default function LecturerClassDetailPage() {
                     }
                 }}
             />
+
+            {/* Modal Upload Slot Material */}
+            {isUploadMaterialModalOpen && (
+                <UploadSlotMaterialModal
+                    isOpen={isUploadMaterialModalOpen}
+                    onClose={() => setIsUploadMaterialModalOpen(false)}
+                    slotId={selectedSlotId}
+                    slotNumber={selectedSlot?.slot_number || slots.findIndex(s => s === selectedSlot) + 1}
+                    slotTitle={selectedSlot?.title || ''}
+                    classId={classId}
+                    onSuccess={() => {
+                        refreshSlotMaterials(selectedSlotId);
+                    }}
+                />
+            )}
+
+            {/* Modal Xem trước tài liệu học tập */}
+            {selectedPreviewMaterial && (
+                <MaterialPreviewModal
+                    isOpen={Boolean(selectedPreviewMaterial)}
+                    onClose={() => setSelectedPreviewMaterial(null)}
+                    material={selectedPreviewMaterial}
+                />
+            )}
+
+            {/* Modal Xác nhận Xóa Tài liệu */}
+            {materialToDelete && createPortal(
+                <div
+                    className="fixed inset-0 z-[9999] bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-150"
+                    onClick={() => !isDeletingMaterial && setMaterialToDelete(null)}
+                >
+                    <div
+                        className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-200 p-6 flex flex-col gap-4"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center shrink-0">
+                                <Trash2 size={20} />
+                            </div>
+                            <div>
+                                <h3 className="text-sm font-bold text-slate-800">Xóa tài liệu học tập</h3>
+                                <p className="text-xs text-slate-400 mt-0.5">Hành động này không thể hoàn tác</p>
+                            </div>
+                        </div>
+
+                        <p className="text-xs text-slate-600 leading-relaxed">
+                            Bạn có chắc chắn muốn xóa tài liệu <strong>"{materialToDelete.title || materialToDelete.file_name}"</strong> khỏi buổi học này?
+                        </p>
+
+                        <div className="flex items-center justify-end gap-3 pt-2">
+                            <button
+                                type="button"
+                                disabled={isDeletingMaterial}
+                                onClick={() => setMaterialToDelete(null)}
+                                className="px-4 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+                            >
+                                Hủy bỏ
+                            </button>
+                            <button
+                                type="button"
+                                disabled={isDeletingMaterial}
+                                onClick={handleDeleteMaterial}
+                                className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-semibold transition cursor-pointer flex items-center gap-2 shadow-sm"
+                            >
+                                {isDeletingMaterial ? 'Đang xóa...' : 'Xóa tài liệu'}
+                            </button>
+                        </div>
+                    </div>
+                </div>,
+                document.body
+            )}
         </div>
     );
 }
