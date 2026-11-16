@@ -21,6 +21,10 @@ const ForumService = {
     const response = await api.post('/forum/posts', data, { schoolScoped: true });
     return response.data;
   },
+  async updatePost(id, data) {
+    const response = await api.patch(`/forum/posts/${id}`, data, { schoolScoped: true });
+    return response.data;
+  },
   async deletePost(id) {
     const response = await api.delete(`/forum/posts/${id}`, { schoolScoped: true });
     return response.data;
