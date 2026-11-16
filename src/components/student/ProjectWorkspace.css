@@ -59,3 +59,232 @@
 .pw-candidates__empty{display:flex;align-items:center;justify-content:center;gap:7px;padding:26px 10px;color:#938478;font-size:12px}
 .pw-invite-tip{margin-top:11px!important;margin-bottom:0!important;font-size:11px!important;color:#998b7f!important}
 @media(max-width:720px){.pw-invite-search{flex-wrap:wrap}.pw-invite-search .pw-btn{width:100%}.pw-candidate{flex-wrap:wrap}.pw-candidate__body{min-width:145px}}
+
+
+/* ==========================================
+   PROJECT WORKSPACE — DARK MODE FIX
+   Giữ chữ dễ đọc trên các panel nền sáng
+========================================== */
+
+/* Các panel nền sáng */
+.pw-root .pw-panel,
+.pw-root .pw-member-list,
+.pw-root .pw-member,
+.pw-root .pw-invite-form,
+.pw-root .pw-candidates,
+.pw-root .pw-candidate {
+    color: #302722;
+}
+
+/* Tiêu đề */
+.pw-root .pw-panel h2,
+.pw-root .pw-panel h3,
+.pw-root .pw-member strong,
+.pw-root .pw-candidate strong,
+.pw-root .pw-invite-form h3 {
+    color: #302722;
+}
+
+/* Mô tả và thông tin phụ */
+.pw-root .pw-panel p,
+.pw-root .pw-member span,
+.pw-root .pw-candidate__body span,
+.pw-root .pw-invite-tip {
+    color: #82736a;
+}
+
+/* Danh sách thành viên */
+.pw-root .pw-member {
+    background: #fff;
+}
+
+.pw-root .pw-member strong {
+    color: #302722;
+}
+
+/* Khu vực mời thành viên */
+.pw-root .pw-invite-form {
+    background: #fffaf7;
+}
+
+.pw-root .pw-candidate {
+    background: #fff;
+}
+
+/* Ô nhập liệu */
+.pw-root .pw-input,
+.pw-root input[type="search"],
+.pw-root textarea {
+    background: #fff;
+    color: #302722;
+    border-color: #e7ddd5;
+    -webkit-text-fill-color: #302722;
+}
+
+.pw-root .pw-input::placeholder,
+.pw-root input::placeholder,
+.pw-root textarea::placeholder {
+    color: #9b8c82;
+    opacity: 1;
+}
+
+/* Khi focus */
+.pw-root .pw-input:focus {
+    border-color: #f36a20;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(243, 106, 32, 0.12);
+}
+
+/* Nút outline trên nền sáng */
+.pw-root .pw-btn--outline {
+    background: #fff;
+    color: #65564c;
+    border-color: #e7ddd5;
+}
+
+/* Nút chính */
+.pw-root .pw-btn--primary {
+    background: #f36a20;
+    color: #fff;
+}
+
+/* Badge trạng thái */
+.pw-root .pw-role {
+    color: #66574d;
+}
+
+.pw-root .pw-role--owner {
+    color: #a95a15;
+}
+
+
+/* ==========================================
+   EDUX PROJECTS — DARK MODE TEXT FIX
+   Student + Lecturer
+========================================== */
+
+/* Áp dụng khi theme tối đang hoạt động */
+:is(
+    html.dark,
+    body.dark,
+    html[data-theme="dark"],
+    body[data-theme="dark"],
+    [data-theme="dark"]
+) .pw-root {
+
+    /* Màu chữ chính */
+    --pw-dark-text: #f5eee8;
+
+    /* Màu chữ phụ */
+    --pw-dark-muted: #b9aaa0;
+}
+
+/* ==========================================
+   PROJECT TITLES
+========================================== */
+
+:is(
+    html.dark,
+    body.dark,
+    [data-theme="dark"]
+) .pw-root .pw-section-heading h2,
+
+:is(
+    html.dark,
+    body.dark,
+    [data-theme="dark"]
+) .pw-root .pw-section-heading h3,
+
+:is(
+    html.dark,
+    body.dark,
+    [data-theme="dark"]
+) .pw-root .pw-project-card h3 {
+    color: #f5eee8;
+}
+
+/* ==========================================
+   LECTURER STATISTICS
+========================================== */
+
+:is(
+    html.dark,
+    body.dark,
+    [data-theme="dark"]
+) .pw-root .pw-stat strong {
+    color: #ffffff;
+}
+
+:is(
+    html.dark,
+    body.dark,
+    [data-theme="dark"]
+) .pw-root .pw-stat > svg {
+    color: #e8dbd0;
+}
+
+:is(
+    html.dark,
+    body.dark,
+    [data-theme="dark"]
+) .pw-root .pw-stat span {
+    color: #b9aaa0;
+}
+
+/* ==========================================
+   HEADINGS INSIDE DARK PANELS
+========================================== */
+
+:is(
+    html.dark,
+    body.dark,
+    [data-theme="dark"]
+) .pw-root .pw-detail > .pw-section-heading h2,
+
+:is(
+    html.dark,
+    body.dark,
+    [data-theme="dark"]
+) .pw-root .pw-detail > .pw-section-heading h3 {
+    color: #f5eee8;
+}
+
+/* ==========================================
+   LIGHT MEMBER CARDS
+   Giữ chữ tối vì card vẫn nền trắng
+========================================== */
+
+.pw-root .pw-member,
+.pw-root .pw-candidate {
+    color: #302722;
+}
+
+.pw-root .pw-member strong,
+.pw-root .pw-candidate strong {
+    color: #302722;
+}
+
+.pw-root .pw-member > div > span,
+.pw-root .pw-candidate__body > span {
+    color: #82736a;
+}
+
+/* ==========================================
+   PROJECT STATISTICS SPACING
+========================================== */
+
+/* Khoảng cách giữa thống kê và Progress */
+.pw-detail .pw-stats {
+    margin-bottom: 24px;
+}
+
+/* Không để các card bị dính nhau */
+.pw-detail .pw-stat {
+    min-width: 0;
+}
+
+/* Progress có khoảng cách riêng */
+.pw-detail .pk-progress {
+    margin-top: 0;
+    margin-bottom: 28px;
+}

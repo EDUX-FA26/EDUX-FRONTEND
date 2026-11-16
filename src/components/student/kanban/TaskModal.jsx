@@ -105,6 +105,7 @@ export default function TaskModal({
     members = [],
     isOwner = false,
     currentUserId = null,
+    readOnly = false,
     onClose,
     onUpdated,
     onDeleted,
@@ -136,9 +137,9 @@ export default function TaskModal({
         Boolean(currentUserId) &&
         task?.assignee_id === currentUserId;
 
-    const canEdit = isOwner || isAssignee;
-    const canAssign = isOwner;
-    const canDelete = isOwner;
+    const canEdit = !readOnly && (isOwner || isAssignee);
+    const canAssign = !readOnly && isOwner;
+    const canDelete = !readOnly && isOwner;
 
     const isSubtask = Boolean(task?.parent_task_id);
 
@@ -215,6 +216,7 @@ export default function TaskModal({
     // ======================================
 
     const saveTask = async event => {
+        if (readOnly) return;
         event.preventDefault();
 
         if (
@@ -288,6 +290,7 @@ export default function TaskModal({
     // ======================================
 
     const deleteTask = async () => {
+        if (readOnly) return;
         if (!canDelete || busy) return;
 
         const confirmed = window.confirm(
@@ -318,6 +321,7 @@ export default function TaskModal({
 
 
     const createSubtask = async event => {
+        if (readOnly) return;
         event.preventDefault();
 
         if (
@@ -444,9 +448,11 @@ export default function TaskModal({
                     <div className="pk-task-modal__readonly">
                         <AlertCircle size={16} />
 
-                        Bạn chỉ có quyền xem công việc này.
-                        Chỉ trưởng nhóm hoặc người được giao
-                        mới có thể chỉnh sửa.
+                        <span>
+                            {readOnly
+                                ? "Chế độ giảng viên: Bạn chỉ có quyền xem thông tin và tiến độ công việc."
+                                : "Chỉ trưởng nhóm hoặc người được giao mới có thể chỉnh sửa công việc này."}
+                        </span>
                     </div>
                 )}
 
@@ -669,17 +675,19 @@ export default function TaskModal({
                                     </p>
                                 </div>
 
-                                <button
-                                    type="button"
-                                    className="pk-btn pk-btn--outline"
-                                    onClick={() =>
-                                        setShowSubtaskForm(value => !value)
-                                    }
-                                    disabled={busy}
-                                >
-                                    <Plus size={15} />
-                                    Thêm Subtask
-                                </button>
+                                {!readOnly && (
+                                    <button
+                                        type="button"
+                                        className="pk-btn pk-btn--outline"
+                                        onClick={() =>
+                                            setShowSubtaskForm(value => !value)
+                                        }
+                                        disabled={busy}
+                                    >
+                                        <Plus size={15} />
+                                        Thêm Subtask
+                                    </button>
+                                )}
                             </div>
 
                             {/* PROGRESS */}
@@ -707,7 +715,7 @@ export default function TaskModal({
 
                             {/* CREATE SUBTASK */}
 
-                            {showSubtaskForm && (
+                            {!readOnly && showSubtaskForm && (
                                 <div className="pk-subtasks__create">
                                     <input
                                         type="text"
