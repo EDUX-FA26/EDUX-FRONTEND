@@ -15,6 +15,7 @@ import {
     FolderOpen,
     ArrowRight,
     AlertCircle,
+    ChevronDown,
 } from "lucide-react";
 
 const SEMESTER_PAGE_LIMIT = 100;
@@ -77,6 +78,39 @@ export default function LecturerClassesPage() {
     const [search, setSearch] = useState("");
 
     const activeSemester = searchParams.get("semester");
+
+    // State cho 3 Accordion droplist FALL, SUMMER, SPRING
+    const [openGroups, setOpenGroups] = useState({});
+
+    const toggleGroup = useCallback((groupName) => {
+        setOpenGroups((prev) => ({
+            ...prev,
+            [groupName]: !prev[groupName],
+        }));
+    }, []);
+
+    // Tự động mở sẵn nhóm mùa đang chứa học kỳ hiện tại (Current) hoặc học kỳ được chọn trên URL
+    useEffect(() => {
+        if (semesters.length === 0) return;
+
+        const targetSem =
+            (activeSemester && semesters.find((s) => s.code === activeSemester)) ||
+            semesters.find((s) => s.is_current) ||
+            semesters[0];
+
+        if (targetSem) {
+            const group = getSemesterGroup(targetSem);
+            setOpenGroups((prev) => {
+                if (Object.keys(prev).length === 0) {
+                    return { [group]: true };
+                }
+                if (activeSemester && !prev[group]) {
+                    return { ...prev, [group]: true };
+                }
+                return prev;
+            });
+        }
+    }, [activeSemester, semesters]);
 
     // Load semesters from backend, including all pages.
     const fetchSemesters = useCallback(async (signal) => {
@@ -404,72 +438,96 @@ return (
                         </p>
                     ) : (
                         Object.entries(groupedSemesters).map(
-                            ([groupName, items]) => (
-                                <div key={groupName} className="space-y-1">
-                                    <div
-                                        style={{
-                                            fontSize: "10px",
-                                            color: "var(--color-ink-soft)",
-                                            fontWeight: "bold",
-                                            textTransform: "uppercase",
-                                            letterSpacing: "1px",
-                                            padding: "4px 8px 2px",
-                                        }}
-                                    >
-                                        {groupName}
-                                    </div>
+                            ([groupName, items]) => {
+                                const isOpen = Boolean(openGroups[groupName]);
+                                const hasActiveOrCurrent = items.some(
+                                    (sem) => sem.code === activeSemester || sem.is_current
+                                );
 
-                                    <div className="space-y-1">
-                                        {items.map((semester) => {
-                                            const selected =
-                                                activeSemester === semester.code;
+                                return (
+                                    <div key={groupName} className="space-y-1">
+                                        <button
+                                            type="button"
+                                            onClick={() => toggleGroup(groupName)}
+                                            className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl bg-slate-50/80 hover:bg-slate-100 text-xs font-bold uppercase tracking-wider text-slate-600 transition cursor-pointer border-0"
+                                        >
+                                            <div className="flex items-center gap-1.5">
+                                                <span>{groupName}</span>
+                                                <span className="text-[10px] font-semibold text-slate-400 bg-slate-200/60 px-1.5 py-0.2 rounded-full">
+                                                    {items.length}
+                                                </span>
+                                                {hasActiveOrCurrent && (
+                                                    <span
+                                                        className="w-1.5 h-1.5 rounded-full bg-orange-500 shrink-0 ml-0.5"
+                                                        title="Chứa học kỳ đang chọn hoặc kỳ hiện tại"
+                                                    />
+                                                )}
+                                            </div>
+                                            <ChevronDown
+                                                size={14}
+                                                className={`text-slate-400 transition-transform duration-200 shrink-0 ${
+                                                    isOpen ? "rotate-180" : ""
+                                                }`}
+                                            />
+                                        </button>
 
-                                            return (
-                                                <button
-                                                    key={semester.id}
-                                                    type="button"
-                                                    onClick={() =>
-                                                        handleSemesterChange(semester.code)
-                                                    }
-                                                    className={`w-full text-left px-3 py-2 rounded-lg text-xs transition-colors duration-150 flex items-center justify-between border-0 cursor-pointer ${
-                                                        selected
-                                                            ? "font-semibold"
-                                                            : "hover:bg-slate-100 font-medium"
-                                                    }`}
-                                                    style={{
-                                                        backgroundColor: selected
-                                                            ? "var(--color-primary)"
-                                                            : "transparent",
-                                                        color: selected
-                                                            ? "#fff"
-                                                            : "var(--color-ink)",
-                                                    }}
-                                                >
-                                                    <span className="truncate">
-                                                        {getSemesterLabel(semester)}
-                                                    </span>
+                                        {isOpen && (
+                                            <div className="space-y-1 pt-0.5">
+                                                {items.map((semester) => {
+                                                    const selected =
+                                                        activeSemester === semester.code;
 
-                                                    {semester.is_current && (
-                                                        <span
-                                                            className="text-[10px] px-1.5 py-0.5 rounded font-normal shrink-0 ml-1.5"
+                                                    return (
+                                                        <button
+                                                            key={semester.id}
+                                                            type="button"
+                                                            onClick={() =>
+                                                                handleSemesterChange(semester.code)
+                                                            }
+                                                            className={`w-full text-left px-3 py-2 rounded-xl text-xs transition-colors duration-150 flex items-center justify-between border-0 cursor-pointer ${
+                                                                selected
+                                                                    ? "font-semibold bg-orange-500 text-white shadow-xs"
+                                                                    : "hover:bg-slate-100 font-medium"
+                                                            }`}
                                                             style={{
                                                                 backgroundColor: selected
-                                                                    ? "rgba(255,255,255,0.25)"
-                                                                    : "var(--color-primary-bg, #eff6ff)",
+                                                                    ? "var(--color-primary, #f97316)"
+                                                                    : "transparent",
                                                                 color: selected
                                                                     ? "#fff"
-                                                                    : "var(--color-primary-dark, #2563eb)",
+                                                                    : "var(--color-ink, #1e293b)",
                                                             }}
                                                         >
-                                                            Current
-                                                        </span>
-                                                    )}
-                                                </button>
-                                            );
-                                        })}
+                                                            <span className="truncate">
+                                                                {getSemesterLabel(semester)}
+                                                            </span>
+
+                                                            {semester.is_current && (
+                                                                <span
+                                                                    className="text-[10px] px-1.5 py-0.5 rounded font-normal shrink-0 ml-1.5"
+                                                                    style={{
+                                                                        backgroundColor: selected
+                                                                            ? "rgba(255,255,255,0.25)"
+                                                                            : "#fff7ed",
+                                                                        color: selected
+                                                                            ? "#fff"
+                                                                            : "#ea580c",
+                                                                        border: selected
+                                                                            ? "none"
+                                                                            : "1px solid #ffedd5",
+                                                                    }}
+                                                                >
+                                                                    Current
+                                                                </span>
+                                                            )}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
                                     </div>
-                                </div>
-                            )
+                                );
+                            }
                         )
                     )}
                 </div>
