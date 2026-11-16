@@ -763,9 +763,13 @@ export default function LecturerAssignmentDetailPage() {
                                 <tbody>
                                     {(() => {
                                         const isAiTrackingEnabled = Boolean(
-                                            assignment?.ai_declaration_required !== false &&
-                                            assignment?.ai_tracking_enabled !== false &&
-                                            assignment?.is_ai_enabled !== false
+                                            assignment &&
+                                            assignment.ai_declaration_required !== false &&
+                                            assignment.ai_declaration_required !== 'false' &&
+                                            assignment.ai_tracking_enabled !== false &&
+                                            assignment.ai_tracking_enabled !== 'false' &&
+                                            assignment.is_ai_enabled !== false &&
+                                            assignment.is_ai_enabled !== 'false'
                                         );
 
                                         return submissions.length > 0 ? submissions.map((sub, index) => {
@@ -830,16 +834,16 @@ export default function LecturerAssignmentDetailPage() {
                                                     {/* 5. CỘT AI AUDIT (CHÍNH LÀ NƠI CHỨA ICON CON MẮT) */}
                                                     <td style={{ padding: '8px', textAlign: 'center' }}>
                                                         {!isAiTrackingEnabled ? (
-                                                            // 1. Bài tập không yêu cầu AI Audit
+                                                            // 1. Bài tập không áp dụng khai báo AI Audit Log
                                                             <span 
-                                                                title="Bài tập không yêu cầu khai báo AI Audit" 
+                                                                title="Bài tập không áp dụng khai báo AI Audit Log" 
                                                                 className="text-slate-300 inline-flex items-center justify-center cursor-default"
                                                                 style={{ color: '#cbd5e1', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
                                                             >
                                                                 <Minus className="w-4 h-4" size={16} />
                                                             </span>
                                                         ) : !isSubmitted ? (
-                                                            // 2. Sinh viên chưa nộp bài
+                                                            // 2. Sinh viên chưa nộp bài (disabled)
                                                             <button
                                                                 type="button"
                                                                 disabled
@@ -859,34 +863,17 @@ export default function LecturerAssignmentDetailPage() {
                                                             >
                                                                 <Eye className="w-4 h-4" size={15} />
                                                             </button>
-                                                        ) : !hasDeclared ? (
-                                                            // 3. Đã nộp bài nhưng không dùng / không khai báo AI
-                                                            <button
-                                                                type="button"
-                                                                disabled
-                                                                title="Sinh viên không khai báo sử dụng AI"
-                                                                className="w-7 h-7 inline-flex items-center justify-center rounded-full bg-slate-50 text-slate-400 opacity-40 cursor-not-allowed"
-                                                                style={{
-                                                                    width: '28px',
-                                                                    height: '28px',
-                                                                    borderRadius: '50%',
-                                                                    display: 'inline-flex',
-                                                                    alignItems: 'center',
-                                                                    justifyContent: 'center',
-                                                                    border: '1px solid #e2e8f0',
-                                                                    opacity: 0.4,
-                                                                    cursor: 'not-allowed',
-                                                                }}
-                                                            >
-                                                                <Eye className="w-4 h-4" size={15} />
-                                                            </button>
                                                         ) : (
-                                                            // 4. Đã khai báo AI đầy đủ
+                                                            // 3. Đã nộp bài (bất kể đã khai báo hay chưa): LUÔN ĐƯỢC ENABLE
                                                             <button
                                                                 type="button"
                                                                 onClick={() => setSelectedAuditSub(sub)}
-                                                                title="Xem chi tiết khai báo AI Audit"
-                                                                className="w-7 h-7 inline-flex items-center justify-center rounded-full bg-slate-100 text-slate-600 hover:text-purple-600 hover:bg-purple-50 transition cursor-pointer"
+                                                                title={hasDeclared ? "Xem chi tiết khai báo AI Audit" : "Xem chi tiết AI Audit (Chưa khai báo)"}
+                                                                className={`w-7 h-7 inline-flex items-center justify-center rounded-full transition cursor-pointer ${
+                                                                    hasDeclared
+                                                                        ? 'bg-purple-50 text-purple-600 hover:bg-purple-100 hover:text-purple-700'
+                                                                        : 'bg-slate-100 text-slate-600 hover:bg-purple-50 hover:text-purple-600'
+                                                                }`}
                                                                 style={{
                                                                     width: '28px',
                                                                     height: '28px',
@@ -1092,6 +1079,7 @@ export default function LecturerAssignmentDetailPage() {
                     }
                     studentName={selectedAuditSub.student_name}
                     studentCode={selectedAuditSub.student_code}
+                    assignment={assignment}
                 />
             )}
         </div>
