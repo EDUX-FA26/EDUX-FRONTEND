@@ -64,7 +64,13 @@ export default function ForumPostPage() {
     if (!editing || !editFileRef.current) return;
     editFileRef.current.accept = 'image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt';
     const button = editFileRef.current.parentElement?.querySelector('button');
-    if (button) button.title = 'Thêm ảnh hoặc tài liệu';
+    if (button) {
+      button.title = 'Thêm ảnh hoặc tài liệu';
+      const textNode = Array.from(button.childNodes).find((node) => node.nodeType === Node.TEXT_NODE);
+      if (textNode) textNode.textContent = ' Thêm ảnh hoặc tài liệu';
+    }
+    const hint = editFileRef.current.parentElement?.querySelector('span');
+    if (hint) hint.textContent = 'Tối đa 5 tệp, mỗi tệp 2MB';
   }, [editing]);
 
   const sendComment = async () => {
