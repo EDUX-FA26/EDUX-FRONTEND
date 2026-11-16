@@ -10,14 +10,18 @@ const AssignmentService = {
     },
 
     async createAssignment(data) {
+        const isFormData = typeof FormData !== 'undefined' && data instanceof FormData;
         const response = await api.post('/assignments', data, {
+            headers: isFormData ? { 'Content-Type': 'multipart/form-data' } : {},
             schoolScoped: true,
         });
         return response.data;
     },
 
     async updateAssignment(assignmentId, data) {
+        const isFormData = typeof FormData !== 'undefined' && data instanceof FormData;
         const response = await api.patch(`/assignments/${assignmentId}`, data, {
+            headers: isFormData ? { 'Content-Type': 'multipart/form-data' } : {},
             schoolScoped: true,
         });
         return response.data;

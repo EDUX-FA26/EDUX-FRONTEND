@@ -14,11 +14,14 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import ClassMaterialService from '../../services/classMaterial.service';
+import AssignmentService from '../../services/assignment.service';
 import { formatBytes } from './UploadSlotMaterialModal';
 export { formatBytes };
 
 export interface MaterialItem {
   id: string;
+  assignmentId?: string;
+  assignment_id?: string;
   title?: string;
   description?: string;
   file_name?: string;
@@ -64,10 +67,18 @@ export default function MaterialPreviewModal({
 
         // If presigned URLs not directly in material object, fetch from backend
         if (!pUrl && !dUrl && material.id) {
-          const res = await ClassMaterialService.downloadMaterial(material.id);
-          const data = res.data || res;
-          pUrl = data.preview_url || data.url || data.download_url || '';
-          dUrl = data.download_url || data.url || '';
+          const asgId = material.assignmentId || material.assignment_id;
+          if (asgId) {
+            const res = await AssignmentService.getMaterialDownloadUrl(asgId, material.id);
+            const data = res?.data || res;
+            pUrl = data.preview_url || data.url || data.download_url || '';
+            dUrl = data.download_url || data.url || '';
+          } else {
+            const res = await ClassMaterialService.downloadMaterial(material.id);
+            const data = res?.data || res;
+            pUrl = data.preview_url || data.url || data.download_url || '';
+            dUrl = data.download_url || data.url || '';
+          }
         }
 
         if (isMounted) {
