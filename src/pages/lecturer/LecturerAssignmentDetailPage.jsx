@@ -470,24 +470,28 @@ export default function LecturerAssignmentDetailPage() {
     if (loading || !assignment) {
         if (error) {
             return (
-                <div className="w-full flex items-center justify-between gap-4" style={{ width: '100%', padding: '16px', backgroundColor: '#fee2e2', color: '#dc2626', border: '1px solid rgba(220, 38, 38, 0.2)', borderRadius: 'var(--radius-md)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <AlertCircle size={20} />
-                        <span>{error}</span>
+                <div className="animate-fade-in h-[calc(100vh-64px)] w-full max-w-full min-w-0 overflow-hidden flex flex-col px-6 pt-4 pb-5 box-border">
+                    <div className="w-full flex items-center justify-between gap-4" style={{ width: '100%', padding: '16px', backgroundColor: '#fee2e2', color: '#dc2626', border: '1px solid rgba(220, 38, 38, 0.2)', borderRadius: 'var(--radius-md)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <AlertCircle size={20} />
+                            <span>{error}</span>
+                        </div>
+                        <button className="btn btn-secondary" onClick={fetchDetail} style={{ fontSize: '12px', padding: '6px 14px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <RotateCw size={14} /> Thử lại
+                        </button>
                     </div>
-                    <button className="btn btn-secondary" onClick={fetchDetail} style={{ fontSize: '12px', padding: '6px 14px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <RotateCw size={14} /> Thử lại
-                    </button>
                 </div>
             );
         }
 
         return (
-            <div className="w-full flex flex-col gap-4" style={{ width: '100%', padding: '24px' }}>
-                <div className="skeleton" style={{ width: '30%', height: '24px' }}></div>
-                <div className="skeleton" style={{ width: '60%', height: '40px' }}></div>
-                <div className="skeleton" style={{ width: '100%', height: '120px' }}></div>
-                <div className="skeleton" style={{ width: '100%', height: '300px' }}></div>
+            <div className="animate-fade-in h-[calc(100vh-64px)] w-full max-w-full min-w-0 overflow-hidden flex flex-col px-6 pt-4 pb-5 box-border">
+                <div className="skeleton mb-2" style={{ width: '220px', height: '18px' }}></div>
+                <div className="skeleton mb-4" style={{ width: '450px', height: '32px' }}></div>
+                <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-6 w-full overflow-hidden">
+                    <div className="lg:col-span-4 h-full skeleton rounded-2xl"></div>
+                    <div className="lg:col-span-8 h-full skeleton rounded-3xl"></div>
+                </div>
             </div>
         );
     }
@@ -495,7 +499,7 @@ export default function LecturerAssignmentDetailPage() {
     const title = assignment?.title || 'Assignment Detail';
 
     return (
-        <div className="animate-fade-in w-full flex flex-col gap-6 relative" style={{ width: '100%' }}>
+        <div className="animate-fade-in h-[calc(100vh-64px)] w-full max-w-full min-w-0 overflow-hidden flex flex-col px-6 pt-4 pb-5 box-border relative">
 
             {/* TOAST ALERT TỰ ĐỘNG THÔNG BÁO */}
             {toast.show && createPortal(
@@ -522,279 +526,297 @@ export default function LecturerAssignmentDetailPage() {
                 document.body
             )}
 
-            {/* Breadcrumbs */}
-            {(() => {
-                const targetClassId = assignment?.class_id || assignment?.classId;
-                const targetClassLink = targetClassId ? `/lecturer/classes/${targetClassId}` : '/lecturer/classes';
-                const courseName =
-                    assignment?.subject_name ||
-                    assignment?.course_name ||
-                    assignment?.class?.subject?.name ||
-                    assignment?.class?.course?.name ||
-                    assignment?.class_code ||
-                    assignment?.class_name ||
-                    'Lớp học';
+            {/* Header trên cùng: Breadcrumb + Tiêu đề + Nút Chỉnh sửa */}
+            <div className="shrink-0 mb-4 flex flex-col gap-2.5">
+                {/* Breadcrumbs */}
+                {(() => {
+                    const targetClassId = assignment?.class_id || assignment?.classId;
+                    const targetClassLink = targetClassId ? `/lecturer/classes/${targetClassId}` : '/lecturer/classes';
+                    const courseName =
+                        assignment?.subject_name ||
+                        assignment?.course_name ||
+                        assignment?.class?.subject?.name ||
+                        assignment?.class?.course?.name ||
+                        assignment?.class_code ||
+                        assignment?.class_name ||
+                        'Lớp học';
 
-                return (
-                    <nav aria-label="Breadcrumb" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', fontWeight: '500' }}>
-                        <Link
-                            to="/lecturer/classes"
-                            style={{ color: 'var(--color-primary)', textDecoration: 'none', transition: 'color 0.15s' }}
-                            onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-primary-dark)'}
-                            onMouseLeave={(e) => e.currentTarget.style.color = 'var(--color-primary)'}
-                        >
-                            Home
-                        </Link>
-                        <span style={{ color: 'var(--color-ink-muted)' }}>/</span>
-                        <Link
-                            to={targetClassLink}
-                            title={courseName}
-                            style={{
-                                color: 'var(--color-primary)',
-                                textDecoration: 'none',
-                                maxWidth: '320px',
-                                whiteSpace: 'nowrap',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                transition: 'color 0.15s'
-                            }}
-                            onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-primary-dark)'}
-                            onMouseLeave={(e) => e.currentTarget.style.color = 'var(--color-primary)'}
-                        >
-                            {courseName}
-                        </Link>
-                        <span style={{ color: 'var(--color-ink-muted)' }}>/</span>
-                        <span
-                            title={title}
-                            style={{
-                                color: 'var(--color-ink-soft)',
-                                maxWidth: '360px',
-                                whiteSpace: 'nowrap',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis'
-                            }}
-                        >
-                            {title}
-                        </span>
-                    </nav>
-                );
-            })()}
+                    return (
+                        <nav aria-label="Breadcrumb" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', fontWeight: '500' }}>
+                            <Link
+                                to="/lecturer/classes"
+                                style={{ color: 'var(--color-primary)', textDecoration: 'none', transition: 'color 0.15s' }}
+                                onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-primary-dark)'}
+                                onMouseLeave={(e) => e.currentTarget.style.color = 'var(--color-primary)'}
+                            >
+                                Home
+                            </Link>
+                            <span style={{ color: 'var(--color-ink-muted)' }}>/</span>
+                            <Link
+                                to={targetClassLink}
+                                title={courseName}
+                                style={{
+                                    color: 'var(--color-primary)',
+                                    textDecoration: 'none',
+                                    maxWidth: '320px',
+                                    whiteSpace: 'nowrap',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    transition: 'color 0.15s'
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-primary-dark)'}
+                                onMouseLeave={(e) => e.currentTarget.style.color = 'var(--color-primary)'}
+                            >
+                                {courseName}
+                            </Link>
+                            <span style={{ color: 'var(--color-ink-muted)' }}>/</span>
+                            <span
+                                title={title}
+                                style={{
+                                    color: 'var(--color-ink-soft)',
+                                    maxWidth: '360px',
+                                    whiteSpace: 'nowrap',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis'
+                                }}
+                            >
+                                {title}
+                            </span>
+                        </nav>
+                    );
+                })()}
 
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-                    <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--color-ink)', margin: 0, letterSpacing: '-0.5px' }}>{title}</h1>
-                    {assignment?.slot_number ? (
-                        <span style={{
-                            display: 'inline-flex', alignItems: 'center', gap: '5px',
-                            fontSize: '11px', fontWeight: '600',
-                            padding: '3px 10px', borderRadius: '16px',
-                            backgroundColor: '#fff7ed', color: '#ea580c',
-                            border: '1px solid #ffedd5'
-                        }}>
-                            <Layers size={12} /> Slot {assignment.slot_number}
-                        </span>
-                    ) : (
-                        <span style={{
-                            display: 'inline-flex', alignItems: 'center', gap: '5px',
-                            fontSize: '11px', fontWeight: '600',
-                            padding: '3px 10px', borderRadius: '16px',
-                            backgroundColor: 'var(--color-surface, #f1f5f9)', color: 'var(--color-ink-muted, #64748b)',
-                            border: '1px solid var(--color-border, #e2e8f0)'
-                        }}>
-                            Toàn khóa
-                        </span>
-                    )}
-                    {assignment?.ai_declaration_required !== false ? (
-                        <span style={{
-                            display: 'inline-flex', alignItems: 'center', gap: '5px',
-                            fontSize: '11px', fontWeight: '600',
-                            padding: '3px 10px', borderRadius: '16px',
-                            backgroundColor: 'rgba(79, 70, 229, 0.1)', color: '#4f46e5',
-                            border: '1px solid rgba(79, 70, 229, 0.2)'
-                        }}>
-                            <Sparkles size={12} /> AI Tracking: Enabled
-                        </span>
-                    ) : (
-                        <span style={{
-                            display: 'inline-flex', alignItems: 'center', gap: '5px',
-                            fontSize: '11px', fontWeight: '600',
-                            padding: '3px 10px', borderRadius: '16px',
-                            backgroundColor: 'var(--color-surface, #f1f5f9)', color: 'var(--color-ink-muted, #64748b)',
-                            border: '1px solid var(--color-border, #e2e8f0)'
-                        }}>
-                            AI Tracking: Disabled
-                        </span>
-                    )}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                        <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--color-ink)', margin: 0, letterSpacing: '-0.5px' }}>{title}</h1>
+                        {assignment?.slot_number ? (
+                            <span style={{
+                                display: 'inline-flex', alignItems: 'center', gap: '5px',
+                                fontSize: '11px', fontWeight: '600',
+                                padding: '3px 10px', borderRadius: '16px',
+                                backgroundColor: '#fff7ed', color: '#ea580c',
+                                border: '1px solid #ffedd5'
+                            }}>
+                                <Layers size={12} /> Slot {assignment.slot_number}
+                            </span>
+                        ) : (
+                            <span style={{
+                                display: 'inline-flex', alignItems: 'center', gap: '5px',
+                                fontSize: '11px', fontWeight: '600',
+                                padding: '3px 10px', borderRadius: '16px',
+                                backgroundColor: 'var(--color-surface, #f1f5f9)', color: 'var(--color-ink-muted, #64748b)',
+                                border: '1px solid var(--color-border, #e2e8f0)'
+                            }}>
+                                Toàn khóa
+                            </span>
+                        )}
+                        {assignment?.ai_declaration_required !== false ? (
+                            <span style={{
+                                display: 'inline-flex', alignItems: 'center', gap: '5px',
+                                fontSize: '11px', fontWeight: '600',
+                                padding: '3px 10px', borderRadius: '16px',
+                                backgroundColor: 'rgba(79, 70, 229, 0.1)', color: '#4f46e5',
+                                border: '1px solid rgba(79, 70, 229, 0.2)'
+                            }}>
+                                <Sparkles size={12} /> AI Tracking: Enabled
+                            </span>
+                        ) : (
+                            <span style={{
+                                display: 'inline-flex', alignItems: 'center', gap: '5px',
+                                fontSize: '11px', fontWeight: '600',
+                                padding: '3px 10px', borderRadius: '16px',
+                                backgroundColor: 'var(--color-surface, #f1f5f9)', color: 'var(--color-ink-muted, #64748b)',
+                                border: '1px solid var(--color-border, #e2e8f0)'
+                            }}>
+                                AI Tracking: Disabled
+                            </span>
+                        )}
+                    </div>
+                    <button
+                        className="btn btn-secondary"
+                        onClick={handleOpenEditModal}
+                        style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            padding: '8px 14px',
+                            borderRadius: 'var(--radius-md)',
+                            fontSize: '12px',
+                            fontWeight: '600',
+                            cursor: 'pointer'
+                        }}
+                    >
+                        <Edit3 size={14} /> Chỉnh sửa bài tập
+                    </button>
                 </div>
-                <button
-                    className="btn btn-secondary"
-                    onClick={handleOpenEditModal}
-                    style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        padding: '8px 14px',
-                        borderRadius: 'var(--radius-md)',
-                        fontSize: '12px',
-                        fontWeight: '600',
-                        cursor: 'pointer'
-                    }}
-                >
-                    <Edit3 size={14} /> Chỉnh sửa bài tập
-                </button>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', alignItems: 'start' }}>
-                <style>{`
-                    @media (min-width: 1024px) {
-                        .assignment-layout { grid-template-columns: 4fr 8fr !important; }
-                    }
-                `}</style>
-                <div className="assignment-layout" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '24px', width: '100%', gridColumn: '1 / -1' }}>
+            <style>{`
+                .custom-scrollbar::-webkit-scrollbar {
+                    width: 6px;
+                    height: 6px;
+                }
+                .custom-scrollbar::-webkit-scrollbar-track {
+                    background: transparent;
+                }
+                .custom-scrollbar::-webkit-scrollbar-thumb {
+                    background: #cbd5e1;
+                    border-radius: 4px;
+                }
+                .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+                    background: #94a3b8;
+                }
+            `}</style>
 
-                    {/* CỘT TRÁI */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                        <div className="card" style={{ padding: '20px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontWeight: 'bold', color: 'var(--color-ink)', fontSize: '14px', cursor: 'pointer', marginBottom: '12px' }}>
-                                <span>Table of contents</span>
-                                <ChevronDown size={14} style={{ color: 'var(--color-ink-muted)' }} />
-                            </div>
-                            <div style={{ fontSize: '10px', color: 'var(--color-ink-muted)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>
-                                ASSIGNMENTS
-                            </div>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: 'var(--color-primary-bg)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: '12px' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                    <span style={{ width: '24px', height: '24px', borderRadius: '4px', backgroundColor: 'var(--color-surface)', color: 'var(--color-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                        <Briefcase size={12} />
-                                    </span>
-                                    <span style={{ fontSize: '12px', fontWeight: '600', color: 'var(--color-ink)' }}>{title}</span>
-                                </div>
-                                <span style={{ fontSize: '12px', fontWeight: '500', color: 'var(--color-ink-muted)' }}>N/A</span>
-                            </div>
+            {/* Khu vực nội dung chính 2 cột bên dưới */}
+            <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-6 w-full overflow-hidden">
+                {/* CỘT TRÁI — Thông tin bài tập */}
+                <div className="lg:col-span-4 min-w-0 h-full overflow-y-auto pr-1.5 space-y-4 custom-scrollbar">
+                    <div className="card h-auto" style={{ padding: '20px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontWeight: 'bold', color: 'var(--color-ink)', fontSize: '14px', cursor: 'pointer', marginBottom: '12px' }}>
+                            <span>Table of contents</span>
+                            <ChevronDown size={14} style={{ color: 'var(--color-ink-muted)' }} />
                         </div>
-
-                        <div className="card" style={{ padding: '20px' }}>
-                            <h3 style={{ fontWeight: 'bold', color: 'var(--color-ink)', fontSize: '14px', margin: '0 0 10px 0' }}>Mô tả bài tập (Description)</h3>
-                            <p style={{ fontSize: '12px', color: 'var(--color-ink-soft)', margin: 0, whiteSpace: 'pre-line', lineHeight: '1.6' }}>
-                                {assignment?.description || 'N/A'}
-                            </p>
-
-                            
+                        <div style={{ fontSize: '10px', color: 'var(--color-ink-muted)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>
+                            ASSIGNMENTS
                         </div>
-
-                        <div className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                <div style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--color-ink)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                                    ADDITIONAL FILES & MATERIALS
-                                </div>
-                                <span style={{ fontSize: '11px', color: 'var(--color-ink-muted)' }}>
-                                    {assignment?.materials?.length || 0} tài liệu
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: 'var(--color-primary-bg)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: '12px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <span style={{ width: '24px', height: '24px', borderRadius: '4px', backgroundColor: 'var(--color-surface)', color: 'var(--color-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <Briefcase size={12} />
                                 </span>
+                                <span style={{ fontSize: '12px', fontWeight: '600', color: 'var(--color-ink)' }}>{title}</span>
                             </div>
-
-                            <div style={{ fontSize: '12px', color: 'var(--color-ink-soft)' }}>
-                                <span style={{ fontWeight: 'bold', color: 'var(--color-ink)' }}>DUE DATE:</span> {assignment?.deadline ? formatDateDMY(assignment.deadline) : 'N/A'}
-                            </div>
-                            <div style={{ fontSize: '12px', fontWeight: 'bold' }}>
-                                <span style={{ color: 'var(--color-ink-soft)', fontWeight: 'normal' }}>(GMT+07)</span>
-                                <span style={{ color: 'var(--color-danger)' }}> - MAX SCORE: {assignment?.max_score != null ? assignment.max_score : 'N/A'}</span>
-                                <span style={{ color: 'var(--color-primary, #4f46e5)' }}> - WEIGHT: {assignment?.weight != null ? `${assignment.weight}%` : 'N/A'}</span>
-                            </div>
-
-                            {/* Render materials */}
-                            <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                <span style={{ fontSize: '11px', fontWeight: '700', color: 'var(--color-ink-muted)', textTransform: 'uppercase' }}>
-                                    Tài liệu đề bài đính kèm
-                                </span>
-                                {assignment?.materials && assignment.materials.length > 0 ? (
-                                    assignment.materials.map((mat) => (
-                                        <div
-                                            key={mat.id}
-                                            style={{
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'space-between',
-                                                padding: '8px 10px',
-                                                borderRadius: '8px',
-                                                backgroundColor: 'var(--color-surface, #f8fafc)',
-                                                border: '1px solid var(--color-border, #e2e8f0)',
-                                                fontSize: '12px'
-                                            }}
-                                        >
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, flex: 1, paddingRight: '8px' }}>
-                                                <FileText size={15} style={{ color: 'var(--color-primary, #4f46e5)', shrink: 0 }} />
-                                                <span style={{ fontWeight: '600', color: 'var(--color-ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={mat.file_name}>
-                                                    {mat.file_name}
-                                                </span>
-                                                <span style={{ fontSize: '10px', color: 'var(--color-ink-muted)', fontFamily: 'monospace', shrink: 0 }}>
-                                                    ({formatFileSize(mat.file_size)})
-                                                </span>
-                                            </div>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', shrink: 0 }}>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleDownloadMaterial(mat.id, mat.file_name)}
-                                                    style={{
-                                                        background: 'transparent',
-                                                        border: 'none',
-                                                        color: 'var(--color-primary, #4f46e5)',
-                                                        cursor: 'pointer',
-                                                        padding: '4px',
-                                                        borderRadius: '4px',
-                                                        display: 'flex',
-                                                        alignItems: 'center'
-                                                    }}
-                                                    title="Tải xuống tài liệu"
-                                                >
-                                                    <Download size={14} />
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleDeleteMaterial(mat.id, mat.file_name)}
-                                                    style={{
-                                                        background: 'transparent',
-                                                        border: 'none',
-                                                        color: 'var(--color-danger, #ef4444)',
-                                                        cursor: 'pointer',
-                                                        padding: '4px',
-                                                        borderRadius: '4px',
-                                                        display: 'flex',
-                                                        alignItems: 'center'
-                                                    }}
-                                                    title="Xóa tài liệu này"
-                                                >
-                                                    <Trash2 size={14} />
-                                                </button>
-                                            </div>
-                                        </div>
-                                    ))
-                                ) : (
-                                    <div style={{ fontSize: '11px', color: 'var(--color-ink-muted)', fontStyle: 'italic', padding: '4px 0' }}>
-                                        Chưa có tài liệu đính kèm (N/A). Bạn có thể bấm "Chỉnh sửa bài tập" để tải lên file.
-                                    </div>
-                                )}
-                            </div>
+                            <span style={{ fontSize: '12px', fontWeight: '500', color: 'var(--color-ink-muted)' }}>N/A</span>
                         </div>
                     </div>
 
-                    {/* CỘT PHẢI: Student Submissions */}
-                    <div className="card" style={{ padding: '24px', minHeight: '350px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                        <div style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--color-ink)', textTransform: 'uppercase', borderBottom: '1px solid var(--color-border)', paddingBottom: '12px' }}>
-                            Student Submissions
+                    <div className="card h-auto" style={{ padding: '20px' }}>
+                        <h3 style={{ fontWeight: 'bold', color: 'var(--color-ink)', fontSize: '14px', margin: '0 0 10px 0' }}>Mô tả bài tập (Description)</h3>
+                        <p style={{ fontSize: '12px', color: 'var(--color-ink-soft)', margin: 0, whiteSpace: 'pre-line', lineHeight: '1.6' }}>
+                            {assignment?.description || 'N/A'}
+                        </p>
+                    </div>
+
+                    <div className="card h-auto" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <div style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--color-ink)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                ADDITIONAL FILES & MATERIALS
+                            </div>
+                            <span style={{ fontSize: '11px', color: 'var(--color-ink-muted)' }}>
+                                {assignment?.materials?.length || 0} tài liệu
+                            </span>
                         </div>
-                        <div style={{ overflowX: 'auto' }}>
-                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left' }}>
-                                <thead>
-                                    <tr style={{ borderBottom: '1px solid var(--color-border)', color: 'var(--color-ink-muted)' }}>
-                                        <th style={{ padding: '8px' }}>Student</th>
-                                        <th style={{ padding: '8px' }}>Status</th>
-                                        <th style={{ padding: '8px' }}>Submitted At</th>
-                                        <th style={{ padding: '8px' }}>File/Link</th>
-                                        <th style={{ padding: '8px', textAlign: 'center' }}>AI Audit</th>
-                                        <th style={{ padding: '8px' }}>Score</th>
-                                        <th style={{ padding: '8px' }}>Action</th>
-                                    </tr>
-                                </thead>
+
+                        <div style={{ fontSize: '12px', color: 'var(--color-ink-soft)' }}>
+                            <span style={{ fontWeight: 'bold', color: 'var(--color-ink)' }}>DUE DATE:</span> {assignment?.deadline ? formatDateDMY(assignment.deadline) : 'N/A'}
+                        </div>
+                        <div style={{ fontSize: '12px', fontWeight: 'bold' }}>
+                            <span style={{ color: 'var(--color-ink-soft)', fontWeight: 'normal' }}>(GMT+07)</span>
+                            <span style={{ color: 'var(--color-danger)' }}> - MAX SCORE: {assignment?.max_score != null ? assignment.max_score : 'N/A'}</span>
+                            <span style={{ color: 'var(--color-primary, #4f46e5)' }}> - WEIGHT: {assignment?.weight != null ? `${assignment.weight}%` : 'N/A'}</span>
+                        </div>
+
+                        {/* Render materials */}
+                        <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            <span style={{ fontSize: '11px', fontWeight: '700', color: 'var(--color-ink-muted)', textTransform: 'uppercase' }}>
+                                Tài liệu đề bài đính kèm
+                            </span>
+                            {assignment?.materials && assignment.materials.length > 0 ? (
+                                assignment.materials.map((mat) => (
+                                    <div
+                                        key={mat.id}
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'space-between',
+                                            padding: '8px 10px',
+                                            borderRadius: '8px',
+                                            backgroundColor: 'var(--color-surface, #f8fafc)',
+                                            border: '1px solid var(--color-border, #e2e8f0)',
+                                            fontSize: '12px'
+                                        }}
+                                    >
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, flex: 1, paddingRight: '8px' }}>
+                                            <FileText size={15} style={{ color: 'var(--color-primary, #4f46e5)', shrink: 0 }} />
+                                            <span style={{ fontWeight: '600', color: 'var(--color-ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={mat.file_name}>
+                                                {mat.file_name}
+                                            </span>
+                                            <span style={{ fontSize: '10px', color: 'var(--color-ink-muted)', fontFamily: 'monospace', shrink: 0 }}>
+                                                ({formatFileSize(mat.file_size)})
+                                            </span>
+                                        </div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', shrink: 0 }}>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleDownloadMaterial(mat.id, mat.file_name)}
+                                                style={{
+                                                    background: 'transparent',
+                                                    border: 'none',
+                                                    color: 'var(--color-primary, #4f46e5)',
+                                                    cursor: 'pointer',
+                                                    padding: '4px',
+                                                    borderRadius: '4px',
+                                                    display: 'flex',
+                                                    alignItems: 'center'
+                                                }}
+                                                title="Tải xuống tài liệu"
+                                            >
+                                                <Download size={14} />
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleDeleteMaterial(mat.id, mat.file_name)}
+                                                style={{
+                                                    background: 'transparent',
+                                                    border: 'none',
+                                                    color: 'var(--color-danger, #ef4444)',
+                                                    cursor: 'pointer',
+                                                    padding: '4px',
+                                                    borderRadius: '4px',
+                                                    display: 'flex',
+                                                    alignItems: 'center'
+                                                }}
+                                                title="Xóa tài liệu này"
+                                            >
+                                                <Trash2 size={14} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <div style={{ fontSize: '11px', color: 'var(--color-ink-muted)', fontStyle: 'italic', padding: '4px 0' }}>
+                                    Chưa có tài liệu đính kèm (N/A). Bạn có thể bấm "Chỉnh sửa bài tập" để tải lên file.
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                {/* CỘT PHẢI: Card STUDENT SUBMISSIONS */}
+                <div className="lg:col-span-8 min-w-0 h-full bg-white rounded-3xl border border-slate-200/80 shadow-sm flex flex-col overflow-hidden">
+                    <div className="px-6 pt-5 pb-3 shrink-0 border-b border-slate-200/80 flex items-center justify-between">
+                        <div style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--color-ink)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                            STUDENT SUBMISSIONS
+                        </div>
+                        <span style={{ fontSize: '11px', fontWeight: '600', color: 'var(--color-ink-muted)' }}>
+                            {submissions?.length || 0} bài nộp
+                        </span>
+                    </div>
+
+                    <div className="flex-1 min-h-0 overflow-y-auto overflow-x-auto px-6 pb-5 custom-scrollbar">
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left' }}>
+                            <thead className="sticky top-0 bg-white z-10 shadow-sm">
+                                <tr style={{ borderBottom: '1px solid var(--color-border)', color: 'var(--color-ink-muted)' }}>
+                                    <th style={{ padding: '10px 8px', backgroundColor: '#fff' }}>Student</th>
+                                    <th style={{ padding: '10px 8px', backgroundColor: '#fff' }}>Status</th>
+                                    <th style={{ padding: '10px 8px', backgroundColor: '#fff' }}>Submitted At</th>
+                                    <th style={{ padding: '10px 8px', backgroundColor: '#fff' }}>File/Link</th>
+                                    <th style={{ padding: '10px 8px', textAlign: 'center', backgroundColor: '#fff' }}>AI Audit</th>
+                                    <th style={{ padding: '10px 8px', backgroundColor: '#fff' }}>Score</th>
+                                    <th style={{ padding: '10px 8px', backgroundColor: '#fff' }}>Action</th>
+                                </tr>
+                            </thead>
                                 <tbody>
                                     {(() => {
                                         const isAiTrackingEnabled = Boolean(
@@ -1002,7 +1024,6 @@ export default function LecturerAssignmentDetailPage() {
                         </div>
                     </div>
                 </div>
-            </div>
 
             {/* MODAL CHẤM ĐIỂM */}
             {isGradingModalOpen && selectedSubmission && createPortal(

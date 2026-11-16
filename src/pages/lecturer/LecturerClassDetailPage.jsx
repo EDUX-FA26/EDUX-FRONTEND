@@ -12,8 +12,7 @@ import {
     Bot,
     Briefcase,
     Eye,
-    Layers,
-    FolderKanban,
+    Layers
 } from 'lucide-react';
 import { PlusCircle, FileText, Upload, Trash2 } from 'lucide-react';
 import AssignmentSubwindowModal from '../../components/student/AssignmentSubwindowModal';
@@ -290,13 +289,14 @@ export default function LecturerClassDetailPage() {
         }
 
         return (
-            <div className="w-full flex flex-col gap-4" style={{ width: '100%' }}>
-                <div className="skeleton" style={{ width: '33%', height: '24px' }}></div>
-                <div className="skeleton" style={{ width: '66%', height: '48px' }}></div>
-                <div style={{ display: 'grid', gridTemplateColumns: '2fr 3fr 7fr', gap: '20px', marginTop: '8px' }}>
-                    <div className="skeleton" style={{ height: '80px' }}></div>
-                    <div className="skeleton" style={{ height: '256px' }}></div>
-                    <div className="skeleton" style={{ height: '384px' }}></div>
+            <div className="animate-fade-in h-[calc(100vh-64px)] w-full max-w-full min-w-0 overflow-hidden flex flex-col px-6 pt-4 pb-5 box-border">
+                <div className="skeleton mb-2" style={{ width: '200px', height: '20px' }}></div>
+                <div className="skeleton mb-3" style={{ width: '400px', height: '36px' }}></div>
+                <div className="skeleton mb-4" style={{ width: '500px', height: '32px' }}></div>
+                <div className="flex-1 min-h-0 flex gap-5 w-full overflow-hidden">
+                    <div className="w-48 shrink-0 h-full skeleton rounded-2xl"></div>
+                    <div className="w-56 shrink-0 h-full skeleton rounded-2xl"></div>
+                    <div className="flex-1 min-w-0 h-full skeleton rounded-3xl"></div>
                 </div>
             </div>
         );
@@ -308,213 +308,200 @@ export default function LecturerClassDetailPage() {
     const displayedSlots = viewAll ? slots : slots.slice((currentPage - 1) * 10, currentPage * 10);
 
     return (
-        <div className="animate-fade-in w-full flex flex-col gap-4 relative" style={{ width: '100%' }}>
-            {/* Breadcrumb */}
-            <nav style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'var(--color-ink-muted)' }}>
-                <Link to="/lecturer/classes" style={{ textDecoration: 'none', color: 'var(--color-ink-muted)' }} onMouseEnter={(e) => e.target.style.textDecoration = 'underline'} onMouseLeave={(e) => e.target.style.textDecoration = 'none'}>My Teaching Courses</Link>
-                <ChevronRight size={14} />
-                <span style={{ color: 'var(--color-ink-soft)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '600px' }}>
-                    {classData.subject_name || classData.name || 'Class Detail'}
-                </span>
-            </nav>
+        <div className="animate-fade-in h-[calc(100vh-64px)] w-full max-w-full min-w-0 overflow-hidden flex flex-col px-6 pt-4 pb-5 box-border relative">
+            {/* Header trên cùng: Breadcrumb + Tiêu đề + Actions Bar */}
+            <div className="shrink-0 mb-4 flex flex-col gap-2.5">
+                {/* Breadcrumb */}
+                <nav style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'var(--color-ink-muted)' }}>
+                    <Link to="/lecturer/classes" style={{ textDecoration: 'none', color: 'var(--color-ink-muted)' }} onMouseEnter={(e) => e.target.style.textDecoration = 'underline'} onMouseLeave={(e) => e.target.style.textDecoration = 'none'}>My Teaching Courses</Link>
+                    <ChevronRight size={14} />
+                    <span style={{ color: 'var(--color-ink-soft)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '600px' }}>
+                        {classData.subject_name || classData.name || 'Class Detail'}
+                    </span>
+                </nav>
 
-            {/* Tiêu đề khóa học & Owner */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px' }}>
-                <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '4px' }}>
-                        <h1 style={{ fontSize: '20px', fontWeight: 'bold', color: 'var(--color-ink)', margin: 0 }}>
-                            {classData.subject_name || classData.name || 'Unnamed Class'}
-                        </h1>
+                {/* Tiêu đề khóa học & Advisor & Owner */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px' }}>
+                    <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '4px' }}>
+                            <h1 style={{ fontSize: '20px', fontWeight: 'bold', color: 'var(--color-ink)', margin: 0 }}>
+                                {classData.subject_name || classData.name || 'Unnamed Class'}
+                            </h1>
 
-                        {/* Trigger Button Advisor: BẮT BUỘC luôn hiển thị ở Header cạnh tên môn học */}
-                        <button
-                            type="button"
-                            onClick={handleOpenAdvisorModal}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200/80 rounded-lg transition shadow-xs hover:shadow-sm cursor-pointer group"
-                            title="Xem khuyến nghị giảng dạy AI cho buổi học (Advisor)"
-                        >
-                            <Bot className="w-4 h-4 text-purple-600 transition-transform group-hover:scale-110" />
-                            <span>Advisor</span>
-                            {advisorData?.has_data && (
-                                <span className="flex h-2 w-2 relative">
-                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"></span>
-                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-purple-600"></span>
-                                </span>
-                            )}
-                        </button>
+                            {/* Trigger Button Advisor: BẮT BUỘC luôn hiển thị ở Header cạnh tên môn học */}
+                            <button
+                                type="button"
+                                onClick={handleOpenAdvisorModal}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200/80 rounded-lg transition shadow-xs hover:shadow-sm cursor-pointer group"
+                                title="Xem khuyến nghị giảng dạy AI cho buổi học (Advisor)"
+                            >
+                                <Bot className="w-4 h-4 text-purple-600 transition-transform group-hover:scale-110" />
+                                <span>Advisor</span>
+                                {advisorData?.has_data && (
+                                    <span className="flex h-2 w-2 relative">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-purple-600"></span>
+                                    </span>
+                                )}
+                            </button>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px' }}>
+                            <span style={{ color: 'var(--color-primary-dark)', fontWeight: 'bold' }}>{classData.subject_code || 'CODE'}</span>
+                            <span style={{ color: 'var(--color-ink-muted)' }}>• {classData.class_code || classData.class_name || 'N/A'}</span>
+                        </div>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px' }}>
-                        <span style={{ color: 'var(--color-primary-dark)', fontWeight: 'bold' }}>{classData.subject_code || 'CODE'}</span>
-                        <span style={{ color: 'var(--color-ink-muted)' }}>• {classData.class_code || classData.class_name || 'N/A'}</span>
+                    <div style={{ fontSize: '12px', color: 'var(--color-ink-muted)' }}>
+                        Owner <span style={{ fontWeight: 'bold', color: 'var(--color-ink)' }}>{classData.owner_name || classData.lecturer_name || 'N/A'}</span>
                     </div>
                 </div>
-                <div style={{ fontSize: '12px', color: 'var(--color-ink-muted)' }}>
-                    Owner <span style={{ fontWeight: 'bold', color: 'var(--color-ink)' }}>{classData.owner_name || classData.lecturer_name || 'N/A'}</span>
+
+                {/* Action Buttons Bar */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginTop: '4px' }}>
+                    <button
+                        type="button"
+                        onClick={() => setIsSlotHistoriesModalOpen(true)}
+                        className="btn btn-secondary cursor-pointer"
+                        style={{ padding: '0 12px', height: '32px', fontSize: '12px', borderRadius: 'var(--radius-sm)' }}
+                    >
+                        <Clock size={14} /> Slot histories
+                    </button>
+                    <button className="btn" onClick={() => navigate(`/lecturer/classes/${classId}/materials`)} style={{ backgroundColor: 'var(--color-accent-teal)', color: '#fff', padding: '0 12px', height: '32px', fontSize: '12px', borderRadius: 'var(--radius-sm)' }}>
+                        <Folder size={14} /> Materials
+                    </button>
+                    {/* NÚT MEMBERS MỚI THÊM */}
+                    <button
+                        className="btn"
+                        onClick={() => setIsMembersModalOpen(true)}
+                        style={{
+                            backgroundColor: "#4f46e5",
+                            color: "#fff",
+                            padding: "0 12px",
+                            height: "32px",
+                            fontSize: "12px",
+                            borderRadius: "var(--radius-sm)",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "6px",
+                        }}
+                    >
+                        <Users size={14} />
+                        Members
+                    </button>
+                    <button className="btn btn-primary" onClick={() => setIsAssignmentModalOpen(true)} style={{ padding: '0 12px', height: '32px', fontSize: '12px', borderRadius: 'var(--radius-sm)' }}>
+                        <FilePenLine size={14} /> Assignments
+                    </button>
+                    <button className="btn btn-secondary" onClick={handleFullRefresh} style={{ padding: '0 12px', height: '32px', fontSize: '12px', borderRadius: 'var(--radius-sm)' }}>
+                        <RotateCw size={14} /> Refresh
+                    </button>
                 </div>
-            </div>
-
-            {/* Action Buttons Bar */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginTop: '4px' }}>
-                <button
-                    type="button"
-                    onClick={() => setIsSlotHistoriesModalOpen(true)}
-                    className="btn btn-secondary cursor-pointer"
-                    style={{ padding: '0 12px', height: '32px', fontSize: '12px', borderRadius: 'var(--radius-sm)' }}
-                >
-                    <Clock size={14} /> Slot histories
-                </button>
-                <button className="btn" onClick={() => navigate(`/lecturer/classes/${classId}/materials`)} style={{ backgroundColor: 'var(--color-accent-teal)', color: '#fff', padding: '0 12px', height: '32px', fontSize: '12px', borderRadius: 'var(--radius-sm)' }}>
-                    <Folder size={14} /> Materials
-                </button>
-
-                {/* PROJECT MANAGEMENT */}
-                <button
-                    type="button"
-                    className="btn"
-                    onClick={() =>
-                        navigate(`/lecturer/classes/${classId}/projects`)
-                    }
-                    style={{
-                        backgroundColor: "#f36a20",
-                        color: "#fff",
-                        padding: "0 12px",
-                        height: "32px",
-                        fontSize: "12px",
-                        borderRadius: "var(--radius-sm)",
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "6px",
-                    }}
-                >
-                    <FolderKanban size={14} />
-                    Projects
-                </button>
-                {/* NÚT MEMBERS MỚI THÊM */}
-                <button
-                    className="btn"
-                    onClick={() => setIsMembersModalOpen(true)}
-                    style={{
-                        backgroundColor: "#4f46e5",
-                        color: "#fff",
-                        padding: "0 12px",
-                        height: "32px",
-                        fontSize: "12px",
-                        borderRadius: "var(--radius-sm)",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "6px",
-                    }}
-                >
-                    <Users size={14} />
-                    Members
-                </button>
-                <button className="btn btn-primary" onClick={() => setIsAssignmentModalOpen(true)} style={{ padding: '0 12px', height: '32px', fontSize: '12px', borderRadius: 'var(--radius-sm)' }}>
-                    <FilePenLine size={14} /> Assignments
-                </button>
-                <button className="btn btn-secondary" onClick={handleFullRefresh} style={{ padding: '0 12px', height: '32px', fontSize: '12px', borderRadius: 'var(--radius-sm)' }}>
-                    <RotateCw size={14} /> Refresh
-                </button>
             </div>
 
             {/* Layout 3 cột: Classes | Slots | Class sessions */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginTop: '8px', alignItems: 'start' }}>
-                {/* Fixed Grid for PC */}
-                <style>{`
-                    @media (min-width: 900px) {
-                        .class-detail-grid { grid-template-columns: 2fr 3fr 7fr !important; }
-                    }
-                `}</style>
-                <div className="class-detail-grid" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '20px', width: '100%', gridColumn: '1 / -1' }}>
-
-                    {/* Cột 1: Classes */}
-                    <div>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '12px', marginBottom: '8px' }}>
-                            <span style={{ fontWeight: 'bold', color: 'var(--color-ink)' }}>Classes</span>
-                            <span style={{ color: 'var(--color-ink-muted)', fontSize: '11px' }}>1 class</span>
-                        </div>
+            <div className="flex-1 min-h-0 flex gap-5 w-full overflow-hidden">
+                {/* Cột 1: Classes */}
+                <div className="w-48 shrink-0 h-full flex flex-col overflow-hidden">
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '12px', marginBottom: '10px' }} className="shrink-0">
+                        <span style={{ fontWeight: 'bold', color: 'var(--color-ink)' }}>Classes</span>
+                        <span style={{ color: 'var(--color-ink-muted)', fontSize: '11px' }}>1 class</span>
+                    </div>
+                    <div className="flex-1 min-h-0 overflow-y-auto space-y-2 pr-1 custom-scroll" style={{ scrollbarWidth: 'thin' }}>
                         <div className="card" style={{ padding: '10px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', fontWeight: '600', color: 'var(--color-ink)' }}>
                             <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--color-success)', flexShrink: 0 }}></span>
                             <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{classData.class_code || classData.class_name || 'N/A'}</span>
                         </div>
                     </div>
+                </div>
 
-                    {/* Cột 2: Slots list */}
-                    <div>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '12px', marginBottom: '8px' }}>
-                            <span style={{ fontWeight: 'bold', color: 'var(--color-ink)' }}>Slots</span>
-                            <span style={{ color: 'var(--color-ink-muted)', fontSize: '11px' }}>{slots.length} sessions</span>
-                        </div>
+                {/* Cột 2: Slots list */}
+                <div className="w-56 shrink-0 h-full flex flex-col overflow-hidden">
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '12px', marginBottom: '10px' }} className="shrink-0">
+                        <span style={{ fontWeight: 'bold', color: 'var(--color-ink)' }}>Slots</span>
+                        <span style={{ color: 'var(--color-ink-muted)', fontSize: '11px' }}>{slots.length} sessions</span>
+                    </div>
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '460px', overflowY: 'auto', paddingRight: '4px' }}>
-                            {displayedSlots.length === 0 ? (
-                                <div className="card" style={{ padding: '8px', textAlign: 'center', fontSize: '12px', color: 'var(--color-ink-muted)' }}>No slots available</div>
-                            ) : displayedSlots.map((slot, index) => {
-                                const isSelected = (slot.id || slot._id) === selectedSlotId;
-                                return (
-                                    <div
-                                        key={slot.id || slot._id || index}
-                                        onClick={() => handleSlotClick(slot.id || slot._id)}
-                                        style={{
-                                            display: 'flex', alignItems: 'center', gap: '10px', padding: '8px', borderRadius: 'var(--radius-md)', cursor: 'pointer', transition: 'all 0.2s',
-                                            backgroundColor: isSelected ? 'var(--color-surface)' : 'var(--color-surface)',
-                                            border: isSelected ? '1px solid var(--color-primary)' : '1px solid var(--color-border)',
-                                            boxShadow: isSelected ? 'var(--shadow-sm)' : 'none'
-                                        }}
-                                    >
-                                        <div style={{
-                                            width: '28px', height: '28px', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '12px', flexShrink: 0, transition: '0.2s',
-                                            backgroundColor: isSelected ? 'var(--color-primary)' : 'var(--color-primary-bg)',
-                                            color: isSelected ? '#fff' : 'var(--color-ink)'
-                                        }}>
-                                            {slot.slot_number || index + 1}
-                                        </div>
-                                        <div style={{ fontSize: '10px', lineHeight: '1.2', color: 'var(--color-ink)', fontWeight: '600', overflow: 'hidden' }}>
-                                            <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{slot.date ? new Date(slot.date).toLocaleDateString('vi-VN') : 'N/A'}</div>
-                                            <div style={{ color: 'var(--color-ink-muted)', fontWeight: '400', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{slot.time || 'N/A'}</div>
-                                        </div>
+                    <div className="flex-1 min-h-0 overflow-y-auto pr-1.5 space-y-2.5 custom-scroll" style={{ scrollbarWidth: 'thin' }}>
+                        {displayedSlots.length === 0 ? (
+                            <div className="card" style={{ padding: '8px', textAlign: 'center', fontSize: '12px', color: 'var(--color-ink-muted)' }}>No slots available</div>
+                        ) : displayedSlots.map((slot, index) => {
+                            const isSelected = (slot.id || slot._id) === selectedSlotId;
+                            return (
+                                <div
+                                    key={slot.id || slot._id || index}
+                                    onClick={() => handleSlotClick(slot.id || slot._id)}
+                                    style={{
+                                        display: 'flex', alignItems: 'center', gap: '10px', padding: '8px', borderRadius: 'var(--radius-md)', cursor: 'pointer', transition: 'all 0.2s',
+                                        backgroundColor: isSelected ? 'var(--color-surface)' : 'var(--color-surface)',
+                                        border: isSelected ? '1px solid var(--color-primary)' : '1px solid var(--color-border)',
+                                        boxShadow: isSelected ? 'var(--shadow-sm)' : 'none'
+                                    }}
+                                >
+                                    <div style={{
+                                        width: '28px', height: '28px', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '12px', flexShrink: 0, transition: '0.2s',
+                                        backgroundColor: isSelected ? 'var(--color-primary)' : 'var(--color-primary-bg)',
+                                        color: isSelected ? '#fff' : 'var(--color-ink)'
+                                    }}>
+                                        {slot.slot_number || index + 1}
                                     </div>
-                                );
-                            })}
-                        </div>
+                                    <div style={{ fontSize: '10px', lineHeight: '1.2', color: 'var(--color-ink)', fontWeight: '600', overflow: 'hidden' }}>
+                                        <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{slot.date ? new Date(slot.date).toLocaleDateString('vi-VN') : 'N/A'}</div>
+                                        <div style={{ color: 'var(--color-ink-muted)', fontWeight: '400', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{slot.time || 'N/A'}</div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
 
-                        {/* Phân trang Slot */}
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11px', color: 'var(--color-ink-muted)', paddingTop: '8px', borderTop: '1px solid var(--color-border)', marginTop: '8px' }}>
-                            <button
-                                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                                disabled={currentPage === 1}
-                                style={{ background: 'none', border: 'none', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', opacity: currentPage === 1 ? 0.3 : 1, padding: '0 4px', color: 'inherit' }}
-                            >
-                                &lt;
-                            </button>
-                            <span style={{ fontWeight: '500', color: 'var(--color-ink)' }}>{currentPage} / {totalPages || 1}</span>
-                            <button
-                                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                                disabled={currentPage === totalPages}
-                                style={{ background: 'none', border: 'none', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', opacity: currentPage === totalPages ? 0.3 : 1, padding: '0 4px', color: 'inherit' }}
-                            >
-                                &gt;
-                            </button>
-                            <button
-                                onClick={() => setViewAll(!viewAll)}
-                                style={{ border: '1px solid var(--color-border)', background: 'var(--color-surface)', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', color: 'var(--color-ink)', cursor: 'pointer' }}
-                            >
-                                {viewAll ? 'Pages' : 'All'}
-                            </button>
+                    {/* Phân trang Slot (cố định ở đáy cột Slots) */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11px', color: 'var(--color-ink-muted)', paddingTop: '8px', borderTop: '1px solid var(--color-border)', marginTop: '8px' }} className="shrink-0">
+                        <button
+                            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                            disabled={currentPage === 1}
+                            style={{ background: 'none', border: 'none', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', opacity: currentPage === 1 ? 0.3 : 1, padding: '0 4px', color: 'inherit' }}
+                        >
+                            &lt;
+                        </button>
+                        <span style={{ fontWeight: '500', color: 'var(--color-ink)' }}>{currentPage} / {totalPages || 1}</span>
+                        <button
+                            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                            disabled={currentPage === totalPages}
+                            style={{ background: 'none', border: 'none', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', opacity: currentPage === totalPages ? 0.3 : 1, padding: '0 4px', color: 'inherit' }}
+                        >
+                            &gt;
+                        </button>
+                        <button
+                            onClick={() => setViewAll(!viewAll)}
+                            style={{ border: '1px solid var(--color-border)', background: 'var(--color-surface)', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', color: 'var(--color-ink)', cursor: 'pointer' }}
+                        >
+                            {viewAll ? 'Pages' : 'All'}
+                        </button>
+                    </div>
+                </div>
+
+                {/* Cột 3: Nội dung chi tiết Class sessions */}
+                <div
+                    className="card flex-1 min-w-0 h-full bg-white rounded-3xl border border-slate-200/80 shadow-xs flex flex-col overflow-hidden relative"
+                    style={{
+                        background: 'var(--color-surface, #fff)',
+                        borderColor: 'var(--color-border, rgba(226, 232, 240, 0.8))',
+                    }}
+                >
+                    <div
+                        className="shrink-0 px-6 pt-5 pb-3.5 border-b border-slate-100 flex justify-between items-center"
+                        style={{ borderBottomColor: 'var(--color-border, #f1f5f9)' }}
+                    >
+                        <div>
+                            <h2 style={{ fontSize: '16px', fontWeight: 'bold', color: 'var(--color-ink)', margin: '0 0 2px 0' }}>Class sessions</h2>
+                            <span style={{ fontSize: '11px', color: 'var(--color-ink-muted)' }}>{slots.length} sessions • Page {viewAll ? 'All' : currentPage} of {totalPages || 1}</span>
+                        </div>
+                        <div style={{ fontSize: '11px', color: 'var(--color-ink-muted)' }}>
+                            Updated <span style={{ color: 'var(--color-success)', fontWeight: '600' }}>just now</span>
                         </div>
                     </div>
 
-                    {/* Cột 3: Nội dung chi tiết Class sessions */}
-                    <div className="card" style={{ padding: '20px', minHeight: '380px', position: 'relative' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--color-border)', paddingBottom: '12px', marginBottom: '16px' }}>
-                            <div>
-                                <h2 style={{ fontSize: '16px', fontWeight: 'bold', color: 'var(--color-ink)', margin: '0 0 2px 0' }}>Class sessions</h2>
-                                <span style={{ fontSize: '11px', color: 'var(--color-ink-muted)' }}>{slots.length} sessions • Page {viewAll ? 'All' : currentPage} of {totalPages || 1}</span>
-                            </div>
-                            <div style={{ fontSize: '11px', color: 'var(--color-ink-muted)' }}>
-                                Updated <span style={{ color: 'var(--color-success)', fontWeight: '600' }}>just now</span>
-                            </div>
-                        </div>
-
+                    <div
+                        className="flex-1 min-h-0 overflow-y-auto p-6 custom-scroll"
+                        style={{ scrollbarWidth: 'thin' }}
+                    >
                         {selectedSlot ? (
                             <>
                                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', padding: '14px', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--color-primary-bg)', border: '1px solid var(--color-border)' }}>
@@ -633,21 +620,20 @@ export default function LecturerClassDetailPage() {
                                 Please select a slot to view details.
                             </div>
                         )}
-
-                        {/* Nút dọc nổi CLASS TOOLS bên phải */}
-                        <div style={{
-                            position: 'absolute', right: 0, top: '50%', transform: 'translateY(-50%)',
-                            backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRight: 0,
-                            boxShadow: 'var(--shadow-sm)', padding: '12px 4px', borderRadius: '4px 0 0 4px',
-                            fontSize: '10px', color: 'var(--color-primary)', fontWeight: 'bold',
-                            writingMode: 'vertical-rl', letterSpacing: '1px', textTransform: 'uppercase', cursor: 'pointer',
-                            display: 'flex', alignItems: 'center', gap: '6px'
-                        }}>
-                            <Code size={12} style={{ writingMode: 'horizontal-tb', transform: 'rotate(-90deg)' }} />
-                            <span>CLASS TOOLS</span>
-                        </div>
                     </div>
 
+                    {/* Nút dọc nổi CLASS TOOLS bên phải */}
+                    <div style={{
+                        position: 'absolute', right: 0, top: '50%', transform: 'translateY(-50%)',
+                        backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRight: 0,
+                        boxShadow: 'var(--shadow-sm)', padding: '12px 4px', borderRadius: '4px 0 0 4px',
+                        fontSize: '10px', color: 'var(--color-primary)', fontWeight: 'bold',
+                        writingMode: 'vertical-rl', letterSpacing: '1px', textTransform: 'uppercase', cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', gap: '6px', zIndex: 10
+                    }}>
+                        <Code size={12} style={{ writingMode: 'horizontal-tb', transform: 'rotate(-90deg)' }} />
+                        <span>CLASS TOOLS</span>
+                    </div>
                 </div>
             </div>
 
@@ -767,5 +753,4 @@ export default function LecturerClassDetailPage() {
         </div>
     );
 }
-
 
