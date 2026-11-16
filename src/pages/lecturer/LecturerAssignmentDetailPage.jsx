@@ -22,6 +22,43 @@ export default function LecturerAssignmentDetailPage() {
 
     // --- STATE DÀNH CHO MODAL XEM CHI TIẾT AI AUDIT LOG ---
     const [selectedAuditSub, setSelectedAuditSub] = useState(null);
+    const hoverAuditTimeoutRef = useRef(null);
+
+    useEffect(() => {
+        return () => {
+            if (hoverAuditTimeoutRef.current) {
+                clearTimeout(hoverAuditTimeoutRef.current);
+            }
+        };
+    }, []);
+
+    const handleOpenAuditModal = (sub) => {
+        if (hoverAuditTimeoutRef.current) {
+            clearTimeout(hoverAuditTimeoutRef.current);
+            hoverAuditTimeoutRef.current = null;
+        }
+        setSelectedAuditSub(sub);
+    };
+
+    const handleCloseAuditModal = () => {
+        if (hoverAuditTimeoutRef.current) {
+            clearTimeout(hoverAuditTimeoutRef.current);
+        }
+        hoverAuditTimeoutRef.current = setTimeout(() => {
+            setSelectedAuditSub(null);
+        }, 250);
+    };
+
+    const handleModalMouseEnter = () => {
+        if (hoverAuditTimeoutRef.current) {
+            clearTimeout(hoverAuditTimeoutRef.current);
+            hoverAuditTimeoutRef.current = null;
+        }
+    };
+
+    const handleModalMouseLeave = () => {
+        handleCloseAuditModal();
+    };
 
     // --- STATE DÀNH CHO MODAL CHẤM ĐIỂM ---
     const [isGradingModalOpen, setIsGradingModalOpen] = useState(false);
@@ -235,13 +272,12 @@ export default function LecturerAssignmentDetailPage() {
                     const submission = submissionMap.get(studentId);
 
                     if (submission && submission.status !== 'draft' && submission.status !== 'Draft') {
-                        const isThisStudent = (submission.student_code && submission.student_code === 'DE181802') || (member.studentCode && member.studentCode === 'DE181802') || submission.student_id === 'std-01';
-                        const localGraded = db[submission.id] || (submission.student_code && db[submission.student_code]) || (member.studentCode && db[member.studentCode]) || (isThisStudent ? db['sub-de181802'] : null);
-                        const rawScore = localGraded?.grade?.score ?? localGraded?.score ?? submission.score ?? null;
+                        const localGraded = db[submission.id] || (submission.student_code && db[submission.student_code]) || (member.studentCode && db[member.studentCode]);
+                        const rawScore = submission.score ?? localGraded?.grade?.score ?? localGraded?.score ?? null;
                         const effectiveScore = rawScore != null ? Number(rawScore) : null;
-                        const effectiveFeedback = localGraded?.grade?.feedback ?? localGraded?.feedback ?? submission.feedback ?? null;
-                        const effectiveRubrics = localGraded?.grade?.rubrics ?? localGraded?.rubrics ?? submission.rubrics ?? null;
-                        const isGradedStatus = effectiveScore !== null || submission.status === 'graded' || submission.status === 'GRADED' || localGraded?.status === 'GRADED';
+                        const effectiveFeedback = submission.feedback ?? localGraded?.grade?.feedback ?? localGraded?.feedback ?? null;
+                        const effectiveRubrics = submission.rubrics ?? localGraded?.grade?.rubrics ?? localGraded?.rubrics ?? null;
+                        const isGradedStatus = submission.status === 'graded' || submission.status === 'GRADED' || localGraded?.status === 'GRADED' || effectiveScore !== null;
 
                         return {
                             ...submission,
@@ -253,8 +289,8 @@ export default function LecturerAssignmentDetailPage() {
                             feedback: effectiveFeedback,
                             rubrics: effectiveRubrics,
                             status: isGradedStatus ? 'graded' : (submission.status || 'submitted'),
-                            aiAuditLog: localGraded?.aiAuditLog || submission.aiAuditLog || submission.ai_audit_log || null,
-                            declarations: localGraded?.aiAuditLog || submission.declarations || submission.ai_declarations || null,
+                            aiAuditLog: submission.ai_audit_log || submission.aiAuditLog || localGraded?.aiAuditLog || null,
+                            declarations: submission.ai_declarations || submission.declarations || localGraded?.aiAuditLog || null,
                             has_declared_audit: submission.has_declared_audit,
                             ai_declarations: submission.ai_declarations,
                             ai_audit_log: submission.ai_audit_log,
@@ -283,8 +319,7 @@ export default function LecturerAssignmentDetailPage() {
                 const unmatchedSubmissions = submissionsData.filter(
                     submission => !classMemberIds.has(submission.student_id)
                 ).map(sub => {
-                    const isThisStudent = (sub.student_code && sub.student_code === 'DE181802') || sub.student_id === 'std-01';
-                    const localGraded = db[sub.id] || (sub.student_code && db[sub.student_code]) || (isThisStudent ? db['sub-de181802'] : null);
+                    const localGraded = db[sub.id] || (sub.student_code && db[sub.student_code]);
                     const rawScore = localGraded?.grade?.score ?? localGraded?.score ?? sub.score ?? null;
                     const effectiveScore = rawScore != null ? Number(rawScore) : null;
                     const effectiveFeedback = localGraded?.grade?.feedback ?? localGraded?.feedback ?? sub.feedback ?? null;
@@ -763,9 +798,13 @@ export default function LecturerAssignmentDetailPage() {
                                 <tbody>
                                     {(() => {
                                         const isAiTrackingEnabled = Boolean(
-                                            assignment?.ai_declaration_required !== false &&
-                                            assignment?.ai_tracking_enabled !== false &&
-                                            assignment?.is_ai_enabled !== false
+                                            assignment &&
+                                            assignment.ai_declaration_required !== false &&
+                                            assignment.ai_declaration_required !== 'false' &&
+                                            assignment.ai_tracking_enabled !== false &&
+                                            assignment.ai_tracking_enabled !== 'false' &&
+                                            assignment.is_ai_enabled !== false &&
+                                            assignment.is_ai_enabled !== 'false'
                                         );
 
                                         return submissions.length > 0 ? submissions.map((sub, index) => {
@@ -830,16 +869,16 @@ export default function LecturerAssignmentDetailPage() {
                                                     {/* 5. CỘT AI AUDIT (CHÍNH LÀ NƠI CHỨA ICON CON MẮT) */}
                                                     <td style={{ padding: '8px', textAlign: 'center' }}>
                                                         {!isAiTrackingEnabled ? (
-                                                            // 1. Bài tập không yêu cầu AI Audit
+                                                            // 1. Bài tập không áp dụng khai báo AI Audit Log
                                                             <span 
-                                                                title="Bài tập không yêu cầu khai báo AI Audit" 
+                                                                title="Bài tập không áp dụng khai báo AI Audit Log" 
                                                                 className="text-slate-300 inline-flex items-center justify-center cursor-default"
                                                                 style={{ color: '#cbd5e1', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
                                                             >
                                                                 <Minus className="w-4 h-4" size={16} />
                                                             </span>
                                                         ) : !isSubmitted ? (
-                                                            // 2. Sinh viên chưa nộp bài
+                                                            // 2. Sinh viên chưa nộp bài (disabled)
                                                             <button
                                                                 type="button"
                                                                 disabled
@@ -859,34 +898,19 @@ export default function LecturerAssignmentDetailPage() {
                                                             >
                                                                 <Eye className="w-4 h-4" size={15} />
                                                             </button>
-                                                        ) : !hasDeclared ? (
-                                                            // 3. Đã nộp bài nhưng không dùng / không khai báo AI
-                                                            <button
-                                                                type="button"
-                                                                disabled
-                                                                title="Sinh viên không khai báo sử dụng AI"
-                                                                className="w-7 h-7 inline-flex items-center justify-center rounded-full bg-slate-50 text-slate-400 opacity-40 cursor-not-allowed"
-                                                                style={{
-                                                                    width: '28px',
-                                                                    height: '28px',
-                                                                    borderRadius: '50%',
-                                                                    display: 'inline-flex',
-                                                                    alignItems: 'center',
-                                                                    justifyContent: 'center',
-                                                                    border: '1px solid #e2e8f0',
-                                                                    opacity: 0.4,
-                                                                    cursor: 'not-allowed',
-                                                                }}
-                                                            >
-                                                                <Eye className="w-4 h-4" size={15} />
-                                                            </button>
                                                         ) : (
-                                                            // 4. Đã khai báo AI đầy đủ
+                                                            // 3. Đã nộp bài (bất kể đã khai báo hay chưa): LUÔN ĐƯỢC ENABLE
                                                             <button
                                                                 type="button"
-                                                                onClick={() => setSelectedAuditSub(sub)}
-                                                                title="Xem chi tiết khai báo AI Audit"
-                                                                className="w-7 h-7 inline-flex items-center justify-center rounded-full bg-slate-100 text-slate-600 hover:text-purple-600 hover:bg-purple-50 transition cursor-pointer"
+                                                                onClick={() => handleOpenAuditModal(sub)}
+                                                                onMouseEnter={() => handleOpenAuditModal(sub)}
+                                                                onMouseLeave={handleCloseAuditModal}
+                                                                title={hasDeclared ? "Xem chi tiết khai báo AI Audit" : "Xem chi tiết AI Audit (Chưa khai báo)"}
+                                                                className={`w-7 h-7 inline-flex items-center justify-center rounded-full transition cursor-pointer ${
+                                                                    hasDeclared
+                                                                        ? 'bg-purple-50 text-purple-600 hover:bg-purple-100 hover:text-purple-700'
+                                                                        : 'bg-slate-100 text-slate-600 hover:bg-purple-50 hover:text-purple-600'
+                                                                }`}
                                                                 style={{
                                                                     width: '28px',
                                                                     height: '28px',
@@ -1081,7 +1105,15 @@ export default function LecturerAssignmentDetailPage() {
             {selectedAuditSub && (
                 <AIAuditDetailModal
                     isOpen={Boolean(selectedAuditSub)}
-                    onClose={() => setSelectedAuditSub(null)}
+                    onClose={() => {
+                        if (hoverAuditTimeoutRef.current) {
+                            clearTimeout(hoverAuditTimeoutRef.current);
+                            hoverAuditTimeoutRef.current = null;
+                        }
+                        setSelectedAuditSub(null);
+                    }}
+                    onMouseEnter={handleModalMouseEnter}
+                    onMouseLeave={handleModalMouseLeave}
                     declarationData={
                         selectedAuditSub.declarations ||
                         selectedAuditSub.ai_declarations ||
@@ -1092,6 +1124,7 @@ export default function LecturerAssignmentDetailPage() {
                     }
                     studentName={selectedAuditSub.student_name}
                     studentCode={selectedAuditSub.student_code}
+                    assignment={assignment}
                 />
             )}
         </div>

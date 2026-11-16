@@ -54,6 +54,10 @@ export interface CourseClassInfo {
   subjectId?: string;
   rubricConfigs?: any[];
   rubric_configs?: any[];
+  ai_declaration_required?: boolean;
+  course_topics?: any[];
+  has_course_topics?: boolean;
+  recommended_topics?: any[];
 }
 
 export interface SubmissionCodeFile {
@@ -268,6 +272,8 @@ export interface LecturerAcademicEvaluationProps {
   savedEvaluation?: any;
   topics?: any[];
   isLoadingTopics?: boolean;
+  hasCourseTopics?: boolean;
+  recommendedTopics?: any[];
   onBack?: () => void;
   onRequestResubmit?: (reason: string) => Promise<void | boolean>;
   onSaveDraft?: (payload: GradePayload) => Promise<void | boolean>;
@@ -277,134 +283,27 @@ export interface LecturerAcademicEvaluationProps {
 }
 
 /* ==========================================================================
-   2. DEFAULT MOCK DATA (MATCHING EXACT HTML MOCKUP)
+   2. DEFAULT EMPTY STATE
    ========================================================================== */
 
 export const DEFAULT_STUDENT: StudentInfo = {
-  name: 'Tran Thi B',
-  code: 'DE181802',
-  email: 'tranb.de181802@fpt.edu.vn',
+  name: '',
+  code: '',
+  email: '',
   aiRiskLevel: 'low',
   aiRiskLabel: 'low AI-transparency risk',
 };
 
 export const DEFAULT_COURSE_INFO: CourseClassInfo = {
-  courseCode: 'SWD392',
-  courseTitle: 'Software Architecture and Design',
-  className: 'SE18D01',
-  assignmentTitle: 'Backend Architecture C4 Model',
+  courseCode: '',
+  courseTitle: '',
+  className: '',
+  assignmentTitle: '',
 };
 
-export const DEFAULT_SUBMISSION_CODE_LINES: string[] = [
-  '/**',
-  ' * Academic Research Transparency & AI Audit System (ART-AI)',
-  ' * Student: Tran Thi B (DE181802)',
-  ' * Assignment: Backend Architecture with C4 Model & Microservices',
-  ' */',
-  '',
-  'import { Injectable, NestMiddleware, UnauthorizedException } from "@nestjs/common";',
-  'import { Request, Response, NextFunction } from "express";',
-  'import { JwtService } from "@nestjs/jwt";',
-  'import { RedisTokenBlacklistService } from "../security/token-blacklist.service";',
-  '',
-  '@Injectable()',
-  'export class JwtAuthMiddleware implements NestMiddleware {',
-  '  constructor(',
-  '    private readonly jwtService: JwtService,',
-  '    private readonly redisBlacklist: RedisTokenBlacklistService',
-  '  ) {}',
-  '',
-  '  async use(req: Request, res: Response, next: NextFunction) {',
-  '    const authHeader = req.headers.authorization;',
-  '    if (!authHeader || !authHeader.startsWith("Bearer ")) {',
-  '      throw new UnauthorizedException("Missing Bearer Authentication Token");',
-  '    }',
-  '',
-  '    const token = authHeader.split(" ")[1];',
-  '    // AI Audit Note: Refactored following student reflection on Dec 15 to check Redis blacklist',
-  '    const isRevoked = await this.redisBlacklist.isTokenRevoked(token);',
-  '    if (isRevoked) {',
-  '      throw new UnauthorizedException("Token has been revoked or expired");',
-  '    }',
-  '',
-  '    try {',
-  '      const decodedPayload = await this.jwtService.verifyAsync(token);',
-  '      req["user"] = decodedPayload;',
-  '      next();',
-  '    } catch (err) {',
-  '      throw new UnauthorizedException("Invalid token signature or expired payload");',
-  '    }',
-  '  }',
-  '}',
-];
+export const DEFAULT_SUBMISSION_CODE_LINES: string[] = [];
 
-export const DEFAULT_AI_DECLARATIONS: AiDeclarationPhase[] = [
-  {
-    phaseKey: 'reflection',
-    phaseName: 'AI REFLECTION',
-    badgeBg: 'bg-purple-50',
-    badgeText: 'text-purple-700',
-    aiTool: 'Claude 3.5 Sonnet',
-    decision: 'Fully Accepted',
-    decisionBg: 'bg-emerald-50',
-    decisionText: 'text-emerald-700',
-    prompt: '"Review this module architecture and point out critical code smells."',
-    aiResponseSummary: 'Suggested decomposing monolithic handlers into service layers.',
-    studentReflection: 'Acknowledged tight coupling and refactored logic into service layer.',
-  },
-  {
-    phaseKey: 'decomposition',
-    phaseName: 'DECOMPOSITION',
-    badgeBg: 'bg-blue-50',
-    badgeText: 'text-blue-700',
-    aiTool: 'ChatGPT-4o',
-    decision: 'Partially Modified',
-    decisionBg: 'bg-blue-50',
-    decisionText: 'text-blue-700',
-    prompt: '"Help me break down the authentication process with JWT & Refresh token."',
-    aiResponseSummary: 'Divided into 4 submodules: validation, token gen, cookie, middleware.',
-    studentReflection: 'Kept the proposed 4 modules, altered token storage to secure cookies.',
-  },
-  {
-    phaseKey: 'pattern',
-    phaseName: 'PATTERN RECOGNITION',
-    badgeBg: 'bg-indigo-50',
-    badgeText: 'text-indigo-700',
-    aiTool: 'GitHub Copilot',
-    decision: 'Heavily Adapted',
-    decisionBg: 'bg-amber-50',
-    decisionText: 'text-amber-700',
-    prompt: '"Generate generic repository pattern for MongoDB CRUD operations."',
-    aiResponseSummary: 'Provided standard BaseRepository class using native Mongo client.',
-    studentReflection: 'Adapted types to fit project schema and added retry transactions.',
-  },
-  {
-    phaseKey: 'abstraction',
-    phaseName: 'ABSTRACTION',
-    badgeBg: 'bg-cyan-50',
-    badgeText: 'text-cyan-700',
-    aiTool: 'ChatGPT-4o',
-    decision: 'Fully Accepted',
-    decisionBg: 'bg-emerald-50',
-    decisionText: 'text-emerald-700',
-    prompt: '"Abstract file upload handling into an independent storage provider."',
-    aiResponseSummary: 'Created IStorageProvider interface with SeaweedFS & S3 adapters.',
-    studentReflection: 'Implemented interface smoothly without leaking filesystem details.',
-  },
-  {
-    phaseKey: 'algorithmic',
-    phaseName: 'ALGORITHMIC THINKING',
-    badgeBg: 'bg-teal-50',
-    badgeText: 'text-teal-700',
-    aiTool: 'Gemini 1.5 Pro',
-    decision: 'Rejected',
-    decisionBg: 'bg-rose-50',
-    decisionText: 'text-rose-700',
-    prompt: '"Write optimal query to calculate real-time student participation."',
-    aiResponseSummary: 'Suggested client-side sorting and filter logic over full dataset.',
-    studentReflection: 'Rejected client-side approach; implemented MongoDB Aggregation pipeline instead.',
-  },
-];
+export const DEFAULT_AI_DECLARATIONS: AiDeclarationPhase[] = [];
 
 /* ==========================================================================
    3. COMPONENT IMPLEMENTATION
@@ -416,7 +315,7 @@ export default function LecturerAcademicEvaluation({
   student = DEFAULT_STUDENT,
   courseInfo = DEFAULT_COURSE_INFO,
   submissionFile = {
-    name: 'SE18D01_TranThiB_BackendArchitecture.ts',
+    name: '',
     lines: DEFAULT_SUBMISSION_CODE_LINES,
   },
   file,
@@ -429,6 +328,8 @@ export default function LecturerAcademicEvaluation({
   savedEvaluation,
   topics,
   isLoadingTopics,
+  hasCourseTopics: hasCourseTopicsProp,
+  recommendedTopics,
   onBack,
   onRequestResubmit,
   onSaveDraft,
@@ -441,10 +342,10 @@ export default function LecturerAcademicEvaluation({
     if (file) return file;
     const lines = submissionFile.lines || (submissionFile.content ? submissionFile.content.split('\n') : DEFAULT_SUBMISSION_CODE_LINES);
     return {
-      name: submissionFile.name || 'SE18D01_TranThiB_BackendArchitecture.ts',
+      name: submissionFile.name || '',
       url: submissionFile.url || '',
-      size: typeof submissionFile.size === 'number' ? submissionFile.size : 4850000,
-      mimeType: submissionFile.name?.endsWith('.zip') ? 'application/zip' : 'text/typescript',
+      size: typeof submissionFile.size === 'number' ? submissionFile.size : 0,
+      mimeType: submissionFile.name?.endsWith('.zip') ? 'application/zip' : 'text/plain',
       fileType: submissionFile.name?.endsWith('.zip') ? 'zip' : (submissionFile.name?.endsWith('.pdf') ? 'pdf' : 'code'),
       textContent: lines.join('\n'),
     };
@@ -475,8 +376,6 @@ export default function LecturerAcademicEvaluation({
 
   const displayAssignmentTitle =
     courseInfo.assignmentTitle || 'Assignment';
-
-  const [aiVerdict, setAiVerdict] = useState<string>('');
 
   // Topics to Improve State (Fetched from Topic Module via subjectId)
   const [internalTopics, setInternalTopics] = useState<any[]>(topics || []);
@@ -515,8 +414,72 @@ export default function LecturerAcademicEvaluation({
     };
   }, [courseInfo?.subjectId, topics]);
 
-  const displayTopics = topics !== undefined ? topics : internalTopics;
+  const rawTopics = topics !== undefined ? topics : internalTopics;
   const loadingTopics = isLoadingTopics ?? isFetchingTopics;
+
+  // Xác định môn học có cấu hình danh sách chủ đề kiến thức (Topics) hay không
+  const hasCourseTopics = useMemo(() => {
+    if (typeof hasCourseTopicsProp === 'boolean') {
+      return hasCourseTopicsProp;
+    }
+    if (typeof (courseInfo as any)?.has_course_topics === 'boolean') {
+      return (courseInfo as any).has_course_topics;
+    }
+    if (typeof (courseInfo as any)?.hasCourseTopics === 'boolean') {
+      return (courseInfo as any).hasCourseTopics;
+    }
+    if (typeof savedEvaluation?.has_course_topics === 'boolean') {
+      return savedEvaluation.has_course_topics;
+    }
+    if (Array.isArray((courseInfo as any)?.course_topics)) {
+      return (courseInfo as any).course_topics.length > 0;
+    }
+    if (Array.isArray(savedEvaluation?.course_topics)) {
+      return savedEvaluation.course_topics.length > 0;
+    }
+    if (topics !== undefined) {
+      return Array.isArray(topics) && topics.length > 0;
+    }
+    if (isFetchingTopics) {
+      return false;
+    }
+    return Array.isArray(internalTopics) && internalTopics.length > 0;
+  }, [hasCourseTopicsProp, courseInfo, savedEvaluation, topics, internalTopics, isFetchingTopics]);
+
+  // Kết hợp thông tin chủ đề AI gợi ý ôn tập nếu có
+  const displayTopics = useMemo(() => {
+    if (!Array.isArray(rawTopics) || rawTopics.length === 0) return [];
+
+    const recList =
+      recommendedTopics ||
+      savedEvaluation?.recommended_topics ||
+      savedEvaluation?.evaluation_data?.recommended_topics ||
+      (courseInfo as any)?.recommended_topics;
+
+    if (!Array.isArray(recList) || recList.length === 0) {
+      return rawTopics;
+    }
+
+    const recNames = new Set(
+      recList.map((r: any) => (typeof r === 'string' ? r.toLowerCase().trim() : (r.name || r.topic_name || '').toLowerCase().trim()))
+    );
+
+    return rawTopics.map((t: any) => {
+      const isRec = recNames.has((t.name || '').toLowerCase().trim()) || recNames.has(String(t.id).toLowerCase().trim());
+      if (isRec) {
+        const foundRec = recList.find((r: any) =>
+          (typeof r === 'string' ? r.toLowerCase().trim() : (r.name || r.topic_name || '').toLowerCase().trim()) === (t.name || '').toLowerCase().trim()
+        );
+        return {
+          ...t,
+          priority: 'high',
+          priority_label: 'Ưu tiên cao (AI đề xuất)',
+          description: (typeof foundRec === 'object' && foundRec?.reason) ? foundRec.reason : t.description,
+        };
+      }
+      return t;
+    });
+  }, [rawTopics, recommendedTopics, savedEvaluation, courseInfo]);
 
   const isAiRequired = useMemo(() => {
     if ((courseInfo as any)?.ai_declaration_required === false) return false;
@@ -767,7 +730,12 @@ export default function LecturerAcademicEvaluation({
   // Rubric Scores State (Thang 10 điểm chuyên môn)
   const isUserModifiedRef = React.useRef(false);
   const [scores, setScores] = useState<RubricScores>(normalizedInitialRubrics);
-  const [feedback, setFeedback] = useState<string>(initialFeedback);
+
+  // Academic Feedback State (Chỉ lưu nhận xét chính thức của giảng viên)
+  const [academicFeedback, setAcademicFeedback] = useState<string>(initialFeedback || '');
+  const feedback = academicFeedback;
+  const setFeedback = setAcademicFeedback;
+
   const [aiCompliance, setAiCompliance] = useState<AiComplianceStatus>(initialAiCompliance);
 
   // Sync state if initialRubrics changes from API, only if user has not manually modified
@@ -777,9 +745,16 @@ export default function LecturerAcademicEvaluation({
     }
   }, [normalizedInitialRubrics]);
 
+  // Khi activeSubmissionId thay đổi, reset cờ người dùng tự sửa và nạp feedback chính thức
   React.useEffect(() => {
-    if (initialFeedback && !isUserModifiedRef.current) {
-      setFeedback(initialFeedback);
+    isUserModifiedRef.current = false;
+    setAcademicFeedback(initialFeedback || '');
+  }, [activeSubmissionId]);
+
+  // Cập nhật academicFeedback khi initialFeedback thay đổi (chỉ khi người dùng chưa tự sửa)
+  React.useEffect(() => {
+    if (!isUserModifiedRef.current) {
+      setAcademicFeedback(initialFeedback || '');
     }
   }, [initialFeedback]);
 
@@ -799,7 +774,22 @@ export default function LecturerAcademicEvaluation({
   const [rubricReasonings, setRubricReasonings] = useState<Record<string, string>>({});
   const [auditIntegrity, setAuditIntegrity] = useState<AuditIntegrity | null>(null);
   const [vivaQuestions, setVivaQuestions] = useState<VivaQuestion[]>([]);
-  const [overallAiFeedback, setOverallAiFeedback] = useState<string>('');
+
+  // AI Verdict Text State: Tách biệt hoàn toàn với Academic Feedback của Giảng viên
+  const [aiVerdictText, setAiVerdictText] = useState<string>('');
+  const overallAiFeedback = aiVerdictText;
+  const setOverallAiFeedback = setAiVerdictText;
+  const aiVerdict = aiVerdictText;
+  const setAiVerdict = setAiVerdictText;
+
+  // Hàm sao chép nhận xét AI sang ô Feedback của Giảng viên khi chủ động bấm nút
+  const handleUseAiVerdictAsFeedback = () => {
+    const textToUse = formatCleanVietnamese(aiVerdictText);
+    if (!textToUse) return;
+    isUserModifiedRef.current = true;
+    setAcademicFeedback(textToUse);
+    showToastNotification('Đã đưa nhận xét AI vào ô Feedback', 'Nội dung nhận xét từ AI đã được chép vào ô Feedback để giảng viên chỉnh sửa.');
+  };
 
   // Danh sách tiêu chí Rubric động theo cấu hình bài tập (chỉ lấy các tiêu chí is_enabled === true)
   const activeCriteriaList = useMemo(() => {
@@ -966,9 +956,6 @@ export default function LecturerAcademicEvaluation({
       if (crit.apiKey) (newScores as any)[crit.apiKey] = targetScore;
     });
     setScores(newScores);
-    if (!feedback) {
-      setFeedback('Code có cấu trúc tốt, hoàn thành các hàm nghiệp vụ theo yêu cầu. Đã ghi nhận một số lỗi tính toán thứ tự VAT và kiểm tra biên.');
-    }
   };
 
   // Hydrate saved snapshot evaluation from DB if available
@@ -980,10 +967,17 @@ export default function LecturerAcademicEvaluation({
       if (savedEvaluation.audit_integrity) {
         setAuditIntegrity(savedEvaluation.audit_integrity);
       }
-      if (savedEvaluation.overall_verdict || savedEvaluation.ai_verdict) {
-        const text = savedEvaluation.overall_verdict || savedEvaluation.ai_verdict;
-        setOverallAiFeedback(text);
-        setAiVerdict(text);
+      const evalText =
+        savedEvaluation.overall_verdict ||
+        savedEvaluation.summary ||
+        savedEvaluation.ai_verdict ||
+        savedEvaluation.evaluation_data?.overall_verdict ||
+        savedEvaluation.evaluation_data?.summary ||
+        '';
+      if (evalText) {
+        setAiVerdictText(formatCleanVietnamese(evalText));
+      } else {
+        setAiVerdictText('');
       }
       if (savedEvaluation.rubric_reasonings) {
         setRubricReasonings(savedEvaluation.rubric_reasonings);
@@ -1001,6 +995,11 @@ export default function LecturerAcademicEvaluation({
         });
         setScores(newSc);
       }
+    } else {
+      setVivaQuestions([]);
+      setAuditIntegrity(null);
+      setAiVerdictText('');
+      setRubricReasonings({});
     }
   }, [savedEvaluation]);
 
@@ -1102,11 +1101,7 @@ export default function LecturerAcademicEvaluation({
       const verdict = aiData.overall_verdict || aiData.ai_verdict || aiData.overall_feedback || '';
       if (verdict) {
         const cleanVerdict = formatCleanVietnamese(verdict);
-        setOverallAiFeedback(cleanVerdict);
-        setAiVerdict(cleanVerdict);
-        if (applyScores) {
-          setFeedback(cleanVerdict);
-        }
+        setAiVerdictText(cleanVerdict);
       }
 
       // 3. Điểm số và nhận xét đã tự động cập nhật trực tiếp lên giao diện (không bật toast làm vướng màn hình)
@@ -1126,6 +1121,15 @@ export default function LecturerAcademicEvaluation({
     } finally {
       setIsAuditingAi(false);
     }
+  };
+
+  // Hàm xử lý AI Grade & Regrade AI - CHỈ cập nhật aiVerdictText và điểm Rubric, TUYỆT ĐỐI KHÔNG ghi vào academicFeedback
+  const handleAiGrade = async () => {
+    await handleAuditWithAi({ force: true, applyScores: true });
+  };
+
+  const handleRegradeAi = async () => {
+    await handleAuditWithAi({ force: true, applyScores: true });
   };
 
   const showToastNotification = (title: string, desc: string, type: 'success' | 'info' | 'error' = 'success') => {
@@ -1174,7 +1178,6 @@ export default function LecturerAcademicEvaluation({
       if (onPublishGrade) {
         await onPublishGrade(payload);
       }
-      showToastNotification('Đã công bố điểm thành công', `Điểm chính thức ${totalScore.toFixed(2)}/10 đã gửi cho sinh viên.`);
       // Tự động chuyển hướng quay về trang danh sách bài nộp sau khi công bố điểm thành công
       if (onBack) {
         setTimeout(() => {
@@ -1290,33 +1293,15 @@ export default function LecturerAcademicEvaluation({
 
           {/* Divider & Student Info */}
           <span className="text-slate-700 hidden sm:inline mx-1 shrink-0">|</span>
-          <div className="hidden md:flex items-center gap-2 shrink-0 min-w-0">
-            <span className="text-xs font-semibold text-white truncate max-w-[120px] sm:max-w-[150px]">
+          <div className="flex items-center gap-2 shrink-0 min-w-0">
+            <span className="text-xs font-semibold text-white truncate max-w-[200px] sm:max-w-[280px]" title={`${student.name} (${student.code})`}>
               {student.name} ({student.code})
             </span>
-            {isAiRequired && (student.aiRiskLevel === 'low' || auditIntegrity?.risk_level === 'LOW_RISK' || auditIntegrity?.riskLevel === 'low') && (
-              <span className="hidden xl:inline-flex items-center gap-1.5 bg-[#063f35] text-[#2fe8a6] border border-[#0d594b] text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0" title="Rủi ro minh bạch AI: Thấp (Đánh giá độc lập, không trừ điểm học thuật)">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#2fe8a6]"></span>
-                <span>LOW_RISK (AI Transparency)</span>
-              </span>
-            )}
-            {isAiRequired && (student.aiRiskLevel === 'medium' || auditIntegrity?.risk_level === 'MEDIUM_RISK' || auditIntegrity?.riskLevel === 'medium') && (
-              <span className="hidden xl:inline-flex items-center gap-1.5 bg-[#3f2f06] text-[#e8b52f] border border-[#59440d] text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0" title="Rủi ro minh bạch AI: Trung bình (Đánh giá độc lập, không trừ điểm học thuật)">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#e8b52f]"></span>
-                <span>MEDIUM_RISK (AI Transparency)</span>
-              </span>
-            )}
-            {isAiRequired && (student.aiRiskLevel === 'high' || auditIntegrity?.risk_level === 'HIGH_RISK' || auditIntegrity?.riskLevel === 'high') && (
-              <span className="hidden xl:inline-flex items-center gap-1.5 bg-[#3f0606] text-[#e82f2f] border border-[#590d0d] text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0" title="Rủi ro minh bạch AI: Cao (Đánh giá độc lập, dùng câu hỏi VIVA để vấn đáp, không trừ thẳng điểm code)">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#e82f2f]"></span>
-                <span>HIGH_RISK (AI Transparency)</span>
-              </span>
-            )}
           </div>
         </div>
 
         {/* Khối nút hành động bên phải */}
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2.5 shrink-0">
           <button
             type="button"
             onClick={() => setShowResubmitModal(true)}
@@ -1324,16 +1309,6 @@ export default function LecturerAcademicEvaluation({
           >
             <RotateCcw size={13} />
             <span>Request Resubmit</span>
-          </button>
-
-          <button
-            type="button"
-            disabled={isSaving}
-            onClick={handleSaveDraft}
-            className="flex items-center gap-1.5 px-3 py-1 bg-[#1b2b52] text-slate-200 rounded-lg text-xs font-semibold hover:bg-[#233766] transition border border-slate-700 cursor-pointer disabled:opacity-50 shrink-0 whitespace-nowrap"
-          >
-            <Bookmark size={13} />
-            <span>{isSaving ? 'Saving...' : 'Save Draft'}</span>
           </button>
 
           <button
@@ -1691,7 +1666,7 @@ export default function LecturerAcademicEvaluation({
                   <button
                     type="button"
                     disabled={isAuditingAi}
-                    onClick={() => handleAuditWithAi({ force: true, applyScores: true })}
+                    onClick={handleAiGrade}
                     className="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-500/20 transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     {isAuditingAi ? (
@@ -1702,7 +1677,7 @@ export default function LecturerAcademicEvaluation({
                     ) : (
                       <>
                         <Sparkles size={14} className="text-amber-300" />
-                        <span>{isAiRequired ? 'Khớp từng tiêu chí với AI' : '✨ AI Gợi ý điểm chuyên môn'}</span>
+                        <span>AI Grade</span>
                       </>
                     )}
                   </button>
@@ -1712,7 +1687,7 @@ export default function LecturerAcademicEvaluation({
                     disabled={isAuditingAi}
                     onClick={() => setShowRegenerateModal(true)}
                     className="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-xs font-bold transition shadow-2xs cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
-                    title="Chấm lại bằng AI (Regenerate AI Evaluation)"
+                    title="Chấm lại bằng AI (Regrade AI)"
                   >
                     {isAuditingAi ? (
                       <>
@@ -1722,7 +1697,7 @@ export default function LecturerAcademicEvaluation({
                     ) : (
                       <>
                         <RefreshCw size={13} className="text-slate-500" />
-                        <span>Chấm lại bằng AI</span>
+                        <span>Regrade AI</span>
                       </>
                     )}
                   </button>
@@ -1734,7 +1709,7 @@ export default function LecturerAcademicEvaluation({
               </div>
 
               {/* Khối tích hợp: Kết luận Thanh tra & Nhận xét Tổng quan từ AI */}
-              {(aiVerdict || overallAiFeedback) && (
+              {aiVerdictText && (
                 <div className="p-4 bg-gradient-to-r from-purple-50/90 via-indigo-50/70 to-blue-50/50 border border-purple-200/90 rounded-2xl text-xs text-purple-950 shadow-xs shrink-0 animate-in fade-in space-y-2.5">
                   <div className="flex items-start justify-between gap-2 pb-2 border-b border-purple-100">
                     <div className="flex items-center gap-2">
@@ -1752,11 +1727,7 @@ export default function LecturerAcademicEvaluation({
                     </div>
                     <button
                       type="button"
-                      onClick={() => {
-                        const textToUse = formatCleanVietnamese(aiVerdict || overallAiFeedback);
-                        isUserModifiedRef.current = true;
-                        setFeedback(textToUse);
-                      }}
+                      onClick={handleUseAiVerdictAsFeedback}
                       className="inline-flex items-center gap-1 text-[10px] font-semibold text-purple-700 bg-white hover:bg-purple-100/70 border border-purple-200 px-2.5 py-1 rounded-lg transition cursor-pointer shadow-2xs shrink-0"
                       title="Sao chép toàn bộ nhận xét này vào ô nhận xét học thuật của Giảng viên"
                     >
@@ -1766,127 +1737,129 @@ export default function LecturerAcademicEvaluation({
                   </div>
 
                   <p className="text-slate-700 text-xs leading-relaxed whitespace-pre-wrap break-words font-medium">
-                    {formatCleanVietnamese(aiVerdict || overallAiFeedback)}
+                    {aiVerdictText}
                   </p>
                 </div>
               )}
 
-              {/* KHỐI CHỦ ĐỀ TRỌNG TÂM CẦN ÔN TẬP (RECOMMENDED TOPICS TO IMPROVE) */}
-              <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs shrink-0 space-y-3.5 transition-all">
-                <div className="flex items-start justify-between gap-2.5 pb-2.5 border-b border-slate-100">
-                  <div className="flex items-start gap-2.5 min-w-0 flex-1">
-                    <div className="w-7 h-7 rounded-lg bg-orange-50 text-orange-600 border border-orange-200/80 flex items-center justify-center shrink-0 shadow-2xs mt-0.5">
-                      <BookOpen size={15} />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wide leading-snug">
-                        Chủ đề trọng tâm cần ôn tập
-                      </h3>
-                      <div className="text-[10px] text-slate-400 font-medium mt-0.5">
-                        Recommended Topics to Improve
+              {/* KHỐI CHỦ ĐỀ TRỌNG TÂM CẦN ÔN TẬP (RECOMMENDED TOPICS TO IMPROVE) - CHỈ HIỂN THỊ KHI MÔN HỌC CÓ CẤU HÌNH TOPICS */}
+              {hasCourseTopics && (
+                <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs shrink-0 space-y-3.5 transition-all">
+                  <div className="flex items-start justify-between gap-2.5 pb-2.5 border-b border-slate-100">
+                    <div className="flex items-start gap-2.5 min-w-0 flex-1">
+                      <div className="w-7 h-7 rounded-lg bg-orange-50 text-orange-600 border border-orange-200/80 flex items-center justify-center shrink-0 shadow-2xs mt-0.5">
+                        <BookOpen size={15} />
                       </div>
-                      <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
-                        Các chủ đề kiến thức thuộc môn học mà sinh viên cần củng cố thêm dựa trên bài làm này.
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wide leading-snug">
+                          Chủ đề trọng tâm cần ôn tập
+                        </h3>
+                        <div className="text-[10px] text-slate-400 font-medium mt-0.5">
+                          Recommended Topics to Improve
+                        </div>
+                        <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
+                          Các chủ đề kiến thức thuộc môn học mà sinh viên cần củng cố thêm dựa trên bài làm này.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 shrink-0 self-start pt-0.5">
+                      {displayTopics.length > 0 && (
+                        <span className="text-[10px] font-bold text-slate-600 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full shrink-0">
+                          {displayTopics.length} chủ đề
+                        </span>
+                      )}
+                      {displayTopics.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const topicNames = displayTopics.map((t: any) => t.name).join(', ');
+                            const note = `\n\n📌 Chủ đề trọng tâm cần củng cố thêm: ${topicNames}.`;
+                            isUserModifiedRef.current = true;
+                            setFeedback((prev) => (prev ? `${prev.trim()}${note}` : note.trim()));
+                          }}
+                          className="inline-flex items-center gap-1 text-[10px] font-semibold text-orange-700 bg-orange-50 hover:bg-orange-100/80 border border-orange-200 px-2.5 py-1 rounded-lg transition cursor-pointer shrink-0 shadow-2xs"
+                          title="Thêm danh sách các chủ đề này vào ô Nhận xét học thuật"
+                        >
+                          <Sparkles size={11} className="text-orange-600" />
+                          <span>Thêm vào nhận xét</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Danh sách Topics / Loading / Empty State */}
+                  {loadingTopics ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 animate-pulse">
+                      <div className="h-20 bg-slate-100 rounded-xl"></div>
+                      <div className="h-20 bg-slate-100 rounded-xl"></div>
+                    </div>
+                  ) : displayTopics && displayTopics.length > 0 ? (
+                    <div className="max-h-[300px] overflow-y-auto custom-scroll pr-1">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        {displayTopics.map((topic: any, idx: number) => {
+                          const isHighPriority =
+                            topic.priority === 'high' ||
+                            topic.priority === 'urgent' ||
+                            topic.level === 'high' ||
+                            idx < 2;
+
+                          const priorityLabel =
+                            topic.priority_label ||
+                            (isHighPriority ? 'Ưu tiên cao' : 'Khuyến nghị');
+
+                          return (
+                            <div
+                              key={topic.id || idx}
+                              className="p-3 bg-slate-50/70 border border-slate-200/80 rounded-xl hover:border-orange-300 hover:bg-orange-50/15 transition-all shadow-2xs flex flex-col justify-between gap-2"
+                            >
+                              <div>
+                                <div className="flex items-start justify-between gap-2 mb-1.5">
+                                  <h4
+                                    className="font-semibold text-xs sm:text-sm text-gray-800 leading-snug break-words flex-1 min-w-0 pr-1"
+                                    title={topic.name}
+                                  >
+                                    {topic.name}
+                                  </h4>
+                                  <span
+                                    className={`shrink-0 px-2 py-0.5 text-[10px] font-semibold rounded-full border whitespace-nowrap self-start ${
+                                      isHighPriority
+                                        ? 'bg-rose-50 text-rose-700 border-rose-200'
+                                        : 'bg-amber-50 text-amber-700 border-amber-200'
+                                    }`}
+                                  >
+                                    {priorityLabel}
+                                  </span>
+                                </div>
+                                <p
+                                  className="text-[11px] text-slate-500 leading-relaxed break-words"
+                                  title={topic.description}
+                                >
+                                  {topic.description ||
+                                    'Chủ đề kiến thức cốt lõi thuộc môn học cần sinh viên củng cố và rèn luyện thêm.'}
+                                </p>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-4 border border-dashed border-slate-200 rounded-xl bg-slate-50/50 text-center space-y-1.5">
+                      <div className="w-8 h-8 rounded-xl bg-slate-100 text-slate-400 mx-auto flex items-center justify-center">
+                        <Compass size={16} />
+                      </div>
+                      <p className="text-xs font-semibold text-slate-700">Chưa có chủ đề trọng tâm nào</p>
+                      <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
+                        Môn học này hiện chưa có chủ đề gắn cờ cần cải thiện hoặc sinh viên đã đáp ứng tốt các yêu cầu học thuật.
                       </p>
                     </div>
-                  </div>
-
-                  <div className="flex items-center gap-1.5 shrink-0 self-start pt-0.5">
-                    {displayTopics.length > 0 && (
-                      <span className="text-[10px] font-bold text-slate-600 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full shrink-0">
-                        {displayTopics.length} chủ đề
-                      </span>
-                    )}
-                    {displayTopics.length > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const topicNames = displayTopics.map((t: any) => t.name).join(', ');
-                          const note = `\n\n📌 Chủ đề trọng tâm cần củng cố thêm: ${topicNames}.`;
-                          isUserModifiedRef.current = true;
-                          setFeedback((prev) => (prev ? `${prev.trim()}${note}` : note.trim()));
-                        }}
-                        className="inline-flex items-center gap-1 text-[10px] font-semibold text-orange-700 bg-orange-50 hover:bg-orange-100/80 border border-orange-200 px-2.5 py-1 rounded-lg transition cursor-pointer shrink-0 shadow-2xs"
-                        title="Thêm danh sách các chủ đề này vào ô Nhận xét học thuật"
-                      >
-                        <Sparkles size={11} className="text-orange-600" />
-                        <span>Thêm vào nhận xét</span>
-                      </button>
-                    )}
-                  </div>
+                  )}
                 </div>
-
-                {/* Danh sách Topics / Loading / Empty State */}
-                {loadingTopics ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 animate-pulse">
-                    <div className="h-20 bg-slate-100 rounded-xl"></div>
-                    <div className="h-20 bg-slate-100 rounded-xl"></div>
-                  </div>
-                ) : displayTopics && displayTopics.length > 0 ? (
-                  <div className="max-h-[300px] overflow-y-auto custom-scroll pr-1">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                      {displayTopics.map((topic: any, idx: number) => {
-                        const isHighPriority =
-                          topic.priority === 'high' ||
-                          topic.priority === 'urgent' ||
-                          topic.level === 'high' ||
-                          idx < 2;
-
-                        const priorityLabel =
-                          topic.priority_label ||
-                          (isHighPriority ? 'Ưu tiên cao' : 'Khuyến nghị');
-
-                        return (
-                          <div
-                            key={topic.id || idx}
-                            className="p-3 bg-slate-50/70 border border-slate-200/80 rounded-xl hover:border-orange-300 hover:bg-orange-50/15 transition-all shadow-2xs flex flex-col justify-between gap-2"
-                          >
-                            <div>
-                              <div className="flex items-start justify-between gap-2 mb-1.5">
-                                <h4
-                                  className="font-semibold text-xs sm:text-sm text-gray-800 leading-snug break-words flex-1 min-w-0 pr-1"
-                                  title={topic.name}
-                                >
-                                  {topic.name}
-                                </h4>
-                                <span
-                                  className={`shrink-0 px-2 py-0.5 text-[10px] font-semibold rounded-full border whitespace-nowrap self-start ${
-                                    isHighPriority
-                                      ? 'bg-rose-50 text-rose-700 border-rose-200'
-                                      : 'bg-amber-50 text-amber-700 border-amber-200'
-                                  }`}
-                                >
-                                  {priorityLabel}
-                                </span>
-                              </div>
-                              <p
-                                className="text-[11px] text-slate-500 leading-relaxed break-words"
-                                title={topic.description}
-                              >
-                                {topic.description ||
-                                  'Chủ đề kiến thức cốt lõi thuộc môn học cần sinh viên củng cố và rèn luyện thêm.'}
-                              </p>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="p-4 border border-dashed border-slate-200 rounded-xl bg-slate-50/50 text-center space-y-1.5">
-                    <div className="w-8 h-8 rounded-xl bg-slate-100 text-slate-400 mx-auto flex items-center justify-center">
-                      <Compass size={16} />
-                    </div>
-                    <p className="text-xs font-semibold text-slate-700">Chưa có chủ đề trọng tâm nào</p>
-                    <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
-                      Môn học này hiện chưa có chủ đề gắn cờ cần cải thiện hoặc sinh viên đã đáp ứng tốt các yêu cầu học thuật.
-                    </p>
-                  </div>
-                )}
-              </div>
+              )}
 
               {/* Điều chỉnh Rubric chuyên môn thang 10 */}
-              <div className="space-y-3.5 pt-2 border-t border-slate-100 shrink-0">
+              <div className={`space-y-3.5 ${hasCourseTopics || aiVerdictText ? 'pt-2 border-t border-slate-100' : ''} shrink-0`}>
                 <div className="flex items-center justify-between">
                   <div className="text-xs font-bold text-slate-800 uppercase tracking-wide">
                     ĐIỀU CHỈNH TIÊU CHÍ RUBRIC CHUẨN ({activeCriteriaList.length} TIÊU CHÍ)
@@ -2238,7 +2211,7 @@ export default function LecturerAcademicEvaluation({
                 disabled={isAuditingAi}
                 onClick={async () => {
                   try {
-                    await handleAuditWithAi({ force: true, applyScores: true });
+                    await handleRegradeAi();
                   } finally {
                     setShowRegenerateModal(false);
                   }

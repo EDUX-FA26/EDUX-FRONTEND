@@ -63,13 +63,57 @@ const COMPUTATIONAL_THINKING_RUBRICS = [
 ];
 
 /**
+ * Lấy danh sách active rubric keys từ cấu hình assignment
+ */
+export function getActiveRubricKeysFromAssignment(assignment) {
+  const configs = assignment?.rubric_configs || assignment?.rubricConfigs;
+  if (!configs || !Array.isArray(configs) || configs.length === 0) {
+    return null;
+  }
+  const enabled = configs.filter((c) => c.is_enabled !== false);
+  if (enabled.length === 0) return null;
+
+  const KEY_MAP = {
+    PROBLEM_ABSTRACTION: 'decomposition',
+    DECOMPOSITION: 'decomposition',
+    PATTERN_RECOGNITION: 'pattern',
+    PATTERN: 'pattern',
+    GENERALIZATION: 'pattern',
+    ABSTRACTION: 'abstraction',
+    IMPLEMENTATION_QUALITY: 'abstraction',
+    ALGORITHMIC_THINKING: 'algorithmic',
+    ALGORITHMIC: 'algorithmic',
+    AI_INTERACTION: 'algorithmic',
+    CRITICAL_EVALUATION: 'reflection',
+    REFLECTION: 'reflection',
+    ETHICAL_IMPACT: 'reflection',
+    AI_EVALUATION: 'reflection',
+    METACOGNITIVE_REFLECTION: 'reflection',
+  };
+
+  const keys = new Set();
+  enabled.forEach((c) => {
+    const rawKey = c.criterion_key || c.key || '';
+    const upper = String(rawKey).toUpperCase();
+    const lower = String(rawKey).toLowerCase();
+    if (KEY_MAP[upper]) {
+      keys.add(KEY_MAP[upper]);
+    } else if (['decomposition', 'pattern', 'abstraction', 'algorithmic', 'reflection'].includes(lower)) {
+      keys.add(lower);
+    }
+  });
+
+  return keys.size > 0 ? Array.from(keys) : null;
+}
+
+/**
  * Robust safe data parser supporting both camelCase and snake_case schemas:
  * - Uses normalizeAuditData helper for 100% backward compatibility
  */
 export function parseDeclarationData(declarationData) {
   const fallbackRubrics = COMPUTATIONAL_THINKING_RUBRICS.map((r) => ({
     ...r,
-    aiTool: 'Chưa khai báo',
+    aiTool: 'N/A',
     decision: 'Not Declared',
     prompt: '',
     responseSummary: '',
@@ -217,7 +261,7 @@ function parseSingleScopeDeclarations(raw) {
 
       return {
         ...r,
-        aiTool: (hasPrompt || hasResponse || hasReflection) ? (aiTool || 'ChatGPT') : (aiTool && aiTool !== 'ChatGPT' ? aiTool : 'Chưa khai báo'),
+        aiTool: (hasPrompt || hasResponse || hasReflection) ? (aiTool || 'ChatGPT') : (aiTool && aiTool !== 'ChatGPT' && aiTool !== 'Chưa khai báo' ? aiTool : 'N/A'),
         decision: finalDecision,
         prompt,
         responseSummary,
@@ -231,7 +275,7 @@ function parseSingleScopeDeclarations(raw) {
     }
     return {
       ...r,
-      aiTool: 'Chưa khai báo',
+      aiTool: 'N/A',
       decision: 'Not Declared',
       prompt: '',
       responseSummary: '',
@@ -290,12 +334,12 @@ export function getToolBadgeStyle(tool) {
       label: tool || 'DeepSeek',
     };
   }
-  if (t === 'not declared' || !t || t === '-') {
+  if (t === 'not declared' || !t || t === '-' || t === 'n/a' || t.includes('chưa') || t.includes('không')) {
     return {
       bg: '#f8fafc',
       color: '#94a3b8',
       border: '#e2e8f0',
-      label: 'Chưa khai báo',
+      label: 'N/A',
     };
   }
   return {
@@ -369,6 +413,10 @@ export function AIAuditDetailModal({
   declarationData,
   studentName = '',
   studentCode = '',
+  assignment,
+  activeRubricKeys = [],
+  onMouseEnter,
+  onMouseLeave,
 }) {
   const [activeScopeIdx, setActiveScopeIdx] = useState(0);
 
@@ -422,7 +470,11 @@ export function AIAuditDetailModal({
   const safeScope = hasScopes
     ? parsedData.scopes[Math.min(activeScopeIdx, parsedData.scopes.length - 1)]
     : null;
-  const displayRubrics = safeScope?.rubrics ?? parsedData?.rubrics ?? [];
+  const baseRubrics = safeScope?.rubrics ?? parsedData?.rubrics ?? [];
+  const activeKeys = activeRubricKeys || (assignment ? getActiveRubricKeysFromAssignment(assignment) : null);
+  const displayRubrics = activeKeys && Array.isArray(activeKeys) && activeKeys.length > 0
+    ? baseRubrics.filter((r) => activeKeys.includes(r.key) || r.isCompleted || r.isPartiallyFilled)
+    : baseRubrics;
 
   // Keyboard accessibility: Escape closes modal
   useEffect(() => {
@@ -438,7 +490,7 @@ export function AIAuditDetailModal({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/40 backdrop-blur-sm transition-all duration-200"
+      className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/40 backdrop-blur-sm transition-all duration-200 pointer-events-none"
       style={{
         position: 'fixed',
         top: 0,
@@ -451,6 +503,7 @@ export function AIAuditDetailModal({
         justifyContent: 'center',
         backgroundColor: 'rgba(15, 23, 42, 0.45)',
         backdropFilter: 'blur(3px)',
+        pointerEvents: 'none',
       }}
       onClick={(e) => {
         if (e.target === e.currentTarget) {
@@ -480,6 +533,8 @@ export function AIAuditDetailModal({
       {/* MODAL CARD: w-[80vw] max-w-5xl h-[75vh] flex flex-col overflow-hidden */}
       <div
         className="pointer-events-auto flex flex-col h-[75vh] w-[80vw] max-w-5xl bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden"
+        onMouseEnter={onMouseEnter}
+        onMouseLeave={onMouseLeave}
         style={{
           pointerEvents: 'auto',
           width: '80vw',
@@ -551,7 +606,7 @@ export function AIAuditDetailModal({
                       <strong style={{ color: '#1e293b' }}>
                         {studentName || 'Sinh viên'}
                       </strong>
-                      {studentCode ? ` (MSSV: ${studentCode})` : ''} • 5 Tiêu chí Computational Thinking
+                      {studentCode ? ` (MSSV: ${studentCode})` : ''} • {displayRubrics.length} Tiêu chí Rubric
                     </p>
                   </div>
                 </div>
@@ -576,7 +631,7 @@ export function AIAuditDetailModal({
                       <CheckCircle2 size={13} />
                       {hasScopes && parsedData.scopes.length > 1
                         ? `Hoàn tất ${parsedData.completedCount}/${parsedData.totalCount} Rubrics`
-                        : `Hoàn tất ${parsedData.completedCount}/5 Rubrics`}
+                        : `Hoàn tất ${parsedData.completedCount}/${displayRubrics.length} Rubrics`}
                     </span>
                   ) : parsedData.completedCount > 0 ? (
                     <span
@@ -596,7 +651,7 @@ export function AIAuditDetailModal({
                       <AlertCircle size={13} />
                       {hasScopes && parsedData.scopes.length > 1
                         ? `Đang khai báo: ${parsedData.completedCount}/${parsedData.totalCount} Rubrics đầy đủ`
-                        : `Đang khai báo: ${parsedData.completedCount}/5 Rubrics đầy đủ`}
+                        : `Đang khai báo: ${parsedData.completedCount}/${displayRubrics.length} Rubrics đầy đủ`}
                     </span>
                   ) : (
                     <span
@@ -616,7 +671,7 @@ export function AIAuditDetailModal({
                       <AlertCircle size={13} />
                       {hasScopes && parsedData.scopes.length > 1
                         ? `Chưa hoàn thành khai báo (0/${parsedData.totalCount})`
-                        : `Chưa hoàn thành khai báo (0/5)`}
+                        : `Chưa hoàn thành khai báo (0/${displayRubrics.length})`}
                     </span>
                   )}
 
@@ -839,6 +894,26 @@ export function AIAuditDetailModal({
                   backgroundColor: '#ffffff',
                 }}
               >
+                {!parsedData.isDeclared && (
+                  <div
+                    style={{
+                      margin: '0 0 16px 0',
+                      padding: '10px 14px',
+                      backgroundColor: '#fffbeb',
+                      border: '1px solid #fde68a',
+                      borderRadius: '10px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      fontSize: '12px',
+                      color: '#b45309',
+                      fontWeight: '500',
+                    }}
+                  >
+                    <AlertCircle size={16} className="shrink-0 text-amber-600" />
+                    <span>Sinh viên chưa thực hiện khai báo AI Audit Log cho bài nộp này. Các tiêu chí dưới đây hiển thị ở trạng thái mặc định (N/A / Not Declared).</span>
+                  </div>
+                )}
                 <table
                   style={{
                     width: '100%',
@@ -1097,7 +1172,7 @@ export function AIAuditDetailModal({
                                 r.prompt
                               ) : (
                                 <span style={{ color: '#94a3b8', fontStyle: 'italic', fontFamily: 'inherit' }}>
-                                  Không có nội dung câu lệnh (Prompt)
+                                  N/A (Chưa khai báo câu lệnh Prompt)
                                 </span>
                               )}
                             </div>
@@ -1131,7 +1206,7 @@ export function AIAuditDetailModal({
                                 r.responseSummary
                               ) : (
                                 <span style={{ color: '#94a3b8', fontStyle: 'italic' }}>
-                                  Không có tóm tắt phản hồi của AI
+                                  N/A (Chưa khai báo phản hồi AI)
                                 </span>
                               )}
                             </div>
@@ -1166,7 +1241,7 @@ export function AIAuditDetailModal({
                                 r.reflection
                               ) : (
                                 <span style={{ color: '#94a3b8', fontStyle: 'italic', fontWeight: 'normal' }}>
-                                  Không có phản tư / đánh giá của sinh viên
+                                  N/A (Chưa khai báo phản tư)
                                 </span>
                               )}
                             </div>
@@ -1176,43 +1251,6 @@ export function AIAuditDetailModal({
                     })}
                   </tbody>
                 </table>
-              </div>
-
-              {/* 3. FOOTER */}
-              <div
-                className="px-7 py-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between shrink-0"
-                style={{
-                  padding: '12px 24px',
-                  backgroundColor: '#f8fafc',
-                  borderTop: '1px solid #e2e8f0',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  flexShrink: 0,
-                  fontSize: '11px',
-                  color: '#475569',
-                }}
-              >
-                <span>
-                  💡 <strong>Ghi chú:</strong> Bấm <strong>"Đóng"</strong> hoặc phím <strong>Esc</strong> để đóng xem nhanh. Bấm <strong>"Sửa điểm"</strong> ở danh sách để thẩm định và cho điểm trên từng tiêu chí Rubric.
-                </span>
-                <button
-                  type="button"
-                  onClick={onClose}
-                  style={{
-                    padding: '5px 14px',
-                    backgroundColor: '#ffffff',
-                    border: '1px solid #cbd5e1',
-                    borderRadius: '8px',
-                    fontWeight: '600',
-                    fontSize: '11px',
-                    color: '#334155',
-                    cursor: 'pointer',
-                    boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-                  }}
-                >
-                  Đóng (Esc)
-                </button>
               </div>
             </div>
           </div>,
@@ -1229,25 +1267,79 @@ export default function AIAuditQuickViewHover({
   studentCode = '',
   className = '',
   hasDeclared: hasDeclaredProp = undefined,
+  isSubmitted = true,
+  assignment = undefined,
 }) {
   const [isOpen, setIsOpen] = useState(false);
+  const hoverTimeoutRef = useRef(null);
   const parsedData = parseDeclarationData(declarationData);
   const hasDeclared =
     typeof hasDeclaredProp === 'boolean'
       ? hasDeclaredProp
       : Boolean(parsedData?.isDeclared && parsedData?.completedCount > 0);
 
+  const isDisabled = !isSubmitted;
+
+  useEffect(() => {
+    return () => {
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const handleMouseEnter = () => {
+    if (isDisabled) return;
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+    setIsOpen(true);
+  };
+
+  const handleMouseLeave = () => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+    }
+    hoverTimeoutRef.current = setTimeout(() => {
+      setIsOpen(false);
+    }, 200);
+  };
+
+  const handleModalMouseEnter = () => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+  };
+
+  const handleModalMouseLeave = () => {
+    handleMouseLeave();
+  };
+
+  const handleClose = () => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+    setIsOpen(false);
+  };
+
   return (
     <>
       <div className="relative group inline-block" style={{ position: 'relative', display: 'inline-block' }}>
         <button
           type="button"
-          disabled={!hasDeclared}
-          onClick={() => hasDeclared && setIsOpen(true)}
+          disabled={isDisabled}
+          onClick={() => !isDisabled && setIsOpen(true)}
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
           className={`w-7 h-7 inline-flex items-center justify-center rounded-full transition-all ${
-            hasDeclared
-              ? 'bg-slate-100 text-slate-600 hover:text-purple-600 hover:bg-purple-50 cursor-pointer active:scale-95'
-              : 'bg-slate-50 text-slate-300 opacity-40 cursor-not-allowed hover:bg-transparent pointer-events-auto'
+            isDisabled
+              ? 'bg-slate-50 text-slate-300 opacity-30 cursor-not-allowed'
+              : hasDeclared
+              ? 'bg-purple-50 text-purple-600 hover:bg-purple-100 hover:text-purple-700 cursor-pointer active:scale-95'
+              : 'bg-slate-100 text-slate-600 hover:text-purple-600 hover:bg-purple-50 cursor-pointer active:scale-95'
           } ${className}`}
           style={{
             width: '28px',
@@ -1257,16 +1349,28 @@ export default function AIAuditQuickViewHover({
             alignItems: 'center',
             justifyContent: 'center',
             border: '1px solid #e2e8f0',
-            cursor: hasDeclared ? 'pointer' : 'not-allowed',
-            opacity: hasDeclared ? 1 : 0.4,
+            cursor: isDisabled ? 'not-allowed' : 'pointer',
+            opacity: isDisabled ? 0.3 : 1,
           }}
-          aria-label={hasDeclared ? "Xem chi tiết khai báo AI Audit" : "Sinh viên chưa khai báo AI Audit Log"}
-          title={hasDeclared ? "Xem chi tiết khai báo AI Audit" : "Sinh viên chưa khai báo AI Audit Log"}
+          aria-label={
+            isDisabled
+              ? "Sinh viên chưa nộp bài"
+              : hasDeclared
+              ? "Xem chi tiết khai báo AI Audit"
+              : "Xem chi tiết AI Audit (Chưa khai báo)"
+          }
+          title={
+            isDisabled
+              ? "Sinh viên chưa nộp bài"
+              : hasDeclared
+              ? "Xem chi tiết khai báo AI Audit"
+              : "Xem chi tiết AI Audit (Chưa khai báo)"
+          }
         >
           <Eye className="w-4 h-4" size={15} />
         </button>
 
-        {/* Tooltip hiển thị khi hover (áp dụng cả khi disabled) */}
+        {/* Tooltip hiển thị khi hover */}
         <div
           className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col items-center z-30 pointer-events-none"
           style={{
@@ -1291,9 +1395,11 @@ export default function AIAuditQuickViewHover({
               boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
             }}
           >
-            {hasDeclared
+            {isDisabled
+              ? "Sinh viên chưa nộp bài"
+              : hasDeclared
               ? "Xem chi tiết khai báo AI Audit"
-              : "Sinh viên chưa khai báo AI Audit Log"}
+              : "Xem chi tiết AI Audit (Chưa khai báo)"}
           </div>
           <div
             className="w-1.5 h-1.5 bg-slate-800 rotate-45 -mt-0.5"
@@ -1310,10 +1416,13 @@ export default function AIAuditQuickViewHover({
 
       <AIAuditDetailModal
         isOpen={isOpen}
-        onClose={() => setIsOpen(false)}
+        onClose={handleClose}
+        onMouseEnter={handleModalMouseEnter}
+        onMouseLeave={handleModalMouseLeave}
         declarationData={declarationData}
         studentName={studentName}
         studentCode={studentCode}
+        assignment={assignment}
       />
     </>
   );
