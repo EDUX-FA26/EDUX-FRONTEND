@@ -13,6 +13,7 @@ import {
   getDepartments,
   updateDepartment,
 } from '../../services/admin.service';
+import TopicRepositoryModal from '../../components/admin/TopicRepositoryModal';
 import '../module-pages.css';
 
 const EMPTY_FORM = {
@@ -294,6 +295,7 @@ export default function SubjectManagementPage() {
   const [error, setError] = useState('');
   const [modal, setModal] = useState(null);
   const [deptModal, setDeptModal] = useState(null);
+  const [topicSubject, setTopicSubject] = useState(null);
   const [formError, setFormError] = useState('');
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState('');
@@ -542,7 +544,16 @@ export default function SubjectManagementPage() {
             ) : (
               <div className="module-table-wrap">
                 <table className="module-table">
-                  <thead><tr><th>Môn học</th><th>Khoa / Bộ môn</th><th>Tín chỉ & Lớp học</th><th>Trạng thái</th><th aria-label="Thao tác" /></tr></thead>
+                  <thead>
+                    <tr>
+                      <th>Môn học</th>
+                      <th>Khoa / Bộ môn</th>
+                      <th>Tín chỉ & Lớp học</th>
+                      <th>Trạng thái</th>
+                      <th style={{ textAlign: 'center' }}>Kho Topic</th>
+                      <th style={{ textAlign: 'center' }}>Thao tác</th>
+                    </tr>
+                  </thead>
                   <tbody>
                     {subjects.map((subject) => {
                       const deptInfo = subject.department_id ? deptMap[subject.department_id] : null;
@@ -583,6 +594,19 @@ export default function SubjectManagementPage() {
                               {subject.is_active ? 'Đang hoạt động' : 'Ngừng hoạt động'}
                             </span>
                           </td>
+                          <td style={{ textAlign: 'center' }}>
+                            <button
+                              className="module-icon-button"
+                              type="button"
+                              onClick={() => setTopicSubject(subject)}
+                              aria-label={`Kho Topic của ${subject.name}`}
+                              title="Quản lý Kho Canonical Topic môn học"
+                              style={{ color: 'var(--color-primary)' }}
+                            >
+                              <span className="material-symbols-outlined">category</span>
+                            </button>
+                          </td>
+                          {/* Cột Thao tác */}
                           <td>
                             <div className="module-row__actions">
                               {subject.is_active ? (
@@ -724,29 +748,43 @@ export default function SubjectManagementPage() {
             )}
           </section>
         </>
-      )}
+      )
+      }
 
-      {modal && (
-        <SubjectModal
-          subject={modal.subject}
-          departments={departments}
-          saving={saving}
-          error={formError}
-          onClose={() => !saving && setModal(null)}
-          onSubmit={submitForm}
-          onQuickCreateDepartment={handleQuickCreateDepartment}
-        />
-      )}
+      {
+        modal && (
+          <SubjectModal
+            subject={modal.subject}
+            departments={departments}
+            saving={saving}
+            error={formError}
+            onClose={() => !saving && setModal(null)}
+            onSubmit={submitForm}
+            onQuickCreateDepartment={handleQuickCreateDepartment}
+          />
+        )
+      }
 
-      {deptModal && (
-        <DepartmentModal
-          department={deptModal.department}
-          saving={saving}
-          error={formError}
-          onClose={() => !saving && setDeptModal(null)}
-          onSubmit={submitDepartmentForm}
-        />
-      )}
-    </div>
+      {
+        deptModal && (
+          <DepartmentModal
+            department={deptModal.department}
+            saving={saving}
+            error={formError}
+            onClose={() => !saving && setDeptModal(null)}
+            onSubmit={submitDepartmentForm}
+          />
+        )
+      }
+
+      {
+        topicSubject && (
+          <TopicRepositoryModal
+            subject={topicSubject}
+            onClose={() => setTopicSubject(null)}
+          />
+        )
+      }
+    </div >
   );
 }
