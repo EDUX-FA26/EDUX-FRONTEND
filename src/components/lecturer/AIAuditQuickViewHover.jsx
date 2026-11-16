@@ -415,6 +415,8 @@ export function AIAuditDetailModal({
   studentCode = '',
   assignment,
   activeRubricKeys,
+  onMouseEnter,
+  onMouseLeave,
 }) {
   const [activeScopeIdx, setActiveScopeIdx] = useState(0);
 
@@ -488,7 +490,7 @@ export function AIAuditDetailModal({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/40 backdrop-blur-sm transition-all duration-200"
+      className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/40 backdrop-blur-sm transition-all duration-200 pointer-events-none"
       style={{
         position: 'fixed',
         top: 0,
@@ -501,6 +503,7 @@ export function AIAuditDetailModal({
         justifyContent: 'center',
         backgroundColor: 'rgba(15, 23, 42, 0.45)',
         backdropFilter: 'blur(3px)',
+        pointerEvents: 'none',
       }}
       onClick={(e) => {
         if (e.target === e.currentTarget) {
@@ -530,6 +533,8 @@ export function AIAuditDetailModal({
       {/* MODAL CARD: w-[80vw] max-w-5xl h-[75vh] flex flex-col overflow-hidden */}
       <div
         className="pointer-events-auto flex flex-col h-[75vh] w-[80vw] max-w-5xl bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden"
+        onMouseEnter={onMouseEnter}
+        onMouseLeave={onMouseLeave}
         style={{
           pointerEvents: 'auto',
           width: '80vw',
@@ -1247,43 +1252,6 @@ export function AIAuditDetailModal({
                   </tbody>
                 </table>
               </div>
-
-              {/* 3. FOOTER */}
-              <div
-                className="px-7 py-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between shrink-0"
-                style={{
-                  padding: '12px 24px',
-                  backgroundColor: '#f8fafc',
-                  borderTop: '1px solid #e2e8f0',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  flexShrink: 0,
-                  fontSize: '11px',
-                  color: '#475569',
-                }}
-              >
-                <span>
-                  💡 <strong>Ghi chú:</strong> Bấm <strong>"Đóng"</strong> hoặc phím <strong>Esc</strong> để đóng xem nhanh. Bấm <strong>"Sửa điểm"</strong> ở danh sách để thẩm định và cho điểm trên từng tiêu chí Rubric.
-                </span>
-                <button
-                  type="button"
-                  onClick={onClose}
-                  style={{
-                    padding: '5px 14px',
-                    backgroundColor: '#ffffff',
-                    border: '1px solid #cbd5e1',
-                    borderRadius: '8px',
-                    fontWeight: '600',
-                    fontSize: '11px',
-                    color: '#334155',
-                    cursor: 'pointer',
-                    boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-                  }}
-                >
-                  Đóng (Esc)
-                </button>
-              </div>
             </div>
           </div>,
           document.body
@@ -1303,6 +1271,7 @@ export default function AIAuditQuickViewHover({
   assignment = undefined,
 }) {
   const [isOpen, setIsOpen] = useState(false);
+  const hoverTimeoutRef = useRef(null);
   const parsedData = parseDeclarationData(declarationData);
   const hasDeclared =
     typeof hasDeclaredProp === 'boolean'
@@ -1311,6 +1280,51 @@ export default function AIAuditQuickViewHover({
 
   const isDisabled = !isSubmitted;
 
+  useEffect(() => {
+    return () => {
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const handleMouseEnter = () => {
+    if (isDisabled) return;
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+    setIsOpen(true);
+  };
+
+  const handleMouseLeave = () => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+    }
+    hoverTimeoutRef.current = setTimeout(() => {
+      setIsOpen(false);
+    }, 200);
+  };
+
+  const handleModalMouseEnter = () => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+  };
+
+  const handleModalMouseLeave = () => {
+    handleMouseLeave();
+  };
+
+  const handleClose = () => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+    setIsOpen(false);
+  };
+
   return (
     <>
       <div className="relative group inline-block" style={{ position: 'relative', display: 'inline-block' }}>
@@ -1318,6 +1332,8 @@ export default function AIAuditQuickViewHover({
           type="button"
           disabled={isDisabled}
           onClick={() => !isDisabled && setIsOpen(true)}
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
           className={`w-7 h-7 inline-flex items-center justify-center rounded-full transition-all ${
             isDisabled
               ? 'bg-slate-50 text-slate-300 opacity-30 cursor-not-allowed'
@@ -1400,7 +1416,9 @@ export default function AIAuditQuickViewHover({
 
       <AIAuditDetailModal
         isOpen={isOpen}
-        onClose={() => setIsOpen(false)}
+        onClose={handleClose}
+        onMouseEnter={handleModalMouseEnter}
+        onMouseLeave={handleModalMouseLeave}
         declarationData={declarationData}
         studentName={studentName}
         studentCode={studentCode}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Eye, File as FileIcon, Minus } from 'lucide-react';
 import { AIAuditDetailModal } from './AIAuditQuickViewHover';
 import { formatDateDMY } from '../../helper/dateFormat';
@@ -77,13 +77,46 @@ export default function SubmissionsTable({
   className = '',
 }: SubmissionsTableProps) {
   const [internalSelectedAuditSub, setInternalSelectedAuditSub] = useState<SubmissionItem | null>(null);
+  const hoverAuditTimeoutRef = useRef<any>(null);
+
+  useEffect(() => {
+    return () => {
+      if (hoverAuditTimeoutRef.current) {
+        clearTimeout(hoverAuditTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleOpenAudit = (sub: SubmissionItem) => {
+    if (hoverAuditTimeoutRef.current) {
+      clearTimeout(hoverAuditTimeoutRef.current);
+      hoverAuditTimeoutRef.current = null;
+    }
     if (onOpenAuditModal) {
       onOpenAuditModal(sub);
     } else {
       setInternalSelectedAuditSub(sub);
     }
+  };
+
+  const handleCloseAudit = () => {
+    if (hoverAuditTimeoutRef.current) {
+      clearTimeout(hoverAuditTimeoutRef.current);
+    }
+    hoverAuditTimeoutRef.current = setTimeout(() => {
+      setInternalSelectedAuditSub(null);
+    }, 250);
+  };
+
+  const handleModalMouseEnter = () => {
+    if (hoverAuditTimeoutRef.current) {
+      clearTimeout(hoverAuditTimeoutRef.current);
+      hoverAuditTimeoutRef.current = null;
+    }
+  };
+
+  const handleModalMouseLeave = () => {
+    handleCloseAudit();
   };
 
   return (
@@ -207,6 +240,8 @@ export default function SubmissionsTable({
                         <button
                           type="button"
                           onClick={() => handleOpenAudit(sub)}
+                          onMouseEnter={() => handleOpenAudit(sub)}
+                          onMouseLeave={handleCloseAudit}
                           title={hasDeclared ? "Xem chi tiết khai báo AI Audit" : "Xem chi tiết AI Audit (Chưa khai báo)"}
                           className={`w-7 h-7 inline-flex items-center justify-center rounded-full transition cursor-pointer ${
                             hasDeclared
@@ -269,7 +304,15 @@ export default function SubmissionsTable({
       {internalSelectedAuditSub && (
         <AIAuditDetailModal
           isOpen={Boolean(internalSelectedAuditSub)}
-          onClose={() => setInternalSelectedAuditSub(null)}
+          onClose={() => {
+            if (hoverAuditTimeoutRef.current) {
+              clearTimeout(hoverAuditTimeoutRef.current);
+              hoverAuditTimeoutRef.current = null;
+            }
+            setInternalSelectedAuditSub(null);
+          }}
+          onMouseEnter={handleModalMouseEnter}
+          onMouseLeave={handleModalMouseLeave}
           declarationData={
             internalSelectedAuditSub.declarations ||
             internalSelectedAuditSub.ai_declarations ||

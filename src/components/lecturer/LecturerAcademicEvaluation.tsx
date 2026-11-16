@@ -1290,33 +1290,15 @@ export default function LecturerAcademicEvaluation({
 
           {/* Divider & Student Info */}
           <span className="text-slate-700 hidden sm:inline mx-1 shrink-0">|</span>
-          <div className="hidden md:flex items-center gap-2 shrink-0 min-w-0">
-            <span className="text-xs font-semibold text-white truncate max-w-[120px] sm:max-w-[150px]">
+          <div className="flex items-center gap-2 shrink-0 min-w-0">
+            <span className="text-xs font-semibold text-white truncate max-w-[200px] sm:max-w-[280px]" title={`${student.name} (${student.code})`}>
               {student.name} ({student.code})
             </span>
-            {isAiRequired && (student.aiRiskLevel === 'low' || auditIntegrity?.risk_level === 'LOW_RISK' || auditIntegrity?.riskLevel === 'low') && (
-              <span className="hidden xl:inline-flex items-center gap-1.5 bg-[#063f35] text-[#2fe8a6] border border-[#0d594b] text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0" title="Rủi ro minh bạch AI: Thấp (Đánh giá độc lập, không trừ điểm học thuật)">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#2fe8a6]"></span>
-                <span>LOW_RISK (AI Transparency)</span>
-              </span>
-            )}
-            {isAiRequired && (student.aiRiskLevel === 'medium' || auditIntegrity?.risk_level === 'MEDIUM_RISK' || auditIntegrity?.riskLevel === 'medium') && (
-              <span className="hidden xl:inline-flex items-center gap-1.5 bg-[#3f2f06] text-[#e8b52f] border border-[#59440d] text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0" title="Rủi ro minh bạch AI: Trung bình (Đánh giá độc lập, không trừ điểm học thuật)">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#e8b52f]"></span>
-                <span>MEDIUM_RISK (AI Transparency)</span>
-              </span>
-            )}
-            {isAiRequired && (student.aiRiskLevel === 'high' || auditIntegrity?.risk_level === 'HIGH_RISK' || auditIntegrity?.riskLevel === 'high') && (
-              <span className="hidden xl:inline-flex items-center gap-1.5 bg-[#3f0606] text-[#e82f2f] border border-[#590d0d] text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0" title="Rủi ro minh bạch AI: Cao (Đánh giá độc lập, dùng câu hỏi VIVA để vấn đáp, không trừ thẳng điểm code)">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#e82f2f]"></span>
-                <span>HIGH_RISK (AI Transparency)</span>
-              </span>
-            )}
           </div>
         </div>
 
         {/* Khối nút hành động bên phải */}
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2.5 shrink-0">
           <button
             type="button"
             onClick={() => setShowResubmitModal(true)}
@@ -1324,16 +1306,6 @@ export default function LecturerAcademicEvaluation({
           >
             <RotateCcw size={13} />
             <span>Request Resubmit</span>
-          </button>
-
-          <button
-            type="button"
-            disabled={isSaving}
-            onClick={handleSaveDraft}
-            className="flex items-center gap-1.5 px-3 py-1 bg-[#1b2b52] text-slate-200 rounded-lg text-xs font-semibold hover:bg-[#233766] transition border border-slate-700 cursor-pointer disabled:opacity-50 shrink-0 whitespace-nowrap"
-          >
-            <Bookmark size={13} />
-            <span>{isSaving ? 'Saving...' : 'Save Draft'}</span>
           </button>
 
           <button

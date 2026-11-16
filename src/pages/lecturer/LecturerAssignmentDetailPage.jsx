@@ -22,6 +22,43 @@ export default function LecturerAssignmentDetailPage() {
 
     // --- STATE DÀNH CHO MODAL XEM CHI TIẾT AI AUDIT LOG ---
     const [selectedAuditSub, setSelectedAuditSub] = useState(null);
+    const hoverAuditTimeoutRef = useRef(null);
+
+    useEffect(() => {
+        return () => {
+            if (hoverAuditTimeoutRef.current) {
+                clearTimeout(hoverAuditTimeoutRef.current);
+            }
+        };
+    }, []);
+
+    const handleOpenAuditModal = (sub) => {
+        if (hoverAuditTimeoutRef.current) {
+            clearTimeout(hoverAuditTimeoutRef.current);
+            hoverAuditTimeoutRef.current = null;
+        }
+        setSelectedAuditSub(sub);
+    };
+
+    const handleCloseAuditModal = () => {
+        if (hoverAuditTimeoutRef.current) {
+            clearTimeout(hoverAuditTimeoutRef.current);
+        }
+        hoverAuditTimeoutRef.current = setTimeout(() => {
+            setSelectedAuditSub(null);
+        }, 250);
+    };
+
+    const handleModalMouseEnter = () => {
+        if (hoverAuditTimeoutRef.current) {
+            clearTimeout(hoverAuditTimeoutRef.current);
+            hoverAuditTimeoutRef.current = null;
+        }
+    };
+
+    const handleModalMouseLeave = () => {
+        handleCloseAuditModal();
+    };
 
     // --- STATE DÀNH CHO MODAL CHẤM ĐIỂM ---
     const [isGradingModalOpen, setIsGradingModalOpen] = useState(false);
@@ -867,7 +904,9 @@ export default function LecturerAssignmentDetailPage() {
                                                             // 3. Đã nộp bài (bất kể đã khai báo hay chưa): LUÔN ĐƯỢC ENABLE
                                                             <button
                                                                 type="button"
-                                                                onClick={() => setSelectedAuditSub(sub)}
+                                                                onClick={() => handleOpenAuditModal(sub)}
+                                                                onMouseEnter={() => handleOpenAuditModal(sub)}
+                                                                onMouseLeave={handleCloseAuditModal}
                                                                 title={hasDeclared ? "Xem chi tiết khai báo AI Audit" : "Xem chi tiết AI Audit (Chưa khai báo)"}
                                                                 className={`w-7 h-7 inline-flex items-center justify-center rounded-full transition cursor-pointer ${
                                                                     hasDeclared
@@ -1068,7 +1107,15 @@ export default function LecturerAssignmentDetailPage() {
             {selectedAuditSub && (
                 <AIAuditDetailModal
                     isOpen={Boolean(selectedAuditSub)}
-                    onClose={() => setSelectedAuditSub(null)}
+                    onClose={() => {
+                        if (hoverAuditTimeoutRef.current) {
+                            clearTimeout(hoverAuditTimeoutRef.current);
+                            hoverAuditTimeoutRef.current = null;
+                        }
+                        setSelectedAuditSub(null);
+                    }}
+                    onMouseEnter={handleModalMouseEnter}
+                    onMouseLeave={handleModalMouseLeave}
                     declarationData={
                         selectedAuditSub.declarations ||
                         selectedAuditSub.ai_declarations ||

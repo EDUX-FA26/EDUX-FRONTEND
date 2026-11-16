@@ -304,16 +304,6 @@ export default function SubmissionFileViewer({
           </div>
 
           <div className="flex items-center gap-2">
-            {onAiAnnotate && (
-              <button
-                type="button"
-                onClick={onAiAnnotate}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#6b21a8] text-white rounded-lg text-xs font-bold hover:bg-purple-800 transition shadow-xs cursor-pointer"
-              >
-                <Sparkles size={12} />
-                <span>AI Code Annotate</span>
-              </button>
-            )}
             <button
               type="button"
               onClick={handleDownload}
@@ -475,16 +465,6 @@ export default function SubmissionFileViewer({
         </div>
 
         <div className="flex items-center gap-2">
-          {onAiAnnotate && (
-            <button
-              type="button"
-              onClick={onAiAnnotate}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#6b21a8] text-white rounded-lg text-xs font-bold hover:bg-purple-800 transition shadow-xs cursor-pointer"
-            >
-              <Sparkles size={12} />
-              <span>AI Code Annotate</span>
-            </button>
-          )}
           <button
             type="button"
             onClick={handleDownload}
