@@ -41,6 +41,17 @@ function getSemesterLabel(semester) {
     return semester.name || semester.code;
 }
 
+function extractSemesterYear(sem) {
+    // Ưu tiên trường year nếu có (ví dụ: 2026)
+    if (sem?.year) return Number(sem.year);
+    // Tìm 4 chữ số năm trong name (ví dụ: "Fall 2026" -> 2026)
+    const match4 = String(sem?.name || '').match(/\b(20\d{2})\b/);
+    if (match4) return Number(match4[1]);
+    // Fallback lấy 2 số cuối từ code (ví dụ: "FA26" -> 2026)
+    const match2 = String(sem?.code || '').match(/(\d{2})$/);
+    return match2 ? 2000 + Number(match2[1]) : 0;
+}
+
 function getErrorMessage(error, fallback) {
     return (
         error?.response?.data?.message ||
@@ -185,17 +196,38 @@ export default function StudentClassesPage() {
     };
 
 const groupedSemesters = useMemo(() => {
-    return semesters.reduce((groups, semester) => {
+    const groups = semesters.reduce((acc, semester) => {
         const group = getSemesterGroup(semester);
 
-        if (!groups[group]) {
-            groups[group] = [];
+        if (!acc[group]) {
+            acc[group] = [];
         }
 
-        groups[group].push(semester);
+        acc[group].push(semester);
 
-        return groups;
+        return acc;
     }, {});
+
+    // Sắp xếp các học kỳ trong từng nhóm theo năm giảm dần (từ lớn đến nhỏ)
+    Object.keys(groups).forEach((groupName) => {
+        groups[groupName].sort((a, b) => extractSemesterYear(b) - extractSemesterYear(a));
+    });
+
+    // Thứ tự hiển thị nhóm mùa: Fall -> Summer -> Spring -> Other (nếu có)
+    const SEASON_ORDER = ['Fall', 'Summer', 'Spring'];
+    const sortedGroups = {};
+    SEASON_ORDER.forEach((season) => {
+        if (groups[season]) {
+            sortedGroups[season] = groups[season];
+        }
+    });
+    Object.keys(groups).forEach((key) => {
+        if (!sortedGroups[key]) {
+            sortedGroups[key] = groups[key];
+        }
+    });
+
+    return sortedGroups;
 }, [semesters]);
 
 const filteredClasses = useMemo(() => {
