@@ -110,6 +110,15 @@ export default function LecturerGradingPage() {
                 assign.class?.subjectId ||
                 resolvedSubjectId;
 
+              const assignCourseTopics = Array.isArray(assign.course_topics) ? assign.course_topics : undefined;
+              const assignHasTopics = typeof assign.has_course_topics === 'boolean'
+                ? assign.has_course_topics
+                : (assignCourseTopics ? assignCourseTopics.length > 0 : undefined);
+
+              if (assignCourseTopics) {
+                setTopics(assignCourseTopics);
+              }
+
               setCourseInfo({
                 courseCode: assign.subject_code || assign.class_code || assign.course_code || stateData?.subjectCode || stateData?.classCode || 'SE1801',
                 courseTitle: resolvedCourseName,
@@ -122,6 +131,8 @@ export default function LecturerGradingPage() {
                 subjectId: resolvedSubjectId,
                 rubric_configs: assign.rubric_configs,
                 ai_declaration_required: assign.ai_declaration_required !== false,
+                course_topics: assignCourseTopics,
+                has_course_topics: assignHasTopics,
               });
 
               if (resolvedSubjectId) {
@@ -129,9 +140,21 @@ export default function LecturerGradingPage() {
                 try {
                   const tRes = await TopicService.getTopics(resolvedSubjectId);
                   const list = tRes?.data || tRes || [];
-                  setTopics(Array.isArray(list) ? list : []);
+                  const topicList = Array.isArray(list) ? list : [];
+                  setTopics(topicList);
+                  setCourseInfo((prev) => ({
+                    ...prev,
+                    course_topics: topicList,
+                    has_course_topics: topicList.length > 0,
+                  }));
                 } catch (tErr) {
                   console.warn('[ART-AI] Failed to load topics for subject:', tErr);
+                  setTopics([]);
+                  setCourseInfo((prev) => ({
+                    ...prev,
+                    course_topics: [],
+                    has_course_topics: false,
+                  }));
                 } finally {
                   setIsLoadingTopics(false);
                 }
@@ -186,6 +209,21 @@ export default function LecturerGradingPage() {
                 aiRiskLevel: (subData.ai_risk_level as any) || 'low',
                 aiRiskLabel: subData.ai_risk_label || 'low AI-transparency risk',
               });
+
+              const subCourseTopics = Array.isArray(subData.course_topics) ? subData.course_topics : undefined;
+              const subHasTopics = typeof subData.has_course_topics === 'boolean'
+                ? subData.has_course_topics
+                : (subCourseTopics ? subCourseTopics.length > 0 : undefined);
+              if (subCourseTopics) {
+                setTopics(subCourseTopics);
+              }
+              const recTopics = subData.recommended_topics || subData.ai_evaluation_data?.recommended_topics || [];
+              setCourseInfo((prev) => ({
+                ...prev,
+                course_topics: subCourseTopics || prev.course_topics,
+                has_course_topics: subHasTopics ?? prev.has_course_topics,
+                recommended_topics: recTopics,
+              }));
 
               // Existing Grade if already graded
               const savedRubrics = subData.rubrics || subData.grade?.rubrics;
@@ -753,6 +791,7 @@ export default function LecturerGradingPage() {
         auditData={auditRawData}
         topics={topics}
         isLoadingTopics={isLoadingTopics}
+        hasCourseTopics={(courseInfo as any)?.has_course_topics}
         savedEvaluation={savedAiEvaluation}
         initialRubrics={initialScores}
         initialFeedback={initialFeedback}

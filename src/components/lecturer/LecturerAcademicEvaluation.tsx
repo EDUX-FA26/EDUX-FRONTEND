@@ -268,6 +268,8 @@ export interface LecturerAcademicEvaluationProps {
   savedEvaluation?: any;
   topics?: any[];
   isLoadingTopics?: boolean;
+  hasCourseTopics?: boolean;
+  recommendedTopics?: any[];
   onBack?: () => void;
   onRequestResubmit?: (reason: string) => Promise<void | boolean>;
   onSaveDraft?: (payload: GradePayload) => Promise<void | boolean>;
@@ -429,6 +431,8 @@ export default function LecturerAcademicEvaluation({
   savedEvaluation,
   topics,
   isLoadingTopics,
+  hasCourseTopics: hasCourseTopicsProp,
+  recommendedTopics,
   onBack,
   onRequestResubmit,
   onSaveDraft,
@@ -515,8 +519,72 @@ export default function LecturerAcademicEvaluation({
     };
   }, [courseInfo?.subjectId, topics]);
 
-  const displayTopics = topics !== undefined ? topics : internalTopics;
+  const rawTopics = topics !== undefined ? topics : internalTopics;
   const loadingTopics = isLoadingTopics ?? isFetchingTopics;
+
+  // Xác định môn học có cấu hình danh sách chủ đề kiến thức (Topics) hay không
+  const hasCourseTopics = useMemo(() => {
+    if (typeof hasCourseTopicsProp === 'boolean') {
+      return hasCourseTopicsProp;
+    }
+    if (typeof (courseInfo as any)?.has_course_topics === 'boolean') {
+      return (courseInfo as any).has_course_topics;
+    }
+    if (typeof (courseInfo as any)?.hasCourseTopics === 'boolean') {
+      return (courseInfo as any).hasCourseTopics;
+    }
+    if (typeof savedEvaluation?.has_course_topics === 'boolean') {
+      return savedEvaluation.has_course_topics;
+    }
+    if (Array.isArray((courseInfo as any)?.course_topics)) {
+      return (courseInfo as any).course_topics.length > 0;
+    }
+    if (Array.isArray(savedEvaluation?.course_topics)) {
+      return savedEvaluation.course_topics.length > 0;
+    }
+    if (topics !== undefined) {
+      return Array.isArray(topics) && topics.length > 0;
+    }
+    if (isFetchingTopics) {
+      return false;
+    }
+    return Array.isArray(internalTopics) && internalTopics.length > 0;
+  }, [hasCourseTopicsProp, courseInfo, savedEvaluation, topics, internalTopics, isFetchingTopics]);
+
+  // Kết hợp thông tin chủ đề AI gợi ý ôn tập nếu có
+  const displayTopics = useMemo(() => {
+    if (!Array.isArray(rawTopics) || rawTopics.length === 0) return [];
+
+    const recList =
+      recommendedTopics ||
+      savedEvaluation?.recommended_topics ||
+      savedEvaluation?.evaluation_data?.recommended_topics ||
+      (courseInfo as any)?.recommended_topics;
+
+    if (!Array.isArray(recList) || recList.length === 0) {
+      return rawTopics;
+    }
+
+    const recNames = new Set(
+      recList.map((r: any) => (typeof r === 'string' ? r.toLowerCase().trim() : (r.name || r.topic_name || '').toLowerCase().trim()))
+    );
+
+    return rawTopics.map((t: any) => {
+      const isRec = recNames.has((t.name || '').toLowerCase().trim()) || recNames.has(String(t.id).toLowerCase().trim());
+      if (isRec) {
+        const foundRec = recList.find((r: any) =>
+          (typeof r === 'string' ? r.toLowerCase().trim() : (r.name || r.topic_name || '').toLowerCase().trim()) === (t.name || '').toLowerCase().trim()
+        );
+        return {
+          ...t,
+          priority: 'high',
+          priority_label: 'Ưu tiên cao (AI đề xuất)',
+          description: (typeof foundRec === 'object' && foundRec?.reason) ? foundRec.reason : t.description,
+        };
+      }
+      return t;
+    });
+  }, [rawTopics, recommendedTopics, savedEvaluation, courseInfo]);
 
   const isAiRequired = useMemo(() => {
     if ((courseInfo as any)?.ai_declaration_required === false) return false;
@@ -1743,122 +1811,124 @@ export default function LecturerAcademicEvaluation({
                 </div>
               )}
 
-              {/* KHỐI CHỦ ĐỀ TRỌNG TÂM CẦN ÔN TẬP (RECOMMENDED TOPICS TO IMPROVE) */}
-              <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs shrink-0 space-y-3.5 transition-all">
-                <div className="flex items-start justify-between gap-2.5 pb-2.5 border-b border-slate-100">
-                  <div className="flex items-start gap-2.5 min-w-0 flex-1">
-                    <div className="w-7 h-7 rounded-lg bg-orange-50 text-orange-600 border border-orange-200/80 flex items-center justify-center shrink-0 shadow-2xs mt-0.5">
-                      <BookOpen size={15} />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wide leading-snug">
-                        Chủ đề trọng tâm cần ôn tập
-                      </h3>
-                      <div className="text-[10px] text-slate-400 font-medium mt-0.5">
-                        Recommended Topics to Improve
+              {/* KHỐI CHỦ ĐỀ TRỌNG TÂM CẦN ÔN TẬP (RECOMMENDED TOPICS TO IMPROVE) - CHỈ HIỂN THỊ KHI MÔN HỌC CÓ CẤU HÌNH TOPICS */}
+              {hasCourseTopics && (
+                <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs shrink-0 space-y-3.5 transition-all">
+                  <div className="flex items-start justify-between gap-2.5 pb-2.5 border-b border-slate-100">
+                    <div className="flex items-start gap-2.5 min-w-0 flex-1">
+                      <div className="w-7 h-7 rounded-lg bg-orange-50 text-orange-600 border border-orange-200/80 flex items-center justify-center shrink-0 shadow-2xs mt-0.5">
+                        <BookOpen size={15} />
                       </div>
-                      <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
-                        Các chủ đề kiến thức thuộc môn học mà sinh viên cần củng cố thêm dựa trên bài làm này.
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wide leading-snug">
+                          Chủ đề trọng tâm cần ôn tập
+                        </h3>
+                        <div className="text-[10px] text-slate-400 font-medium mt-0.5">
+                          Recommended Topics to Improve
+                        </div>
+                        <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
+                          Các chủ đề kiến thức thuộc môn học mà sinh viên cần củng cố thêm dựa trên bài làm này.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 shrink-0 self-start pt-0.5">
+                      {displayTopics.length > 0 && (
+                        <span className="text-[10px] font-bold text-slate-600 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full shrink-0">
+                          {displayTopics.length} chủ đề
+                        </span>
+                      )}
+                      {displayTopics.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const topicNames = displayTopics.map((t: any) => t.name).join(', ');
+                            const note = `\n\n📌 Chủ đề trọng tâm cần củng cố thêm: ${topicNames}.`;
+                            isUserModifiedRef.current = true;
+                            setFeedback((prev) => (prev ? `${prev.trim()}${note}` : note.trim()));
+                          }}
+                          className="inline-flex items-center gap-1 text-[10px] font-semibold text-orange-700 bg-orange-50 hover:bg-orange-100/80 border border-orange-200 px-2.5 py-1 rounded-lg transition cursor-pointer shrink-0 shadow-2xs"
+                          title="Thêm danh sách các chủ đề này vào ô Nhận xét học thuật"
+                        >
+                          <Sparkles size={11} className="text-orange-600" />
+                          <span>Thêm vào nhận xét</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Danh sách Topics / Loading / Empty State */}
+                  {loadingTopics ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 animate-pulse">
+                      <div className="h-20 bg-slate-100 rounded-xl"></div>
+                      <div className="h-20 bg-slate-100 rounded-xl"></div>
+                    </div>
+                  ) : displayTopics && displayTopics.length > 0 ? (
+                    <div className="max-h-[300px] overflow-y-auto custom-scroll pr-1">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        {displayTopics.map((topic: any, idx: number) => {
+                          const isHighPriority =
+                            topic.priority === 'high' ||
+                            topic.priority === 'urgent' ||
+                            topic.level === 'high' ||
+                            idx < 2;
+
+                          const priorityLabel =
+                            topic.priority_label ||
+                            (isHighPriority ? 'Ưu tiên cao' : 'Khuyến nghị');
+
+                          return (
+                            <div
+                              key={topic.id || idx}
+                              className="p-3 bg-slate-50/70 border border-slate-200/80 rounded-xl hover:border-orange-300 hover:bg-orange-50/15 transition-all shadow-2xs flex flex-col justify-between gap-2"
+                            >
+                              <div>
+                                <div className="flex items-start justify-between gap-2 mb-1.5">
+                                  <h4
+                                    className="font-semibold text-xs sm:text-sm text-gray-800 leading-snug break-words flex-1 min-w-0 pr-1"
+                                    title={topic.name}
+                                  >
+                                    {topic.name}
+                                  </h4>
+                                  <span
+                                    className={`shrink-0 px-2 py-0.5 text-[10px] font-semibold rounded-full border whitespace-nowrap self-start ${
+                                      isHighPriority
+                                        ? 'bg-rose-50 text-rose-700 border-rose-200'
+                                        : 'bg-amber-50 text-amber-700 border-amber-200'
+                                    }`}
+                                  >
+                                    {priorityLabel}
+                                  </span>
+                                </div>
+                                <p
+                                  className="text-[11px] text-slate-500 leading-relaxed break-words"
+                                  title={topic.description}
+                                >
+                                  {topic.description ||
+                                    'Chủ đề kiến thức cốt lõi thuộc môn học cần sinh viên củng cố và rèn luyện thêm.'}
+                                </p>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-4 border border-dashed border-slate-200 rounded-xl bg-slate-50/50 text-center space-y-1.5">
+                      <div className="w-8 h-8 rounded-xl bg-slate-100 text-slate-400 mx-auto flex items-center justify-center">
+                        <Compass size={16} />
+                      </div>
+                      <p className="text-xs font-semibold text-slate-700">Chưa có chủ đề trọng tâm nào</p>
+                      <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
+                        Môn học này hiện chưa có chủ đề gắn cờ cần cải thiện hoặc sinh viên đã đáp ứng tốt các yêu cầu học thuật.
                       </p>
                     </div>
-                  </div>
-
-                  <div className="flex items-center gap-1.5 shrink-0 self-start pt-0.5">
-                    {displayTopics.length > 0 && (
-                      <span className="text-[10px] font-bold text-slate-600 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full shrink-0">
-                        {displayTopics.length} chủ đề
-                      </span>
-                    )}
-                    {displayTopics.length > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const topicNames = displayTopics.map((t: any) => t.name).join(', ');
-                          const note = `\n\n📌 Chủ đề trọng tâm cần củng cố thêm: ${topicNames}.`;
-                          isUserModifiedRef.current = true;
-                          setFeedback((prev) => (prev ? `${prev.trim()}${note}` : note.trim()));
-                        }}
-                        className="inline-flex items-center gap-1 text-[10px] font-semibold text-orange-700 bg-orange-50 hover:bg-orange-100/80 border border-orange-200 px-2.5 py-1 rounded-lg transition cursor-pointer shrink-0 shadow-2xs"
-                        title="Thêm danh sách các chủ đề này vào ô Nhận xét học thuật"
-                      >
-                        <Sparkles size={11} className="text-orange-600" />
-                        <span>Thêm vào nhận xét</span>
-                      </button>
-                    )}
-                  </div>
+                  )}
                 </div>
-
-                {/* Danh sách Topics / Loading / Empty State */}
-                {loadingTopics ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 animate-pulse">
-                    <div className="h-20 bg-slate-100 rounded-xl"></div>
-                    <div className="h-20 bg-slate-100 rounded-xl"></div>
-                  </div>
-                ) : displayTopics && displayTopics.length > 0 ? (
-                  <div className="max-h-[300px] overflow-y-auto custom-scroll pr-1">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                      {displayTopics.map((topic: any, idx: number) => {
-                        const isHighPriority =
-                          topic.priority === 'high' ||
-                          topic.priority === 'urgent' ||
-                          topic.level === 'high' ||
-                          idx < 2;
-
-                        const priorityLabel =
-                          topic.priority_label ||
-                          (isHighPriority ? 'Ưu tiên cao' : 'Khuyến nghị');
-
-                        return (
-                          <div
-                            key={topic.id || idx}
-                            className="p-3 bg-slate-50/70 border border-slate-200/80 rounded-xl hover:border-orange-300 hover:bg-orange-50/15 transition-all shadow-2xs flex flex-col justify-between gap-2"
-                          >
-                            <div>
-                              <div className="flex items-start justify-between gap-2 mb-1.5">
-                                <h4
-                                  className="font-semibold text-xs sm:text-sm text-gray-800 leading-snug break-words flex-1 min-w-0 pr-1"
-                                  title={topic.name}
-                                >
-                                  {topic.name}
-                                </h4>
-                                <span
-                                  className={`shrink-0 px-2 py-0.5 text-[10px] font-semibold rounded-full border whitespace-nowrap self-start ${
-                                    isHighPriority
-                                      ? 'bg-rose-50 text-rose-700 border-rose-200'
-                                      : 'bg-amber-50 text-amber-700 border-amber-200'
-                                  }`}
-                                >
-                                  {priorityLabel}
-                                </span>
-                              </div>
-                              <p
-                                className="text-[11px] text-slate-500 leading-relaxed break-words"
-                                title={topic.description}
-                              >
-                                {topic.description ||
-                                  'Chủ đề kiến thức cốt lõi thuộc môn học cần sinh viên củng cố và rèn luyện thêm.'}
-                              </p>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="p-4 border border-dashed border-slate-200 rounded-xl bg-slate-50/50 text-center space-y-1.5">
-                    <div className="w-8 h-8 rounded-xl bg-slate-100 text-slate-400 mx-auto flex items-center justify-center">
-                      <Compass size={16} />
-                    </div>
-                    <p className="text-xs font-semibold text-slate-700">Chưa có chủ đề trọng tâm nào</p>
-                    <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
-                      Môn học này hiện chưa có chủ đề gắn cờ cần cải thiện hoặc sinh viên đã đáp ứng tốt các yêu cầu học thuật.
-                    </p>
-                  </div>
-                )}
-              </div>
+              )}
 
               {/* Điều chỉnh Rubric chuyên môn thang 10 */}
-              <div className="space-y-3.5 pt-2 border-t border-slate-100 shrink-0">
+              <div className={`space-y-3.5 ${hasCourseTopics || (aiVerdict || overallAiFeedback) ? 'pt-2 border-t border-slate-100' : ''} shrink-0`}>
                 <div className="flex items-center justify-between">
                   <div className="text-xs font-bold text-slate-800 uppercase tracking-wide">
                     ĐIỀU CHỈNH TIÊU CHÍ RUBRIC CHUẨN ({activeCriteriaList.length} TIÊU CHÍ)
