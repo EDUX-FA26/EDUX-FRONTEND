@@ -41,10 +41,10 @@ export default function ForumPostPage() {
     setEditing(true);
   };
   const chooseEditImages = async (event) => {
-    const files = Array.from(event.target.files || []).slice(0, 5 - editAttachments.length).filter((file) => file.type.startsWith('image/') && file.size <= 2 * 1024 * 1024);
+    const files = Array.from(event.target.files || []).slice(0, 5 - editAttachments.length).filter((file) => file.size <= 2 * 1024 * 1024);
     const encoded = await Promise.all(files.map((file) => new Promise((resolve) => {
       const reader = new FileReader();
-      reader.onload = () => resolve({ name: file.name, type: file.type, size: file.size, dataUrl: reader.result });
+      reader.onload = () => resolve({ name: file.name, type: file.type || 'application/octet-stream', size: file.size, dataUrl: reader.result });
       reader.readAsDataURL(file);
     })));
     setEditAttachments((prev) => [...prev, ...encoded].slice(0, 5));
@@ -60,6 +60,12 @@ export default function ForumPostPage() {
     } catch (err) { setError(err.response?.data?.message || 'Không thể cập nhật bài đăng.'); }
     finally { setEditSaving(false); }
   };
+  useEffect(() => {
+    if (!editing || !editFileRef.current) return;
+    editFileRef.current.accept = 'image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt';
+    const button = editFileRef.current.parentElement?.querySelector('button');
+    if (button) button.title = 'Thêm ảnh hoặc tài liệu';
+  }, [editing]);
 
   const sendComment = async () => {
     if (!comment.trim()) return;
