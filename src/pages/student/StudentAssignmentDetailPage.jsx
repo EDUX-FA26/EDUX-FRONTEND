@@ -258,7 +258,13 @@ export default function StudentAssignmentDetailPage() {
 
     if (loading) {
         return (
-            <div className="w-full max-w-full min-w-0 min-h-[calc(100vh-64px)] bg-[#F8FAFC] px-6 pt-7 pb-8 space-y-6 animate-pulse">
+            <div
+                className="w-full max-w-full min-w-0 min-h-[calc(100vh-64px)] bg-[#F8FAFC] px-6 pb-8 space-y-6 animate-pulse"
+                style={{
+                    marginTop: 'calc(-1 * var(--dashboard-header-height, 64px))',
+                    paddingTop: '20px',
+                }}
+            >
                 <div className="h-6 bg-slate-200 rounded w-1/4"></div>
                 <div className="h-10 bg-slate-200 rounded w-1/2"></div>
                 <div className="grid grid-cols-12 gap-6">

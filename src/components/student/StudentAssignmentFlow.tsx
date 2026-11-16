@@ -3348,7 +3348,13 @@ export default function StudentAssignmentFlow({
   };
 
   return (
-    <div className="w-full max-w-full min-w-0 min-h-[calc(100vh-64px)] bg-[#F8FAFC] px-6 pt-7 pb-8 flex flex-col space-y-6">
+    <div
+      className="w-full max-w-full min-w-0 min-h-[calc(100vh-64px)] bg-[#F8FAFC] px-6 pb-8 flex flex-col space-y-5"
+      style={{
+        marginTop: 'calc(-1 * var(--dashboard-header-height, 64px))',
+        paddingTop: '20px',
+      }}
+    >
       {/* Toast Feedback */}
       {toastMessage && (
         <div className="fixed top-6 right-6 z-50 flex items-center gap-3 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-xl animate-in slide-in-from-top-4 duration-200">
@@ -3389,12 +3395,7 @@ export default function StudentAssignmentFlow({
               <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
                 {assignment.title}
               </h1>
-              {submission.status === 'Graded' ? (
-                <span className="bg-indigo-50 text-indigo-700 text-xs font-bold px-2.5 py-0.5 rounded-full border border-indigo-200 flex items-center gap-1">
-                  <CheckCircle2 size={12} />
-                  <span>Graded</span>
-                </span>
-              ) : submission.status === 'Submitted' ? (
+              {submission.status === 'Submitted' ? (
                 <span className="bg-emerald-50 text-emerald-700 text-xs font-bold px-2.5 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
                   <Check size={12} />
                   <span>Submitted</span>
@@ -3406,12 +3407,10 @@ export default function StudentAssignmentFlow({
             </p>
           </div>
 
-          {submission.status && submission.status !== 'Draft' && (
+          {submission.status && submission.status !== 'Draft' && submission.status !== 'Graded' && (
             <span
               className={`text-xs font-bold px-3 py-1.5 rounded-full border self-start sm:self-auto ${
-                submission.status === 'Graded'
-                  ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
-                  : submission.status === 'Submitted'
+                submission.status === 'Submitted'
                   ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                   : 'bg-slate-100 text-slate-600 border-slate-200'
               }`}
