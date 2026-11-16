@@ -480,8 +480,6 @@ export default function LecturerAcademicEvaluation({
   const displayAssignmentTitle =
     courseInfo.assignmentTitle || 'Assignment';
 
-  const [aiVerdict, setAiVerdict] = useState<string>('');
-
   // Topics to Improve State (Fetched from Topic Module via subjectId)
   const [internalTopics, setInternalTopics] = useState<any[]>(topics || []);
   const [isFetchingTopics, setIsFetchingTopics] = useState<boolean>(false);
@@ -835,7 +833,12 @@ export default function LecturerAcademicEvaluation({
   // Rubric Scores State (Thang 10 điểm chuyên môn)
   const isUserModifiedRef = React.useRef(false);
   const [scores, setScores] = useState<RubricScores>(normalizedInitialRubrics);
-  const [feedback, setFeedback] = useState<string>(initialFeedback);
+
+  // Academic Feedback State (Chỉ lưu nhận xét chính thức của giảng viên)
+  const [academicFeedback, setAcademicFeedback] = useState<string>(initialFeedback || '');
+  const feedback = academicFeedback;
+  const setFeedback = setAcademicFeedback;
+
   const [aiCompliance, setAiCompliance] = useState<AiComplianceStatus>(initialAiCompliance);
 
   // Sync state if initialRubrics changes from API, only if user has not manually modified
@@ -845,9 +848,16 @@ export default function LecturerAcademicEvaluation({
     }
   }, [normalizedInitialRubrics]);
 
+  // Khi activeSubmissionId thay đổi, reset cờ người dùng tự sửa và nạp feedback chính thức
   React.useEffect(() => {
-    if (initialFeedback && !isUserModifiedRef.current) {
-      setFeedback(initialFeedback);
+    isUserModifiedRef.current = false;
+    setAcademicFeedback(initialFeedback || '');
+  }, [activeSubmissionId]);
+
+  // Cập nhật academicFeedback khi initialFeedback thay đổi (chỉ khi người dùng chưa tự sửa)
+  React.useEffect(() => {
+    if (!isUserModifiedRef.current) {
+      setAcademicFeedback(initialFeedback || '');
     }
   }, [initialFeedback]);
 
@@ -867,7 +877,22 @@ export default function LecturerAcademicEvaluation({
   const [rubricReasonings, setRubricReasonings] = useState<Record<string, string>>({});
   const [auditIntegrity, setAuditIntegrity] = useState<AuditIntegrity | null>(null);
   const [vivaQuestions, setVivaQuestions] = useState<VivaQuestion[]>([]);
-  const [overallAiFeedback, setOverallAiFeedback] = useState<string>('');
+
+  // AI Verdict Text State: Tách biệt hoàn toàn với Academic Feedback của Giảng viên
+  const [aiVerdictText, setAiVerdictText] = useState<string>('');
+  const overallAiFeedback = aiVerdictText;
+  const setOverallAiFeedback = setAiVerdictText;
+  const aiVerdict = aiVerdictText;
+  const setAiVerdict = setAiVerdictText;
+
+  // Hàm sao chép nhận xét AI sang ô Feedback của Giảng viên khi chủ động bấm nút
+  const handleUseAiVerdictAsFeedback = () => {
+    const textToUse = formatCleanVietnamese(aiVerdictText);
+    if (!textToUse) return;
+    isUserModifiedRef.current = true;
+    setAcademicFeedback(textToUse);
+    showToastNotification('Đã đưa nhận xét AI vào ô Feedback', 'Nội dung nhận xét từ AI đã được chép vào ô Feedback để giảng viên chỉnh sửa.');
+  };
 
   // Danh sách tiêu chí Rubric động theo cấu hình bài tập (chỉ lấy các tiêu chí is_enabled === true)
   const activeCriteriaList = useMemo(() => {
@@ -1034,9 +1059,6 @@ export default function LecturerAcademicEvaluation({
       if (crit.apiKey) (newScores as any)[crit.apiKey] = targetScore;
     });
     setScores(newScores);
-    if (!feedback) {
-      setFeedback('Code có cấu trúc tốt, hoàn thành các hàm nghiệp vụ theo yêu cầu. Đã ghi nhận một số lỗi tính toán thứ tự VAT và kiểm tra biên.');
-    }
   };
 
   // Hydrate saved snapshot evaluation from DB if available
@@ -1048,10 +1070,17 @@ export default function LecturerAcademicEvaluation({
       if (savedEvaluation.audit_integrity) {
         setAuditIntegrity(savedEvaluation.audit_integrity);
       }
-      if (savedEvaluation.overall_verdict || savedEvaluation.ai_verdict) {
-        const text = savedEvaluation.overall_verdict || savedEvaluation.ai_verdict;
-        setOverallAiFeedback(text);
-        setAiVerdict(text);
+      const evalText =
+        savedEvaluation.overall_verdict ||
+        savedEvaluation.summary ||
+        savedEvaluation.ai_verdict ||
+        savedEvaluation.evaluation_data?.overall_verdict ||
+        savedEvaluation.evaluation_data?.summary ||
+        '';
+      if (evalText) {
+        setAiVerdictText(formatCleanVietnamese(evalText));
+      } else {
+        setAiVerdictText('');
       }
       if (savedEvaluation.rubric_reasonings) {
         setRubricReasonings(savedEvaluation.rubric_reasonings);
@@ -1069,6 +1098,11 @@ export default function LecturerAcademicEvaluation({
         });
         setScores(newSc);
       }
+    } else {
+      setVivaQuestions([]);
+      setAuditIntegrity(null);
+      setAiVerdictText('');
+      setRubricReasonings({});
     }
   }, [savedEvaluation]);
 
@@ -1170,11 +1204,7 @@ export default function LecturerAcademicEvaluation({
       const verdict = aiData.overall_verdict || aiData.ai_verdict || aiData.overall_feedback || '';
       if (verdict) {
         const cleanVerdict = formatCleanVietnamese(verdict);
-        setOverallAiFeedback(cleanVerdict);
-        setAiVerdict(cleanVerdict);
-        if (applyScores) {
-          setFeedback(cleanVerdict);
-        }
+        setAiVerdictText(cleanVerdict);
       }
 
       // 3. Điểm số và nhận xét đã tự động cập nhật trực tiếp lên giao diện (không bật toast làm vướng màn hình)
@@ -1194,6 +1224,15 @@ export default function LecturerAcademicEvaluation({
     } finally {
       setIsAuditingAi(false);
     }
+  };
+
+  // Hàm xử lý AI Grade & Regrade AI - CHỈ cập nhật aiVerdictText và điểm Rubric, TUYỆT ĐỐI KHÔNG ghi vào academicFeedback
+  const handleAiGrade = async () => {
+    await handleAuditWithAi({ force: true, applyScores: true });
+  };
+
+  const handleRegradeAi = async () => {
+    await handleAuditWithAi({ force: true, applyScores: true });
   };
 
   const showToastNotification = (title: string, desc: string, type: 'success' | 'info' | 'error' = 'success') => {
@@ -1242,7 +1281,6 @@ export default function LecturerAcademicEvaluation({
       if (onPublishGrade) {
         await onPublishGrade(payload);
       }
-      showToastNotification('Đã công bố điểm thành công', `Điểm chính thức ${totalScore.toFixed(2)}/10 đã gửi cho sinh viên.`);
       // Tự động chuyển hướng quay về trang danh sách bài nộp sau khi công bố điểm thành công
       if (onBack) {
         setTimeout(() => {
@@ -1731,7 +1769,7 @@ export default function LecturerAcademicEvaluation({
                   <button
                     type="button"
                     disabled={isAuditingAi}
-                    onClick={() => handleAuditWithAi({ force: true, applyScores: true })}
+                    onClick={handleAiGrade}
                     className="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-500/20 transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     {isAuditingAi ? (
@@ -1742,7 +1780,7 @@ export default function LecturerAcademicEvaluation({
                     ) : (
                       <>
                         <Sparkles size={14} className="text-amber-300" />
-                        <span>{isAiRequired ? 'Khớp từng tiêu chí với AI' : '✨ AI Gợi ý điểm chuyên môn'}</span>
+                        <span>AI Grade</span>
                       </>
                     )}
                   </button>
@@ -1752,7 +1790,7 @@ export default function LecturerAcademicEvaluation({
                     disabled={isAuditingAi}
                     onClick={() => setShowRegenerateModal(true)}
                     className="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-xs font-bold transition shadow-2xs cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
-                    title="Chấm lại bằng AI (Regenerate AI Evaluation)"
+                    title="Chấm lại bằng AI (Regrade AI)"
                   >
                     {isAuditingAi ? (
                       <>
@@ -1762,7 +1800,7 @@ export default function LecturerAcademicEvaluation({
                     ) : (
                       <>
                         <RefreshCw size={13} className="text-slate-500" />
-                        <span>Chấm lại bằng AI</span>
+                        <span>Regrade AI</span>
                       </>
                     )}
                   </button>
@@ -1774,7 +1812,7 @@ export default function LecturerAcademicEvaluation({
               </div>
 
               {/* Khối tích hợp: Kết luận Thanh tra & Nhận xét Tổng quan từ AI */}
-              {(aiVerdict || overallAiFeedback) && (
+              {aiVerdictText && (
                 <div className="p-4 bg-gradient-to-r from-purple-50/90 via-indigo-50/70 to-blue-50/50 border border-purple-200/90 rounded-2xl text-xs text-purple-950 shadow-xs shrink-0 animate-in fade-in space-y-2.5">
                   <div className="flex items-start justify-between gap-2 pb-2 border-b border-purple-100">
                     <div className="flex items-center gap-2">
@@ -1792,11 +1830,7 @@ export default function LecturerAcademicEvaluation({
                     </div>
                     <button
                       type="button"
-                      onClick={() => {
-                        const textToUse = formatCleanVietnamese(aiVerdict || overallAiFeedback);
-                        isUserModifiedRef.current = true;
-                        setFeedback(textToUse);
-                      }}
+                      onClick={handleUseAiVerdictAsFeedback}
                       className="inline-flex items-center gap-1 text-[10px] font-semibold text-purple-700 bg-white hover:bg-purple-100/70 border border-purple-200 px-2.5 py-1 rounded-lg transition cursor-pointer shadow-2xs shrink-0"
                       title="Sao chép toàn bộ nhận xét này vào ô nhận xét học thuật của Giảng viên"
                     >
@@ -1806,7 +1840,7 @@ export default function LecturerAcademicEvaluation({
                   </div>
 
                   <p className="text-slate-700 text-xs leading-relaxed whitespace-pre-wrap break-words font-medium">
-                    {formatCleanVietnamese(aiVerdict || overallAiFeedback)}
+                    {aiVerdictText}
                   </p>
                 </div>
               )}
@@ -1928,7 +1962,7 @@ export default function LecturerAcademicEvaluation({
               )}
 
               {/* Điều chỉnh Rubric chuyên môn thang 10 */}
-              <div className={`space-y-3.5 ${hasCourseTopics || (aiVerdict || overallAiFeedback) ? 'pt-2 border-t border-slate-100' : ''} shrink-0`}>
+              <div className={`space-y-3.5 ${hasCourseTopics || aiVerdictText ? 'pt-2 border-t border-slate-100' : ''} shrink-0`}>
                 <div className="flex items-center justify-between">
                   <div className="text-xs font-bold text-slate-800 uppercase tracking-wide">
                     ĐIỀU CHỈNH TIÊU CHÍ RUBRIC CHUẨN ({activeCriteriaList.length} TIÊU CHÍ)
@@ -2280,7 +2314,7 @@ export default function LecturerAcademicEvaluation({
                 disabled={isAuditingAi}
                 onClick={async () => {
                   try {
-                    await handleAuditWithAi({ force: true, applyScores: true });
+                    await handleRegradeAi();
                   } finally {
                     setShowRegenerateModal(false);
                   }

@@ -75,6 +75,16 @@ export default function LecturerGradingPage() {
     const loadGradingData = async () => {
       try {
         setLoading(true);
+        setSavedAiEvaluation(null);
+        setInitialFeedback('');
+        setExistingGradeId(null);
+        setInitialScores({
+          abstraction: 0,
+          implementation: 0,
+          verification: 0,
+          ai_interaction: 0,
+          reflection: 0,
+        });
 
         // State passed from parent listing page if available
         if (assignmentId) {
@@ -266,20 +276,21 @@ export default function LecturerGradingPage() {
                     reflection: parseFloat((1.0 * ratio).toFixed(2)),
                   });
                 }
-                setInitialFeedback(subData.feedback || gradeObj.feedback || '');
-              } else if (subData.ai_evaluation_data || subData.ai_rubric_scores) {
-                // Chưa chấm điểm thủ công nhưng đã có bản ghi Snapshot AI Evaluation lưu trong DB
-                const aiScores = subData.ai_rubric_scores || subData.ai_evaluation_data?.rubric_scores;
-                if (aiScores) {
-                  setInitialScores(aiScores);
-                }
-                if (subData.ai_overall_verdict || subData.ai_evaluation_data?.overall_verdict) {
-                  setInitialFeedback(subData.ai_overall_verdict || subData.ai_evaluation_data?.overall_verdict);
+                const officialFeedback = subData.grade?.lecturer_feedback || subData.grade?.feedback || subData.lecturer_feedback || subData.feedback || '';
+                setInitialFeedback(officialFeedback);
+              } else {
+                setInitialFeedback('');
+                if (subData.ai_evaluation_data || subData.ai_rubric_scores) {
+                  // Chưa chấm điểm thủ công nhưng đã có bản ghi Snapshot AI Evaluation lưu trong DB
+                  const aiScores = subData.ai_rubric_scores || subData.ai_evaluation_data?.rubric_scores;
+                  if (aiScores) {
+                    setInitialScores(aiScores);
+                  }
                 }
               }
 
-              if (subData.ai_evaluation_data) {
-                setSavedAiEvaluation(subData.ai_evaluation_data);
+              if (subData.ai_evaluation_data || subData.ai_evaluation) {
+                setSavedAiEvaluation(subData.ai_evaluation_data || subData.ai_evaluation);
               }
 
               // Submission Files
@@ -598,6 +609,8 @@ export default function LecturerGradingPage() {
               }
               if (activeFeedback) {
                 setInitialFeedback(activeFeedback);
+              } else {
+                setInitialFeedback('');
               }
             }
           } catch (err) {
