@@ -33,6 +33,22 @@ export default function ForumPostPage() {
     finally { setLoading(false); }
   };
   useEffect(() => { load(); }, [postId]);
+  useEffect(() => {
+    document.querySelectorAll('.forum-post-page a[href^="data:image/"]').forEach((anchor) => {
+      if (anchor.dataset.previewed) return;
+      const preview = document.createElement('img');
+      preview.src = anchor.getAttribute('href');
+      preview.alt = anchor.getAttribute('download') || 'Ảnh đính kèm';
+      preview.style.width = '120px';
+      preview.style.maxHeight = '120px';
+      preview.style.objectFit = 'cover';
+      preview.style.borderRadius = '6px';
+      preview.style.display = 'block';
+      preview.style.marginBottom = '5px';
+      anchor.prepend(preview);
+      anchor.dataset.previewed = 'true';
+    });
+  }, [post]);
 
   const startEditing = () => {
     setEditTitle(post.title || '');
@@ -74,10 +90,10 @@ export default function ForumPostPage() {
   }, [editing]);
 
   const sendComment = async () => {
-    if (!comment.trim()) return;
+    if (!comment.trim() && commentAttachments.length === 0) return;
     try {
       const result = await ForumService.addComment(postId, { content: comment.trim(), parentId: replyTo, attachments: commentAttachments });
-      setPost((prev) => ({ ...prev, comments: [...(prev.comments || []), { ...(result.data || result), author_id: user?.id, author_name: user?.full_name || 'Bạn', author_role: user?.role }] }));
+      setPost((prev) => ({ ...prev, comments: [...(prev.comments || []), { ...(result.data || result), attachments: commentAttachments, author_id: user?.id, author_name: user?.full_name || 'Bạn', author_role: user?.role }] }));
       setComment(''); setReplyTo(null); setCommentAttachments([]);
     } catch (err) { setError(err.response?.data?.message || 'Không thể gửi bình luận.'); }
   };
