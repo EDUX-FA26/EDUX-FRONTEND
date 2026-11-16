@@ -10,7 +10,7 @@ import {
   Plus, Pencil, Trash2, Globe, Lock, Layers, BookOpen,
   BarChart2, ChevronDown, ChevronUp, X, Save, Eye,
   CheckCircle, RefreshCw, Zap, AlertTriangle, ArrowLeft,
-  Users, Share2, FileSpreadsheet, Upload, Download,
+  Users, Share2, FileSpreadsheet, Upload, Download, AlertCircle,
 } from 'lucide-react';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -60,10 +60,10 @@ function IconBtn({ onClick, title, danger, disabled, children }) {
 
 // ─── Modal backdrop ───────────────────────────────────────────────────────────
 
-function Modal({ title, onClose, children, width = '560px', padding = '16px 20px' }) {
+function Modal({ title, onClose, children, width = '560px', padding = '16px 20px', zIndex = 200 }) {
   return (
     <div style={{
-      position: 'fixed', inset: 0, zIndex: 200,
+      position: 'fixed', inset: 0, zIndex,
       display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px',
       background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)',
     }}>
@@ -218,10 +218,152 @@ function DeckFormModal({ deck, onClose, onSaved, classInfo }) {
   );
 }
 
+// ─── Topic Proposal Modal ──────────────────────────────────────────────────
+
+function TopicProposalModal({ subjectId, onClose, onProposed, zIndex = 1000 }) {
+  const [name, setName] = useState('');
+  const [code, setCode] = useState('');
+  const [description, setDescription] = useState('');
+  const [reason, setReason] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!name.trim()) {
+      setError('Vui lòng nhập tên Topic đề xuất');
+      return;
+    }
+    if (!subjectId) {
+      setError('Không xác định được môn học (subjectId). Vui lòng thử lại sau.');
+      return;
+    }
+    setSubmitting(true);
+    setError(null);
+    try {
+      const trimmedCode = code.trim().toUpperCase();
+      const trimmedDesc = description.trim();
+
+      await TopicService.createProposal({
+        subjectId,
+        name: name.trim(),
+        code: trimmedCode || undefined,
+        description: trimmedDesc || undefined,
+        reason: reason.trim() || undefined,
+      });
+      setSuccess(true);
+      if (onProposed) onProposed();
+      setTimeout(() => {
+        onClose();
+      }, 1500);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Có lỗi xảy ra khi gửi đề xuất Topic');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <Modal title="💡 Đề xuất Canonical Topic mới" onClose={onClose} width="520px" zIndex={zIndex}>
+      {success ? (
+        <div style={{ textAlign: 'center', padding: '24px 16px' }}>
+          <CheckCircle style={{ width: '48px', height: '48px', color: '#16a34a', margin: '0 auto 12px' }} />
+          <h4 style={{ margin: '0 0 6px', fontSize: '1.05rem', color: 'var(--color-ink)' }}>Gửi đề xuất thành công!</h4>
+          <p style={{ margin: '0 0 6px', fontSize: '0.8125rem', color: 'var(--color-ink)', fontWeight: 600 }}>
+            Topic đang ở trạng thái <span style={{ color: '#ca8a04' }}>Chờ duyệt (pending_approval)</span>.
+          </p>
+          <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--color-ink-muted)' }}>
+            Đề xuất đã được gửi tới School Admin để thẩm định. Sau khi được duyệt, bạn có thể làm mới danh mục để chọn Topic này.
+          </p>
+        </div>
+      ) : (
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <p style={{ margin: '0 0 4px', fontSize: '0.8125rem', color: 'var(--color-ink-muted)' }}>
+            Hệ thống áp dụng mô hình chuẩn <strong>School → Subject → Topic</strong> (Flat Model). Mọi Topic mới cần được School Admin phê duyệt để đảm bảo tính đồng bộ cho sinh viên.
+          </p>
+          <Field label="Tên Topic đề xuất" required>
+            <input
+              type="text"
+              style={inputStyle}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Ví dụ: Vòng lặp For và While..."
+            />
+          </Field>
+          <Field label="Mã Topic gợi ý (tùy chọn)">
+            <input
+              type="text"
+              style={inputStyle}
+              value={code}
+              onChange={(e) => setCode(e.target.value.toUpperCase())}
+              placeholder="Ví dụ: LOOP_FOR_WHILE"
+            />
+          </Field>
+          <Field label="Mô tả tóm tắt">
+            <textarea
+              rows={2}
+              style={{ ...inputStyle, minHeight: '50px', resize: 'vertical' }}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Tóm tắt kiến thức cốt lõi của Topic..."
+            />
+          </Field>
+          <Field label="Lý do đề xuất">
+            <input
+              type="text"
+              style={inputStyle}
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder="Ví dụ: Bổ sung câu hỏi kiểm tra kiến thức cho giáo trình mới..."
+            />
+          </Field>
+          {error && (
+            <div style={{ padding: '8px 12px', borderRadius: '8px', background: 'rgba(220,38,38,0.08)', color: '#dc2626', fontSize: '0.8125rem' }}>
+              {error}
+            </div>
+          )}
+          <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '6px' }}>
+            <button
+              type="button"
+              onClick={onClose}
+              style={{
+                padding: '8px 16px', borderRadius: '8px',
+                border: '1px solid var(--color-border)', background: 'var(--color-surface)',
+                color: 'var(--color-ink)', fontSize: '0.8125rem', fontWeight: 600, cursor: 'pointer',
+              }}
+            >
+              Hủy
+            </button>
+            <button
+              type="submit"
+              disabled={submitting || !name.trim()}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: '6px',
+                padding: '8px 18px', borderRadius: '8px',
+                background: 'var(--color-primary)', color: 'white',
+                border: 'none', fontSize: '0.8125rem', fontWeight: 700,
+                cursor: (submitting || !name.trim()) ? 'not-allowed' : 'pointer',
+                opacity: (submitting || !name.trim()) ? 0.7 : 1,
+              }}
+            >
+              {submitting ? 'Đang gửi...' : 'Gửi đề xuất'}
+            </button>
+          </div>
+        </form>
+      )}
+    </Modal>
+  );
+}
+
 // ─── Card Form Modal ──────────────────────────────────────────────────────────
 
 function CardFormModal({ deckId, subjectId, card, onClose, onSaved }) {
   const isEdit = !!card;
+  const reviewCount = Number(card?.review_count || 0);
+  const isCardLocked = isEdit && reviewCount > 0;
+  const isTopicLocked = isCardLocked;
+  const effectiveSubjectId = subjectId || card?.subject_id || card?.subjectId;
 
   // Khởi tạo options từ card (khi edit) hoặc 2 ô trống (khi tạo mới)
   const initOptions = () => {
@@ -241,8 +383,11 @@ function CardFormModal({ deckId, subjectId, card, onClose, onSaved }) {
   };
 
   const [question, setQuestion] = useState(card?.question || '');
-  const [topicName, setTopicName] = useState(card?.topic_name || '');
-  const [existingTopics, setExistingTopics] = useState([]);
+  const [topicId, setTopicId] = useState(card?.topic_id || '');
+  const [canonicalTopics, setCanonicalTopics] = useState([]);
+  const [loadingTopics, setLoadingTopics] = useState(false);
+  const [showProposalModal, setShowProposalModal] = useState(false);
+
   const [options, setOptions] = useState(initOptions);
   const [correctIdx, setCorrectIdx] = useState(initCorrectIdx);
   const [explanation, setExplanation] = useState(card?.explanation || '');
@@ -250,16 +395,59 @@ function CardFormModal({ deckId, subjectId, card, onClose, onSaved }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    if (subjectId) {
-      TopicService.getTopics(subjectId)
-        .then((res) => {
-          const list = Array.isArray(res.data) ? res.data : (res.data?.topics || []);
-          setExistingTopics(list);
-        })
-        .catch(() => {});
+  const [suggestingTopic, setSuggestingTopic] = useState(false);
+  const [suggestedCandidates, setSuggestedCandidates] = useState([]);
+  const [suggestError, setSuggestError] = useState(null);
+
+  const handleSuggestTopic = async () => {
+    if (!deckId) return;
+    if (!question.trim()) {
+      setSuggestError('Vui lòng nhập nội dung câu hỏi trước khi tìm gợi ý');
+      return;
     }
-  }, [subjectId]);
+    setSuggestingTopic(true);
+    setSuggestError(null);
+    try {
+      const currentAnswer = options[correctIdx] || '';
+      const res = await FlashcardService.getTopicSuggestions(deckId, {
+        question: question.trim(),
+        answer: currentAnswer.trim(),
+        limit: 5,
+      });
+      const candidates = res?.data?.candidates || [];
+      setSuggestedCandidates(candidates);
+      if (candidates.length === 0) {
+        setSuggestError('Không tìm thấy Topic phù hợp trong danh mục của môn học.');
+      }
+    } catch (err) {
+      setSuggestError(err?.response?.data?.message || 'Không thể tìm gợi ý Topic lúc này');
+    } finally {
+      setSuggestingTopic(false);
+    }
+  };
+
+  const fetchApprovedTopics = useCallback(async () => {
+    if (!effectiveSubjectId) return;
+    setLoadingTopics(true);
+    try {
+      const res = await TopicService.getTopics(effectiveSubjectId, {
+        status: 'approved',
+        reviewRequired: false,
+        isActive: true,
+        limit: 100,
+      });
+      const list = res?.data?.items || (Array.isArray(res?.data) ? res.data : (res?.data?.topics || []));
+      setCanonicalTopics(list);
+    } catch {
+      // Ignore
+    } finally {
+      setLoadingTopics(false);
+    }
+  }, [effectiveSubjectId]);
+
+  useEffect(() => {
+    fetchApprovedTopics();
+  }, [fetchApprovedTopics]);
 
   const handleOptionChange = (idx, val) => {
     setOptions((prev) => prev.map((o, i) => (i === idx ? val : o)));
@@ -273,7 +461,6 @@ function CardFormModal({ deckId, subjectId, card, onClose, onSaved }) {
   const handleRemoveOption = (idx) => {
     if (options.length <= 2) return;
     const next = options.filter((_, i) => i !== idx);
-    // Adjust correctIdx if needed
     setCorrectIdx((prev) => {
       if (idx === prev) return 0;
       if (idx < prev) return prev - 1;
@@ -287,8 +474,8 @@ function CardFormModal({ deckId, subjectId, card, onClose, onSaved }) {
     if (!question.trim()) { setError('Câu hỏi không được để trống'); return; }
     const filled = options.map((o) => o.trim()).filter(Boolean);
     if (filled.length < 2) { setError('Cần ít nhất 2 lựa chọn có nội dung'); return; }
-    // Phải chọn đáp án đúng
     if (!options[correctIdx]?.trim()) { setError('Vui lòng chọn đáp án đúng hợp lệ'); return; }
+    if (!topicId) { setError('Vui lòng chọn Canonical Topic chuẩn cho thẻ'); return; }
 
     const payload = {
       type: 'multiple_choice',
@@ -297,7 +484,7 @@ function CardFormModal({ deckId, subjectId, card, onClose, onSaved }) {
       answer: options[correctIdx].trim(),
       explanation: explanation.trim(),
       difficulty,
-      topicName: topicName.trim() || null,
+      topicId: topicId,
     };
 
     setSaving(true); setError(null);
@@ -315,77 +502,227 @@ function CardFormModal({ deckId, subjectId, card, onClose, onSaved }) {
     }
   };
 
+  const currentTopicInCatalog = canonicalTopics.some((t) => t.id === topicId);
   const OPTION_LABELS = ['A', 'B', 'C', 'D', 'E', 'F'];
 
   return (
-    <Modal title={isEdit ? '✏️ Sửa thẻ trắc nghiệm' : '➕ Thêm thẻ trắc nghiệm'} onClose={onClose} width="600px" padding="16px 20px">
-      <form onSubmit={handleSubmit}>
+    <>
+      <Modal title={isEdit ? (isCardLocked ? '🔒 Xem & Sửa thẻ (Đã có sinh viên ôn tập)' : '✏️ Sửa thẻ trắc nghiệm') : '➕ Thêm thẻ trắc nghiệm'} onClose={onClose} width="620px" padding="16px 20px">
+        <form onSubmit={handleSubmit}>
 
-        {/* Câu hỏi */}
-        <Field label="Câu hỏi" required>
-          <LatexToolbar onInsert={(f) => setQuestion(prev => prev ? prev + ' ' + f : f)} />
-          <textarea
-            rows={2}
-            style={{ ...inputStyle, minHeight: '44px', resize: 'vertical', padding: '8px 10px' }}
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
-            placeholder="Nhập câu hỏi trắc nghiệm..."
-          />
-          {question.trim() && (
+          {/* Cảnh báo khóa toàn bộ nội dung khi thẻ đã có sinh viên ôn tập */}
+          {isCardLocked && (
             <div style={{
-              marginTop: '6px', padding: '8px 12px', borderRadius: '8px',
-              background: 'var(--color-primary-bg)', border: '1px solid var(--color-border)',
+              marginBottom: '14px', padding: '10px 14px', borderRadius: '10px',
+              background: 'rgba(234, 179, 8, 0.1)', border: '1.5px solid rgba(234, 179, 8, 0.3)',
+              color: '#b45309', fontSize: '0.8125rem', lineHeight: 1.5,
             }}>
-              <span style={{ fontSize: '0.6875rem', fontWeight: 700, color: 'var(--color-primary-dark)', display: 'block', marginBottom: '2px' }}>
-                👁️ Xem trước công thức câu hỏi:
-              </span>
-              <div style={{ fontSize: '0.875rem', color: 'var(--color-ink)', lineHeight: 1.5 }}>
-                <MathText content={question} />
-              </div>
+              <p style={{ margin: '0 0 2px', fontWeight: 700 }}>
+                🔒 Thẻ này đã có {reviewCount} lượt sinh viên ôn tập
+              </p>
+              <p style={{ margin: 0, fontSize: '0.75rem' }}>
+                Để bảo vệ lịch sử học tập, tính chính xác của Learning Analytics và AI Study Plan, câu hỏi, đáp án, các lựa chọn và Topic đã được khóa bảo vệ. Bạn chỉ có thể cập nhật giải thích đáp án.
+              </p>
             </div>
           )}
-        </Field>
 
-        {/* Chủ đề (Topic) */}
-        <Field label="Chủ đề (Topic) — Phục vụ AI Học tập cá nhân hóa">
-          <input
-            type="text"
-            list="topics-datalist"
-            style={{ ...inputStyle, padding: '7px 10px' }}
-            value={topicName}
-            onChange={(e) => setTopicName(e.target.value)}
-            placeholder="Nhập tên chủ đề (ví dụ: Đạo hàm hàm số) hoặc chọn gợi ý bên dưới..."
-          />
-          <datalist id="topics-datalist">
-            {existingTopics.map((t) => (
-              <option key={t.id} value={t.name} />
-            ))}
-          </datalist>
-          {existingTopics.length > 0 && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '6px' }}>
-              <span style={{ fontSize: '0.6875rem', color: 'var(--color-ink-muted)', alignSelf: 'center' }}>Gợi ý nhanh:</span>
-              {existingTopics.slice(0, 6).map((t) => (
+          {/* Empty state nếu môn học chưa có topic nào được duyệt */}
+          {!isCardLocked && !isEdit && canonicalTopics.length === 0 && !loadingTopics && (
+            <div style={{
+              marginBottom: '14px', padding: '12px 14px', borderRadius: '10px',
+              background: 'rgba(220, 38, 38, 0.08)', border: '1.5px solid rgba(220, 38, 38, 0.25)',
+              color: '#b91c1c', fontSize: '0.8125rem',
+            }}>
+              <p style={{ margin: '0 0 4px', fontWeight: 700 }}>
+                ⚠️ Môn học chưa có Canonical Topic chuẩn nào được duyệt
+              </p>
+              <p style={{ margin: '0 0 8px', fontSize: '0.75rem', lineHeight: 1.5 }}>
+                Flashcard mới bắt buộc phải gắn với một Topic đã duyệt. Vui lòng gửi đề xuất Topic cho School Admin trước khi thêm thẻ.
+              </p>
+              <button
+                type="button"
+                onClick={() => setShowProposalModal(true)}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '4px',
+                  padding: '5px 12px', borderRadius: '6px',
+                  background: '#dc2626', color: 'white', border: 'none',
+                  fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer',
+                }}
+              >
+                💡 Đề xuất Topic mới ngay
+              </button>
+            </div>
+          )}
+
+          {/* Câu hỏi */}
+          <Field label="Câu hỏi" required>
+            {!isCardLocked && <LatexToolbar onInsert={(f) => setQuestion(prev => prev ? prev + ' ' + f : f)} />}
+            <textarea
+              rows={2}
+              disabled={isCardLocked}
+              style={{
+                ...inputStyle, minHeight: '44px',
+                resize: isCardLocked ? 'none' : 'vertical', padding: '8px 10px',
+                opacity: isCardLocked ? 0.75 : 1,
+                backgroundColor: isCardLocked ? 'var(--color-primary-bg)' : 'var(--color-surface)',
+                cursor: isCardLocked ? 'not-allowed' : 'text',
+              }}
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              placeholder="Nhập câu hỏi trắc nghiệm..."
+            />
+            {question.trim() && (
+              <div style={{
+                marginTop: '6px', padding: '8px 12px', borderRadius: '8px',
+                background: 'var(--color-primary-bg)', border: '1px solid var(--color-border)',
+              }}>
+                <span style={{ fontSize: '0.6875rem', fontWeight: 700, color: 'var(--color-primary-dark)', display: 'block', marginBottom: '2px' }}>
+                  👁️ Xem trước công thức câu hỏi:
+                </span>
+                <div style={{ fontSize: '0.875rem', color: 'var(--color-ink)', lineHeight: 1.5 }}>
+                  <MathText content={question} />
+                </div>
+              </div>
+            )}
+          </Field>
+
+          {/* Canonical Topic Selector */}
+          <Field label="Canonical Topic (Chủ đề chuẩn)" required>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <select
+                style={{
+                  ...inputStyle,
+                  padding: '8px 10px',
+                  cursor: isTopicLocked ? 'not-allowed' : 'pointer',
+                  backgroundColor: isTopicLocked ? 'var(--color-primary-bg)' : 'var(--color-surface)',
+                  opacity: isTopicLocked ? 0.8 : 1,
+                  flex: 1,
+                }}
+                value={topicId}
+                onChange={(e) => setTopicId(e.target.value)}
+                disabled={isTopicLocked}
+              >
+                <option value="">-- Chọn Canonical Topic đã duyệt --</option>
+                {/* Giữ lại option nếu thẻ cũ có Topic Legacy chưa duyệt hoặc inactive */}
+                {isEdit && card?.topic_id && !currentTopicInCatalog && (
+                  <option value={card.topic_id}>
+                    ⚠️ [Chủ đề cũ / Cần rà soát] {card.topic_name || card.topic_id}
+                  </option>
+                )}
+                {canonicalTopics.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.code ? `[${t.code}] ` : ''}{t.name}
+                  </option>
+                ))}
+              </select>
+
+              {!isTopicLocked && (
                 <button
-                  key={t.id}
                   type="button"
-                  onClick={() => setTopicName(t.name)}
+                  onClick={handleSuggestTopic}
+                  disabled={suggestingTopic || !question.trim()}
+                  title="Tìm gợi ý Topic chuẩn dựa trên nội dung câu hỏi và đáp án"
                   style={{
-                    fontSize: '0.6875rem', padding: '2px 8px', borderRadius: '6px',
-                    border: '1px solid var(--color-border)',
-                    background: topicName === t.name ? 'var(--color-primary-card)' : 'var(--color-surface)',
-                    color: topicName === t.name ? 'var(--color-primary)' : 'var(--color-ink)',
-                    cursor: 'pointer',
+                    display: 'inline-flex', alignItems: 'center', gap: '4px',
+                    padding: '8px 10px', borderRadius: '8px',
+                    background: 'var(--color-primary-card)', border: '1px solid var(--color-primary)',
+                    color: 'var(--color-primary)', fontSize: '0.75rem', fontWeight: 700,
+                    cursor: (suggestingTopic || !question.trim()) ? 'not-allowed' : 'pointer',
+                    opacity: (suggestingTopic || !question.trim()) ? 0.6 : 1,
+                    whiteSpace: 'nowrap',
                   }}
                 >
-                  {t.name}
+                  <Zap style={{ width: '13px', height: '13px' }} />
+                  {suggestingTopic ? 'Đang gợi ý...' : 'Gợi ý Topic'}
                 </button>
-              ))}
+              )}
+
+              <button
+                type="button"
+                onClick={fetchApprovedTopics}
+                disabled={loadingTopics}
+                title="Làm mới danh mục Topic đã duyệt"
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '4px',
+                  padding: '8px 10px', borderRadius: '8px',
+                  background: 'var(--color-surface)', border: '1px solid var(--color-border)',
+                  color: 'var(--color-ink)', fontSize: '0.75rem', fontWeight: 600,
+                  cursor: loadingTopics ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap',
+                }}
+              >
+                🔄 {loadingTopics ? 'Đang tải...' : 'Làm mới'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowProposalModal(true)}
+                title="Đề xuất Topic mới nếu chưa có trong danh mục"
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '4px',
+                  padding: '8px 12px', borderRadius: '8px',
+                  background: 'var(--color-primary-card)', border: '1px solid var(--color-border)',
+                  color: 'var(--color-primary-dark)', fontSize: '0.75rem', fontWeight: 600,
+                  cursor: 'pointer', whiteSpace: 'nowrap',
+                }}
+              >
+                💡 Đề xuất
+              </button>
             </div>
-          )}
-          <p style={{ fontSize: '0.6875rem', color: 'var(--color-ink-muted)', margin: '4px 0 0' }}>
-            💡 Gõ tên chủ đề mới (hệ thống sẽ tự động tạo) hoặc chọn từ danh sách có sẵn.
-          </p>
-        </Field>
+
+            {/* Danh sách các pill gợi ý khi Lecturer bấm Gợi ý Topic */}
+            {suggestedCandidates.length > 0 && (
+              <div style={{
+                marginTop: '8px', padding: '10px 12px', borderRadius: '8px',
+                background: 'var(--color-primary-bg)', border: '1px solid var(--color-border)',
+              }}>
+                <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-ink)', marginBottom: '6px' }}>
+                  🎯 Gợi ý Topic khớp với nội dung (Bấm để chọn):
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                  {suggestedCandidates.map((c) => {
+                    const isSelected = topicId === c.topicId;
+                    const pct = Math.round((c.score || 0) * 100);
+                    return (
+                      <button
+                        key={c.topicId}
+                        type="button"
+                        onClick={() => setTopicId(c.topicId)}
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', gap: '6px',
+                          padding: '5px 10px', borderRadius: '6px',
+                          border: `1.5px solid ${isSelected ? 'var(--color-primary)' : 'var(--color-border)'}`,
+                          background: isSelected ? 'var(--color-primary)' : 'var(--color-surface)',
+                          color: isSelected ? '#ffffff' : 'var(--color-ink)',
+                          fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer',
+                          transition: 'all 0.15s ease-in-out',
+                        }}
+                      >
+                        <span>{c.topicCode ? `[${c.topicCode}] ` : ''}{c.topicName}</span>
+                        <span style={{
+                          padding: '1px 5px', borderRadius: '4px',
+                          background: isSelected ? 'rgba(255,255,255,0.25)' : 'var(--color-primary-bg)',
+                          color: isSelected ? '#ffffff' : 'var(--color-primary-dark)',
+                          fontSize: '0.6875rem', fontWeight: 700,
+                        }}>
+                          {pct}%
+                        </span>
+                        {isSelected && <span>✓ Đã chọn</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {suggestError && (
+              <div style={{
+                marginTop: '6px', fontSize: '0.75rem', color: '#dc2626',
+                display: 'flex', alignItems: 'center', gap: '4px',
+              }}>
+                <AlertCircle style={{ width: '13px', height: '13px', flexShrink: 0 }} />
+                <span>{suggestError}</span>
+              </div>
+            )}
+          </Field>
 
         {/* Các lựa chọn */}
         <Field label="Các lựa chọn" required>
@@ -417,6 +754,7 @@ function CardFormModal({ deckId, subjectId, card, onClose, onSaved }) {
                   {/* Input text */}
                   <input
                     type="text"
+                    disabled={isCardLocked}
                     value={opt}
                     onChange={(e) => handleOptionChange(idx, e.target.value)}
                     placeholder={`Lựa chọn ${OPTION_LABELS[idx]}${isCorrect ? ' (đáp án đúng)' : ' (gây nhiễu)'}`}
@@ -424,22 +762,26 @@ function CardFormModal({ deckId, subjectId, card, onClose, onSaved }) {
                       flex: 1, padding: '6px 8px', border: 'none', outline: 'none',
                       background: 'transparent', fontSize: '0.875rem',
                       fontFamily: 'var(--font-sans)', color: 'var(--color-ink)',
+                      cursor: isCardLocked ? 'not-allowed' : 'text',
+                      opacity: isCardLocked ? 0.8 : 1,
                     }}
                   />
 
                   {/* Nút chọn đáp án đúng */}
                   <button
                     type="button"
+                    disabled={isCardLocked}
                     onClick={() => setCorrectIdx(idx)}
                     title={isCorrect ? 'Đây là đáp án đúng' : 'Chọn làm đáp án đúng'}
                     style={{
                       display: 'flex', alignItems: 'center', gap: '4px',
                       padding: '4px 8px', borderRadius: '6px', border: '1px solid',
-                      cursor: 'pointer', fontSize: '0.6875rem', fontWeight: 700,
+                      cursor: isCardLocked ? 'not-allowed' : 'pointer', fontSize: '0.6875rem', fontWeight: 700,
                       flexShrink: 0, fontFamily: 'var(--font-sans)',
                       borderColor: isCorrect ? 'var(--color-primary)' : 'var(--color-border)',
                       background: isCorrect ? 'var(--color-primary)' : 'transparent',
                       color: isCorrect ? 'white' : 'var(--color-ink-muted)',
+                      opacity: isCardLocked ? 0.75 : 1,
                       transition: 'all 0.15s',
                     }}
                   >
@@ -450,18 +792,18 @@ function CardFormModal({ deckId, subjectId, card, onClose, onSaved }) {
                   <button
                     type="button"
                     onClick={() => handleRemoveOption(idx)}
-                    disabled={options.length <= 2}
+                    disabled={isCardLocked || options.length <= 2}
                     title="Xóa lựa chọn này"
                     style={{
                       width: '24px', height: '24px', borderRadius: '6px',
                       border: '1px solid var(--color-border)', background: 'transparent',
-                      cursor: options.length <= 2 ? 'not-allowed' : 'pointer',
+                      cursor: (isCardLocked || options.length <= 2) ? 'not-allowed' : 'pointer',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      color: 'var(--color-ink-muted)', opacity: options.length <= 2 ? 0.35 : 1,
+                      color: 'var(--color-ink-muted)', opacity: (isCardLocked || options.length <= 2) ? 0.35 : 1,
                       flexShrink: 0, transition: 'all 0.15s',
                       fontSize: '0.875rem',
                     }}
-                    onMouseEnter={(e) => { if (options.length > 2) e.currentTarget.style.borderColor = '#fca5a5'; e.currentTarget.style.color = '#dc2626'; }}
+                    onMouseEnter={(e) => { if (!isCardLocked && options.length > 2) { e.currentTarget.style.borderColor = '#fca5a5'; e.currentTarget.style.color = '#dc2626'; } }}
                     onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.color = 'var(--color-ink-muted)'; }}
                   >
                     ×
@@ -472,7 +814,7 @@ function CardFormModal({ deckId, subjectId, card, onClose, onSaved }) {
           </div>
 
           {/* Nút thêm lựa chọn */}
-          {options.length < 6 && (
+          {!isCardLocked && options.length < 6 && (
             <button
               type="button"
               onClick={handleAddOption}
@@ -554,13 +896,34 @@ function CardFormModal({ deckId, subjectId, card, onClose, onSaved }) {
           <button type="button" onClick={onClose} style={{ padding: '7px 16px', borderRadius: '8px', border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-ink)', fontSize: '0.8125rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-sans)' }}>
             Hủy
           </button>
-          <button type="submit" disabled={saving} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 18px', borderRadius: '8px', background: 'var(--color-primary)', color: 'white', border: 'none', fontSize: '0.8125rem', fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.7 : 1, fontFamily: 'var(--font-sans)' }}>
+          <button
+            type="submit"
+            disabled={saving || (!isEdit && canonicalTopics.length === 0)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 18px',
+              borderRadius: '8px', background: 'var(--color-primary)', color: 'white',
+              border: 'none', fontSize: '0.8125rem', fontWeight: 700,
+              cursor: (saving || (!isEdit && canonicalTopics.length === 0)) ? 'not-allowed' : 'pointer',
+              opacity: (saving || (!isEdit && canonicalTopics.length === 0)) ? 0.6 : 1,
+              fontFamily: 'var(--font-sans)',
+            }}
+          >
             <Save style={{ width: '14px', height: '14px' }} />
-            {saving ? 'Đang lưu...' : isEdit ? 'Lưu thay đổi' : 'Thêm thẻ'}
+            {saving ? 'Đang lưu...' : isEdit ? (isCardLocked ? 'Lưu giải thích' : 'Lưu thay đổi') : 'Thêm thẻ'}
           </button>
         </div>
       </form>
     </Modal>
+
+    {showProposalModal && (
+      <TopicProposalModal
+        subjectId={effectiveSubjectId}
+        zIndex={1000}
+        onClose={() => setShowProposalModal(false)}
+        onProposed={fetchApprovedTopics}
+      />
+    )}
+  </>
   );
 }
 
@@ -784,32 +1147,55 @@ function ClassAccessModal({ deck, onClose, onSaved }) {
   );
 }
 
-// ─── Excel Import Modal ───────────────────────────────────────────────────────
+// ─── Excel Import Modal (4-step Wizard) ───────────────────────────────────────
 
 function ExcelImportModal({ deckId, subjectId, onClose, onSaved }) {
+  const [step, setStep] = useState('upload'); // 'upload' | 'preview' | 'done'
   const [file, setFile] = useState(null);
-  const [topicName, setTopicName] = useState('');
-  const [existingTopics, setExistingTopics] = useState([]);
+  const [canonicalTopics, setCanonicalTopics] = useState([]);
+  const [loadingTopics, setLoadingTopics] = useState(false);
+  const [showProposalModal, setShowProposalModal] = useState(false);
+
   const [uploading, setUploading] = useState(false);
   const [downloadingTemplate, setDownloadingTemplate] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+
+  const [previewData, setPreviewData] = useState(null);
+  const [rowTopicSelections, setRowTopicSelections] = useState({});
+  const [bulkRawTopic, setBulkRawTopic] = useState('');
+  const [bulkTargetTopicId, setBulkTargetTopicId] = useState('');
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    if (subjectId) {
-      TopicService.getTopics(subjectId)
-        .then((res) => {
-          const list = Array.isArray(res.data) ? res.data : (res.data?.topics || []);
-          setExistingTopics(list);
-        })
-        .catch(() => {});
+  const effectiveSubjectId = subjectId || previewData?.subjectId || previewData?.subject_id;
+
+  const fetchApprovedTopics = useCallback(async () => {
+    if (!effectiveSubjectId) return;
+    setLoadingTopics(true);
+    try {
+      const res = await TopicService.getTopics(effectiveSubjectId, {
+        status: 'approved',
+        reviewRequired: false,
+        isActive: true,
+        limit: 100,
+      });
+      const list = res?.data?.items || (Array.isArray(res?.data) ? res.data : (res?.data?.topics || []));
+      setCanonicalTopics(list);
+    } catch {
+      // Ignore
+    } finally {
+      setLoadingTopics(false);
     }
-  }, [subjectId]);
+  }, [effectiveSubjectId]);
+
+  useEffect(() => {
+    fetchApprovedTopics();
+  }, [fetchApprovedTopics]);
 
   const handleDownloadTemplate = async () => {
     setDownloadingTemplate(true);
     try {
-      const blob = await FlashcardService.downloadExcelTemplate();
+      const blob = await FlashcardService.downloadExcelTemplate(deckId);
       const url = window.URL.createObjectURL(new Blob([blob]));
       const link = document.createElement('a');
       link.href = url;
@@ -824,183 +1210,686 @@ function ExcelImportModal({ deckId, subjectId, onClose, onSaved }) {
     }
   };
 
-  const handleUpload = async (e) => {
-    e.preventDefault();
+  const handlePreview = async (e) => {
+    if (e) e.preventDefault();
     if (!file) {
       setError('Vui lòng chọn một file Excel (.xlsx, .xls) hoặc .csv');
       return;
     }
     setUploading(true);
     setError(null);
-    setResult(null);
 
     try {
-      const res = await FlashcardService.importCardsFromExcel(deckId, file, topicName.trim());
-      setResult(res);
-      if (res.imported_count > 0) {
-        onSaved();
-      }
+      const res = await FlashcardService.previewImportCards(deckId, file);
+      const data = res?.data || res;
+      setPreviewData(data);
+
+      // Phase 4: Do NOT auto-preselect topicId. Lecturer must explicitly confirm or use Bulk Actions.
+      setRowTopicSelections({});
+      setStep('preview');
     } catch (err) {
-      setError(err.response?.data?.message || 'Có lỗi xảy ra khi nhập file Excel');
+      setError(err.response?.data?.message || 'Có lỗi xảy ra khi phân tích file Excel');
     } finally {
       setUploading(false);
     }
   };
 
-  return (
-    <Modal title="📥 Nhập thẻ từ file Excel" onClose={onClose}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-        {/* Banner download template */}
-        <div style={{
-          padding: '14px 16px', borderRadius: '12px',
-          background: 'var(--color-primary-card)', border: '1px solid var(--color-border)',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px',
-        }}>
-          <div>
-            <p style={{ margin: '0 0 2px', fontSize: '0.875rem', fontWeight: 700, color: 'var(--color-primary-dark)' }}>
-              Tải file mẫu Excel
-            </p>
-            <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--color-ink-muted)' }}>
-              Điền câu hỏi, đáp án và <strong>Chủ đề (Topic)</strong> theo đúng định dạng mẫu để AI tự xếp lịch ôn tập.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={handleDownloadTemplate}
-            disabled={downloadingTemplate}
-            style={{
-              display: 'inline-flex', alignItems: 'center', gap: '6px',
-              padding: '8px 14px', borderRadius: '8px',
-              background: 'var(--color-surface)', border: '1px solid var(--color-border)',
-              color: 'var(--color-ink)', fontSize: '0.8125rem', fontWeight: 600,
-              cursor: 'pointer', flexShrink: 0,
-            }}
-          >
-            <Download style={{ width: '14px', height: '14px' }} />
-            {downloadingTemplate ? 'Đang tải...' : 'Tải template (.xlsx)'}
-          </button>
-        </div>
+  const handleBulkAssign = (rawTopic, targetTopicId) => {
+    if (!previewData?.rows) return;
+    setRowTopicSelections((prev) => {
+      const next = { ...prev };
+      for (const r of previewData.rows) {
+        if ((r.rawTopic || '').trim() === (rawTopic || '').trim()) {
+          next[r.rowNumber] = targetTopicId;
+        }
+      }
+      return next;
+    });
+  };
 
-        {/* Form upload file */}
-        <form onSubmit={handleUpload}>
-          {/* Chủ đề mặc định */}
-          <Field label="Chủ đề mặc định (Tùy chọn)">
-            <input
-              type="text"
-              list="topics-import-datalist"
-              style={{ ...inputStyle, padding: '7px 10px' }}
-              value={topicName}
-              onChange={(e) => setTopicName(e.target.value)}
-              placeholder="Nhập tên chủ đề (ví dụ: Đạo hàm) hoặc chọn gợi ý bên dưới..."
-            />
-            <datalist id="topics-import-datalist">
-              {existingTopics.map((t) => (
-                <option key={t.id} value={t.name} />
-              ))}
-            </datalist>
-            {existingTopics.length > 0 && (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '6px' }}>
-                <span style={{ fontSize: '0.6875rem', color: 'var(--color-ink-muted)', alignSelf: 'center' }}>Gợi ý nhanh:</span>
-                {existingTopics.slice(0, 6).map((t) => (
+  const handleApplyAllSuggestions = () => {
+    if (!previewData?.rows) return;
+    setRowTopicSelections((prev) => {
+      const next = { ...prev };
+      for (const r of previewData.rows) {
+        if (!next[r.rowNumber] && r.candidates && r.candidates.length > 0 && !r.isAmbiguous) {
+          const topCandidate = r.candidates[0];
+          if (topCandidate?.topicId) {
+            next[r.rowNumber] = topCandidate.topicId;
+          }
+        }
+      }
+      return next;
+    });
+  };
+
+  const handleRowTopicChange = (rowNumber, targetTopicId) => {
+    setRowTopicSelections((prev) => ({
+      ...prev,
+      [rowNumber]: targetTopicId,
+    }));
+  };
+
+  const handleConfirm = async () => {
+    if (!previewData?.previewId) return;
+
+    const validRows = (previewData.rows || []).filter(
+      (r) => !r.validationErrors || r.validationErrors.length === 0
+    );
+
+    const missingRows = validRows.filter((r) => !rowTopicSelections[r.rowNumber]);
+    if (missingRows.length > 0) {
+      setError(`Còn ${missingRows.length} dòng chưa chọn Topic chuẩn. Vui lòng gán Canonical Topic cho toàn bộ câu hỏi trước khi lưu.`);
+      return;
+    }
+
+    const payloadRows = validRows.map((r) => ({
+      rowNumber: r.rowNumber,
+      topicId: rowTopicSelections[r.rowNumber],
+    }));
+
+    setConfirming(true);
+    setError(null);
+
+    try {
+      const res = await FlashcardService.confirmImportCards(deckId, {
+        previewId: previewData.previewId,
+        rows: payloadRows,
+      });
+      setResult(res?.data || res);
+      setStep('done');
+      if (onSaved) onSaved();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Có lỗi xảy ra khi lưu flashcards');
+    } finally {
+      setConfirming(false);
+    }
+  };
+
+  const validRows = (previewData?.rows || []).filter(
+    (r) => !r.validationErrors || r.validationErrors.length === 0
+  );
+  const validRowsCount = validRows.length;
+  const errorRowsCount = (previewData?.rows || []).length - validRowsCount;
+  const assignedCount = validRows.filter((r) => Boolean(rowTopicSelections[r.rowNumber])).length;
+  const isAllAssigned = validRowsCount > 0 && assignedCount === validRowsCount;
+
+  // Unique raw topics for bulk toolbar
+  const uniqueRawTopics = Array.from(
+    new Set(validRows.map((r) => (r.rawTopic || '').trim()))
+  ).filter(Boolean);
+
+  const getMatchBadge = (row) => {
+    if (row.isAmbiguous) {
+      return (
+        <span
+          style={{ fontSize: '0.6875rem', padding: '2px 6px', borderRadius: '4px', background: 'rgba(234, 179, 8, 0.15)', color: '#b45309', fontWeight: 700 }}
+          title="Nhiều Topic có độ tương đồng sát nhau (cần xác nhận thủ công)"
+        >
+          ⚠️ Phân vân
+        </span>
+      );
+    }
+    if (!row.candidates || row.candidates.length === 0) {
+      return (
+        <span style={{ fontSize: '0.6875rem', padding: '2px 6px', borderRadius: '4px', background: 'rgba(100, 116, 139, 0.12)', color: '#64748b', fontWeight: 600 }}>
+          Chưa khớp
+        </span>
+      );
+    }
+    const best = row.candidates[0];
+    const scorePct = Math.round((best.score || 0) * 100);
+    switch (best.matchType) {
+      case 'exact_code':
+        return (
+          <span style={{ fontSize: '0.6875rem', padding: '2px 6px', borderRadius: '4px', background: 'rgba(22, 163, 74, 0.12)', color: '#16a34a', fontWeight: 700 }} title="Khớp chính xác 100% mã Topic">
+            ✓ Khớp mã
+          </span>
+        );
+      case 'exact_name':
+        return (
+          <span style={{ fontSize: '0.6875rem', padding: '2px 6px', borderRadius: '4px', background: 'rgba(37, 99, 235, 0.12)', color: '#2563eb', fontWeight: 700 }} title="Khớp chính xác 100% tên Topic">
+            ✓ Khớp tên
+          </span>
+        );
+      case 'exact_alias':
+        return (
+          <span style={{ fontSize: '0.6875rem', padding: '2px 6px', borderRadius: '4px', background: 'rgba(147, 51, 234, 0.12)', color: '#9333ea', fontWeight: 700 }} title="Khớp chính xác Alias phụ">
+            ✓ Khớp alias
+          </span>
+        );
+      case 'normalized':
+        return (
+          <span style={{ fontSize: '0.6875rem', padding: '2px 6px', borderRadius: '4px', background: 'rgba(13, 148, 136, 0.12)', color: '#0d9488', fontWeight: 700 }} title="Khớp sau khi chuẩn hóa Unicode/bỏ dấu tiếng Việt">
+            ✓ Không dấu
+          </span>
+        );
+      case 'fuzzy':
+        return (
+          <span style={{ fontSize: '0.6875rem', padding: '2px 6px', borderRadius: '4px', background: 'rgba(99, 102, 241, 0.12)', color: '#4f46e5', fontWeight: 700 }} title={`Độ tương đồng chữ: ${scorePct}%`}>
+            ~ Gần đúng ({scorePct}%)
+          </span>
+        );
+      case 'semantic':
+        return (
+          <span style={{ fontSize: '0.6875rem', padding: '2px 6px', borderRadius: '4px', background: 'rgba(168, 85, 247, 0.15)', color: '#7e22ce', fontWeight: 700 }} title={`AI Semantic Match: ${scorePct}%`}>
+            🤖 AI ({scorePct}%)
+          </span>
+        );
+      default:
+        return (
+          <span style={{ fontSize: '0.6875rem', padding: '2px 6px', borderRadius: '4px', background: 'rgba(59, 130, 246, 0.12)', color: '#2563eb', fontWeight: 600 }}>
+            Gợi ý ({scorePct}%)
+          </span>
+        );
+    }
+  };
+
+  return (
+    <>
+      <Modal
+        title={
+          step === 'upload'
+            ? '📥 Nhập thẻ từ file Excel'
+            : step === 'preview'
+            ? '🔍 Xem trước & Khớp Canonical Topic (Phase 3)'
+            : '✅ Kết quả nhập thẻ Excel'
+        }
+        onClose={onClose}
+        width={step === 'preview' ? '920px' : '560px'}
+      >
+        {/* BƯỚC 1: UPLOAD & TEMPLATE */}
+        {step === 'upload' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {canonicalTopics.length === 0 && !loadingTopics && (
+              <div style={{
+                padding: '12px 14px', borderRadius: '10px',
+                background: 'rgba(234, 179, 8, 0.1)', border: '1px solid rgba(234, 179, 8, 0.3)',
+                color: '#b45309', fontSize: '0.8125rem', display: 'flex', flexDirection: 'column', gap: '8px'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700 }}>
+                  <AlertCircle style={{ width: '16px', height: '16px', flexShrink: 0 }} />
+                  <span>Chú ý: Môn học này hiện chưa có Canonical Topic chuẩn nào!</span>
+                </div>
+                <p style={{ margin: 0, fontSize: '0.75rem', lineHeight: '1.4' }}>
+                  Hệ thống yêu cầu các thẻ nhập vào phải khớp với Topic chuẩn của trường. Bạn có thể gửi đề xuất danh mục Topic ngay bây giờ để School Admin phê duyệt trước hoặc tiếp tục xem trước file.
+                </p>
+                <div style={{ display: 'flex', gap: '10px', marginTop: '2px' }}>
                   <button
-                    key={t.id}
                     type="button"
-                    onClick={() => setTopicName(t.name)}
+                    onClick={() => setShowProposalModal(true)}
                     style={{
-                      fontSize: '0.6875rem', padding: '2px 8px', borderRadius: '6px',
-                      border: '1px solid var(--color-border)',
-                      background: topicName === t.name ? 'var(--color-primary-card)' : 'var(--color-surface)',
-                      color: topicName === t.name ? 'var(--color-primary)' : 'var(--color-ink)',
-                      cursor: 'pointer',
+                      padding: '6px 12px', borderRadius: '6px',
+                      background: 'var(--color-primary)', color: 'white',
+                      border: 'none', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer'
                     }}
                   >
-                    {t.name}
+                    + Đề xuất Topic mới ngay
                   </button>
-                ))}
+                  <button
+                    type="button"
+                    onClick={fetchApprovedTopics}
+                    style={{
+                      padding: '6px 12px', borderRadius: '6px',
+                      background: 'var(--color-surface)', color: 'var(--color-ink)',
+                      border: '1px solid var(--color-border)', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer'
+                    }}
+                  >
+                    Làm mới danh mục Topic
+                  </button>
+                </div>
               </div>
             )}
-          </Field>
 
-          <Field label="Chọn file Excel từ máy tính (.xlsx, .xls, .csv)" required>
-            <input
-              type="file"
-              accept=".xlsx,.xls,.csv"
-              onChange={(e) => {
-                setFile(e.target.files[0] || null);
-                setError(null);
-                setResult(null);
-              }}
-              style={{
-                width: '100%', boxSizing: 'border-box',
-                padding: '10px 12px', borderRadius: '10px',
-                border: '1.5px dashed var(--color-border)',
-                background: 'var(--color-surface)', color: 'var(--color-ink)',
-                fontSize: '0.875rem', cursor: 'pointer',
-              }}
-            />
-          </Field>
-
-          {error && (
             <div style={{
-              padding: '10px 14px', borderRadius: '10px',
-              background: 'rgba(220,38,38,0.08)', color: '#dc2626',
-              fontSize: '0.8125rem', marginTop: '12px',
+              padding: '14px 16px', borderRadius: '12px',
+              background: 'var(--color-primary-card)', border: '1px solid var(--color-border)',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px',
             }}>
-              {error}
+              <div>
+                <p style={{ margin: '0 0 2px', fontSize: '0.875rem', fontWeight: 700, color: 'var(--color-primary-dark)' }}>
+                  Tải file mẫu Excel
+                </p>
+             
+              </div>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 }}>
+                <button
+                  type="button"
+                  onClick={handleDownloadTemplate}
+                  disabled={downloadingTemplate}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: '6px',
+                    padding: '8px 14px', borderRadius: '8px',
+                    background: 'var(--color-surface)', border: '1px solid var(--color-border)',
+                    color: 'var(--color-ink)', fontSize: '0.8125rem', fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                >
+                  <Download style={{ width: '14px', height: '14px' }} />
+                  {downloadingTemplate ? 'Đang tải...' : 'Tải template (.xlsx)'}
+                </button>
+              </div>
             </div>
-          )}
 
-          {result && (
+            <form onSubmit={handlePreview}>
+              <Field label="Chọn file Excel từ máy tính (.xlsx, .xls, .csv)" required>
+                <input
+                  type="file"
+                  accept=".xlsx,.xls,.csv"
+                  onChange={(e) => {
+                    setFile(e.target.files[0] || null);
+                    setError(null);
+                  }}
+                  style={{
+                    width: '100%', boxSizing: 'border-box',
+                    padding: '12px 14px', borderRadius: '10px',
+                    border: '1.5px dashed var(--color-border)',
+                    background: 'var(--color-surface)', color: 'var(--color-ink)',
+                    fontSize: '0.875rem', cursor: 'pointer',
+                  }}
+                />
+              </Field>
+
+              {error && (
+                <div style={{
+                  padding: '10px 14px', borderRadius: '10px',
+                  background: 'rgba(220,38,38,0.08)', color: '#dc2626',
+                  fontSize: '0.8125rem', marginTop: '12px',
+                }}>
+                  {error}
+                </div>
+              )}
+
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '20px' }}>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  style={{
+                    padding: '9px 18px', borderRadius: '9px',
+                    border: '1px solid var(--color-border)', background: 'var(--color-surface)',
+                    color: 'var(--color-ink)', fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer',
+                  }}
+                >
+                  Đóng
+                </button>
+                <button
+                  type="submit"
+                  disabled={uploading || !file}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: '6px',
+                    padding: '9px 20px', borderRadius: '9px',
+                    background: 'var(--color-primary)', color: 'white',
+                    border: 'none', fontSize: '0.875rem', fontWeight: 700,
+                    cursor: (uploading || !file) ? 'not-allowed' : 'pointer',
+                    opacity: (uploading || !file) ? 0.6 : 1,
+                  }}
+                >
+                  <Upload style={{ width: '14px', height: '14px' }} />
+                  {uploading ? 'Đang phân tích...' : 'Tiếp tục: Xem trước & Khớp Topic'}
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {/* BƯỚC 2 & 3: PREVIEW, DETERMINISTIC MATCHING & TOPIC CONFIRMATION */}
+        {step === 'preview' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            {/* Thanh thống kê nhanh */}
             <div style={{
-              padding: '12px 14px', borderRadius: '10px', marginTop: '12px',
-              background: result.success ? 'rgba(22,163,74,0.08)' : 'rgba(220,38,38,0.08)',
-              color: result.success ? '#15803d' : '#dc2626', fontSize: '0.8125rem',
+              display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))',
+              gap: '10px', padding: '12px', borderRadius: '10px',
+              background: 'var(--color-primary-bg)', border: '1px solid var(--color-border)',
             }}>
-              <p style={{ margin: '0 0 4px', fontWeight: 700 }}>{result.message}</p>
-              {result.errors && result.errors.length > 0 && (
-                <div style={{ marginTop: '8px', maxHeight: '120px', overflowY: 'auto' }}>
-                  <p style={{ margin: '0 0 4px', fontWeight: 600, color: '#b91c1c' }}>Các dòng có cảnh báo/lỗi:</p>
-                  <ul style={{ margin: 0, paddingLeft: '18px' }}>
-                    {result.errors.map((err, i) => (
-                      <li key={i}>Dòng {err.row}: {err.message}</li>
-                    ))}
-                  </ul>
+              <div>
+                <span style={{ fontSize: '0.6875rem', color: 'var(--color-ink-muted)', textTransform: 'uppercase' }}>Tổng số dòng</span>
+                <p style={{ margin: '2px 0 0', fontSize: '1.15rem', fontWeight: 800, color: 'var(--color-ink)' }}>
+                  {previewData?.totalRows || 0}
+                </p>
+              </div>
+              <div>
+                <span style={{ fontSize: '0.6875rem', color: '#16a34a', textTransform: 'uppercase' }}>Hợp lệ</span>
+                <p style={{ margin: '2px 0 0', fontSize: '1.15rem', fontWeight: 800, color: '#16a34a' }}>
+                  {validRowsCount}
+                </p>
+              </div>
+              <div>
+                <span style={{ fontSize: '0.6875rem', color: isAllAssigned ? '#16a34a' : '#ca8a04', textTransform: 'uppercase' }}>Đã gán Topic chuẩn</span>
+                <p style={{ margin: '2px 0 0', fontSize: '1.15rem', fontWeight: 800, color: isAllAssigned ? '#16a34a' : '#ca8a04' }}>
+                  {assignedCount} / {validRowsCount}
+                </p>
+              </div>
+              {errorRowsCount > 0 && (
+                <div>
+                  <span style={{ fontSize: '0.6875rem', color: '#dc2626', textTransform: 'uppercase' }}>Dòng lỗi/bỏ qua</span>
+                  <p style={{ margin: '2px 0 0', fontSize: '1.15rem', fontWeight: 800, color: '#dc2626' }}>
+                    {errorRowsCount}
+                  </p>
                 </div>
               )}
             </div>
-          )}
+            {/* Toolbar gán hàng loạt & Thao tác nhanh Phase 4 */}
+            <div style={{
+              display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between',
+              gap: '10px', padding: '10px 14px', borderRadius: '10px',
+              background: 'var(--color-primary-card)', border: '1px solid var(--color-border)',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-ink)' }}>
+                  ⚡ Thao tác nhanh:
+                </span>
+                <button
+                  type="button"
+                  onClick={handleApplyAllSuggestions}
+                  style={{
+                    padding: '5px 12px', borderRadius: '6px',
+                    background: 'var(--color-primary)', color: '#ffffff',
+                    border: 'none', fontSize: '0.75rem', fontWeight: 700,
+                    cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px',
+                  }}
+                  title="Tự động gán gợi ý hàng đầu cho tất cả các dòng chưa chọn Topic (trừ các dòng phân vân)"
+                >
+                  <Zap style={{ width: '12px', height: '12px' }} />
+                  Áp dụng tất cả gợi ý ({validRows.filter(r => !rowTopicSelections[r.rowNumber] && r.candidates?.length > 0 && !r.isAmbiguous).length})
+                </button>
+              </div>
 
-          <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '20px' }}>
+              {uniqueRawTopics.length > 0 && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--color-ink-muted)' }}>Gán theo nhóm Excel:</span>
+                  <select
+                    style={{
+                      padding: '4px 8px', borderRadius: '6px', border: '1px solid var(--color-border)',
+                      fontSize: '0.75rem', background: 'var(--color-surface)', color: 'var(--color-ink)',
+                      maxWidth: '140px',
+                    }}
+                    value={bulkRawTopic}
+                    onChange={(e) => setBulkRawTopic(e.target.value)}
+                  >
+                    <option value="">-- Chọn Chủ đề Excel --</option>
+                    {uniqueRawTopics.map((rt) => (
+                      <option key={rt} value={rt}>{rt}</option>
+                    ))}
+                  </select>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--color-ink-muted)' }}>→</span>
+                  <select
+                    style={{
+                      padding: '4px 8px', borderRadius: '6px', border: '1px solid var(--color-border)',
+                      fontSize: '0.75rem', background: 'var(--color-surface)', color: 'var(--color-ink)',
+                      maxWidth: '160px',
+                    }}
+                    value={bulkTargetTopicId}
+                    onChange={(e) => setBulkTargetTopicId(e.target.value)}
+                  >
+                    <option value="">-- Chọn Topic chuẩn --</option>
+                    {canonicalTopics.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.code ? `[${t.code}] ` : ''}{t.name}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    disabled={!bulkRawTopic || !bulkTargetTopicId}
+                    onClick={() => {
+                      handleBulkAssign(bulkRawTopic, bulkTargetTopicId);
+                      setBulkRawTopic('');
+                      setBulkTargetTopicId('');
+                    }}
+                    style={{
+                      padding: '4px 10px', borderRadius: '6px',
+                      background: (!bulkRawTopic || !bulkTargetTopicId) ? 'var(--color-border)' : 'var(--color-surface)',
+                      border: '1px solid var(--color-border)',
+                      color: (!bulkRawTopic || !bulkTargetTopicId) ? 'var(--color-ink-muted)' : 'var(--color-ink)',
+                      fontSize: '0.75rem', fontWeight: 600,
+                      cursor: (!bulkRawTopic || !bulkTargetTopicId) ? 'not-allowed' : 'pointer',
+                    }}
+                  >
+                    Gán nhóm
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Bảng chi tiết từng câu hỏi & matching */}
+            <div style={{ maxHeight: '340px', overflowY: 'auto', border: '1px solid var(--color-border)', borderRadius: '10px' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8125rem' }}>
+                <thead>
+                  <tr style={{ background: 'var(--color-primary-bg)', borderBottom: '1px solid var(--color-border)', textAlign: 'left' }}>
+                    <th style={{ padding: '8px 10px', width: '45px' }}>Dòng</th>
+                    <th style={{ padding: '8px 10px', minWidth: '220px' }}>Câu hỏi & Đáp án</th>
+                    <th style={{ padding: '8px 10px', width: '130px' }}>Chủ đề Excel</th>
+                    <th style={{ padding: '8px 10px', width: '90px' }}>Khớp gợi ý</th>
+                    <th style={{ padding: '8px 10px', minWidth: '220px' }}>Topic Chuẩn được chọn (*)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {previewData?.rows?.map((row) => {
+                    const hasError = row.validationErrors && row.validationErrors.length > 0;
+                    const selectedTid = rowTopicSelections[row.rowNumber] || '';
+                    return (
+                      <tr
+                        key={row.rowNumber}
+                        style={{
+                          borderBottom: '1px solid var(--color-border)',
+                          background: hasError ? 'rgba(220,38,38,0.04)' : 'transparent',
+                        }}
+                      >
+                        <td style={{ padding: '8px 10px', fontWeight: 700, color: 'var(--color-ink-muted)' }}>
+                          #{row.rowNumber}
+                        </td>
+                        <td style={{ padding: '8px 10px' }}>
+                          <p style={{ margin: '0 0 2px', fontWeight: 600, color: 'var(--color-ink)' }}>
+                            {row.question || '---'}
+                          </p>
+                          <span style={{ fontSize: '0.75rem', color: '#16a34a' }}>
+                            ✓ Đáp án: {row.answer || '---'}
+                          </span>
+                          {hasError && (
+                            <div style={{ marginTop: '2px', color: '#dc2626', fontSize: '0.6875rem' }}>
+                              ⚠️ {row.validationErrors.join('; ')}
+                            </div>
+                          )}
+                        </td>
+                        <td style={{ padding: '8px 10px', color: 'var(--color-ink-muted)' }}>
+                          {row.rawTopic ? `"${row.rawTopic}"` : <span style={{ fontStyle: 'italic', opacity: 0.6 }}>Trống</span>}
+                        </td>
+                        <td style={{ padding: '8px 10px' }}>
+                          {getMatchBadge(row)}
+                        </td>
+                        <td style={{ padding: '8px 10px' }}>
+                          {hasError ? (
+                            <span style={{ fontSize: '0.75rem', color: '#dc2626' }}>Bị bỏ qua do lỗi</span>
+                          ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                              <select
+                                style={{
+                                  width: '100%', padding: '5px 8px', borderRadius: '6px',
+                                  border: `1.5px solid ${selectedTid ? 'var(--color-primary)' : '#dc2626'}`,
+                                  fontSize: '0.75rem', background: 'var(--color-surface)', color: 'var(--color-ink)',
+                                }}
+                                value={selectedTid}
+                                onChange={(e) => handleRowTopicChange(row.rowNumber, e.target.value)}
+                              >
+                                <option value="">-- Chọn Canonical Topic (*) --</option>
+                                {canonicalTopics.map((t) => (
+                                  <option key={t.id} value={t.id}>
+                                    {t.code ? `[${t.code}] ` : ''}{t.name}
+                                  </option>
+                                ))}
+                              </select>
+
+                              {/* Gợi ý candidate nhanh cho từng dòng */}
+                              {row.candidates && row.candidates.length > 0 && (
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '2px' }}>
+                                  {row.candidates.slice(0, 2).map((c) => {
+                                    const isSelected = selectedTid === c.topicId;
+                                    return (
+                                      <button
+                                        key={c.topicId}
+                                        type="button"
+                                        onClick={() => handleRowTopicChange(row.rowNumber, c.topicId)}
+                                        title={`Gán: ${c.topicCode ? `[${c.topicCode}] ` : ''}${c.topicName} (${Math.round((c.score || 0) * 100)}%)`}
+                                        style={{
+                                          padding: '2px 6px', borderRadius: '4px',
+                                          border: `1px solid ${isSelected ? 'var(--color-primary)' : 'var(--color-border)'}`,
+                                          background: isSelected ? 'var(--color-primary-card)' : 'var(--color-surface)',
+                                          color: isSelected ? 'var(--color-primary-dark)' : 'var(--color-ink)',
+                                          fontSize: '0.6875rem', fontWeight: isSelected ? 700 : 500,
+                                          cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px',
+                                          maxWidth: '220px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                                        }}
+                                      >
+                                        <span>{isSelected ? '✓ ' : '+ '}{c.topicCode ? `[${c.topicCode}] ` : ''}{c.topicName}</span>
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {error && (
+              <div style={{
+                padding: '10px 14px', borderRadius: '10px',
+                background: 'rgba(220,38,38,0.08)', color: '#dc2626', fontSize: '0.8125rem',
+              }}>
+                {error}
+              </div>
+            )}
+
+            {canonicalTopics.length === 0 && (
+              <div style={{
+                padding: '12px 14px', borderRadius: '10px',
+                background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.25)',
+                color: '#dc2626', fontSize: '0.8125rem', display: 'flex', flexDirection: 'column', gap: '6px'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700 }}>
+                  <AlertCircle style={{ width: '16px', height: '16px', flexShrink: 0 }} />
+                  <span>Không thể xác nhận: Môn học này chưa có Canonical Topic chuẩn!</span>
+                </div>
+                <p style={{ margin: 0, fontSize: '0.75rem' }}>
+                  Hệ thống không cho phép lưu flashcard khi không có Topic chuẩn được phê duyệt. Vui lòng bấm <strong>"+ Đề xuất Topic mới nếu chưa có"</strong> ở thanh công cụ hoặc liên hệ School Admin để duyệt danh mục.
+                </p>
+              </div>
+            )}
+
+            {!isAllAssigned && canonicalTopics.length > 0 && (
+              <div style={{
+                padding: '8px 12px', borderRadius: '8px',
+                background: 'rgba(234, 179, 8, 0.08)', border: '1px solid rgba(234, 179, 8, 0.25)',
+                color: '#b45309', fontSize: '0.75rem',
+              }}>
+                ⚠️ Còn <strong>{validRowsCount - assignedCount}</strong> câu hỏi chưa được gán Canonical Topic. Vui lòng chọn Topic chuẩn cho tất cả các dòng trước khi lưu.
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px' }}>
+              <button
+                type="button"
+                onClick={() => setStep('upload')}
+                style={{
+                  padding: '8px 16px', borderRadius: '8px',
+                  border: '1px solid var(--color-border)', background: 'var(--color-surface)',
+                  color: 'var(--color-ink)', fontSize: '0.8125rem', fontWeight: 600, cursor: 'pointer',
+                }}
+              >
+                ← Chọn file khác
+              </button>
+
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button
+                  type="button"
+                  onClick={() => setShowProposalModal(true)}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: '4px',
+                    padding: '8px 14px', borderRadius: '8px',
+                    border: '1px solid var(--color-border)', background: 'var(--color-primary-card)',
+                    color: 'var(--color-primary-dark)', fontSize: '0.8125rem', fontWeight: 600, cursor: 'pointer',
+                  }}
+                  title="Đề xuất Topic mới nếu danh mục hiện tại chưa có"
+                >
+                  💡 Đề xuất Topic
+                </button>
+
+                <button
+                  type="button"
+                  onClick={fetchApprovedTopics}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: '4px',
+                    padding: '8px 14px', borderRadius: '8px',
+                    border: '1px solid var(--color-border)', background: 'var(--color-surface)',
+                    color: 'var(--color-ink)', fontSize: '0.8125rem', fontWeight: 600, cursor: 'pointer',
+                  }}
+                  title="Làm mới danh mục Topic nếu School Admin vừa duyệt thêm"
+                >
+                  <RefreshCw style={{ width: '13px', height: '13px' }} className={loadingTopics ? 'animate-spin' : ''} />
+                  Làm mới Topic
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleConfirm}
+                  disabled={confirming || !isAllAssigned || canonicalTopics.length === 0 || validRowsCount === 0}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: '6px',
+                    padding: '8px 22px', borderRadius: '8px',
+                    background: 'var(--color-primary)', color: 'white',
+                    border: 'none', fontSize: '0.8125rem', fontWeight: 700,
+                    cursor: (confirming || !isAllAssigned || canonicalTopics.length === 0 || validRowsCount === 0) ? 'not-allowed' : 'pointer',
+                    opacity: (confirming || !isAllAssigned || canonicalTopics.length === 0 || validRowsCount === 0) ? 0.6 : 1,
+                  }}
+                >
+                  <Save style={{ width: '14px', height: '14px' }} />
+                  {confirming ? 'Đang lưu vào bộ thẻ...' : `Xác nhận & Lưu ${assignedCount} thẻ`}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* BƯỚC 4: KẾT QUẢ THÀNH CÔNG */}
+        {step === 'done' && (
+          <div style={{ textAlign: 'center', padding: '24px 16px' }}>
+            <CheckCircle style={{ width: '52px', height: '52px', color: '#16a34a', margin: '0 auto 12px' }} />
+            <h4 style={{ margin: '0 0 8px', fontSize: '1.15rem', color: 'var(--color-ink)' }}>
+              Nhập thẻ từ file Excel thành công!
+            </h4>
+            <p style={{ margin: '0 0 20px', fontSize: '0.875rem', color: 'var(--color-ink-muted)' }}>
+              {result?.message || `Đã nhập thành công ${result?.importedCount || assignedCount} thẻ Flashcard với đầy đủ Canonical Topic chuẩn.`}
+            </p>
             <button
               type="button"
               onClick={onClose}
               style={{
-                padding: '9px 18px', borderRadius: '9px',
-                border: '1px solid var(--color-border)', background: 'var(--color-surface)',
-                color: 'var(--color-ink)', fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer',
-              }}
-            >
-              Đóng
-            </button>
-            <button
-              type="submit"
-              disabled={uploading || !file}
-              style={{
                 display: 'inline-flex', alignItems: 'center', gap: '6px',
-                padding: '9px 20px', borderRadius: '9px',
+                padding: '9px 24px', borderRadius: '9px',
                 background: 'var(--color-primary)', color: 'white',
-                border: 'none', fontSize: '0.875rem', fontWeight: 700,
-                cursor: (uploading || !file) ? 'not-allowed' : 'pointer',
-                opacity: (uploading || !file) ? 0.6 : 1,
+                border: 'none', fontSize: '0.875rem', fontWeight: 700, cursor: 'pointer',
               }}
             >
-              <Upload style={{ width: '14px', height: '14px' }} />
-              {uploading ? 'Đang tải lên...' : 'Tải lên & Nhập thẻ'}
+              Xem danh sách thẻ vừa nhập
             </button>
           </div>
-        </form>
-      </div>
-    </Modal>
+        )}
+      </Modal>
+
+      {showProposalModal && (
+        <TopicProposalModal
+          subjectId={effectiveSubjectId}
+          zIndex={1000}
+          onClose={() => setShowProposalModal(false)}
+          onProposed={fetchApprovedTopics}
+        />
+      )}
+    </>
   );
 }
 
@@ -1065,7 +1954,7 @@ function DeckRow({ deck, onEdit, onDelete, onRefresh }) {
       {cardModal !== null && (
         <CardFormModal
           deckId={deck.id}
-          subjectId={deck.subject_id}
+          subjectId={deck.subject_id || deck.subjectId}
           card={cardModal === 'create' ? null : cardModal}
           onClose={() => setCardModal(null)}
           onSaved={() => { setCardModal(null); loadDeckDetails(); }}
@@ -1074,7 +1963,7 @@ function DeckRow({ deck, onEdit, onDelete, onRefresh }) {
       {excelModal && (
         <ExcelImportModal
           deckId={deck.id}
-          subjectId={deck.subject_id}
+          subjectId={deck.subject_id || deck.subjectId}
           onClose={() => setExcelModal(false)}
           onSaved={() => {
             loadDeckDetails();
@@ -1246,10 +2135,14 @@ function DeckRow({ deck, onEdit, onDelete, onRefresh }) {
                       {card.topic_name && (
                         <span style={{
                           fontSize: '0.6875rem', fontWeight: 600, padding: '2px 8px', borderRadius: '6px',
-                          background: 'rgba(59, 130, 246, 0.1)', color: '#2563eb', border: '1px solid rgba(59, 130, 246, 0.25)',
+                          background: card.topic_review_required ? 'rgba(234, 179, 8, 0.12)' : 'rgba(59, 130, 246, 0.1)',
+                          color: card.topic_review_required ? '#b45309' : '#2563eb',
+                          border: `1px solid ${card.topic_review_required ? 'rgba(234, 179, 8, 0.3)' : 'rgba(59, 130, 246, 0.25)'}`,
                           flexShrink: 0, marginTop: '2px', display: 'inline-flex', alignItems: 'center', gap: '4px'
                         }}>
-                          🏷️ {card.topic_name}
+                          {card.topic_review_required ? '⚠️ [Legacy] ' : '🏷️ '}
+                          {card.topic_code ? `[${card.topic_code}] ` : ''}
+                          {card.topic_name}
                         </span>
                       )}
                       {/* Edit / Delete */}
