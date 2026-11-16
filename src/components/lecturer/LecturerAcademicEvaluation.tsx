@@ -54,6 +54,10 @@ export interface CourseClassInfo {
   subjectId?: string;
   rubricConfigs?: any[];
   rubric_configs?: any[];
+  ai_declaration_required?: boolean;
+  course_topics?: any[];
+  has_course_topics?: boolean;
+  recommended_topics?: any[];
 }
 
 export interface SubmissionCodeFile {
@@ -279,134 +283,27 @@ export interface LecturerAcademicEvaluationProps {
 }
 
 /* ==========================================================================
-   2. DEFAULT MOCK DATA (MATCHING EXACT HTML MOCKUP)
+   2. DEFAULT EMPTY STATE
    ========================================================================== */
 
 export const DEFAULT_STUDENT: StudentInfo = {
-  name: 'Tran Thi B',
-  code: 'DE181802',
-  email: 'tranb.de181802@fpt.edu.vn',
+  name: '',
+  code: '',
+  email: '',
   aiRiskLevel: 'low',
   aiRiskLabel: 'low AI-transparency risk',
 };
 
 export const DEFAULT_COURSE_INFO: CourseClassInfo = {
-  courseCode: 'SWD392',
-  courseTitle: 'Software Architecture and Design',
-  className: 'SE18D01',
-  assignmentTitle: 'Backend Architecture C4 Model',
+  courseCode: '',
+  courseTitle: '',
+  className: '',
+  assignmentTitle: '',
 };
 
-export const DEFAULT_SUBMISSION_CODE_LINES: string[] = [
-  '/**',
-  ' * Academic Research Transparency & AI Audit System (ART-AI)',
-  ' * Student: Tran Thi B (DE181802)',
-  ' * Assignment: Backend Architecture with C4 Model & Microservices',
-  ' */',
-  '',
-  'import { Injectable, NestMiddleware, UnauthorizedException } from "@nestjs/common";',
-  'import { Request, Response, NextFunction } from "express";',
-  'import { JwtService } from "@nestjs/jwt";',
-  'import { RedisTokenBlacklistService } from "../security/token-blacklist.service";',
-  '',
-  '@Injectable()',
-  'export class JwtAuthMiddleware implements NestMiddleware {',
-  '  constructor(',
-  '    private readonly jwtService: JwtService,',
-  '    private readonly redisBlacklist: RedisTokenBlacklistService',
-  '  ) {}',
-  '',
-  '  async use(req: Request, res: Response, next: NextFunction) {',
-  '    const authHeader = req.headers.authorization;',
-  '    if (!authHeader || !authHeader.startsWith("Bearer ")) {',
-  '      throw new UnauthorizedException("Missing Bearer Authentication Token");',
-  '    }',
-  '',
-  '    const token = authHeader.split(" ")[1];',
-  '    // AI Audit Note: Refactored following student reflection on Dec 15 to check Redis blacklist',
-  '    const isRevoked = await this.redisBlacklist.isTokenRevoked(token);',
-  '    if (isRevoked) {',
-  '      throw new UnauthorizedException("Token has been revoked or expired");',
-  '    }',
-  '',
-  '    try {',
-  '      const decodedPayload = await this.jwtService.verifyAsync(token);',
-  '      req["user"] = decodedPayload;',
-  '      next();',
-  '    } catch (err) {',
-  '      throw new UnauthorizedException("Invalid token signature or expired payload");',
-  '    }',
-  '  }',
-  '}',
-];
+export const DEFAULT_SUBMISSION_CODE_LINES: string[] = [];
 
-export const DEFAULT_AI_DECLARATIONS: AiDeclarationPhase[] = [
-  {
-    phaseKey: 'reflection',
-    phaseName: 'AI REFLECTION',
-    badgeBg: 'bg-purple-50',
-    badgeText: 'text-purple-700',
-    aiTool: 'Claude 3.5 Sonnet',
-    decision: 'Fully Accepted',
-    decisionBg: 'bg-emerald-50',
-    decisionText: 'text-emerald-700',
-    prompt: '"Review this module architecture and point out critical code smells."',
-    aiResponseSummary: 'Suggested decomposing monolithic handlers into service layers.',
-    studentReflection: 'Acknowledged tight coupling and refactored logic into service layer.',
-  },
-  {
-    phaseKey: 'decomposition',
-    phaseName: 'DECOMPOSITION',
-    badgeBg: 'bg-blue-50',
-    badgeText: 'text-blue-700',
-    aiTool: 'ChatGPT-4o',
-    decision: 'Partially Modified',
-    decisionBg: 'bg-blue-50',
-    decisionText: 'text-blue-700',
-    prompt: '"Help me break down the authentication process with JWT & Refresh token."',
-    aiResponseSummary: 'Divided into 4 submodules: validation, token gen, cookie, middleware.',
-    studentReflection: 'Kept the proposed 4 modules, altered token storage to secure cookies.',
-  },
-  {
-    phaseKey: 'pattern',
-    phaseName: 'PATTERN RECOGNITION',
-    badgeBg: 'bg-indigo-50',
-    badgeText: 'text-indigo-700',
-    aiTool: 'GitHub Copilot',
-    decision: 'Heavily Adapted',
-    decisionBg: 'bg-amber-50',
-    decisionText: 'text-amber-700',
-    prompt: '"Generate generic repository pattern for MongoDB CRUD operations."',
-    aiResponseSummary: 'Provided standard BaseRepository class using native Mongo client.',
-    studentReflection: 'Adapted types to fit project schema and added retry transactions.',
-  },
-  {
-    phaseKey: 'abstraction',
-    phaseName: 'ABSTRACTION',
-    badgeBg: 'bg-cyan-50',
-    badgeText: 'text-cyan-700',
-    aiTool: 'ChatGPT-4o',
-    decision: 'Fully Accepted',
-    decisionBg: 'bg-emerald-50',
-    decisionText: 'text-emerald-700',
-    prompt: '"Abstract file upload handling into an independent storage provider."',
-    aiResponseSummary: 'Created IStorageProvider interface with SeaweedFS & S3 adapters.',
-    studentReflection: 'Implemented interface smoothly without leaking filesystem details.',
-  },
-  {
-    phaseKey: 'algorithmic',
-    phaseName: 'ALGORITHMIC THINKING',
-    badgeBg: 'bg-teal-50',
-    badgeText: 'text-teal-700',
-    aiTool: 'Gemini 1.5 Pro',
-    decision: 'Rejected',
-    decisionBg: 'bg-rose-50',
-    decisionText: 'text-rose-700',
-    prompt: '"Write optimal query to calculate real-time student participation."',
-    aiResponseSummary: 'Suggested client-side sorting and filter logic over full dataset.',
-    studentReflection: 'Rejected client-side approach; implemented MongoDB Aggregation pipeline instead.',
-  },
-];
+export const DEFAULT_AI_DECLARATIONS: AiDeclarationPhase[] = [];
 
 /* ==========================================================================
    3. COMPONENT IMPLEMENTATION
@@ -418,7 +315,7 @@ export default function LecturerAcademicEvaluation({
   student = DEFAULT_STUDENT,
   courseInfo = DEFAULT_COURSE_INFO,
   submissionFile = {
-    name: 'SE18D01_TranThiB_BackendArchitecture.ts',
+    name: '',
     lines: DEFAULT_SUBMISSION_CODE_LINES,
   },
   file,
@@ -445,10 +342,10 @@ export default function LecturerAcademicEvaluation({
     if (file) return file;
     const lines = submissionFile.lines || (submissionFile.content ? submissionFile.content.split('\n') : DEFAULT_SUBMISSION_CODE_LINES);
     return {
-      name: submissionFile.name || 'SE18D01_TranThiB_BackendArchitecture.ts',
+      name: submissionFile.name || '',
       url: submissionFile.url || '',
-      size: typeof submissionFile.size === 'number' ? submissionFile.size : 4850000,
-      mimeType: submissionFile.name?.endsWith('.zip') ? 'application/zip' : 'text/typescript',
+      size: typeof submissionFile.size === 'number' ? submissionFile.size : 0,
+      mimeType: submissionFile.name?.endsWith('.zip') ? 'application/zip' : 'text/plain',
       fileType: submissionFile.name?.endsWith('.zip') ? 'zip' : (submissionFile.name?.endsWith('.pdf') ? 'pdf' : 'code'),
       textContent: lines.join('\n'),
     };

@@ -414,7 +414,7 @@ export function AIAuditDetailModal({
   studentName = '',
   studentCode = '',
   assignment,
-  activeRubricKeys,
+  activeRubricKeys = [],
   onMouseEnter,
   onMouseLeave,
 }) {

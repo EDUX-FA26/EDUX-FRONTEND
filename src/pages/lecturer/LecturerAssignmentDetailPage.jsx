@@ -272,13 +272,12 @@ export default function LecturerAssignmentDetailPage() {
                     const submission = submissionMap.get(studentId);
 
                     if (submission && submission.status !== 'draft' && submission.status !== 'Draft') {
-                        const isThisStudent = (submission.student_code && submission.student_code === 'DE181802') || (member.studentCode && member.studentCode === 'DE181802') || submission.student_id === 'std-01';
-                        const localGraded = db[submission.id] || (submission.student_code && db[submission.student_code]) || (member.studentCode && db[member.studentCode]) || (isThisStudent ? db['sub-de181802'] : null);
-                        const rawScore = localGraded?.grade?.score ?? localGraded?.score ?? submission.score ?? null;
+                        const localGraded = db[submission.id] || (submission.student_code && db[submission.student_code]) || (member.studentCode && db[member.studentCode]);
+                        const rawScore = submission.score ?? localGraded?.grade?.score ?? localGraded?.score ?? null;
                         const effectiveScore = rawScore != null ? Number(rawScore) : null;
-                        const effectiveFeedback = localGraded?.grade?.feedback ?? localGraded?.feedback ?? submission.feedback ?? null;
-                        const effectiveRubrics = localGraded?.grade?.rubrics ?? localGraded?.rubrics ?? submission.rubrics ?? null;
-                        const isGradedStatus = effectiveScore !== null || submission.status === 'graded' || submission.status === 'GRADED' || localGraded?.status === 'GRADED';
+                        const effectiveFeedback = submission.feedback ?? localGraded?.grade?.feedback ?? localGraded?.feedback ?? null;
+                        const effectiveRubrics = submission.rubrics ?? localGraded?.grade?.rubrics ?? localGraded?.rubrics ?? null;
+                        const isGradedStatus = submission.status === 'graded' || submission.status === 'GRADED' || localGraded?.status === 'GRADED' || effectiveScore !== null;
 
                         return {
                             ...submission,
@@ -290,8 +289,8 @@ export default function LecturerAssignmentDetailPage() {
                             feedback: effectiveFeedback,
                             rubrics: effectiveRubrics,
                             status: isGradedStatus ? 'graded' : (submission.status || 'submitted'),
-                            aiAuditLog: localGraded?.aiAuditLog || submission.aiAuditLog || submission.ai_audit_log || null,
-                            declarations: localGraded?.aiAuditLog || submission.declarations || submission.ai_declarations || null,
+                            aiAuditLog: submission.ai_audit_log || submission.aiAuditLog || localGraded?.aiAuditLog || null,
+                            declarations: submission.ai_declarations || submission.declarations || localGraded?.aiAuditLog || null,
                             has_declared_audit: submission.has_declared_audit,
                             ai_declarations: submission.ai_declarations,
                             ai_audit_log: submission.ai_audit_log,
@@ -320,8 +319,7 @@ export default function LecturerAssignmentDetailPage() {
                 const unmatchedSubmissions = submissionsData.filter(
                     submission => !classMemberIds.has(submission.student_id)
                 ).map(sub => {
-                    const isThisStudent = (sub.student_code && sub.student_code === 'DE181802') || sub.student_id === 'std-01';
-                    const localGraded = db[sub.id] || (sub.student_code && db[sub.student_code]) || (isThisStudent ? db['sub-de181802'] : null);
+                    const localGraded = db[sub.id] || (sub.student_code && db[sub.student_code]);
                     const rawScore = localGraded?.grade?.score ?? localGraded?.score ?? sub.score ?? null;
                     const effectiveScore = rawScore != null ? Number(rawScore) : null;
                     const effectiveFeedback = localGraded?.grade?.feedback ?? localGraded?.feedback ?? sub.feedback ?? null;

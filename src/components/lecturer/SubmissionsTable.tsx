@@ -324,6 +324,7 @@ export default function SubmissionsTable({
           studentName={internalSelectedAuditSub.student_name}
           studentCode={internalSelectedAuditSub.student_code}
           assignment={assignment}
+          activeRubricKeys={[]}
         />
       )}
     </div>
