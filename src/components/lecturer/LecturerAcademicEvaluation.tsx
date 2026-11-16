@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { useParams, useNavigate } from 'react-router-dom';
 import SubmissionService from '../../services/submission.service';
 import {
@@ -1395,15 +1396,6 @@ export default function LecturerAcademicEvaluation({
                   <span>STUDENT AI DECLARATION ({scopes.length > 1 ? `${scopes.length} PHẠM VI / SCOPES` : '5 PHASES'})</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <button
-                    type="button"
-                    disabled={isAuditingAi}
-                    onClick={() => setShowReloadAuditModal(true)}
-                    className="p-1.5 text-gray-500 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                    title="Chạy lại thanh tra & cập nhật câu hỏi vấn đáp"
-                  >
-                    <RefreshCw size={14} className={isAuditingAi ? "animate-spin text-purple-600" : ""} />
-                  </button>
                   <span className="text-[10px] bg-slate-100 text-slate-500 font-semibold px-2 py-0.5 rounded border border-slate-200">
                     Self-Reported
                   </span>
@@ -2104,70 +2096,72 @@ export default function LecturerAcademicEvaluation({
       )}
 
       {/* ==================== MODAL: CONFIRM RELOAD AI AUDIT & VIVA ==================== */}
-      {showReloadAuditModal && (
-        <div className="fixed inset-0 z-[999] bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-sm w-full p-5 space-y-4 animate-in zoom-in-95 duration-150">
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 border border-purple-200/80 flex items-center justify-center shrink-0 shadow-2xs">
-                <RefreshCw size={20} className={`text-purple-600 ${isAuditingAi ? 'animate-spin' : ''}`} />
-              </div>
-              <div className="space-y-1 min-w-0 flex-1">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-bold text-slate-800 leading-snug">
-                    Xác nhận chạy lại thanh tra AI?
-                  </h3>
-                  <button
-                    type="button"
-                    disabled={isAuditingAi}
-                    onClick={() => setShowReloadAuditModal(false)}
-                    className="text-slate-400 hover:text-slate-600 transition -mr-1 -mt-1 p-1 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
-                  >
-                    <X size={15} />
-                  </button>
+      {showReloadAuditModal &&
+        createPortal(
+          <div className="fixed inset-0 z-[9999] bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-150">
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-sm w-full p-5 space-y-4 animate-in zoom-in-95 duration-150">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 border border-purple-200/80 flex items-center justify-center shrink-0 shadow-2xs">
+                  <RefreshCw size={20} className={`text-purple-600 ${isAuditingAi ? 'animate-spin' : ''}`} />
                 </div>
-                <p className="text-xs text-slate-600 leading-relaxed pt-0.5">
-                  Thao tác này sẽ phân tích lại toàn bộ lịch sử khai báo AI và cập nhật bộ câu hỏi vấn đáp mới. Điểm số của bài nộp sẽ được giữ nguyên.
-                </p>
+                <div className="space-y-1 min-w-0 flex-1">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-bold text-slate-800 leading-snug">
+                      Xác nhận chạy lại thanh tra AI?
+                    </h3>
+                    <button
+                      type="button"
+                      disabled={isAuditingAi}
+                      onClick={() => setShowReloadAuditModal(false)}
+                      className="text-slate-400 hover:text-slate-600 transition -mr-1 -mt-1 p-1 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                    >
+                      <X size={15} />
+                    </button>
+                  </div>
+                  <p className="text-xs text-slate-600 leading-relaxed pt-0.5">
+                    Thao tác này sẽ phân tích lại toàn bộ lịch sử khai báo AI và cập nhật bộ câu hỏi vấn đáp mới. Điểm số của bài nộp sẽ được giữ nguyên.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  disabled={isAuditingAi}
+                  onClick={() => setShowReloadAuditModal(false)}
+                  className="px-3.5 py-2 border border-slate-200 text-slate-600 hover:bg-slate-50 rounded-xl text-xs font-semibold transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Hủy bỏ
+                </button>
+                <button
+                  type="button"
+                  disabled={isAuditingAi}
+                  onClick={async () => {
+                    try {
+                      await handleAuditWithAi({ force: true, applyScores: false });
+                    } finally {
+                      setShowReloadAuditModal(false);
+                    }
+                  }}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold transition shadow-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isAuditingAi ? (
+                    <>
+                      <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Đang phân tích...</span>
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw size={13} />
+                      <span>Xác nhận</span>
+                    </>
+                  )}
+                </button>
               </div>
             </div>
-
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
-              <button
-                type="button"
-                disabled={isAuditingAi}
-                onClick={() => setShowReloadAuditModal(false)}
-                className="px-3.5 py-2 border border-slate-200 text-slate-600 hover:bg-slate-50 rounded-xl text-xs font-semibold transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Hủy bỏ
-              </button>
-              <button
-                type="button"
-                disabled={isAuditingAi}
-                onClick={async () => {
-                  try {
-                    await handleAuditWithAi({ force: true, applyScores: false });
-                  } finally {
-                    setShowReloadAuditModal(false);
-                  }
-                }}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold transition shadow-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isAuditingAi ? (
-                  <>
-                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    <span>Đang phân tích...</span>
-                  </>
-                ) : (
-                  <>
-                    <RefreshCw size={13} />
-                    <span>Xác nhận</span>
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
 
       {/* ==================== MODAL: CONFIRM REGENERATE AI EVALUATION ==================== */}
       {showRegenerateModal && (

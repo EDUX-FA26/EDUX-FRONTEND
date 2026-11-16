@@ -52,6 +52,34 @@ const ClassMaterialService = {
         });
         return response.data;
     },
+
+    // GET /api/slots/:slotId/materials (Lấy danh sách tài liệu buổi học)
+    async getSlotMaterials(slotId, classId = null) {
+        const url = classId ? `/classes/${classId}/slots/${slotId}/materials` : `/slots/${slotId}/materials`;
+        const response = await api.get(url, {
+            schoolScoped: true,
+        });
+        return response.data;
+    },
+
+    // POST /api/lecturer/slots/:slotId/materials (Upload tài liệu buổi học)
+    async uploadSlotMaterial(slotId, formData) {
+        const response = await api.post(`/lecturer/slots/${slotId}/materials`, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+            schoolScoped: true,
+        });
+        return response.data;
+    },
+
+    // DELETE /api/lecturer/materials/:materialId (Xóa tài liệu buổi học)
+    async deleteSlotMaterial(materialId) {
+        const response = await api.delete(`/lecturer/materials/${materialId}`, {
+            schoolScoped: true,
+        });
+        return response.data;
+    },
 };
 
 export default ClassMaterialService;

@@ -19,6 +19,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Download,
+  Eye,
   Trash2,
   Edit3,
   Plus,
@@ -42,6 +43,7 @@ import {
 } from 'lucide-react';
 import AssignmentService from '../../services/assignment.service';
 import SubmissionService from '../../services/submission.service';
+import MaterialPreviewModal from '../modals/MaterialPreviewModal';
 import './StudentAssignmentFlow.css';
 
 /* ==========================================================================
@@ -598,6 +600,40 @@ export const AssignmentOverview: React.FC<AssignmentOverviewProps> = ({
   score,
 }) => {
   const [isTocOpen, setIsTocOpen] = useState(true);
+  const [selectedPreviewMaterial, setSelectedPreviewMaterial] = useState<any | null>(null);
+
+  const handleDownloadFile = async (file: any) => {
+    if (file.materialId && file.assignmentId) {
+      try {
+        const res = await AssignmentService.getMaterialDownloadUrl(file.assignmentId, file.materialId);
+        const downloadUrl = res?.data?.download_url || res?.download_url;
+        if (downloadUrl) {
+          window.open(downloadUrl, '_blank');
+          return;
+        }
+      } catch (err) {
+        console.error('Download material failed:', err);
+      }
+    }
+    if (file.url && file.url !== '#') {
+      window.open(file.url, '_blank');
+    } else {
+      alert(`Tải file tài liệu: ${file.name}`);
+    }
+  };
+
+  const handlePreviewFile = (file: any) => {
+    setSelectedPreviewMaterial({
+      id: file.materialId || file.id,
+      assignmentId: file.assignmentId || assignment.id,
+      file_name: file.name,
+      file_size: file.size,
+      file_type: (file as any).file_type,
+      url: file.url,
+      preview_url: (file as any).preview_url,
+      download_url: (file as any).download_url
+    });
+  };
 
   return (
     <div className="space-y-5">
@@ -719,32 +755,15 @@ export const AssignmentOverview: React.FC<AssignmentOverviewProps> = ({
             </span>
             {assignment.additionalFiles && assignment.additionalFiles.length > 0 ? (
               assignment.additionalFiles.map((file) => (
-                <a
+                <div
                   key={file.id}
-                  href={file.url || '#'}
-                  onClick={async (e) => {
-                    e.preventDefault();
-                    if (file.materialId && file.assignmentId) {
-                      try {
-                        const res = await AssignmentService.getMaterialDownloadUrl(file.assignmentId, file.materialId);
-                        const downloadUrl = res?.data?.download_url || res?.download_url;
-                        if (downloadUrl) {
-                          window.open(downloadUrl, '_blank');
-                          return;
-                        }
-                      } catch (err) {
-                        console.error('Download material failed:', err);
-                      }
-                    }
-                    if (file.url && file.url !== '#') {
-                      window.open(file.url, '_blank');
-                    } else {
-                      alert(`Tải file tài liệu: ${file.name}`);
-                    }
-                  }}
                   className="flex items-center justify-between bg-slate-50 hover:bg-blue-50/60 p-2.5 rounded-xl border border-slate-200/80 transition group"
                 >
-                  <div className="flex items-center gap-2 min-w-0">
+                  <div
+                    onClick={() => handlePreviewFile(file)}
+                    className="flex items-center gap-2 min-w-0 flex-1 cursor-pointer"
+                    title={`Bấm để xem trực tiếp ${file.name}`}
+                  >
                     <FileText size={15} className="text-blue-500 shrink-0" />
                     <div className="min-w-0">
                       <p className="text-xs font-semibold text-slate-700 group-hover:text-blue-600 truncate">
@@ -755,11 +774,25 @@ export const AssignmentOverview: React.FC<AssignmentOverviewProps> = ({
                       </span>
                     </div>
                   </div>
-                  <Download
-                    size={14}
-                    className="text-slate-400 group-hover:text-blue-600 shrink-0"
-                  />
-                </a>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => handlePreviewFile(file)}
+                      className="p-1.5 text-slate-400 hover:text-blue-600 rounded-lg hover:bg-white/80 transition cursor-pointer"
+                      title="Xem trực tiếp tài liệu"
+                    >
+                      <Eye size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDownloadFile(file)}
+                      className="p-1.5 text-slate-400 hover:text-blue-600 rounded-lg hover:bg-white/80 transition cursor-pointer"
+                      title="Tải xuống tài liệu"
+                    >
+                      <Download size={14} />
+                    </button>
+                  </div>
+                </div>
               ))
             ) : (
               <div className="text-[11px] text-slate-400 italic">
@@ -768,6 +801,15 @@ export const AssignmentOverview: React.FC<AssignmentOverviewProps> = ({
             )}
           </div>
       </div>
+
+      {/* Modal xem trước trực tiếp tài liệu đính kèm */}
+      {selectedPreviewMaterial && (
+        <MaterialPreviewModal
+          isOpen={Boolean(selectedPreviewMaterial)}
+          onClose={() => setSelectedPreviewMaterial(null)}
+          material={selectedPreviewMaterial}
+        />
+      )}
     </div>
   );
 };

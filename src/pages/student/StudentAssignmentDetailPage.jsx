@@ -95,18 +95,22 @@ export default function StudentAssignmentDetailPage() {
             name: assignment?.lecturer_name || assignment?.lecturer?.name || 'N/A',
             role: 'Giảng viên'
         },
-        additionalFiles: (assignment?.materials && assignment.materials.length > 0)
-            ? assignment.materials.map(m => ({
+        additionalFiles: ((assignment?.materials && assignment.materials.length > 0) ? assignment.materials : (assignment?.attachments || []))
+            .map(m => ({
                 id: m.id,
                 name: m.file_name,
+                file_name: m.file_name,
                 size: typeof m.file_size === 'number'
                     ? (m.file_size > 1048576 ? `${(m.file_size / 1048576).toFixed(1)} MB` : `${(m.file_size / 1024).toFixed(1)} KB`)
                     : (m.file_size || 'N/A'),
-                url: '#',
+                file_size: m.file_size,
+                file_type: m.file_type,
+                url: m.url || m.preview_url || m.download_url || '#',
+                download_url: m.download_url,
+                preview_url: m.preview_url,
                 materialId: m.id,
                 assignmentId: assignment?.id || id
-            }))
-            : [],
+            })),
         score: effectiveScore,
         aiDeclarationRequired: assignment?.ai_declaration_required !== false,
         minAiInteractions: assignment?.min_ai_interactions != null ? Number(assignment.min_ai_interactions) : 1,

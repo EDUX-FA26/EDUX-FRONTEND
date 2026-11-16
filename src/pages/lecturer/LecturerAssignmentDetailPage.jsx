@@ -10,6 +10,7 @@ import MockSubmissionService from '../../services/mockSubmissionService';
 import { formatDateDMY } from '../../helper/dateFormat';
 import AIAuditQuickViewHover, { AIAuditDetailModal } from '../../components/lecturer/AIAuditQuickViewHover';
 import AssignmentFormModal from '../../components/lecturer/AssignmentFormModal';
+import MaterialPreviewModal from '../../components/modals/MaterialPreviewModal';
 
 export default function LecturerAssignmentDetailPage() {
     const { id } = useParams();
@@ -19,6 +20,7 @@ export default function LecturerAssignmentDetailPage() {
     const [submissions, setSubmissions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [selectedPreviewMaterial, setSelectedPreviewMaterial] = useState(null);
 
     // --- STATE DÀNH CHO MODAL XEM CHI TIẾT AI AUDIT LOG ---
     const [selectedAuditSub, setSelectedAuditSub] = useState(null);
@@ -704,7 +706,7 @@ export default function LecturerAssignmentDetailPage() {
                                 ADDITIONAL FILES & MATERIALS
                             </div>
                             <span style={{ fontSize: '11px', color: 'var(--color-ink-muted)' }}>
-                                {assignment?.materials?.length || 0} tài liệu
+                                {(assignment?.materials?.length || assignment?.attachments?.length || 0)} tài liệu
                             </span>
                         </div>
 
@@ -722,73 +724,99 @@ export default function LecturerAssignmentDetailPage() {
                             <span style={{ fontSize: '11px', fontWeight: '700', color: 'var(--color-ink-muted)', textTransform: 'uppercase' }}>
                                 Tài liệu đề bài đính kèm
                             </span>
-                            {assignment?.materials && assignment.materials.length > 0 ? (
-                                assignment.materials.map((mat) => (
-                                    <div
-                                        key={mat.id}
-                                        style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'space-between',
-                                            padding: '8px 10px',
-                                            borderRadius: '8px',
-                                            backgroundColor: 'var(--color-surface, #f8fafc)',
-                                            border: '1px solid var(--color-border, #e2e8f0)',
-                                            fontSize: '12px'
-                                        }}
-                                    >
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, flex: 1, paddingRight: '8px' }}>
-                                            <FileText size={15} style={{ color: 'var(--color-primary, #4f46e5)', shrink: 0 }} />
-                                            <span style={{ fontWeight: '600', color: 'var(--color-ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={mat.file_name}>
-                                                {mat.file_name}
-                                            </span>
-                                            <span style={{ fontSize: '10px', color: 'var(--color-ink-muted)', fontFamily: 'monospace', shrink: 0 }}>
-                                                ({formatFileSize(mat.file_size)})
-                                            </span>
-                                        </div>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', shrink: 0 }}>
-                                            <button
-                                                type="button"
-                                                onClick={() => handleDownloadMaterial(mat.id, mat.file_name)}
-                                                style={{
-                                                    background: 'transparent',
-                                                    border: 'none',
-                                                    color: 'var(--color-primary, #4f46e5)',
-                                                    cursor: 'pointer',
-                                                    padding: '4px',
-                                                    borderRadius: '4px',
-                                                    display: 'flex',
-                                                    alignItems: 'center'
-                                                }}
-                                                title="Tải xuống tài liệu"
+                            {(() => {
+                                const materialsList = assignment?.materials || assignment?.attachments || [];
+                                if (materialsList.length > 0) {
+                                    return materialsList.map((mat) => (
+                                        <div
+                                            key={mat.id || mat.file_name}
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'space-between',
+                                                padding: '8px 10px',
+                                                borderRadius: '8px',
+                                                backgroundColor: 'var(--color-surface, #f8fafc)',
+                                                border: '1px solid var(--color-border, #e2e8f0)',
+                                                fontSize: '12px',
+                                                transition: 'all 0.15s ease'
+                                            }}
+                                        >
+                                            <div
+                                                onClick={() => setSelectedPreviewMaterial({ ...mat, assignmentId: id })}
+                                                style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, flex: 1, paddingRight: '8px', cursor: 'pointer' }}
+                                                title={`Bấm để xem trực tiếp ${mat.file_name}`}
                                             >
-                                                <Download size={14} />
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => handleDeleteMaterial(mat.id, mat.file_name)}
-                                                style={{
-                                                    background: 'transparent',
-                                                    border: 'none',
-                                                    color: 'var(--color-danger, #ef4444)',
-                                                    cursor: 'pointer',
-                                                    padding: '4px',
-                                                    borderRadius: '4px',
-                                                    display: 'flex',
-                                                    alignItems: 'center'
-                                                }}
-                                                title="Xóa tài liệu này"
-                                            >
-                                                <Trash2 size={14} />
-                                            </button>
+                                                <FileText size={15} style={{ color: 'var(--color-primary, #4f46e5)', flexShrink: 0 }} />
+                                                <span style={{ fontWeight: '600', color: 'var(--color-ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                    {mat.file_name}
+                                                </span>
+                                                <span style={{ fontSize: '10px', color: 'var(--color-ink-muted)', fontFamily: 'monospace', flexShrink: 0 }}>
+                                                    ({formatFileSize(mat.file_size)})
+                                                </span>
+                                            </div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setSelectedPreviewMaterial({ ...mat, assignmentId: id })}
+                                                    style={{
+                                                        background: 'transparent',
+                                                        border: 'none',
+                                                        color: 'var(--color-primary, #4f46e5)',
+                                                        cursor: 'pointer',
+                                                        padding: '4px',
+                                                        borderRadius: '4px',
+                                                        display: 'flex',
+                                                        alignItems: 'center'
+                                                    }}
+                                                    title="Xem trực tiếp tài liệu"
+                                                >
+                                                    <Eye size={14} />
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleDownloadMaterial(mat.id, mat.file_name)}
+                                                    style={{
+                                                        background: 'transparent',
+                                                        border: 'none',
+                                                        color: 'var(--color-primary, #4f46e5)',
+                                                        cursor: 'pointer',
+                                                        padding: '4px',
+                                                        borderRadius: '4px',
+                                                        display: 'flex',
+                                                        alignItems: 'center'
+                                                    }}
+                                                    title="Tải xuống tài liệu"
+                                                >
+                                                    <Download size={14} />
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleDeleteMaterial(mat.id, mat.file_name)}
+                                                    style={{
+                                                        background: 'transparent',
+                                                        border: 'none',
+                                                        color: 'var(--color-danger, #ef4444)',
+                                                        cursor: 'pointer',
+                                                        padding: '4px',
+                                                        borderRadius: '4px',
+                                                        display: 'flex',
+                                                        alignItems: 'center'
+                                                    }}
+                                                    title="Xóa tài liệu này"
+                                                >
+                                                    <Trash2 size={14} />
+                                                </button>
+                                            </div>
                                         </div>
+                                    ));
+                                }
+                                return (
+                                    <div style={{ fontSize: '11px', color: 'var(--color-ink-muted)', fontStyle: 'italic', padding: '4px 0' }}>
+                                        Chưa có tài liệu đính kèm (N/A). Bạn có thể bấm "Chỉnh sửa bài tập" để tải lên file.
                                     </div>
-                                ))
-                            ) : (
-                                <div style={{ fontSize: '11px', color: 'var(--color-ink-muted)', fontStyle: 'italic', padding: '4px 0' }}>
-                                    Chưa có tài liệu đính kèm (N/A). Bạn có thể bấm "Chỉnh sửa bài tập" để tải lên file.
-                                </div>
-                            )}
+                                );
+                            })()}
                         </div>
                     </div>
                 </div>
@@ -1146,6 +1174,15 @@ export default function LecturerAssignmentDetailPage() {
                     studentName={selectedAuditSub.student_name}
                     studentCode={selectedAuditSub.student_code}
                     assignment={assignment}
+                />
+            )}
+
+            {/* MODAL XEM TRỰC TIẾP TÀI LIỆU HỌC TẬP / FILE ĐÍNH KÈM */}
+            {selectedPreviewMaterial && (
+                <MaterialPreviewModal
+                    isOpen={Boolean(selectedPreviewMaterial)}
+                    onClose={() => setSelectedPreviewMaterial(null)}
+                    material={selectedPreviewMaterial}
                 />
             )}
         </div>
