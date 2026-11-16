@@ -101,6 +101,7 @@ export default function DashboardLayout() {
   const isGradePage = location.pathname.includes('/grade');
   const isFocusRoom = location.pathname.startsWith('/student/focus');
   const isStudentAssignment = location.pathname.startsWith('/student/assignments');
+  const isClassesPage = location.pathname === '/lecturer/classes' || location.pathname === '/student/classes' || location.pathname === '/lecturer/classes/' || location.pathname === '/student/classes/';
 
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -831,7 +832,7 @@ export default function DashboardLayout() {
         <main
           className={`flex-1 min-w-0 w-full overflow-x-hidden ${isGradePage ? 'dashboard-layout__main--grade' : ''}`}
           style={
-            isFocusRoom || isGradePage
+            isFocusRoom || isGradePage || isClassesPage
               ? {
                 flex: 1,
                 width: '100%',
@@ -875,9 +876,10 @@ export default function DashboardLayout() {
           <Outlet />
         </main>
 
-        {/* Footer: ẩn ở trang flashcard, grading, student assignment và focus room */}
+        {/* Footer: ẩn ở trang flashcard, grading, student assignment, focus room và classes */}
         {!isGradePage &&
           !isStudentAssignment &&
+          !isClassesPage &&
           !location.pathname.startsWith('/student/flashcards') &&
           !location.pathname.startsWith('/lecturer/flashcards') &&
           !isFocusRoom && (

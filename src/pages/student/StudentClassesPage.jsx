@@ -220,30 +220,15 @@ const filteredClasses = useMemo(() => {
 }, [classes, search]);
 
 return (
-    <div
-        className="animate-fade-in w-full px-0"
-        style={{
-            width: "100%",
-            display: "flex",
-            flexDirection: "column",
-            gap: "20px",
-        }}
-    >
-        {/* Header */}
-        <div
-            style={{
-                display: "flex",
-                alignItems: "flex-end",
-                justifyContent: "space-between",
-                marginTop: "8px",
-            }}
-        >
+    <div className="animate-fade-in h-[calc(100vh-64px)] w-full max-w-full min-w-0 overflow-hidden flex flex-col px-6 pt-5 pb-5 box-border">
+        {/* Header: Title + Search & Refresh */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 shrink-0">
             <div>
                 <p
                     style={{
                         fontSize: "12px",
                         color: "var(--color-ink-muted)",
-                        marginBottom: "4px",
+                        marginBottom: "2px",
                     }}
                 >
                     Welcome back, Student
@@ -255,54 +240,87 @@ return (
                         fontWeight: "bold",
                         color: "var(--color-ink)",
                         margin: 0,
+                        lineHeight: 1.2,
                     }}
                 >
                     My Courses
                 </h1>
             </div>
 
-            <button
-                className="btn btn-secondary"
-                onClick={handleRefresh}
-                disabled={loading || semestersLoading}
-                style={{
-                    height: "36px",
-                    fontSize: "13px",
-                    padding: "0 12px",
-                }}
-            >
-                <RotateCw size={16} />
-                Refresh
-            </button>
+            <div className="flex items-center gap-3">
+                <div
+                    style={{
+                        position: "relative",
+                        width: "280px",
+                        maxWidth: "100%",
+                    }}
+                >
+                    <Search
+                        size={16}
+                        style={{
+                            position: "absolute",
+                            left: "12px",
+                            top: "50%",
+                            transform: "translateY(-50%)",
+                            color: "var(--color-ink-soft)",
+                            pointerEvents: "none",
+                        }}
+                    />
+                    <input
+                        type="text"
+                        className="input"
+                        placeholder="Search courses..."
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        style={{
+                            width: "100%",
+                            height: "40px",
+                            paddingLeft: "36px",
+                            boxSizing: "border-box",
+                        }}
+                    />
+                </div>
+
+                <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={handleRefresh}
+                    disabled={loading || semestersLoading}
+                    style={{
+                        height: "40px",
+                        padding: "0 16px",
+                        fontSize: "13px",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "8px",
+                        whiteSpace: "nowrap",
+                        flexShrink: 0,
+                    }}
+                >
+                    <RotateCw
+                        size={16}
+                        className={loading || semestersLoading ? "animate-spin" : ""}
+                    />
+                    <span>Refresh</span>
+                </button>
+            </div>
         </div>
 
-        <div
-            style={{
-                display: "flex",
-                gap: "24px",
-                alignItems: "flex-start",
-                flexWrap: "wrap",
-            }}
-        >
-            {/* Semester Sidebar */}
+        {/* Main 2-column area */}
+        <div className="flex-1 min-h-0 flex gap-6 w-full overflow-hidden">
+            {/* Left Column: Semesters Card */}
             <div
-                className="card"
+                className="w-60 shrink-0 h-full flex flex-col bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden"
                 style={{
-                    width: "180px",
-                    padding: "16px",
-                    flexShrink: 0,
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "16px",
+                    background: "var(--color-surface, #fff)",
+                    borderColor: "var(--color-border, rgba(226, 232, 240, 0.8))",
                 }}
             >
                 <div
+                    className="px-4 py-3.5 border-b border-slate-100 shrink-0 flex items-center justify-between"
                     style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        borderBottom: "1px solid var(--color-border)",
-                        paddingBottom: "8px",
+                        borderBottomColor: "var(--color-border, #f1f5f9)",
                     }}
                 >
                     <span
@@ -321,19 +339,22 @@ return (
                 </div>
 
                 <div
-                    style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: "8px",
-                    }}
+                    className="flex-1 min-h-0 overflow-y-auto p-3 space-y-3 custom-scroll"
+                    style={{ scrollbarWidth: "thin" }}
                 >
                     {semestersLoading ? (
-                        <div className="skeleton" style={{ height: 120 }} />
+                        <div className="space-y-2">
+                            <div className="skeleton rounded-lg" style={{ height: "36px" }} />
+                            <div className="skeleton rounded-lg" style={{ height: "36px" }} />
+                            <div className="skeleton rounded-lg" style={{ height: "36px" }} />
+                            <div className="skeleton rounded-lg" style={{ height: "36px" }} />
+                        </div>
                     ) : semesterError ? (
                         <div
                             style={{
                                 fontSize: "12px",
                                 color: "#dc2626",
+                                padding: "8px",
                             }}
                         >
                             {semesterError}
@@ -343,6 +364,8 @@ return (
                             style={{
                                 fontSize: "12px",
                                 color: "var(--color-ink-muted)",
+                                padding: "8px",
+                                margin: 0,
                             }}
                         >
                             Chưa có học kỳ nào.
@@ -350,7 +373,7 @@ return (
                     ) : (
                         Object.entries(groupedSemesters).map(
                             ([groupName, items]) => (
-                                <div key={groupName}>
+                                <div key={groupName} className="space-y-1">
                                     <div
                                         style={{
                                             fontSize: "10px",
@@ -358,19 +381,13 @@ return (
                                             fontWeight: "bold",
                                             textTransform: "uppercase",
                                             letterSpacing: "1px",
-                                            marginBottom: "8px",
+                                            padding: "4px 8px 2px",
                                         }}
                                     >
                                         {groupName}
                                     </div>
 
-                                    <div
-                                        style={{
-                                            display: "flex",
-                                            flexDirection: "column",
-                                            gap: "6px",
-                                        }}
-                                    >
+                                    <div className="space-y-1">
                                         {items.map((semester) => {
                                             const selected =
                                                 activeSemester === semester.code;
@@ -382,15 +399,12 @@ return (
                                                     onClick={() =>
                                                         handleSemesterChange(semester.code)
                                                     }
+                                                    className={`w-full text-left px-3 py-2 rounded-lg text-xs transition-colors duration-150 flex items-center justify-between border-0 cursor-pointer ${
+                                                        selected
+                                                            ? "font-semibold"
+                                                            : "hover:bg-slate-100 font-medium"
+                                                    }`}
                                                     style={{
-                                                        border: "none",
-                                                        textAlign: "left",
-                                                        padding: "8px 12px",
-                                                        borderRadius: "var(--radius-sm)",
-                                                        cursor: "pointer",
-                                                        fontWeight: selected ? "600" : "500",
-                                                        fontSize: "13px",
-                                                        transition: "0.2s",
                                                         backgroundColor: selected
                                                             ? "var(--color-primary)"
                                                             : "transparent",
@@ -399,18 +413,24 @@ return (
                                                             : "var(--color-ink)",
                                                     }}
                                                 >
-                                                    <div>{getSemesterLabel(semester)}</div>
+                                                    <span className="truncate">
+                                                        {getSemesterLabel(semester)}
+                                                    </span>
 
                                                     {semester.is_current && (
-                                                        <div
+                                                        <span
+                                                            className="text-[10px] px-1.5 py-0.5 rounded font-normal shrink-0 ml-1.5"
                                                             style={{
-                                                                fontSize: "10px",
-                                                                opacity: 0.8,
-                                                                marginTop: "3px",
+                                                                backgroundColor: selected
+                                                                    ? "rgba(255,255,255,0.25)"
+                                                                    : "var(--color-primary-bg, #eff6ff)",
+                                                                color: selected
+                                                                    ? "#fff"
+                                                                    : "var(--color-primary-dark, #2563eb)",
                                                             }}
                                                         >
                                                             Current
-                                                        </div>
+                                                        </span>
                                                     )}
                                                 </button>
                                             );
@@ -423,113 +443,77 @@ return (
                 </div>
             </div>
 
-            {/* Classes */}
-            <div style={{ flex: 1, minWidth: 0 }}>
-                <div
-                    style={{
-                        display: "flex",
-                        justifyContent: "flex-end",
-                        marginBottom: "20px",
-                    }}
-                >
-                    <div
-                        style={{
-                            position: "relative",
-                            width: "280px",
-                        }}
-                    >
-                        <Search
-                            size={16}
-                            style={{
-                                position: "absolute",
-                                left: "12px",
-                                top: "50%",
-                                transform: "translateY(-50%)",
-                                color: "var(--color-ink-soft)",
-                            }}
+            {/* Right Column: Course Cards Grid */}
+            <div
+                className="flex-1 min-w-0 h-full overflow-y-auto pr-1 custom-scroll"
+                style={{ scrollbarWidth: "thin" }}
+            >
+                {loading || semestersLoading ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 content-start">
+                        <div
+                            className="skeleton rounded-2xl"
+                            style={{ height: "190px" }}
                         />
-
-                        <input
-                            type="text"
-                            className="input"
-                            placeholder="Search courses..."
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            style={{ paddingLeft: "36px" }}
+                        <div
+                            className="skeleton rounded-2xl"
+                            style={{ height: "190px" }}
+                        />
+                        <div
+                            className="skeleton rounded-2xl"
+                            style={{ height: "190px" }}
                         />
                     </div>
-                </div>
-
-                <div
-                    style={{
-                        display: "grid",
-                        gridTemplateColumns:
-                            "repeat(auto-fill, minmax(280px, 1fr))",
-                        gap: "20px",
-                    }}
-                >
-                    {loading || semestersLoading ? (
-                        <>
-                            <div
-                                className="skeleton"
-                                style={{ height: "200px" }}
-                            />
-                            <div
-                                className="skeleton"
-                                style={{ height: "200px" }}
-                            />
-                            <div
-                                className="skeleton"
-                                style={{ height: "200px" }}
-                            />
-                        </>
-                    ) : error || semesterError ? (
-                        <div
+                ) : error || semesterError ? (
+                    <div
+                        style={{
+                            padding: "16px",
+                            backgroundColor: "#fee2e2",
+                            color: "#dc2626",
+                            borderRadius: "var(--radius-md)",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "8px",
+                        }}
+                    >
+                        <AlertCircle size={20} className="shrink-0" />
+                        <span>{semesterError || error}</span>
+                    </div>
+                ) : filteredClasses.length === 0 ? (
+                    <div
+                        className="card"
+                        style={{
+                            padding: "48px 12px",
+                            textAlign: "center",
+                            color: "var(--color-ink-muted)",
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            justifyContent: "center",
+                        }}
+                    >
+                        <FolderOpen
+                            size={48}
                             style={{
-                                gridColumn: "1 / -1",
-                                padding: "16px",
-                                backgroundColor: "#fee2e2",
-                                color: "#dc2626",
-                                borderRadius: "var(--radius-md)",
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "8px",
+                                margin: "0 auto 12px",
+                                opacity: 0.2,
+                            }}
+                        />
+
+                        <p
+                            style={{
+                                fontSize: "14px",
+                                fontWeight: "500",
+                                margin: 0,
                             }}
                         >
-                            <AlertCircle size={20} />
-                            <span>{semesterError || error}</span>
-                        </div>
-                    ) : filteredClasses.length === 0 ? (
-                        <div
-                            className="card"
-                            style={{
-                                gridColumn: "1 / -1",
-                                padding: "48px 12px",
-                                textAlign: "center",
-                                color: "var(--color-ink-muted)",
-                            }}
-                        >
-                            <FolderOpen
-                                size={48}
-                                style={{
-                                    margin: "0 auto 12px",
-                                    opacity: 0.2,
-                                }}
-                            />
-
-                            <p
-                                style={{
-                                    fontSize: "14px",
-                                    fontWeight: "500",
-                                }}
-                            >
-                                {search
-                                    ? "Không tìm thấy lớp học phù hợp."
-                                    : "Không tìm thấy lớp học nào trong học kỳ này."}
-                            </p>
-                        </div>
-                    ) : (
-                        filteredClasses.map((course) => (
+                            {search
+                                ? "Không tìm thấy lớp học phù hợp."
+                                : "Không tìm thấy lớp học nào trong học kỳ này."}
+                        </p>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 content-start">
+                        {filteredClasses.map((course) => (
                             <div
                                 className="card"
                                 key={course.id || course._id}
@@ -537,7 +521,7 @@ return (
                                     padding: "20px",
                                     display: "flex",
                                     flexDirection: "column",
-                                    gap: "16px",
+                                    gap: "14px",
                                 }}
                             >
                                 <div
@@ -578,6 +562,7 @@ return (
                                         style={{
                                             fontSize: "12px",
                                             color: "var(--color-ink-muted)",
+                                            margin: 0,
                                         }}
                                     >
                                         Class:{" "}
@@ -602,7 +587,7 @@ return (
                                     }
                                     style={{
                                         marginTop: "auto",
-                                        paddingTop: "16px",
+                                        paddingTop: "14px",
                                         borderTop: "1px solid var(--color-border)",
                                         display: "flex",
                                         alignItems: "center",
@@ -611,6 +596,13 @@ return (
                                         fontWeight: "600",
                                         color: "var(--color-ink-muted)",
                                         cursor: "pointer",
+                                        transition: "color 0.15s ease",
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.color = "var(--color-primary)";
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.color = "var(--color-ink-muted)";
                                     }}
                                 >
                                     <span
@@ -627,9 +619,9 @@ return (
                                     <ArrowRight size={16} />
                                 </div>
                             </div>
-                        ))
-                    )}
-                </div>
+                        ))}
+                    </div>
+                )}
             </div>
         </div>
     </div>
