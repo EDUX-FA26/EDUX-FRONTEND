@@ -88,11 +88,33 @@ const FlashcardService = {
   },
 
   /** GET /api/flashcards/template/excel — Tải file Excel mẫu */
-  async downloadExcelTemplate() {
-    const response = await api.get('/flashcards/template/excel', {
+  async downloadExcelTemplate(deckId = null) {
+    const url = deckId ? `/flashcards/decks/${deckId}/import/template` : '/flashcards/template/excel';
+    const response = await api.get(url, {
       responseType: 'blob',
       schoolScoped: true,
     });
+    return response.data;
+  },
+
+  /** POST /api/flashcards/decks/:deckId/import/preview — Upload Excel & Preview Topic Matching */
+  async previewImportCards(deckId, file) {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await api.post(`/flashcards/decks/${deckId}/import/preview`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      schoolScoped: true,
+    });
+    return response.data;
+  },
+
+  /** POST /api/flashcards/decks/:deckId/import/confirm — Confirm và Transactionally lưu cards */
+  async confirmImportCards(deckId, { previewId, rows, idempotencyKey }) {
+    const response = await api.post(
+      `/flashcards/decks/${deckId}/import/confirm`,
+      { previewId, rows, idempotencyKey },
+      { schoolScoped: true }
+    );
     return response.data;
   },
 
@@ -129,6 +151,12 @@ const FlashcardService = {
   /** GET /api/flashcards/decks/:deckId/reviews/stats — Thống kê tiến độ */
   async getDeckReviewStats(deckId) {
     const response = await api.get(`/flashcards/decks/${deckId}/reviews/stats`, { schoolScoped: true });
+    return response.data;
+  },
+
+  /** POST /api/flashcards/decks/:deckId/topic-suggestions — Gợi ý Topic cho câu hỏi / manual */
+  async getTopicSuggestions(deckId, data = {}) {
+    const response = await api.post(`/flashcards/decks/${deckId}/topic-suggestions`, data, { schoolScoped: true });
     return response.data;
   },
 
