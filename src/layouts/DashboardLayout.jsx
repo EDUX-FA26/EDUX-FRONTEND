@@ -3,7 +3,7 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useSchool } from '../contexts/SchoolContext';
 import { useLanguage } from '../contexts/LanguageContext';
-import { ROLES, SEMESTER_LABEL } from '../config/constants';
+import { ROLES } from '../config/constants';
 import { getSemesters } from '../services/semester.service';
 import SettingsToggle from '../components/common/SettingsToggle';
 import PlatformAdminMenuItem from
@@ -463,7 +463,7 @@ export default function DashboardLayout() {
                         animation: 'pulse-ring 1.5s ease-in-out infinite',
                       }}
                     />
-                    {currentSemesterLabel || t?.layout?.semester || SEMESTER_LABEL}
+                    {currentSemesterLabel || (schoolStatus === 'ready' ? 'Chưa có học kỳ hiện tại' : 'Đang tải học kỳ...')}
                   </div>
                 </div>
 
