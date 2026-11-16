@@ -6,7 +6,14 @@ import { useSchool } from '../../contexts/SchoolContext';
 const suggestions = ['Bài tập sắp đến hạn?', 'Thông báo mới có gì?', 'Học kỳ hiện tại là gì?'];
 
 export default function AIChatBox() {
-  const { activeSchool } = useSchool();
+
+
+  const { currentSchool } = useSchool();
+
+  const schoolName = currentSchool?.schoolName || 'EDUX';
+
+  const aiName = `${schoolName} AI`;
+
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
@@ -14,30 +21,36 @@ export default function AIChatBox() {
     { role: 'assistant', text: 'Chào bạn! Mình có thể tra lớp, học kỳ, bài tập, thông báo và flashcard.' },
   ]);
 
-  const currentSchoolIdRef = useRef(activeSchool?.id);
+  const currentSchoolIdRef = useRef(currentSchool?.schoolId);
   const abortControllerRef = useRef(null);
 
   // Reset cuộc hội thoại & hủy các request đang bay khi chuyển trường để ngăn rò rỉ và Race Condition
-  useEffect(() => {
-    currentSchoolIdRef.current = activeSchool?.id;
 
-    // Hủy request của trường cũ đang dở dang
+  useEffect(() => {
+    currentSchoolIdRef.current = currentSchool?.schoolId;
+
+    // Hủy request đang thực hiện khi chuyển trường.
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
     }
 
     setLoading(false);
+    setMessage('');
+
     setMessages([
-      { role: 'assistant', text: 'Chào bạn! Mình có thể tra lớp, học kỳ, bài tập, thông báo và flashcard.' },
+      {
+        role: 'assistant',
+        text: 'Chào bạn! Mình có thể tra lớp, học kỳ, bài tập, thông báo và flashcard.',
+      },
     ]);
-  }, [activeSchool?.id]);
+  }, [currentSchool?.schoolId]);
 
   const send = async (value = message) => {
     const text = value.trim();
     if (!text || loading) return;
 
-    const requestSchoolId = activeSchool?.id;
+    const requestSchoolId = currentSchool?.schoolId;
     const controller = new AbortController();
     abortControllerRef.current = controller;
 
@@ -75,9 +88,34 @@ export default function AIChatBox() {
   return (
     <div style={{ position: 'fixed', right: 24, bottom: 24, zIndex: 120, fontFamily: 'var(--font-sans)' }}>
       {open && (
-        <section aria-label="EDUX AI Assistant" style={{ width: 360, maxWidth: 'calc(100vw - 32px)', height: 480, marginBottom: 12, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 18, boxShadow: '0 16px 44px rgba(30, 20, 10, .18)' }}>
+        <section aria-label={`${aiName} Assistant`} style={{ width: 360, maxWidth: 'calc(100vw - 32px)', height: 480, marginBottom: 12, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 18, boxShadow: '0 16px 44px rgba(30, 20, 10, .18)' }}>
           <header style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: 'white', background: 'var(--color-primary)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Bot size={19} /><strong>EDUX AI</strong></div>
+
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                minWidth: 0,
+              }}
+            >
+              <Bot size={19} style={{ flexShrink: 0 }} />
+
+              <strong
+                title={aiName}
+                style={{
+                  fontSize: 14,
+                  fontWeight: 700,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {aiName}
+              </strong>
+            </div>
+
+
             <button type="button" onClick={() => setOpen(false)} aria-label="Đóng" style={{ color: 'white', background: 'transparent', border: 0, cursor: 'pointer' }}><X size={18} /></button>
           </header>
           <div style={{ flex: 1, padding: 14, overflowY: 'auto', background: 'var(--color-primary-bg)' }}>
@@ -90,7 +128,7 @@ export default function AIChatBox() {
             {messages.length === 1 && <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 12 }}>{suggestions.map((item) => <button key={item} type="button" onClick={() => send(item)} style={{ padding: '6px 9px', borderRadius: 999, border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-primary-dark)', cursor: 'pointer', fontSize: 11 }}>{item}</button>)}</div>}
           </div>
           <form onSubmit={(event) => { event.preventDefault(); send(); }} style={{ display: 'flex', gap: 8, padding: 10, borderTop: '1px solid var(--color-border)', background: 'var(--color-surface)' }}>
-            <input value={message} onChange={(event) => setMessage(event.target.value)} maxLength={500} placeholder="Hỏi EDUX AI..." aria-label="Câu hỏi" style={{ minWidth: 0, flex: 1, padding: '9px 10px', borderRadius: 10, border: '1px solid var(--color-border)', outline: 'none', background: 'var(--color-primary-bg)' }} />
+            <input value={message} onChange={(event) => setMessage(event.target.value)} maxLength={500} placeholder={`Hỏi ${aiName}...`} aria-label="Câu hỏi" style={{ minWidth: 0, flex: 1, padding: '9px 10px', borderRadius: 10, border: '1px solid var(--color-border)', outline: 'none', background: 'var(--color-primary-bg)' }} />
             <button type="submit" disabled={loading || !message.trim()} aria-label="Gửi" style={{ width: 38, border: 0, borderRadius: 10, color: 'white', background: 'var(--color-primary)', cursor: loading ? 'wait' : 'pointer', opacity: loading || !message.trim() ? .55 : 1 }}><Send size={16} /></button>
           </form>
         </section>
