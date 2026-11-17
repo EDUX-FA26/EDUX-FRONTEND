@@ -2133,6 +2133,33 @@ main[style*="backdrop-filter"] p {
   font-size: 10px;
   font-weight: 700;
 }
+.forum-page-stitch article .postTags span:first-child {
+  background: #fff0ea;
+  color: #f5661f;
+}
+.forum-page-stitch article .postTags span:not(:first-child) {
+  background: #ffe0d8;
+  color: #a52a0a;
+  border-radius: 999px;
+}
+.forum-page-stitch article .actions span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.forum-page-stitch article .fileRow {
+  border: 1px solid #e8d8d0;
+  background: #fcf8f5;
+  min-height: 46px;
+}
+.forum-page-stitch article .fileRow small {
+  margin-left: auto;
+  padding: 5px 9px;
+  border: 1px solid #e8d8d0;
+  border-radius: 7px;
+  background: #fff;
+  color: #594138;
+}
 @media (max-width: 1280px) {
   .forum-page-stitch > div { grid-template-columns: minmax(0, 1fr) 300px !important; }
   .forum-page-stitch > div > section { width: auto !important; max-width: none !important; }
