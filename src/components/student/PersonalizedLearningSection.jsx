@@ -5,6 +5,7 @@ import ClassService from '../../services/class.service';
 import MathText from '../common/MathText';
 import StudyQuizModal from './StudyQuizModal';
 import StudyResultModal from './StudyResultModal';
+import StudyPlanAiInsights from './StudyPlanAiInsights';
 import {
   Sparkles, Target, TrendingUp, TrendingDown,
   Minus, CheckCircle2, AlertTriangle, Calendar,
@@ -121,13 +122,17 @@ export default function PersonalizedLearningSection() {
         return sum + Number(topic.totalAttempts || 0);
       }, 0);
 
+      const totalReviews = topics.reduce((sum, topic) => {
+        return sum + Number(topic.totalReviews || 0);
+      }, 0);
+
       // Chỉ dùng nếu profile thực sự trả về thống kê này.
       const totalTestAnswers = Number(
         profile?.flashcardTests?.totalAnswers || 0
       );
 
       const hasLearningActivity =
-        totalAttempts > 0 || totalTestAnswers > 0;
+        totalAttempts > 0 || totalTestAnswers > 0 || totalReviews > 0;
 
       if (!hasLearningActivity) {
         console.log(
@@ -275,7 +280,8 @@ export default function PersonalizedLearningSection() {
 
     const totalAttemptsAll = topics.reduce((sum, t) => sum + (t.totalAttempts || 0), 0);
     const testAnswersCount = learningProfile?.flashcardTests?.totalAnswers || 0;
-    const hasActivity = totalAttemptsAll > 0 || testAnswersCount > 0;
+    const totalReviewsAll = topics.reduce((sum, t) => sum + Number(t.totalReviews || 0), 0);
+    const hasActivity = totalAttemptsAll > 0 || testAnswersCount > 0 || totalReviewsAll > 0;
 
     let totalMastery = 0;
     let countedTopics = 0;
@@ -289,14 +295,13 @@ export default function PersonalizedLearningSection() {
     let overallMastery = 0;
     if (countedTopics > 0) {
       overallMastery = Math.round(totalMastery / countedTopics);
-    } else if (hasActivity && learningProfile?.flashcardTests?.accuracy !== null && learningProfile?.flashcardTests?.accuracy !== undefined) {
-      overallMastery = Math.round(learningProfile.flashcardTests.accuracy);
     } else {
       overallMastery = 0;
     }
 
-    const attemptedTopics = topics.filter(t => (t.totalAttempts || 0) > 0);
-    const reviewTopics = attemptedTopics.filter(t => t.needsReview || t.priority === 'high' || t.priority === 'medium');
+    const attemptedTopics = topics.filter(t => (t.totalAttempts || 0) > 0 || (t.totalReviews || 0) > 0);
+    const evaluatedTopics = topics.filter(t => t.masteryStatus === 'developing' || t.masteryStatus === 'mastered');
+    const reviewTopics = evaluatedTopics.filter(t => t.needsReview || t.priority === 'high' || t.priority === 'medium');
 
     let weakTopic = null;
     let isDefaultTopic = false;
@@ -308,9 +313,12 @@ export default function PersonalizedLearningSection() {
         return accA - accB;
       });
       weakTopic = reviewTopics[0];
-    } else if (attemptedTopics.length > 0) {
-      const sorted = [...attemptedTopics].sort((a, b) => (a.accuracy ?? 100) - (b.accuracy ?? 100));
+    } else if (evaluatedTopics.length > 0) {
+      const sorted = [...evaluatedTopics].sort((a, b) => (a.accuracy ?? 100) - (b.accuracy ?? 100));
       weakTopic = sorted[0];
+    } else if (attemptedTopics.length > 0) {
+      weakTopic = attemptedTopics[0];
+      isDefaultTopic = true;
     } else if (topics.length > 0) {
       weakTopic = topics[0];
       isDefaultTopic = true;
@@ -321,6 +329,7 @@ export default function PersonalizedLearningSection() {
 
     return {
       hasActivity,
+      countedTopics,
       mastery: overallMastery,
       weakTopic,
       isDefaultTopic,
@@ -480,8 +489,8 @@ export default function PersonalizedLearningSection() {
                   </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-                  <span style={{ fontSize: '2.25rem', fontWeight: 900, color: metrics.hasActivity ? 'var(--color-primary, #f27024)' : 'var(--color-ink-muted, #94a3b8)', lineHeight: 1 }}>
-                    {metrics.hasActivity ? `${metrics.mastery}%` : '0%'}
+                  <span style={{ fontSize: '2.25rem', fontWeight: 900, color: (metrics.hasActivity && metrics.countedTopics > 0) ? 'var(--color-primary, #f27024)' : 'var(--color-ink-muted, #94a3b8)', lineHeight: 1 }}>
+                    {metrics.countedTopics > 0 ? `${metrics.mastery}%` : '0%'}
                   </span>
                 </div>
                 <div style={{ marginTop: '10px' }}>
@@ -495,7 +504,11 @@ export default function PersonalizedLearningSection() {
                     }} />
                   </div>
                   <span style={{ fontSize: '0.6875rem', color: 'var(--color-ink-soft, #8c7166)', marginTop: '4px', display: 'block' }}>
-                    {metrics.hasActivity ? 'Mức độ làm chủ kiến thức môn học' : 'Chưa có dữ liệu làm bài để tính điểm'}
+                    {metrics.countedTopics > 0
+                      ? 'Mức độ làm chủ kiến thức môn học'
+                      : (metrics.hasActivity
+                          ? 'Đã có lượt ôn thẻ, chưa đủ bài test trắc nghiệm để đánh giá'
+                          : 'Chưa có dữ liệu làm bài để tính điểm')}
                   </span>
                 </div>
               </div>
@@ -525,7 +538,7 @@ export default function PersonalizedLearningSection() {
                   <div style={{ fontSize: '0.8125rem', color: 'var(--color-ink-soft, #8c7166)', marginBottom: '2px' }}>
                     {metrics.hasActivity && metrics.weakTopic && !metrics.isDefaultTopic && metrics.weakTopic.accuracy !== null
                       ? `Độ chính xác ${metrics.weakTopic.accuracy}%`
-                      : 'Chưa có dữ liệu bài test'}
+                      : (metrics.hasActivity ? 'Chưa đủ bài test để xếp hạng điểm yếu' : 'Chưa có dữ liệu bài test')}
                   </div>
                   <div style={{
                     fontSize: '1.25rem', fontWeight: 800, color: 'var(--color-ink, #1f1b17)',
@@ -843,6 +856,14 @@ export default function PersonalizedLearningSection() {
                       </div>
                     </div>
                   )}
+
+                  {/* ── AI Personalization Coach (Phase 5C) ── */}
+                  <StudyPlanAiInsights
+                    planId={studyPlan?.planId}
+                    selectedDayNumber={selectedDayNumber}
+                    selectedDayDetail={selectedDay}
+                    onRefresh={() => selectedSubjectId && loadLearningData(selectedSubjectId)}
+                  />
                 </div>
               )}
             </div>
@@ -885,7 +906,8 @@ export default function PersonalizedLearningSection() {
                   {topicsPerf?.map(topic => {
                     const totalAttempts = Number(topic.totalAttempts ?? 0);
                     const totalAnswered = Number(topic.totalAnswered ?? 0);
-                    const hasData = totalAttempts > 0 || totalAnswered > 0;
+                    const totalReviews = Number(topic.totalReviews ?? 0);
+                    const hasData = topic.dataQuality === 'sufficient' || topic.dataQuality === 'insufficient' || totalAttempts > 0 || totalAnswered > 0 || totalReviews > 0;
 
                     const isWeak =
                       topic.needsReview ||
@@ -895,17 +917,19 @@ export default function PersonalizedLearningSection() {
                     // Không tự mặc định Mastery thành 50% khi chưa có dữ liệu
                     const mastery = topic.masteryEstimate ?? 0;
 
-                    const status = !hasData
+                    const status = (!hasData || topic.masteryStatus === 'not_assessed')
                       ? 'Chưa học'
-                      : topic.priority === 'high'
-                        ? 'Cần ôn gấp'
-                        : topic.priority === 'medium'
-                          ? 'Cần cải thiện'
-                          : topic.masteryEstimate == null
-                            ? 'Chưa đủ dữ liệu'
-                            : 'Nắm vững';
+                      : topic.masteryStatus === 'insufficient_data'
+                        ? 'Chưa đủ dữ liệu'
+                        : topic.priority === 'high'
+                          ? 'Cần ôn gấp'
+                          : topic.priority === 'medium'
+                            ? 'Cần cải thiện'
+                            : topic.masteryEstimate == null
+                              ? 'Chưa đủ dữ liệu'
+                              : 'Nắm vững';
 
-                    const statusStyle = !hasData || topic.masteryEstimate == null
+                    const statusStyle = (!hasData || topic.masteryStatus === 'not_assessed' || topic.masteryStatus === 'insufficient_data' || topic.masteryEstimate == null)
                       ? {
                         backgroundColor: '#f1f5f9',
                         color: '#64748b'
@@ -935,9 +959,16 @@ export default function PersonalizedLearningSection() {
                         }}
                       >
                         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px' }}>
-                          <span style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--color-ink)' }}>
-                            {topic.topicName}
-                          </span>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                            <span style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--color-ink)' }}>
+                              {topic.topicName}
+                            </span>
+                            {topic.topicCode && (
+                              <span style={{ fontSize: '0.6875rem', fontWeight: 600, color: 'var(--color-ink-muted)', fontFamily: 'monospace' }}>
+                                [{topic.topicCode}]
+                              </span>
+                            )}
+                          </div>
 
                           <span
                             style={{
@@ -945,6 +976,7 @@ export default function PersonalizedLearningSection() {
                               fontWeight: 800,
                               padding: '2px 6px',
                               borderRadius: '4px',
+                              whiteSpace: 'nowrap',
                               ...statusStyle
                             }}
                           >
@@ -971,7 +1003,11 @@ export default function PersonalizedLearningSection() {
 
                         {/* Attempts & Trend */}
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.6875rem', color: 'var(--color-ink-soft)' }}>
-                          <span>{topic.totalAttempts || 0} câu đã làm ({topic.correctAnswers || 0} đúng)</span>
+                          <span>
+                            {topic.totalQuizAnswers || topic.totalAttempts || 0} câu test
+                            {Number(topic.totalReviews) > 0 ? ` • ${topic.totalReviews} ôn thẻ` : ''}
+                            {` (${topic.correctAnswers || 0} đúng)`}
+                          </span>
                           <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
                             {topic.trend === 'improving' ? (
                               <><TrendingUp size={12} color="#16a34a" /> Tiến bộ</>
