@@ -2232,6 +2232,17 @@ main[style*="backdrop-filter"] p {
   gap: 8px;
   margin-top: 12px;
 }
+.forum-page-stitch > div {
+  width: 100% !important;
+  max-width: none !important;
+  grid-template-columns: minmax(0, 1fr) 360px !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+.forum-page-stitch > div > section {
+  width: auto !important;
+  max-width: none !important;
+}
 .forum-page-stitch .forum-filter-field {
   min-width: 0;
   width: 100%;
