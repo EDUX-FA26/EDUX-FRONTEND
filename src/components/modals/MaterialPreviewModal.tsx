@@ -54,7 +54,9 @@ export interface MaterialItem {
   fileUrl?: string;
   file_url?: string;
   preview_url?: string;
+  previewUrl?: string;
   download_url?: string;
+  downloadUrl?: string;
   uploaded_by_name?: string;
 }
 
@@ -242,7 +244,7 @@ export default function MaterialPreviewModal({
       setBlobUrl('');
 
       try {
-        let pUrl = normalizePreviewUrl(material.preview_url, material);
+        let pUrl = normalizePreviewUrl(material.preview_url || material.previewUrl, material);
         let dUrl = normalizePreviewUrl(
           material.download_url || material.downloadUrl || material.url,
           material
