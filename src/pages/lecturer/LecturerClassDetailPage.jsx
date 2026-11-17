@@ -965,7 +965,20 @@ export default function LecturerClassDetailPage() {
                     slotNumber={selectedSlot?.slot_number || slots.findIndex(s => s === selectedSlot) + 1}
                     slotTitle={selectedSlot?.title || ''}
                     classId={classId}
-                    onSuccess={() => {
+                    onSuccess={(createdMaterial) => {
+                        if (createdMaterial) {
+                            setSlots(prev => prev.map(s => {
+                                if ((s.id || s._id) === selectedSlotId) {
+                                    const existing = s.materials || [];
+                                    const exists = existing.some(m => m.id === createdMaterial.id);
+                                    return {
+                                        ...s,
+                                        materials: exists ? existing : [...existing, createdMaterial]
+                                    };
+                                }
+                                return s;
+                            }));
+                        }
                         refreshSlotMaterials(selectedSlotId);
                     }}
                 />
