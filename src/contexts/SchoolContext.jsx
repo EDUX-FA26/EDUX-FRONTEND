@@ -302,6 +302,12 @@ export function SchoolProvider({ children }) {
     () => ({
       schools,
       currentSchool,
+      activeSchool: currentSchool
+        ? {
+            ...currentSchool,
+            id: currentSchool.schoolId || currentSchool.id,
+          }
+        : null,
 
       schoolId:
         currentSchool?.schoolId ?? null,

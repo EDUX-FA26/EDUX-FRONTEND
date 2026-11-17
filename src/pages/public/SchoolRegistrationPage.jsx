@@ -3,19 +3,9 @@ import { Link, useNavigate } from "react-router-dom";
 import {
   createSchoolRegistration,
   getPublicPlans,
-  getSchoolRegistrationStatus,
 } from "../../services/publicRegistrationApi";
 
 const REGISTRATION_SESSION_KEY = "edux:pending-school-registration";
-
-const statusLabels = {
-  pending_email_verification: "Đang chờ xác minh email",
-  pending_payment: "Đang chờ thanh toán",
-  processing: "Đang xác nhận thanh toán",
-  paid: "Đã thanh toán",
-  expired: "Đã hết hạn",
-  cancelled: "Đã hủy",
-};
 
 function formatCurrency(value) {
   return new Intl.NumberFormat("vi-VN", {
@@ -45,7 +35,6 @@ export default function SchoolRegistrationPage() {
   const [plansLoading, setPlansLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const [registration, setRegistration] = useState(null);
   const [form, setForm] = useState({
     school_name: "",
     admin_email: "",
@@ -55,37 +44,14 @@ export default function SchoolRegistrationPage() {
   });
 
   useEffect(() => {
+    // Tự động xóa session cũ khi quay lại trang đăng ký để người dùng luôn có form tạo trường mới
+    sessionStorage.removeItem(REGISTRATION_SESSION_KEY);
+
     let active = true;
 
     const load = async () => {
       try {
-        const [plansResult, savedResult] = await Promise.all([
-          getPublicPlans(),
-          (async () => {
-            try {
-              const raw = sessionStorage.getItem(REGISTRATION_SESSION_KEY);
-              if (!raw) return null;
-              const saved = JSON.parse(raw);
-              if (!saved?.id || !saved?.trackingToken) {
-                sessionStorage.removeItem(REGISTRATION_SESSION_KEY);
-                return null;
-              }
-              const result = await getSchoolRegistrationStatus(saved.id, saved.trackingToken);
-              
-              // Nếu đơn đã thanh toán hoặc đã hủy/hết hạn, tự động xóa session để cho phép tạo trường mới!
-              if (!result?.data || ["paid", "cancelled", "expired"].includes(result.data.status)) {
-                sessionStorage.removeItem(REGISTRATION_SESSION_KEY);
-                return null;
-              }
-
-              return { ...result.data, tracking_token: saved.trackingToken };
-            } catch {
-              sessionStorage.removeItem(REGISTRATION_SESSION_KEY);
-              return null;
-            }
-          })(),
-        ]);
-
+        const plansResult = await getPublicPlans();
         if (!active) return;
         const availablePlans = plansResult.data || [];
         setPlans(availablePlans);
@@ -93,7 +59,6 @@ export default function SchoolRegistrationPage() {
           ...current,
           plan_id: current.plan_id || availablePlans[0]?.id || "",
         }));
-        setRegistration(savedResult);
       } catch (loadError) {
         if (active) setError(getErrorMessage(loadError));
       } finally {
@@ -137,7 +102,6 @@ export default function SchoolRegistrationPage() {
         id: created.id,
         trackingToken: created.tracking_token,
       }));
-      setRegistration(created);
       navigate(`/register-school/payment/${created.id}`, { replace: true });
     } catch (submitError) {
       setError(getErrorMessage(submitError));
@@ -145,47 +109,6 @@ export default function SchoolRegistrationPage() {
       setSubmitting(false);
     }
   };
-
-  const handleClearAndCreateNew = () => {
-    sessionStorage.removeItem(REGISTRATION_SESSION_KEY);
-    setRegistration(null);
-    setError("");
-  };
-
-  if (registration) {
-    const registrationPlan = plans.find((plan) => plan.id === registration.plan_id);
-    return (
-      <main className="min-h-screen bg-slate-50 px-4 py-12 text-slate-900">
-        <section className="mx-auto max-w-2xl rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-          <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 text-amber-700">
-            <span className="material-symbols-outlined">schedule</span>
-          </div>
-          <p className="text-sm font-bold uppercase tracking-wider text-orange-600">EDUX SCHOOL REGISTRATION</p>
-          <h1 className="mt-2 text-3xl font-bold">Yêu cầu đã được ghi nhận</h1>
-          <p className="mt-3 leading-6 text-slate-600">
-            Trước khi thanh toán, hãy xác minh email quản trị. Trường chưa được kích hoạt và chưa có School Admin ở bước này.
-          </p>
-          <dl className="mt-7 grid gap-4 rounded-2xl bg-slate-50 p-5 text-sm sm:grid-cols-2">
-            <div><dt className="text-slate-500">Mã yêu cầu</dt><dd className="mt-1 break-all font-semibold">{registration.id}</dd></div>
-            <div><dt className="text-slate-500">Trạng thái</dt><dd className="mt-1 font-semibold text-amber-700">{statusLabels[registration.status] || registration.status}</dd></div>
-            <div><dt className="text-slate-500">Gói đăng ký</dt><dd className="mt-1 font-semibold">{registrationPlan?.name || registration.plan_id}</dd></div>
-            <div><dt className="text-slate-500">Tổng tiền dự kiến</dt><dd className="mt-1 font-semibold">{formatCurrency(registration.price_snapshot)} / {registration.billing_cycle === "yearly" ? "năm" : "tháng"}</dd></div>
-          </dl>
-          <div className="mt-7 flex flex-wrap gap-3">
-            <Link to={`/register-school/payment/${registration.id}`} className="inline-flex rounded-lg bg-orange-500 px-4 py-2.5 font-semibold text-white hover:bg-orange-600">Xem trạng thái và tiếp tục</Link>
-            <button
-              type="button"
-              onClick={handleClearAndCreateNew}
-              className="inline-flex rounded-lg border border-orange-300 bg-orange-50 px-4 py-2.5 font-semibold text-orange-700 hover:bg-orange-100 transition"
-            >
-              Hủy phiên này & Đăng ký trường mới khác
-            </button>
-            <Link to="/login" className="inline-flex rounded-lg border border-slate-300 px-4 py-2.5 font-semibold text-slate-700 hover:bg-slate-50">Quay lại đăng nhập</Link>
-          </div>
-        </section>
-      </main>
-    );
-  }
 
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-10 text-slate-900">

@@ -16,6 +16,9 @@ import {
     AlertCircle,
     GraduationCap,
     Layers3,
+    TrendingUp,
+    RotateCcw,
+    FileText,
 } from "lucide-react";
 
 import api from '../../config/axios.config';
@@ -422,12 +425,80 @@ export default function PlatformDashboardPage() {
                                 textDecoration: "none",
                             }}
                         >
+                            <Users
+                                size={20}
+                                style={{ flexShrink: 0, color: "#f97320" }}
+                            />
+                            <span style={{ color: "#5d697e" }}>
+                                Quản lý Manager
+                            </span>
+                        </Link>
+
+                        <Link
+                            to="/superadmin/plans"
+                            className="flex items-center gap-3 rounded-xl px-4 py-3.5 text-sm font-semibold transition hover:bg-[#fff3eb]"
+                            style={{
+                                color: "#5d697e",
+                                textDecoration: "none",
+                            }}
+                        >
                             <Layers3
                                 size={20}
                                 style={{ flexShrink: 0, color: "#f97320" }}
                             />
                             <span style={{ color: "#5d697e" }}>
-                                Managers
+                                Gói dịch vụ
+                            </span>
+                        </Link>
+
+                        <Link
+                            to="/superadmin/revenue"
+                            className="flex items-center gap-3 rounded-xl px-4 py-3.5 text-sm font-semibold transition hover:bg-[#fff3eb]"
+                            style={{
+                                color: "#5d697e",
+                                textDecoration: "none",
+                            }}
+                        >
+                            <TrendingUp
+                                size={20}
+                                style={{ flexShrink: 0, color: "#f97320" }}
+                            />
+                            <span style={{ color: "#5d697e" }}>
+                                Doanh thu & Báo cáo
+                            </span>
+                        </Link>
+
+                        <Link
+                            to="/superadmin/refunds"
+                            className="flex items-center gap-3 rounded-xl px-4 py-3.5 text-sm font-semibold transition hover:bg-[#fff3eb]"
+                            style={{
+                                color: "#5d697e",
+                                textDecoration: "none",
+                            }}
+                        >
+                            <RotateCcw
+                                size={20}
+                                style={{ flexShrink: 0, color: "#f97320" }}
+                            />
+                            <span style={{ color: "#5d697e" }}>
+                                Quản lý Hoàn tiền
+                            </span>
+                        </Link>
+
+                        <Link
+                            to="/superadmin/logs"
+                            className="flex items-center gap-3 rounded-xl px-4 py-3.5 text-sm font-semibold transition hover:bg-[#fff3eb]"
+                            style={{
+                                color: "#5d697e",
+                                textDecoration: "none",
+                            }}
+                        >
+                            <FileText
+                                size={20}
+                                style={{ flexShrink: 0, color: "#f97320" }}
+                            />
+                            <span style={{ color: "#5d697e" }}>
+                                Nhật ký hệ thống
                             </span>
                         </Link>
 
