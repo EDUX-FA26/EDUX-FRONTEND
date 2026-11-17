@@ -2323,6 +2323,75 @@ main[style*="backdrop-filter"] p {
   background: #fff;
   color: #594138;
 }
+
+.forum-page-stitch .forum-attachment-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.forum-page-stitch .forum-attachment {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 9px 10px;
+  border: 1px solid #ecd8ce;
+  border-radius: 9px;
+  background: #fcf8f5;
+}
+
+.forum-page-stitch .forum-attachment-icon {
+  display: inline-flex;
+  width: 30px;
+  height: 30px;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 30px;
+  border-radius: 7px;
+  background: #ffe0d8;
+  color: #b52f0a;
+}
+
+.forum-page-stitch .forum-attachment-info {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.forum-page-stitch .forum-attachment-info strong {
+  overflow: hidden;
+  color: #594138;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.forum-page-stitch .forum-attachment-info small {
+  color: #806d65;
+  font-size: 10px;
+}
+
+.forum-page-stitch .forum-download {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  padding: 5px 8px;
+  border-radius: 7px;
+  background: #f1edea;
+  color: #594138;
+  font-size: 10px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.forum-page-stitch .forum-download:hover {
+  background: #ffe0d8;
+  color: #a53c00;
+}
 @media (max-width: 1280px) {
   .forum-page-stitch > div { grid-template-columns: minmax(0, 1fr) 300px !important; }
   .forum-page-stitch > div > section { width: auto !important; max-width: none !important; }
@@ -2364,4 +2433,819 @@ main[style*="backdrop-filter"] p {
 
 .forum-page-stitch > div > aside > .card {
   min-width: 0 !important;
+}
+
+/* Wider, information-rich forum tabs. */
+.forum-page-stitch > div > section > nav {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+  width: 100% !important;
+}
+
+.forum-page-stitch > div > section > nav > button {
+  min-width: 0 !important;
+  width: 100% !important;
+  min-height: 46px !important;
+  padding: 11px 18px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  box-shadow: 0 1px 3px rgba(31, 27, 23, .06) !important;
+}
+
+.forum-page-stitch > div > section > nav > button > b {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #f1edea;
+  color: #806d65;
+  font-size: 11px;
+}
+
+.forum-page-stitch .forum-school-info {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.forum-page-stitch .forum-school-info strong {
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.forum-page-stitch .forum-semester-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #f1edea;
+  color: #806d65;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.forum-page-stitch .forum-semester-status.is-active {
+  background: #ffe0d8;
+  color: #b52f0a;
+}
+
+.forum-page-stitch .forum-semester-status i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.forum-page-stitch .forum-stats-heading {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.forum-page-stitch .forum-student-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  color: #594138;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.forum-page-stitch .forum-student-chip b {
+  display: inline-flex;
+  width: 24px;
+  height: 24px;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 24px;
+  border-radius: 50%;
+  background: #f5661f;
+  color: #fff;
+  font-size: 10px;
+}
+
+.forum-page-stitch .forum-student-chip small {
+  max-width: 170px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Color accents for the right-hand community cards. */
+.forum-page-stitch > div > aside > .card:nth-child(3) {
+  background: linear-gradient(145deg, #fffaf7 0%, #fff 100%) !important;
+  border: 1px solid #f2d2c5;
+}
+
+.forum-page-stitch > div > aside > .card:nth-child(3) h3 {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #a53c00;
+}
+
+.forum-page-stitch > div > aside > .card:nth-child(3) h3 svg {
+  color: #f5661f;
+  fill: #ffd1bf;
+}
+
+.forum-page-stitch > div > aside > .card:nth-child(3) .trend {
+  border-top-color: #f2d2c5;
+}
+
+.forum-page-stitch > div > aside > .card:nth-child(3) .trend > b {
+  display: inline-flex;
+  width: 28px;
+  height: 28px;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 28px;
+  border-radius: 9px;
+  background: #ffe0d8;
+  color: #b52f0a;
+}
+
+.forum-page-stitch > div > aside > .card:nth-child(3) .trend:nth-of-type(1) > b {
+  background: #ffe0d8;
+  color: #b52f0a;
+}
+
+.forum-page-stitch > div > aside > .card:nth-child(3) .trend:nth-of-type(2) > b {
+  background: #e5efff;
+  color: #2563a8;
+}
+
+.forum-page-stitch > div > aside > .card:nth-child(3) .trend:nth-of-type(3) > b {
+  background: #e4f5e9;
+  color: #237447;
+}
+
+.forum-page-stitch > div > aside > .card:nth-child(4) {
+  background: #fff8f3 !important;
+  border: 1px solid #f2d2c5;
+}
+
+.forum-page-stitch > div > aside > .card:nth-child(4) h3 {
+  color: #a53c00;
+}
+
+.forum-page-stitch > div > aside > .card:nth-child(4) li::marker {
+  color: #f5661f;
+}
+
+/* Explicit card hooks keep these styles stable when sidebar cards change. */
+.forum-page-stitch .forum-featured-card h3,
+.forum-page-stitch .forum-rules-card h3 {
+  display: flex !important;
+  align-items: center !important;
+  gap: 7px !important;
+}
+
+.forum-page-stitch .forum-featured-card h3 svg {
+  color: #f5661f !important;
+  fill: #ffd1bf !important;
+}
+
+.forum-page-stitch .forum-featured-card .trend:nth-of-type(1) > b {
+  background: #ffe0d8 !important;
+  color: #b52f0a !important;
+}
+
+.forum-page-stitch .forum-featured-card .trend:nth-of-type(2) > b {
+  background: #e5efff !important;
+  color: #2563a8 !important;
+}
+
+.forum-page-stitch .forum-featured-card .trend:nth-of-type(3) > b {
+  background: #e4f5e9 !important;
+  color: #237447 !important;
+}
+
+.forum-page-stitch .forum-featured-card .trend > span {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.forum-page-stitch .forum-featured-card .trend > span > strong {
+  display: -webkit-box;
+  overflow: hidden;
+  color: #1c1b1a;
+  font-size: 14px;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.forum-page-stitch .forum-featured-card .trend > span > small {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #806d65;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.forum-page-stitch .forum-featured-card .trend > span > small i {
+  color: #d28a70;
+  font-style: normal;
+}
+
+.forum-page-stitch .forum-featured-card .forum-trend-rank.rank-1 {
+  background: #ffe0d8 !important;
+  color: #b52f0a !important;
+}
+
+.forum-page-stitch .forum-featured-card .forum-trend-rank.rank-2 {
+  background: #e5efff !important;
+  color: #2563a8 !important;
+}
+
+.forum-page-stitch .forum-featured-card .forum-trend-rank.rank-3 {
+  background: #e4f5e9 !important;
+  color: #237447 !important;
+}
+
+.forum-page-stitch .forum-rules-card {
+  background: #fff8f3 !important;
+  border: 1px solid #f2d2c5;
+}
+
+.forum-page-stitch .forum-rules-card h3 {
+  color: #a53c00;
+}
+
+.forum-page-stitch .forum-rules-card h3 svg {
+  color: #f5661f;
+}
+
+.forum-page-stitch .forum-rules-card li::marker {
+  color: #f5661f;
+}
+
+.forum-page-stitch .forum-featured-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.forum-page-stitch .forum-featured-heading h3 {
+  margin: 0;
+}
+
+.forum-page-stitch .forum-featured-heading h3 svg {
+  color: #f5661f !important;
+  fill: none !important;
+}
+
+.forum-page-stitch .forum-featured-heading > small {
+  color: #a53c00;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.forum-page-stitch .forum-featured-item {
+  align-items: flex-start !important;
+  gap: 10px !important;
+  padding: 14px 0 !important;
+}
+
+.forum-page-stitch .forum-featured-copy {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.forum-page-stitch .forum-featured-copy .forum-trend-tag {
+  color: #b52f0a;
+  font-size: 13px;
+  line-height: 1.2;
+}
+
+.forum-page-stitch .forum-featured-item > .forum-trend-rank {
+  display: inline-flex;
+  width: 30px;
+  height: 30px;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 30px;
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.forum-page-stitch .forum-featured-copy > strong {
+  display: -webkit-box;
+  max-width: 100%;
+  overflow: hidden;
+  color: #1c1b1a;
+  font-size: 16px;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.forum-page-stitch .forum-featured-copy > small {
+  display: inline-flex;
+  gap: 8px;
+  color: #594138;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.forum-page-stitch .forum-featured-copy > small i {
+  color: #a53c00;
+  font-style: normal;
+}
+
+/* =====================================================================
+   EDUX post detail refresh (matches the supplied detail-screen reference)
+   ===================================================================== */
+.forum-post-page {
+  position: relative !important;
+  max-width: 1440px !important;
+  margin: 0 auto !important;
+  padding: 28px 32px 72px !important;
+  background: #fdf9f6 !important;
+  color: #1c1b1a !important;
+  box-sizing: border-box !important;
+}
+
+.forum-post-page > .btn:first-child {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+  border: 0;
+  border-radius: 9px;
+  background: #f1edea;
+  color: #594138;
+  font-weight: 700;
+}
+
+.forum-post-page > .forum-detail-context {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  min-height: 34px;
+  padding: 7px 10px !important;
+  border: 1px solid #ead8d0 !important;
+  border-radius: 9px !important;
+  background: #fff !important;
+  color: #594138 !important;
+}
+
+.forum-post-page > .forum-detail-context > strong {
+  overflow: hidden;
+  color: #594138 !important;
+  font-size: 12px !important;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.forum-post-page > .forum-detail-context > .forum-detail-type {
+  flex-shrink: 0;
+}
+
+.forum-post-page > .forum-detail-context > .forum-detail-tag {
+  flex-shrink: 0;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #ffe0d8;
+  color: #a52a0a;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.forum-post-page > .forum-detail-context > span:last-child {
+  margin-left: auto;
+  flex-shrink: 0;
+  color: #806d65;
+  font-size: 11px;
+}
+
+.forum-post-page > article {
+  width: calc(100% - 324px) !important;
+  padding: 24px !important;
+  border: 1px solid #e8d8d0 !important;
+  border-radius: 16px !important;
+  background: #fff !important;
+  box-shadow: 0 3px 14px rgba(31, 27, 23, .07) !important;
+}
+
+.forum-post-page > article > aside {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  min-height: 48px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+.forum-post-page > article > aside > div {
+  min-width: 0;
+}
+
+.forum-post-page > article > aside strong {
+  color: #a53c00 !important;
+  font-size: 16px !important;
+}
+
+.forum-post-page > article > aside > div:last-child {
+  margin-left: auto;
+}
+
+.forum-post-page > article h1 {
+  margin-top: 16px !important;
+  color: #101a36 !important;
+  font-size: 22px !important;
+  line-height: 1.25 !important;
+}
+
+.forum-post-page > article > aside .authorAvatar {
+  width: 38px !important;
+  height: 38px !important;
+}
+
+.forum-post-page > article > aside > div:last-child {
+  margin-left: auto;
+}
+
+.forum-post-page > article p {
+  color: #594138 !important;
+  font-size: 13px !important;
+  line-height: 1.65 !important;
+}
+
+.forum-post-page > article > div > div[style*="postMetaRow"] {
+  color: #806d65 !important;
+  border-bottom-color: #e8bfb2 !important;
+}
+
+.forum-post-page [style*="flashcardLink"] {
+  border-color: #f3b3a0 !important;
+  background: #fff0ea !important;
+  color: #a53c00 !important;
+}
+
+.forum-post-page [style*="attachmentsStyle"] {
+  border-color: #efc4b6 !important;
+  background: #fff8f4 !important;
+}
+
+.forum-post-page [style*="attachmentLink"] {
+  border: 1px solid #efd3c8;
+  background: #fff !important;
+  color: #a53c00 !important;
+}
+
+/* Match attachment presentation used by the feed cards. */
+.forum-post-page > article img {
+  width: 100% !important;
+  height: 260px !important;
+  object-fit: cover !important;
+  border-radius: 10px !important;
+}
+
+.forum-post-page > article button:has(> img) {
+  width: 100%;
+  min-width: 0;
+  padding: 6px !important;
+  border: 1px solid #ead8d0 !important;
+  border-radius: 10px !important;
+  background: #fff !important;
+  overflow: hidden;
+}
+
+/* The image gallery is a separate visual section; only document rows keep
+   the attachment surface/card treatment. */
+.forum-post-page > article div:has(> strong:first-child):has(button:has(> img)) {
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+
+.forum-post-page > article div:has(> strong:first-child):has(button:has(> img)) > strong {
+  display: block;
+  margin: 18px 0 10px;
+  color: #1c1b1a;
+  font-size: 18px;
+}
+
+.forum-post-page > article div:has(> strong:first-child):has(button:has(> img)) > div {
+  padding: 0 !important;
+  background: transparent !important;
+}
+
+/* Override the inline thumbnail grid so images use the full post width. */
+.forum-post-page > article div:has(> strong):has(> div > button > img) {
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+
+.forum-post-page > article div:has(> strong):has(button > img) {
+  background: transparent !important;
+  border: 0 !important;
+}
+
+.forum-post-page > article div:has(> button > img) {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+  width: 100% !important;
+  padding: 0 !important;
+  background: #f7f3f0 !important;
+  border-radius: 9px;
+}
+
+.forum-post-page > article div:has(> button > img) > button {
+  width: 100% !important;
+  height: 420px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+
+.forum-post-page > article div:has(> button > img) > button > img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+}
+
+.forum-post-page > article div:has(> button:only-child) {
+  grid-template-columns: minmax(0, 1fr) !important;
+  justify-items: center;
+}
+
+.forum-post-page > article div:has(> button:only-child) > button {
+  max-width: 100% !important;
+}
+
+.forum-post-page > article a[download] {
+  display: flex !important;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 48px;
+  padding: 9px 12px !important;
+  border: 1px solid #ead8d0;
+  border-radius: 9px;
+  background: #fff !important;
+  color: #a53c00 !important;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.forum-post-page > article a[download]::before {
+  content: '▧';
+  display: inline-flex;
+  width: 28px;
+  height: 28px;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 28px;
+  border-radius: 7px;
+  background: #ffe0d8;
+  color: #b52f0a;
+}
+
+@media (min-width: 760px) {
+  .forum-post-page > article img {
+    height: 320px !important;
+  }
+}
+
+.forum-post-page > section {
+  width: calc(100% - 324px) !important;
+  margin-top: 18px !important;
+  padding: 24px !important;
+  border: 1px solid #e8d8d0 !important;
+  border-radius: 16px !important;
+  background: #fff !important;
+  box-shadow: 0 3px 14px rgba(31, 27, 23, .06) !important;
+}
+
+.forum-post-page > aside {
+  position: absolute !important;
+  top: 78px !important;
+  right: 32px !important;
+  width: 300px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 14px !important;
+}
+
+.forum-post-page > .forum-detail-context {
+  width: calc(100% - 324px) !important;
+}
+
+.forum-post-page > article > div {
+  min-width: 0;
+}
+
+.forum-post-page > article > div > h1 {
+  letter-spacing: -.015em;
+}
+
+.forum-post-page > article > div > div[style*="postActions"] {
+  justify-content: flex-start !important;
+  gap: 10px !important;
+}
+
+.forum-post-page > article > div > div[style*="postActions"] button {
+  border-radius: 8px;
+  padding: 8px 11px;
+  background: #fff0ea;
+}
+
+.forum-post-page > aside > div {
+  padding: 16px !important;
+}
+
+.forum-post-page > aside h3 {
+  color: #a53c00 !important;
+  letter-spacing: .02em;
+}
+
+.forum-post-page > aside > div {
+  border: 1px solid #e8d8d0 !important;
+  border-radius: 14px !important;
+  background: #fff !important;
+  box-shadow: 0 3px 12px rgba(31, 27, 23, .06) !important;
+}
+
+.forum-post-page > aside h3 {
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+  min-height: 24px;
+  margin-bottom: 12px !important;
+  color: #a53c00 !important;
+  font-size: 14px !important;
+  line-height: 1.25 !important;
+}
+
+.forum-post-page > aside h3 > span {
+  max-width: 62%;
+  margin-left: auto;
+  overflow: hidden;
+  padding: 4px 7px !important;
+  border-radius: 999px !important;
+  background: #ffe0d8 !important;
+  color: #a52a0a !important;
+  font-size: 9px !important;
+  line-height: 1.2 !important;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.forum-post-page > aside > div:first-child strong {
+  color: #1c1b1a !important;
+  font-size: 16px !important;
+  line-height: 1.4 !important;
+}
+
+.forum-post-page > aside p {
+  color: #594138 !important;
+  font-size: 12px !important;
+  line-height: 1.55 !important;
+}
+
+.forum-post-page > aside > div:first-child {
+  border-top: 3px solid #f5661f !important;
+}
+
+.forum-post-page > aside > div:nth-child(2) {
+  background: #fff8f3 !important;
+}
+
+.forum-post-page > aside > div:nth-child(3) {
+  border-color: #f2d2c5 !important;
+}
+
+.forum-post-page .forum-attachment-list,
+.forum-post-page [style*="attachmentsStyle"] {
+  margin-top: 18px;
+}
+
+.forum-post-page textarea:focus,
+.forum-post-page input:focus {
+  outline: 2px solid rgba(245, 102, 31, .25);
+  outline-offset: 1px;
+}
+
+@media (max-width: 980px) {
+  .forum-post-page > article,
+  .forum-post-page > section,
+  .forum-post-page > .forum-detail-context {
+    width: 100% !important;
+  }
+
+  .forum-post-page > aside {
+    position: static !important;
+    width: 100% !important;
+    margin-top: 18px;
+  }
+}
+
+.forum-page-stitch article .actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #806d65;
+  font: inherit;
+  cursor: pointer;
+}
+
+.forum-page-stitch article .actions button:hover,
+.forum-page-stitch article .actions button[aria-label="Thích bài viết"] {
+  color: #a53c00;
+}
+
+.forum-page-stitch article .actions button:disabled {
+  cursor: wait;
+  opacity: .6;
+}
+
+/* Keep the forum clear of the fixed navigation when it is expanded. */
+.dashboard-layout:not(.dashboard-layout--collapsed) .dashboard-layout__main:has(.forum-page-stitch) {
+  padding-left: var(--dashboard-sidebar-width, 256px) !important;
+}
+
+.dashboard-layout--collapsed .dashboard-layout__main:has(.forum-page-stitch) {
+  padding-left: 64px !important;
+}
+
+.forum-page-stitch > div > section > nav > button[style*="background: rgb(165, 60, 0)"] > b {
+  background: rgba(255, 255, 255, .22);
+  color: #fff;
+}
+
+/* Compact pagination bar matching the forum reference layout. */
+.forum-page-stitch .forum-pagination { display:flex !important; justify-content:space-between; align-items:center; gap:12px; margin-top:10px; padding:8px 10px; border:1px solid #eee4df; border-radius:10px; background:#fff; box-shadow:0 1px 3px rgba(50,30,20,.04); }
+.forum-page-stitch .forum-pagination-summary { color:#806d65; font-size:11px; white-space:nowrap; }
+.forum-page-stitch .forum-pagination-controls { display:flex; align-items:center; gap:5px; flex-wrap:wrap; }
+.forum-page-stitch .forum-page-nav,
+.forum-page-stitch .forum-page-number,
+.forum-page-stitch .forum-page-jump button { height:26px; min-width:28px; padding:0 8px; border:0; border-radius:7px; background:#f1edea; color:#594138; font-size:11px; font-weight:700; cursor:pointer; }
+.forum-page-stitch .forum-page-number.is-active { background:#f5661f; color:#fff; }
+.forum-page-stitch .forum-page-nav:disabled { opacity:.45; cursor:not-allowed; }
+.forum-page-stitch .forum-page-ellipsis { padding:0 3px; color:#806d65; font-weight:800; }
+.forum-page-stitch .forum-page-jump { display:inline-flex; align-items:center; gap:5px; margin-left:8px; color:#806d65; font-size:10px; white-space:nowrap; }
+.forum-page-stitch .forum-page-jump input { width:34px; height:26px; box-sizing:border-box; border:1px solid #e1bfb3; border-radius:7px; padding:0 5px; text-align:center; }
+.forum-page-stitch .forum-page-jump button { background:#f1edea; }
+
+.forum-create-uploads {
+  display: grid;
+  gap: 10px;
+}
+
+.forum-upload-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 5px 6px;
+  border-radius: 6px;
+  background: #fff;
+  color: #5a4139;
+  font-size: 11px;
+}
+
+.forum-upload-item > span,
+.forum-upload-item > svg { flex: 0 0 auto; color: #aa3000; }
+.forum-upload-item > button { margin-left: auto; border: 0; background: transparent; color: #aa3000; cursor: pointer; }
+.forum-image-upload-box { background: #fff0e9 !important; }
+.forum-create-uploads > label > small { display: block; margin-top: 4px; }
+@media (max-width:760px) {
+  .forum-page-stitch .forum-pagination { align-items:flex-start; flex-direction:column; }
+  .forum-page-stitch .forum-pagination-controls { width:100%; }
+  .forum-page-stitch .forum-page-jump { margin-left:0; }
 }
