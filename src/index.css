@@ -2202,6 +2202,29 @@ main[style*="backdrop-filter"] p {
   border-color: #f5661f;
   box-shadow: 0 0 0 3px rgba(245, 102, 31, .12);
 }
+.forum-page-stitch .forum-filter-field {
+  display: flex !important;
+  flex-direction: column;
+  gap: 5px;
+}
+.forum-page-stitch .forum-filter-field > span {
+  display: block !important;
+  color: #806d65;
+  font-size: 10px;
+  font-weight: 700;
+}
+.forum-page-stitch .forum-filter-field select {
+  width: 100%;
+  min-width: 0;
+  height: 38px !important;
+  padding: 0 10px !important;
+  border: 1px solid #e8d8d0 !important;
+  border-radius: 9px !important;
+  background: #fff !important;
+  color: #594138;
+  font-size: 12px;
+  font-weight: 600;
+}
 .forum-page-stitch article > div:first-of-type > span {
   padding: 3px 7px;
   border-radius: 5px;
