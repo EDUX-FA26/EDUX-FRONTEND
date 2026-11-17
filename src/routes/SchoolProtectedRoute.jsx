@@ -26,7 +26,9 @@ export default function SchoolProtectedRoute({
     return <Navigate to="/login" replace />;
   }
 
-
+  if (user?.must_change_password) {
+    return <Navigate to="/first-login/change-password" replace />;
+  }
 
   if (
     status === "loading" ||

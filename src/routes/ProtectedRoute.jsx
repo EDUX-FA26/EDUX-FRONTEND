@@ -14,6 +14,10 @@ export default function ProtectedRoute({ children, allowedRoles }) {
     return <Navigate to="/login" replace state={null} />;
   }
 
+  if (user?.must_change_password) {
+    return <Navigate to="/first-login/change-password" replace state={null} />;
+  }
+
   if (allowedRoles && user) {
     const userRole = String(user.role || '').toLowerCase();
     const hasRole = allowedRoles.some((r) => String(r || '').toLowerCase() === userRole);

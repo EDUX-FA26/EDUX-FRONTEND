@@ -62,3 +62,16 @@ export const changePassword = async (old_password, new_password) => {
   const { data } = await api.patch('/auth/change-password', { old_password, new_password });
   return data;
 };
+
+/**
+ * POST /api/auth/first-login-change-password
+ * Body: { current_password, new_password, confirm_password }
+ */
+export const firstLoginChangePassword = async (current_password, new_password, confirm_password) => {
+  const { data } = await api.post('/auth/first-login-change-password', {
+    current_password,
+    new_password,
+    confirm_password,
+  });
+  return data;
+};

@@ -58,6 +58,7 @@ const NAV_BY_ROLE = {
     { id: 'notifications', icon: 'campaign', path: '/admin/notifications', key: 'notifications', label: 'Tạo thông báo' },
     { id: 'semesters', icon: 'calendar_month', path: '/admin/semesters', key: 'semesters', label: 'Học kỳ' },
     { id: 'subjects', icon: 'menu_book', path: '/admin/subjects', key: 'subjects', label: 'Môn học' },
+    { id: 'school-profile', icon: 'account_balance', path: '/admin/profile', key: 'schoolProfile', label: 'Hồ sơ trường' },
     { id: 'logs', icon: 'history', path: '/admin/logs', key: 'logs', label: 'System Logs' },
   ],
 };
@@ -731,6 +732,61 @@ export default function DashboardLayout() {
                           <PlatformAdminMenuItem
                             onNavigate={() => setShowUserMenu(false)}
                           />
+
+                          {/* SCHOOL PROFILE (FOR SCHOOL ADMIN) */}
+                          {effectiveRole === ROLES.ADMIN && (
+                            <button
+                              type="button"
+                              role="menuitem"
+                              onClick={() => {
+                                setShowUserMenu(false);
+                                navigate("/admin/profile");
+                              }}
+                              style={{
+                                width: "100%",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "10px",
+                                padding: "11px 12px",
+                                background: "none",
+                                border: "none",
+                                borderRadius: "9px",
+                                textAlign: "left",
+                                cursor: "pointer",
+                                color: "var(--color-ink)",
+                                fontFamily: "var(--font-sans)",
+                              }}
+                              onMouseEnter={(event) => {
+                                event.currentTarget.style.background =
+                                  "var(--color-primary-bg)";
+                              }}
+                              onMouseLeave={(event) => {
+                                event.currentTarget.style.background =
+                                  "none";
+                              }}
+                            >
+                              <span
+                                className="material-symbols-outlined"
+                                style={{
+                                  fontSize: "20px",
+                                  color: "var(--color-primary)",
+                                }}
+                              >
+                                account_balance
+                              </span>
+
+                              <span
+                                style={{
+                                  fontSize: "0.8125rem",
+                                  fontWeight: 600,
+                                }}
+                              >
+                                {lang === "vi"
+                                  ? "Hồ sơ trường học"
+                                  : "School Profile"}
+                              </span>
+                            </button>
+                          )}
 
                           {/* SWITCH SCHOOL */}
                           <button
