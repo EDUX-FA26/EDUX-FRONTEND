@@ -52,7 +52,8 @@ const paginationItems = (currentPage, totalPages) => {
 
 export default function SearchPage() {
   const { user } = useAuth();
-  const { activeSchool } = useSchool();
+  const { activeSchool, currentSchool, schoolId } = useSchool();
+  const effectiveSchoolId = schoolId || currentSchool?.schoolId || activeSchool?.id;
   const { t } = useLanguage();
   const S = t?.search || {};
   const [searchParams] = useSearchParams();
@@ -68,12 +69,12 @@ export default function SearchPage() {
   const [error, setError] = useState('');
   const limit = 12;
 
-  const currentRole = activeSchool?.role || null;
-  const currentSchoolIdRef = useRef(activeSchool?.id);
+  const currentRole = activeSchool?.role || currentSchool?.role || null;
+  const currentSchoolIdRef = useRef(effectiveSchoolId);
   const requestGenRef = useRef(0);
   const abortControllerRef = useRef(null);
 
-  const runSearch = useCallback(async (targetSchoolId = activeSchool?.id) => {
+  const runSearch = useCallback(async (targetSchoolId = effectiveSchoolId) => {
     if (!targetSchoolId) {
       setResults([]);
       setTotal(0);
@@ -119,24 +120,24 @@ export default function SearchPage() {
         setLoading(false);
       }
     }
-  }, [query, type, page, limit, activeSchool?.id, S.searchError]);
+  }, [query, type, page, limit, effectiveSchoolId, S.searchError]);
 
   useEffect(() => {
     setPage(1);
     setResults([]);
     setTotal(0);
-    runSearch(activeSchool?.id);
+    runSearch(effectiveSchoolId);
 
     return () => {
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
     };
-  }, [activeSchool?.id]);
+  }, [effectiveSchoolId]);
 
   useEffect(() => {
-    runSearch(activeSchool?.id);
-  }, [query, type, page, limit]);
+    runSearch(effectiveSchoolId);
+  }, [query, type, page, limit, effectiveSchoolId]);
 
   useEffect(() => {
     setPage(1);

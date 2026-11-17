@@ -181,7 +181,9 @@ const styles = `
 `;
 
 export default function AdminReportsPage() {
-  const { activeSchool } = useSchool();
+  const { activeSchool, currentSchool, schoolId } = useSchool();
+  const effectiveSchoolId = schoolId || currentSchool?.schoolId || activeSchool?.id;
+
   const [activeTab, setActiveTab] = useState("overview");
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState("");
@@ -194,11 +196,11 @@ export default function AdminReportsPage() {
   const [auditType, setAuditType] = useState("all");
   const [auditRange, setAuditRange] = useState("all");
 
-  const currentSchoolIdRef = useRef(activeSchool?.id);
+  const currentSchoolIdRef = useRef(effectiveSchoolId);
   const requestGenRef = useRef(0);
   const abortControllerRef = useRef(null);
 
-  const loadReports = useCallback(async (targetSchoolId = activeSchool?.id) => {
+  const loadReports = useCallback(async (targetSchoolId = effectiveSchoolId) => {
     if (!targetSchoolId) {
       setSystemStats(null);
       setAiStats(null);
@@ -258,20 +260,20 @@ export default function AdminReportsPage() {
         setLoading(false);
       }
     }
-  }, [activeSchool?.id]);
+  }, [effectiveSchoolId]);
 
   useEffect(() => {
     setSystemStats(null);
     setAiStats(null);
     setAuditLogs([]);
-    loadReports(activeSchool?.id);
+    loadReports(effectiveSchoolId);
 
     return () => {
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
     };
-  }, [activeSchool?.id, loadReports]);
+  }, [effectiveSchoolId, loadReports]);
 
   const toolItems = useMemo(() => (Array.isArray(aiStats?.tools) ? aiStats.tools : [])
     .map((item) => ({ ...item, count: asNumber(item.count) }))
