@@ -2051,6 +2051,8 @@ main[style*="backdrop-filter"] p {
 }
 .forum-page-stitch > div {
   max-width: 1224px !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
   grid-template-columns: minmax(0, 840px) minmax(280px, 320px) !important;
   justify-content: center;
 }
@@ -2105,13 +2107,13 @@ main[style*="backdrop-filter"] p {
 }
 .forum-page-stitch .selectWrap select {
   min-width: 112px;
-  height: 34px;
+  height: 40px;
   padding: 0 10px;
   border: 1px solid #e8d8d0;
   border-radius: 9px;
   background: #fff;
   color: #594138;
-  font-size: 12px;
+  font-size: 13px;
 }
 .forum-page-stitch article header strong {
   margin-right: 6px;
@@ -2124,6 +2126,8 @@ main[style*="backdrop-filter"] p {
 .forum-page-stitch article img:only-child {
   grid-column: 1 / -1;
   height: 300px;
+  object-fit: contain;
+  background: #f7f3f0;
 }
 .forum-page-stitch article > div:first-of-type > span {
   padding: 3px 7px;
