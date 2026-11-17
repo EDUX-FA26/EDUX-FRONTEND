@@ -2327,3 +2327,41 @@ main[style*="backdrop-filter"] p {
   .forum-page-stitch > div { grid-template-columns: minmax(0, 1fr) 300px !important; }
   .forum-page-stitch > div > section { width: auto !important; max-width: none !important; }
 }
+
+/* The forum owns the full content canvas.  When the compact navigation is
+   hidden/collapsed, the shell must not preserve the old 256px sidebar gutter. */
+.dashboard-layout__main:has(.forum-page-stitch) {
+  padding-left: 0 !important;
+}
+
+.forum-page-stitch {
+  width: 100% !important;
+  max-width: none !important;
+  box-sizing: border-box !important;
+}
+
+/* Let the utility rail use the available right-hand canvas instead of
+   leaving an unused strip beside the cards. */
+.forum-page-stitch > div {
+  grid-template-columns: minmax(0, 1fr) minmax(380px, 420px) !important;
+}
+
+.forum-page-stitch > div > aside {
+  width: 100% !important;
+  min-width: 0;
+}
+
+.forum-page-stitch > div > aside > .card {
+  width: 100% !important;
+  box-sizing: border-box;
+}
+
+@media (max-width: 1280px) {
+  .forum-page-stitch > div {
+    grid-template-columns: minmax(0, 1fr) minmax(340px, 380px) !important;
+  }
+}
+
+.forum-page-stitch > div > aside > .card {
+  min-width: 0 !important;
+}
