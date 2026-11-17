@@ -113,6 +113,36 @@ function StreakModal({ data, onClose }) {
   );
 }
 
+const renderAnswerDisplay = (ans, options = []) => {
+  if (ans === null || ans === undefined || ans === '') {
+    return '(Bỏ trống - Chưa trả lời)';
+  }
+  const ansStr = typeof ans === 'object' ? (ans.text || ans.key || ans.value || '') : String(ans);
+  if (!ansStr.trim()) {
+    return '(Bỏ trống - Chưa trả lời)';
+  }
+
+  // If ansStr matches an option key (e.g. 'A', 'B', 'C', 'D'), find the corresponding text
+  if (Array.isArray(options) && options.length > 0) {
+    const matched = options.find((opt) => {
+      if (typeof opt === 'object' && opt !== null) {
+        return (opt.key && opt.key.toUpperCase() === ansStr.trim().toUpperCase());
+      }
+      return false;
+    });
+    if (matched) {
+      return (
+        <span>
+          <strong>{matched.key}. </strong>
+          <MathText content={matched.text || matched.content || ''} inline />
+        </span>
+      );
+    }
+  }
+
+  return <MathText content={ansStr} inline />;
+};
+
 export default function FlashcardTestResultPage() {
   const { testId } = useParams();
   const navigate = useNavigate();
@@ -381,7 +411,7 @@ export default function FlashcardTestResultPage() {
                   color: q.student_answer ? (q.is_correct ? '#15803d' : '#b91c1c') : 'var(--color-ink-soft)',
                   margin: 0, fontStyle: q.student_answer ? 'normal' : 'italic',
                 }}>
-                  {q.student_answer ? <MathText content={q.student_answer} inline /> : '(Bỏ trống - Chưa trả lời)'}
+                  {renderAnswerDisplay(q.student_answer, q.options)}
                 </div>
               </div>
 
@@ -395,7 +425,7 @@ export default function FlashcardTestResultPage() {
                   Đáp án chuẩn:
                 </span>
                 <div style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--color-ink)', margin: 0 }}>
-                  <MathText content={q.correct_answer} inline />
+                  {renderAnswerDisplay(q.correct_answer, q.options)}
                 </div>
               </div>
             </div>
