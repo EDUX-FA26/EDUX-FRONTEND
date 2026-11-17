@@ -121,6 +121,23 @@ const LearningService = {
     const response = await api.get(`/learning/study-plan/days/${planDayId}/result`, { schoolScoped: true });
     return response.data;
   },
+
+  /** Phase 5C: Lấy giải thích và gợi ý AI cho kế hoạch 7 ngày */
+  async getStudyPlanAiInsights(planId) {
+    const response = await api.get('/learning/study-plan/ai-insights', {
+      params: { planId },
+      schoolScoped: true,
+    });
+    return response.data;
+  },
+
+  /** Phase 5C: Lấy nhận xét AI sau khi sinh viên đã nộp bài 1 ngày học */
+  async getStudyPlanDayAiFeedback(planDayId) {
+    const response = await api.get(`/learning/study-plan/days/${planDayId}/ai-feedback`, {
+      schoolScoped: true,
+    });
+    return response.data;
+  },
 };
 
 export default LearningService;
