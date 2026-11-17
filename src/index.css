@@ -2225,6 +2225,28 @@ main[style*="backdrop-filter"] p {
   font-size: 12px;
   font-weight: 600;
 }
+.forum-page-stitch .filters > div:last-child {
+  display: grid !important;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  align-items: end;
+  gap: 8px;
+  margin-top: 12px;
+}
+.forum-page-stitch .forum-filter-field {
+  min-width: 0;
+  width: 100%;
+}
+.forum-page-stitch .forum-filter-field > span {
+  white-space: nowrap;
+  line-height: 14px;
+}
+.forum-page-stitch .forum-filter-field select {
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 38px;
+}
 .forum-page-stitch article > div:first-of-type > span {
   padding: 3px 7px;
   border-radius: 5px;
