@@ -14,7 +14,7 @@ export default function SchoolProtectedRoute({
   allowedRoles = [],
   children,
 }) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
 
   const {
     schoolRole,
@@ -23,6 +23,10 @@ export default function SchoolProtectedRoute({
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
+  }
+
+  if (user?.must_change_password) {
+    return <Navigate to="/first-login/change-password" replace />;
   }
 
   if (

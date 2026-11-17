@@ -65,6 +65,7 @@ const en = {
     search: 'Search',
     semesters: 'Semesters',
     subjects: 'Subjects',
+    schoolProfile: 'School Profile',
     classes: 'Classes',
   },
 
