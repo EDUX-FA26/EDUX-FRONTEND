@@ -26,15 +26,15 @@ export default function StudyQuizModal({ planDayId, dayInfo, onClose, onSubmitte
       setWarning(null);
 
       const res = await LearningService.getStudyPlanDay(planDayId);
-      const data = res.data;
+      const data = res?.data || res;
       setDayData(data);
 
       // If already submitted, fetch results directly to prevent re-submission
-      if (data.submitted) {
+      if (data?.submitted) {
         const resultRes = await LearningService.getStudyPlanDayResult(planDayId);
-        setSubmissionResult(resultRes.data);
-      } else if (data.contentStatus === 'unavailable') {
-        setWarning('Chủ đề này hiện chưa có đủ học liệu flashcard trong hệ thống để AI tạo câu hỏi.');
+        setSubmissionResult(resultRes?.data || resultRes);
+      } else if (data?.contentStatus === 'unavailable') {
+        setWarning('Chủ đề này hiện chưa có đủ học liệu flashcard trong hệ thống để tạo câu hỏi.');
       }
     } catch (err) {
       setError(
@@ -60,14 +60,15 @@ export default function StudyQuizModal({ planDayId, dayInfo, onClose, onSubmitte
       setWarning(null);
 
       const res = await LearningService.generateStudyPlanDay(planDayId);
-      const data = res.data;
+      const data = res?.data || res;
 
-      if (data.contentStatus === 'unavailable') {
-        setWarning('Chủ đề này hiện chưa có đủ học liệu flashcard trong hệ thống để AI tạo câu hỏi.');
+      if (data?.contentStatus === 'unavailable') {
+        setWarning('Chủ đề này hiện chưa có đủ học liệu flashcard trong hệ thống để tạo câu hỏi.');
+      } else if (Array.isArray(data?.questions) && data.questions.length > 0) {
+        setDayData(data);
+      } else {
+        await loadDay();
       }
-
-      // Reload day to get fresh questions
-      await loadDay();
     } catch (err) {
       setError(
         err.response?.data?.message ||
@@ -408,12 +409,24 @@ export default function StudyQuizModal({ planDayId, dayInfo, onClose, onSubmitte
               }}>
                 <BrainCircuit size={28} />
               </div>
-              <h3 style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--color-ink, #0f172a)', margin: '0 0 6px' }}>
+              <h3 style={{ fontSize: '1.125rem', fontWeight: 800, color: '#0f172a', margin: '0 0 6px' }}>
                 Buổi học chưa có bộ câu hỏi
               </h3>
-              <p style={{ fontSize: '0.875rem', color: 'var(--color-ink-muted, #64748b)', maxWidth: '440px', margin: '0 auto 20px', lineHeight: 1.6 }}>
-                Hệ thống AI sẽ tạo bộ 5 câu hỏi ôn tập dựa trên các lỗi bạn thường gặp trong chủ đề <strong>{dayData?.topicName}</strong>.
+              <p style={{ fontSize: '0.875rem', color: '#64748b', maxWidth: '440px', margin: '0 auto 20px', lineHeight: 1.6 }}>
+                Hệ thống AI sẽ tạo bộ 5 câu hỏi ôn tập cho chủ đề <strong>{dayData?.topicName}</strong>.
               </p>
+
+              {error && (
+                <div style={{
+                  marginBottom: '20px', padding: '12px 16px', borderRadius: '12px',
+                  backgroundColor: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.25)',
+                  color: '#dc2626', fontSize: '0.875rem', textAlign: 'left',
+                  display: 'flex', alignItems: 'center', gap: '8px'
+                }}>
+                  <AlertTriangle size={18} style={{ flexShrink: 0 }} />
+                  <div>{error}</div>
+                </div>
+              )}
 
               {warning && (
                 <div style={{
@@ -435,11 +448,15 @@ export default function StudyQuizModal({ planDayId, dayInfo, onClose, onSubmitte
                   padding: '12px 28px', borderRadius: '14px',
                   fontSize: '0.9375rem', fontWeight: 700,
                   display: 'inline-flex', alignItems: 'center', gap: '8px',
-                  cursor: 'pointer', boxShadow: '0 8px 20px rgba(242, 112, 36, 0.25)'
+                  cursor: generating ? 'not-allowed' : 'pointer',
+                  boxShadow: '0 8px 20px rgba(242, 112, 36, 0.25)',
+                  opacity: generating ? 0.7 : 1,
                 }}
               >
                 <Sparkles size={18} />
-                Tạo 5 câu luyện tập AI ngay
+                {generating
+                  ? 'Đang chuẩn bị câu hỏi...'
+                  : 'Tạo 5 câu luyện tập AI ngay'}
               </button>
             </div>
           ) : (
