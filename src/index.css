@@ -2236,12 +2236,42 @@ main[style*="backdrop-filter"] p {
   width: 100% !important;
   max-width: none !important;
   grid-template-columns: minmax(0, 1fr) 360px !important;
+  justify-content: stretch !important;
   margin-left: 0 !important;
   margin-right: 0 !important;
 }
 .forum-page-stitch > div > section {
   width: auto !important;
   max-width: none !important;
+}
+.forum-page-stitch {
+  width: 100% !important;
+  padding-left: 28px !important;
+  padding-right: 28px !important;
+}
+.forum-page-stitch article {
+  padding: 28px !important;
+}
+.forum-page-stitch article h2,
+.forum-page-stitch .postTitle {
+  font-size: 23px !important;
+  line-height: 1.35 !important;
+  margin-top: 14px !important;
+}
+.forum-page-stitch article .postText {
+  font-size: 15px !important;
+  line-height: 1.75 !important;
+  margin-top: 10px !important;
+  -webkit-line-clamp: 5;
+}
+.forum-page-stitch article header strong {
+  font-size: 14px;
+}
+.forum-page-stitch article header small {
+  font-size: 12px;
+}
+.forum-page-stitch .gallery {
+  margin-top: 18px;
 }
 .forum-page-stitch .forum-filter-field {
   min-width: 0;
