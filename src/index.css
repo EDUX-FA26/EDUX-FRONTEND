@@ -2134,6 +2134,40 @@ main[style*="backdrop-filter"] p {
 .forum-page-stitch .gallery:has(img:only-child) {
   background: #f7f3f0;
 }
+/* Filter row matches the supplied Stitch reference: labels above compact values. */
+.forum-page-stitch .filterGrid {
+  display: grid !important;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  align-items: end;
+  gap: 8px;
+  justify-content: initial;
+}
+.forum-page-stitch .selectWrap {
+  display: flex !important;
+  flex-direction: column;
+  gap: 3px;
+  width: auto;
+}
+.forum-page-stitch .selectWrap > span {
+  display: block;
+  color: #806d65;
+  font-size: 10px;
+  line-height: 1.2;
+  font-weight: 700;
+}
+.forum-page-stitch .selectWrap select {
+  width: 100%;
+  min-width: 0;
+  height: 28px;
+  padding: 0 18px 0 2px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #594138;
+  font-size: 11px;
+  font-weight: 700;
+  outline: 0;
+}
 .forum-page-stitch article > div:first-of-type > span {
   padding: 3px 7px;
   border-radius: 5px;
