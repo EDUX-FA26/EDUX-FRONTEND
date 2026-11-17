@@ -98,6 +98,57 @@ export const isExternalOrSignedUrl = (url: string): boolean => {
   return !isApiInternal || hasSignature;
 };
 
+/**
+ * Chuẩn hóa URL trước khi fetch hoặc kiểm tra
+ * - Giữ nguyên URL ngoài (http/https/blob/data).
+ * - Bỏ qua các chuỗi chỉ là storage key nội bộ (class-materials/...).
+ * - Tự động bổ sung tiền tố /api cho các đường dẫn tương đối backend để Vite proxy đúng sang port Backend.
+ */
+export const normalizePreviewUrl = (rawUrl?: string, fileObj?: any): string => {
+  let url = (
+    rawUrl ||
+    fileObj?.preview_url ||
+    fileObj?.download_url ||
+    fileObj?.downloadUrl ||
+    fileObj?.url ||
+    fileObj?.fileUrl ||
+    fileObj?.file_url ||
+    ''
+  ).trim();
+
+  if (!url || url === '#' || url === 'undefined' || url === 'null') return '';
+
+  // 1. Nếu url chỉ là S3 storage key (ví dụ class-materials/... hoặc assignment-materials/...) -> không phải URL HTTP trực tiếp
+  if (
+    !/^(https?:\/\/|blob:|data:|\/api\/|api\/|\/uploads\/)/i.test(url) &&
+    (url.includes('class-materials/') || url.includes('assignment-materials/') || url.includes('submissions/'))
+  ) {
+    return '';
+  }
+
+  // 2. Nếu là URL đầy đủ (S3/R2 presigned URL, http/https, blob, data) -> giữ nguyên
+  if (/^(https?:\/\/|blob:|data:)/i.test(url)) {
+    return url;
+  }
+
+  // 3. Đảm bảo bắt đầu bằng dấu /
+  if (!url.startsWith('/')) {
+    url = `/${url}`;
+  }
+
+  // 4. Nếu là đường dẫn tương đối gọi về Backend nhưng thiếu tiền tố /api (và không phải /uploads) -> tự động gắn /api
+  const apiBase = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '');
+  if (!url.startsWith('/api/') && !url.startsWith('/uploads/')) {
+    if (url.startsWith('/api')) {
+      url = url.replace(/^\/api/, '/api/');
+    } else {
+      url = `${apiBase}${url}`;
+    }
+  }
+
+  return url;
+};
+
 // -------------------------------------------------------------
 // Magic Bytes Helper Functions (Kiểm tra chữ ký nhị phân)
 // -------------------------------------------------------------
@@ -191,27 +242,38 @@ export default function MaterialPreviewModal({
       setBlobUrl('');
 
       try {
-        let pUrl = material.preview_url || '';
-        let dUrl =
-          material.download_url ||
-          material.url ||
-          material.fileUrl ||
-          material.file_url ||
-          '';
+        let pUrl = normalizePreviewUrl(material.preview_url, material);
+        let dUrl = normalizePreviewUrl(
+          material.download_url || material.downloadUrl || material.url,
+          material
+        );
 
-        // Nếu chưa có presigned URLs trực tiếp trong material object, gọi API backend lấy về
-        if (!pUrl && !dUrl && material.id) {
+        // Kiểm tra xem đã có URL presigned thực sự (bắt đầu bằng http/https và có signature) chưa
+        const hasActualSignedUrl =
+          (Boolean(pUrl) && /^(https?:\/\/|blob:)/i.test(pUrl) && isExternalOrSignedUrl(pUrl)) ||
+          (Boolean(dUrl) && /^(https?:\/\/|blob:)/i.test(dUrl) && isExternalOrSignedUrl(dUrl));
+
+        // Nếu chưa có presigned URL đầy đủ và material có ID, gọi API backend lấy URL presigned chính thức
+        if (!hasActualSignedUrl && material.id) {
           const asgId = material.assignmentId || material.assignment_id;
-          if (asgId) {
-            const res = await AssignmentService.getMaterialDownloadUrl(asgId, material.id);
-            const data = res?.data || res;
-            pUrl = data.preview_url || data.url || data.download_url || '';
-            dUrl = data.download_url || data.url || '';
-          } else {
-            const res = await ClassMaterialService.downloadMaterial(material.id);
-            const data = res?.data || res;
-            pUrl = data.preview_url || data.url || data.download_url || '';
-            dUrl = data.download_url || data.url || '';
+          try {
+            if (asgId) {
+              const res = await AssignmentService.getMaterialDownloadUrl(asgId, material.id);
+              const data = res?.data || res;
+              const resolvedPreview = normalizePreviewUrl(data.preview_url || data.url || data.download_url);
+              const resolvedDownload = normalizePreviewUrl(data.download_url || data.url || data.preview_url);
+              if (resolvedPreview) pUrl = resolvedPreview;
+              if (resolvedDownload) dUrl = resolvedDownload;
+            } else {
+              const res = await ClassMaterialService.downloadMaterial(material.id);
+              const data = res?.data || res;
+              const resolvedPreview = normalizePreviewUrl(data.preview_url || data.url || data.download_url);
+              const resolvedDownload = normalizePreviewUrl(data.download_url || data.url || data.preview_url);
+              if (resolvedPreview) pUrl = resolvedPreview;
+              if (resolvedDownload) dUrl = resolvedDownload;
+            }
+          } catch (apiErr) {
+            console.warn('Lấy presigned URL từ service thất bại, thử dùng URL dự phòng:', apiErr);
           }
         }
 
@@ -260,7 +322,7 @@ export default function MaterialPreviewModal({
               }
 
               // Cache-buster nếu retry
-              let reqUrl = currentUrl;
+              let reqUrl = normalizePreviewUrl(currentUrl);
               if (attempt > 0) {
                 const sep = reqUrl.includes('?') ? '&' : '?';
                 reqUrl = `${reqUrl}${sep}_t=${Date.now()}`;
@@ -296,16 +358,17 @@ export default function MaterialPreviewModal({
                   throw new Error(jsonResp?.message || 'Không tìm thấy đường dẫn tệp trong phản hồi từ máy chủ.');
                 }
 
-                currentUrl = actualUrl;
+                currentUrl = normalizePreviewUrl(actualUrl);
                 if (isMounted) {
-                  setPreviewUrl(actualUrl);
-                  const actualDownloadUrl =
-                    jsonResp?.data?.download_url || jsonResp?.download_url || actualUrl;
+                  setPreviewUrl(currentUrl);
+                  const actualDownloadUrl = normalizePreviewUrl(
+                    jsonResp?.data?.download_url || jsonResp?.download_url || currentUrl
+                  );
                   setDownloadUrl(actualDownloadUrl);
                 }
 
                 // Gọi fetch URL Presigned nhị phân thực tế (hoàn toàn KHÔNG gửi kèm Authorization header)
-                response = await fetch(actualUrl, { credentials: 'omit' });
+                response = await fetch(currentUrl, { credentials: 'omit' });
                 if (!response.ok) {
                   let errMsg = `Tải tệp tin nhị phân thất bại (${response.status} ${response.statusText})`;
                   try {
