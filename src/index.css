@@ -2070,6 +2070,28 @@ main[style*="backdrop-filter"] p {
   font-size: 19px;
   line-height: 1.35;
 }
+.forum-page-stitch section > label input {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--color-ink);
+  font: inherit;
+}
+.forum-page-stitch article header strong {
+  margin-right: 6px;
+  color: var(--color-ink);
+}
+.forum-page-stitch article header small {
+  color: var(--color-ink-muted);
+  font-size: 11px;
+}
+.forum-page-stitch article img:only-child {
+  grid-column: 1 / -1;
+  height: 300px;
+}
 .forum-page-stitch article > div:first-of-type > span {
   padding: 3px 7px;
   border-radius: 5px;
