@@ -2051,7 +2051,7 @@ main[style*="backdrop-filter"] p {
 }
 .forum-page-stitch > div {
   max-width: 1224px !important;
-  grid-template-columns: minmax(0, 840px) minmax(300px, 360px) !important;
+  grid-template-columns: minmax(0, 840px) minmax(280px, 320px) !important;
   justify-content: center;
 }
 .forum-page-stitch > div > section {
@@ -2070,6 +2070,15 @@ main[style*="backdrop-filter"] p {
   font-size: 19px;
   line-height: 1.35;
 }
+.forum-page-stitch article {
+  border: 1px solid #e8d8d0;
+  padding: 24px !important;
+  border-radius: 16px !important;
+  box-shadow: 0 1px 3px rgba(31, 27, 23, .04) !important;
+}
+.forum-page-stitch article:hover {
+  border-color: rgba(245, 102, 31, .4);
+}
 .forum-page-stitch section > label input {
   flex: 1;
   min-width: 0;
@@ -2079,6 +2088,30 @@ main[style*="backdrop-filter"] p {
   background: transparent;
   color: var(--color-ink);
   font: inherit;
+}
+.forum-page-stitch .filterGrid {
+  display: flex !important;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.forum-page-stitch .selectWrap {
+  display: block !important;
+  flex: 0 1 auto;
+  min-width: 0;
+}
+.forum-page-stitch .selectWrap > span {
+  display: none;
+}
+.forum-page-stitch .selectWrap select {
+  min-width: 112px;
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid #e8d8d0;
+  border-radius: 9px;
+  background: #fff;
+  color: #594138;
+  font-size: 12px;
 }
 .forum-page-stitch article header strong {
   margin-right: 6px;
