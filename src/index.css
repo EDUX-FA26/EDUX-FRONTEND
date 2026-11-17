@@ -2168,6 +2168,40 @@ main[style*="backdrop-filter"] p {
   font-weight: 700;
   outline: 0;
 }
+/* Refined boxed filter controls with consistent spacing. */
+.forum-page-stitch .filters {
+  padding: 16px;
+  border: 1px solid #e8d8d0;
+}
+.forum-page-stitch .filterGrid {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+.forum-page-stitch .selectWrap {
+  gap: 5px;
+}
+.forum-page-stitch .selectWrap > span {
+  padding-left: 2px;
+  font-size: 10px;
+  letter-spacing: .01em;
+}
+.forum-page-stitch .selectWrap select {
+  height: 38px;
+  padding: 0 26px 0 10px;
+  border: 1px solid #e8d8d0;
+  border-radius: 9px;
+  background: #fff;
+  color: #594138;
+  font-size: 12px;
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(31, 27, 23, .03);
+  cursor: pointer;
+}
+.forum-page-stitch .selectWrap select:focus {
+  border-color: #f5661f;
+  box-shadow: 0 0 0 3px rgba(245, 102, 31, .12);
+}
 .forum-page-stitch article > div:first-of-type > span {
   padding: 3px 7px;
   border-radius: 5px;
