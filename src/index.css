@@ -3244,6 +3244,66 @@ main[style*="backdrop-filter"] p {
 .forum-upload-item > button { margin-left: auto; border: 0; background: transparent; color: #aa3000; cursor: pointer; }
 .forum-image-upload-box { background: #fff0e9 !important; }
 .forum-create-uploads > label > small { display: block; margin-top: 4px; }
+
+.forum-my-posts-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: 100%;
+  margin-top: 12px;
+  min-height: 36px;
+  border: 0;
+  border-radius: 8px;
+  background: #f1edea;
+  color: #594138;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.forum-my-posts-button:hover { background: #ffe0d8; color: #a53c00; }
+
+.forum-delete-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(28, 22, 19, .56);
+}
+
+.forum-delete-modal {
+  width: min(100%, 430px);
+  box-sizing: border-box;
+  padding: 24px;
+  border: 1px solid #ead8d0;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 20px 60px rgba(28, 22, 19, .25);
+  color: #1c1b1a;
+}
+
+.forum-delete-modal-icon {
+  width: 42px;
+  height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #ffe0d8;
+  color: #b42318;
+}
+
+.forum-delete-modal h2 { margin: 14px 0 8px; font-size: 20px; }
+.forum-delete-modal p { margin: 0; color: #806d65; font-size: 13px; line-height: 1.55; }
+.forum-delete-modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 22px; }
+.forum-delete-modal-actions button { min-height: 36px; padding: 0 14px; border: 0; border-radius: 8px; font-weight: 800; cursor: pointer; }
+.forum-delete-cancel { background: #f1edea; color: #594138; }
+.forum-delete-confirm { background: #b42318; color: #fff; }
+.forum-delete-modal-actions button:disabled { cursor: not-allowed; opacity: .6; }
 @media (max-width:760px) {
   .forum-page-stitch .forum-pagination { align-items:flex-start; flex-direction:column; }
   .forum-page-stitch .forum-pagination-controls { width:100%; }
