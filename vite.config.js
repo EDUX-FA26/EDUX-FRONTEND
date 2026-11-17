@@ -7,6 +7,9 @@ export default defineConfig({
     tailwindcss(),
     react(),
   ],
+  optimizeDeps: {
+    include: ['mammoth', 'xlsx'],
+  },
   server: {
     proxy: {
       '/api': {
