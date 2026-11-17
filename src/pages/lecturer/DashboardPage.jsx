@@ -91,6 +91,7 @@ export default function LecturerDashboardPage() {
     currentSchool?.schoolId ||
     currentSchool?.id ||
     null;
+  const schoolName = currentSchool?.schoolName || 'EDUX';
   const [data, setData] = useState(null);
   const [notifData, setNotifData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -184,7 +185,7 @@ export default function LecturerDashboardPage() {
         <div style={{ position: 'relative', zIndex: 1 }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '4px 14px', borderRadius: '9999px', background: 'rgba(255,255,255,0.1)', fontSize: '0.75rem', color: '#a5f3fc', fontWeight: 600, marginBottom: '12px' }}>
             <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--color-accent-teal)', display: 'inline-block' }} />
-            {t.dashboard?.lecturerBadge}
+            {`${schoolName} Lecturer Portal`}
           </div>
           <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: 0, letterSpacing: '-0.02em', color: '#ffffff' }}>
             {t.dashboard?.welcomeStudent} {user?.full_name || user?.email}!
@@ -205,16 +206,17 @@ export default function LecturerDashboardPage() {
           <div style={{ gridColumn: '1/-1', padding: '20px', borderRadius: '14px', background: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.3)', color: '#ef4444', textAlign: 'center' }}>{error}</div>
         ) : (
           <>
+
             <StatCard
               label={S?.classesTeaching}
               value={stats?.totalClasses}
               icon="class"
               iconBg="#e6f7f5"
               iconColor="var(--color-accent-teal)"
-              sub={S?.currentSemester}
               onClick={() => navigate('/lecturer/classes')}
               className="cursor-pointer hover:shadow-md transition-all hover:scale-[1.01]"
             />
+
             <StatCard
               label={S?.totalStudents}
               value={stats?.totalStudents}

@@ -1,21 +1,22 @@
 
 import React from "react";
 import { Navigate } from "react-router-dom";
-
+import { useTheme } from "../contexts/ThemeContext";
 import { useAuth } from "../contexts/AuthContext";
 import { useSchool } from "../contexts/SchoolContext";
-
+import { School2, LoaderCircle } from "lucide-react";
 import {
   ROLES,
   ROLE_HOME,
 } from "../config/constants";
+import EduxLoadingScreen from "../components/common/EduxLoadingScreen";
 
 export default function SchoolProtectedRoute({
   allowedRoles = [],
   children,
 }) {
   const { isAuthenticated } = useAuth();
-
+  const { isDark } = useTheme();
   const {
     schoolRole,
     status,
@@ -25,16 +26,23 @@ export default function SchoolProtectedRoute({
     return <Navigate to="/login" replace />;
   }
 
+  if (user?.must_change_password) {
+    return <Navigate to="/first-login/change-password" replace />;
+  }
+
   if (
     status === "loading" ||
     status === "idle"
   ) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p>Đang xác minh trường học...</p>
-      </div>
+      <EduxLoadingScreen
+        title="Đang xác minh trường học"
+        description="Hệ thống đang kiểm tra quyền truy cập và chuẩn bị không gian học tập của bạn."
+      />
     );
   }
+
+
 
   if (status !== "ready") {
     return (

@@ -46,7 +46,7 @@ export default function ManagerDashboardPage() {
         <Metric icon={ReceiptText} label="Giao dịch gần đây" value={recent.length} />
       </section>
       <section className="mt-7 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="flex items-center justify-between"><h2 className="text-lg font-bold">Giao dịch VNPay gần đây</h2><Link className="text-sm font-semibold text-orange-600" to="/manager/transactions">Xem tất cả</Link></div>
+        <div className="flex items-center justify-between"><h2 className="text-lg font-bold">Giao dịch gần đây</h2><Link className="text-sm font-semibold text-orange-600" to="/manager/transactions">Xem tất cả</Link></div>
         {loading ? <p className="mt-5 text-slate-500">Đang tải…</p> : <div className="mt-5 overflow-x-auto"><table className="w-full text-left text-sm"><thead className="text-slate-500"><tr><th className="pb-3">Mã</th><th className="pb-3">Trường</th><th className="pb-3">Số tiền</th><th className="pb-3">Trạng thái</th></tr></thead><tbody>{recent.map((transaction) => <tr key={transaction.id} className="border-t"><td className="py-3">{transaction.order_reference}</td><td>{transaction.school_name || transaction.school_code}</td><td>{Number(transaction.amount || 0).toLocaleString("vi-VN")} đ</td><td>{transaction.status}</td></tr>)}</tbody></table></div>}
       </section>
     </div>

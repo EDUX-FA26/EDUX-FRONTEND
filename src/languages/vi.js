@@ -65,6 +65,7 @@ const vi = {
     search: 'Tìm kiếm',
     semesters: 'Học kỳ',
     subjects: 'Môn học',
+    schoolProfile: 'Hồ sơ trường',
     classes: 'Lớp học',
   },
 

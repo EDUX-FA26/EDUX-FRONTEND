@@ -249,7 +249,7 @@ export default function StudentDashboardPage() {
             backdropFilter: 'blur(4px)',
           }}>
             <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--color-primary)', display: 'inline-block', animation: 'pulse-ring 1.5s ease-in-out infinite' }} />
-            {t.dashboard?.portalBadge}
+            {schoolName ? `${schoolName} Student Portal` : 'Student Portal'}
           </div>
           <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: 0, letterSpacing: '-0.02em', color: '#ffffff' }}>
             {t.dashboard?.welcomeStudent} {user?.full_name || user?.email}!
@@ -305,16 +305,17 @@ export default function StudentDashboardPage() {
           </div>
         ) : (
           <>
+
             <StatCard
               label={S?.totalClasses}
               value={stats?.totalClasses}
               icon="class"
               iconBg="#fff1e7"
               iconColor="var(--color-primary)"
-              sub={S?.currentSemester}
-              onClick={() => navigate('/student/classes?semester=FALL_2026')}
+              onClick={() => navigate('/student/classes')}
               className="cursor-pointer hover:shadow-md transition-all hover:scale-[1.02]"
             />
+
             <StatCard label={S?.pendingAssignments} value={stats?.pendingAssignments} icon="pending_actions" iconBg="rgba(220,38,38,0.1)" iconColor="#dc2626"
               sub={stats?.pendingAssignments > 0 ? S?.needDone : S?.allDone}
               subColor={stats?.pendingAssignments > 0 ? '#dc2626' : '#16a34a'} />

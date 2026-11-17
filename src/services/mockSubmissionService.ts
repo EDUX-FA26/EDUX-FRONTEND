@@ -27,9 +27,9 @@ export const MOCK_ZIP_TREE_CASE_1: ZipTreeNode[] = [
         type: 'folder',
         children: [
           {
-            id: 'node-jwt-middleware',
-            name: 'jwt.middleware.ts',
-            path: 'src/auth/jwt.middleware.ts',
+            id: 'node-auth-middleware',
+            name: 'auth.middleware.ts',
+            path: 'src/auth/auth.middleware.ts',
             type: 'file',
             extension: 'ts',
             size: 2450,
@@ -220,7 +220,7 @@ export class SubmissionController {
     content: `{
   "name": "art-ai-backend-submission",
   "version": "1.0.0",
-  "description": "Student Tran Thi B - DE181802 Submission",
+  "description": "Student Project Submission",
   "main": "dist/index.js",
   "dependencies": {
     "express": "^4.19.2",
@@ -238,7 +238,7 @@ export class SubmissionController {
     extension: 'md',
     size: 1200,
     content: `# Báo Cáo Kiến Trúc Phần Mềm (C4 Model) & ART-AI Declaration
-**Sinh viên:** Trần Thị B (DE181802)  
+**Sinh viên:** Nguyễn Văn Mẫu (DE180001)  
 **Lớp:** SE18D01 | **Môn học:** SWD392  
 
 ### Tóm tắt phương pháp thiết kế:
@@ -248,7 +248,7 @@ export class SubmissionController {
   }
 ];
 
-// Khai báo AI chuẩn 5 tiêu chí của sinh viên Trần Thị B
+// Khai báo AI chuẩn 5 tiêu chí mẫu
 const MOCK_AI_AUDIT_LOG_FULL: AiAuditDeclaration = {
   isDeclared: true,
   transparencyScore: 92,
@@ -296,20 +296,20 @@ const MOCK_AI_AUDIT_LOG_FULL: AiAuditDeclaration = {
 const STORAGE_KEY = 'edux_art_ai_mock_submissions_db_v2';
 
 const defaultMockDatabase: Record<string, Submission> = {
-  // Case 1: Sinh viên Trần Thị B (Đã nộp bài file ZIP, khai báo AI đầy đủ, chưa chấm điểm)
-  'sub-de181802': {
-    id: 'sub-de181802',
+  // Case 1: Sinh viên Nguyễn Văn Mẫu (Đã nộp bài file ZIP, khai báo AI đầy đủ, chưa chấm điểm)
+  'sub-de180001': {
+    id: 'sub-de180001',
     assignmentId: 'asg-swd392-01',
     studentId: 'std-02',
-    studentName: 'Tran Thi B',
-    studentCode: 'DE181802',
-    studentEmail: 'tranb.de181802@fpt.edu.vn',
+    studentName: 'Nguyen Van Mau',
+    studentCode: 'DE180001',
+    studentEmail: 'nguyenvanmau@fpt.edu.vn',
     status: 'SUBMITTED',
     submittedAt: '2026-10-27T14:35:00Z',
     lastUpdatedAt: '2026-10-27T14:35:00Z',
     file: {
-      name: 'SE18D01_TranThiB_BackendArchitecture.zip',
-      url: 'https://cdn.edux.edu.vn/submissions/SE18D01_TranThiB_BackendArchitecture.zip',
+      name: 'SE18D01_NguyenVanMau_Project.zip',
+      url: 'https://cdn.edux.edu.vn/submissions/SE18D01_NguyenVanMau_Project.zip',
       size: 4850000, // 4.85 MB
       mimeType: 'application/zip',
       fileType: 'zip',
@@ -405,8 +405,8 @@ const getInitialDatabase = (): Record<string, Submission> => {
           const sub = v as Submission;
           if (
             k.startsWith('asm_') ||
-            k === 'DE181802' ||
-            k === 'de181802' ||
+            k === 'DE180001' ||
+            k === 'de180001' ||
             k === 'std-current-user'
           ) {
             continue;
@@ -432,7 +432,7 @@ const getInitialDatabase = (): Record<string, Submission> => {
 
         const cleaned: Record<string, Submission> = {};
         for (const sub of studentMap.values()) {
-          const canonicalId = (sub.studentCode === 'DE181802' || !sub.id) ? 'sub-de181802' : sub.id;
+          const canonicalId = (sub.studentCode === 'DE180001' || !sub.id) ? 'sub-de180001' : sub.id;
           cleaned[canonicalId] = { ...sub, id: canonicalId };
         }
 
@@ -545,11 +545,11 @@ export const MockSubmissionService = {
   async getMySubmission(assignmentId: string): Promise<Submission | null> {
     await delay(100);
     const db = getInitialDatabase();
-    // Ưu tiên trả về bài nộp khớp assignmentId hoặc sub-de181802 có điểm mới nhất
+    // Ưu tiên trả về bài nộp khớp assignmentId hoặc sub-de180001 có điểm mới nhất
     const sub =
       (assignmentId && db[`asm_${assignmentId}`]) ||
       (assignmentId && Object.values(db).find((s) => s.assignmentId === assignmentId && (s.grade || (s as any).score != null))) ||
-      db['sub-de181802'] ||
+      db['sub-de180001'] ||
       Object.values(db).find((s) => s.assignmentId === assignmentId);
     return sub ? JSON.parse(JSON.stringify(sub)) : null;
   },
@@ -563,7 +563,7 @@ export const MockSubmissionService = {
 
     let extractedTree: ZipTreeNode[] | undefined = undefined;
     let fileType: 'pdf' | 'zip' | 'docx' | 'code' | 'other' = 'other';
-    let fileName = payload.file?.name || payload.fileMeta?.name || 'SE18D01_TranThiB_BackendArchitecture.zip';
+    let fileName = payload.file?.name || payload.fileMeta?.name || 'SE18D01_ProjectSubmission.zip';
     let fileSize = payload.file?.size || payload.fileMeta?.size || 1024;
     let mimeType = payload.file?.type || payload.fileMeta?.mimeType || 'application/octet-stream';
 
@@ -584,16 +584,16 @@ export const MockSubmissionService = {
 
     const db = getInitialDatabase();
     // Luôn cập nhật bài nộp của sinh viên hiện tại thay vì tự tạo thêm sinh viên mới
-    const existing = db['sub-de181802'] || Object.values(db).find((s) => s.studentCode === 'DE181802');
+    const existing = db['sub-de180001'] || Object.values(db).find((s) => s.studentCode === 'DE180001');
 
     const updatedSubmission: Submission = {
-      ...(existing || defaultMockDatabase['sub-de181802']),
-      id: existing?.id || 'sub-de181802',
+      ...(existing || defaultMockDatabase['sub-de180001']),
+      id: existing?.id || 'sub-de180001',
       assignmentId: assignmentId || existing?.assignmentId || 'asg-swd392-01',
       studentId: existing?.studentId || 'std-01',
-      studentName: existing?.studentName || 'Tran Thi B',
-      studentCode: existing?.studentCode || 'DE181802',
-      studentEmail: existing?.studentEmail || 'tranb.de181802@fpt.edu.vn',
+      studentName: existing?.studentName || 'Nguyen Van Mau',
+      studentCode: existing?.studentCode || 'DE180001',
+      studentEmail: existing?.studentEmail || 'nguyenvanmau@fpt.edu.vn',
       status: 'SUBMITTED',
       submittedAt: existing?.submittedAt || new Date().toISOString(),
       lastUpdatedAt: new Date().toISOString(),
@@ -613,7 +613,7 @@ export const MockSubmissionService = {
       aiRiskLabel: payload.aiAuditLog?.isDeclared ? 'low AI-transparency risk' : (existing?.aiRiskLabel || 'pure manual / no AI')
     };
 
-    const canonicalId = (updatedSubmission.studentCode === 'DE181802' || !updatedSubmission.id) ? 'sub-de181802' : updatedSubmission.id;
+    const canonicalId = (updatedSubmission.studentCode === 'DE180001' || !updatedSubmission.id) ? 'sub-de180001' : updatedSubmission.id;
     updatedSubmission.id = canonicalId;
     db[canonicalId] = updatedSubmission;
     for (const key of Object.keys(db)) {
@@ -633,7 +633,7 @@ export const MockSubmissionService = {
   async getSubmissionById(assignmentId: string, submissionId: string): Promise<Submission> {
     await delay(100);
     const db = getInitialDatabase();
-    const sub = db[submissionId] || db['sub-de181802'];
+    const sub = db[submissionId] || db['sub-de180001'];
     if (!sub) {
       throw new Error(`Submission not found: ${submissionId}`);
     }
@@ -647,9 +647,9 @@ export const MockSubmissionService = {
   async gradeSubmission(submissionId: string, payload: GradeSubmissionPayload): Promise<Submission> {
     await delay(100);
     const db = getInitialDatabase();
-    let existing = db[submissionId] || (submissionId && Object.values(db).find(s => s.id === submissionId || s.studentCode === submissionId)) || db['sub-de181802'];
+    let existing = db[submissionId] || (submissionId && Object.values(db).find(s => s.id === submissionId || s.studentCode === submissionId)) || db['sub-de180001'];
     if (!existing) {
-      existing = defaultMockDatabase['sub-de181802'];
+      existing = defaultMockDatabase['sub-de180001'];
     }
 
     existing.status = payload.isDraft ? 'SUBMITTED' : 'GRADED';
@@ -666,13 +666,13 @@ export const MockSubmissionService = {
     (existing as any).feedback = payload.feedback;
     (existing as any).rubrics = payload.rubrics;
 
-    const canonicalId = (existing.studentCode === 'DE181802' || !existing.id) ? 'sub-de181802' : existing.id;
+    const canonicalId = (existing.studentCode === 'DE180001' || !existing.id) ? 'sub-de180001' : existing.id;
     existing.id = canonicalId;
     db[canonicalId] = existing;
 
     // Xóa triệt để các key rác và các key trùng lặp sinh viên này
     for (const key of Object.keys(db)) {
-      if (key.startsWith('asm_') || key === 'DE181802' || key === 'de181802' || key === 'std-current-user') {
+      if (key.startsWith('asm_') || key === 'DE180001' || key === 'de180001' || key === 'std-current-user') {
         delete db[key];
       } else if (key !== canonicalId && db[key]?.studentCode === existing.studentCode) {
         delete db[key];
@@ -691,7 +691,7 @@ export const MockSubmissionService = {
   async requestResubmit(submissionId: string, reason: string): Promise<boolean> {
     await delay(100);
     const db = getInitialDatabase();
-    const sub = db[submissionId] || db['sub-de181802'];
+    const sub = db[submissionId] || db['sub-de180001'];
     if (sub) {
       sub.resubmitRequested = true;
       sub.resubmitReason = reason;
@@ -711,7 +711,7 @@ export const MockSubmissionService = {
     const list: Submission[] = [];
     for (const [key, sub] of Object.entries(db)) {
       if (!sub || typeof sub !== 'object' || !sub.id) continue;
-      if (key.startsWith('asm_') || key === 'DE181802' || key === 'de181802' || key === 'std-current-user') continue;
+      if (key.startsWith('asm_') || key === 'DE180001' || key === 'de180001' || key === 'std-current-user') continue;
       const dedupKey = sub.studentCode || sub.id;
       if (!seen.has(dedupKey)) {
         seen.add(dedupKey);

@@ -126,7 +126,7 @@ export default function AssignmentFormModal({
             } else {
                 setRubricConfigs(DEFAULT_RUBRIC_CONFIGS);
             }
-            setExistingMaterials(initialData.materials || []);
+            setExistingMaterials(initialData.materials || initialData.attachments || []);
             setNewMaterials([]);
         } else {
             // Mode create: reset to blank/defaults
@@ -277,6 +277,11 @@ export default function AssignmentFormModal({
             newMaterials.forEach((file) => {
                 formData.append('materials', file);
             });
+
+            if (mode === 'edit') {
+                formData.append('existing_materials', JSON.stringify(existingMaterials || []));
+                formData.append('existing_attachments', JSON.stringify(existingMaterials || []));
+            }
 
             if (onSubmit) {
                 await onSubmit(formData);

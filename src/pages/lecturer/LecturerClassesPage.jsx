@@ -15,6 +15,7 @@ import {
     FolderOpen,
     ArrowRight,
     AlertCircle,
+    ChevronDown,
 } from "lucide-react";
 
 const SEMESTER_PAGE_LIMIT = 100;
@@ -39,6 +40,17 @@ function getSemesterGroup(semester) {
 
 function getSemesterLabel(semester) {
     return semester.name || semester.code;
+}
+
+function extractSemesterYear(sem) {
+    // Ưu tiên trường year nếu có (ví dụ: 2026)
+    if (sem?.year) return Number(sem.year);
+    // Tìm 4 chữ số năm trong name (ví dụ: "Fall 2026" -> 2026)
+    const match4 = String(sem?.name || '').match(/\b(20\d{2})\b/);
+    if (match4) return Number(match4[1]);
+    // Fallback lấy 2 số cuối từ code (ví dụ: "FA26" -> 2026)
+    const match2 = String(sem?.code || '').match(/(\d{2})$/);
+    return match2 ? 2000 + Number(match2[1]) : 0;
 }
 
 function getErrorMessage(error, fallback) {
@@ -66,6 +78,39 @@ export default function LecturerClassesPage() {
     const [search, setSearch] = useState("");
 
     const activeSemester = searchParams.get("semester");
+
+    // State cho 3 Accordion droplist FALL, SUMMER, SPRING
+    const [openGroups, setOpenGroups] = useState({});
+
+    const toggleGroup = useCallback((groupName) => {
+        setOpenGroups((prev) => ({
+            ...prev,
+            [groupName]: !prev[groupName],
+        }));
+    }, []);
+
+    // Tự động mở sẵn nhóm mùa đang chứa học kỳ hiện tại (Current) hoặc học kỳ được chọn trên URL
+    useEffect(() => {
+        if (semesters.length === 0) return;
+
+        const targetSem =
+            (activeSemester && semesters.find((s) => s.code === activeSemester)) ||
+            semesters.find((s) => s.is_current) ||
+            semesters[0];
+
+        if (targetSem) {
+            const group = getSemesterGroup(targetSem);
+            setOpenGroups((prev) => {
+                if (Object.keys(prev).length === 0) {
+                    return { [group]: true };
+                }
+                if (activeSemester && !prev[group]) {
+                    return { ...prev, [group]: true };
+                }
+                return prev;
+            });
+        }
+    }, [activeSemester, semesters]);
 
     // Load semesters from backend, including all pages.
     const fetchSemesters = useCallback(async (signal) => {
@@ -185,17 +230,38 @@ export default function LecturerClassesPage() {
     };
 
 const groupedSemesters = useMemo(() => {
-    return semesters.reduce((groups, semester) => {
+    const groups = semesters.reduce((acc, semester) => {
         const group = getSemesterGroup(semester);
 
-        if (!groups[group]) {
-            groups[group] = [];
+        if (!acc[group]) {
+            acc[group] = [];
         }
 
-        groups[group].push(semester);
+        acc[group].push(semester);
 
-        return groups;
+        return acc;
     }, {});
+
+    // Sắp xếp các học kỳ trong từng nhóm theo năm giảm dần (từ lớn đến nhỏ)
+    Object.keys(groups).forEach((groupName) => {
+        groups[groupName].sort((a, b) => extractSemesterYear(b) - extractSemesterYear(a));
+    });
+
+    // Thứ tự hiển thị nhóm mùa: Fall -> Summer -> Spring -> Other (nếu có)
+    const SEASON_ORDER = ['Fall', 'Summer', 'Spring'];
+    const sortedGroups = {};
+    SEASON_ORDER.forEach((season) => {
+        if (groups[season]) {
+            sortedGroups[season] = groups[season];
+        }
+    });
+    Object.keys(groups).forEach((key) => {
+        if (!sortedGroups[key]) {
+            sortedGroups[key] = groups[key];
+        }
+    });
+
+    return sortedGroups;
 }, [semesters]);
 
 const filteredClasses = useMemo(() => {
@@ -220,30 +286,15 @@ const filteredClasses = useMemo(() => {
 }, [classes, search]);
 
 return (
-    <div
-        className="animate-fade-in w-full px-0"
-        style={{
-            width: "100%",
-            display: "flex",
-            flexDirection: "column",
-            gap: "20px",
-        }}
-    >
-        {/* Header */}
-        <div
-            style={{
-                display: "flex",
-                alignItems: "flex-end",
-                justifyContent: "space-between",
-                marginTop: "8px",
-            }}
-        >
+    <div className="animate-fade-in h-[calc(100vh-64px)] w-full max-w-full min-w-0 overflow-hidden flex flex-col px-6 pt-5 pb-5 box-border">
+        {/* Header: Title + Search & Refresh */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 shrink-0">
             <div>
                 <p
                     style={{
                         fontSize: "12px",
                         color: "var(--color-ink-muted)",
-                        marginBottom: "4px",
+                        marginBottom: "2px",
                     }}
                 >
                     Welcome back, Lecturer
@@ -255,41 +306,87 @@ return (
                         fontWeight: "bold",
                         color: "var(--color-ink)",
                         margin: 0,
+                        lineHeight: 1.2,
                     }}
                 >
                     My Courses
                 </h1>
             </div>
 
+            <div className="flex items-center gap-3">
+                <div
+                    style={{
+                        position: "relative",
+                        width: "280px",
+                        maxWidth: "100%",
+                    }}
+                >
+                    <Search
+                        size={16}
+                        style={{
+                            position: "absolute",
+                            left: "12px",
+                            top: "50%",
+                            transform: "translateY(-50%)",
+                            color: "var(--color-ink-soft)",
+                            pointerEvents: "none",
+                        }}
+                    />
+                    <input
+                        type="text"
+                        className="input"
+                        placeholder="Search courses..."
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        style={{
+                            width: "100%",
+                            height: "40px",
+                            paddingLeft: "36px",
+                            boxSizing: "border-box",
+                        }}
+                    />
+                </div>
+
+                <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={handleRefresh}
+                    disabled={loading || semestersLoading}
+                    style={{
+                        height: "40px",
+                        padding: "0 16px",
+                        fontSize: "13px",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "8px",
+                        whiteSpace: "nowrap",
+                        flexShrink: 0,
+                    }}
+                >
+                    <RotateCw
+                        size={16}
+                        className={loading || semestersLoading ? "animate-spin" : ""}
+                    />
+                    <span>Refresh</span>
+                </button>
+            </div>
         </div>
 
-        <div
-            style={{
-                display: "flex",
-                gap: "24px",
-                alignItems: "flex-start",
-                flexWrap: "wrap",
-            }}
-        >
-            {/* Semester Sidebar */}
+        {/* Main 2-column area */}
+        <div className="flex-1 min-h-0 flex gap-6 w-full overflow-hidden">
+            {/* Left Column: Semesters Card */}
             <div
-                className="card"
+                className="w-60 shrink-0 h-full flex flex-col bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden"
                 style={{
-                    width: "180px",
-                    padding: "16px",
-                    flexShrink: 0,
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "16px",
+                    background: "var(--color-surface, #fff)",
+                    borderColor: "var(--color-border, rgba(226, 232, 240, 0.8))",
                 }}
             >
                 <div
+                    className="px-4 py-3.5 border-b border-slate-100 shrink-0 flex items-center justify-between"
                     style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        borderBottom: "1px solid var(--color-border)",
-                        paddingBottom: "8px",
+                        borderBottomColor: "var(--color-border, #f1f5f9)",
                     }}
                 >
                     <span
@@ -308,19 +405,22 @@ return (
                 </div>
 
                 <div
-                    style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: "8px",
-                    }}
+                    className="flex-1 min-h-0 overflow-y-auto p-3 space-y-3 custom-scroll"
+                    style={{ scrollbarWidth: "thin" }}
                 >
                     {semestersLoading ? (
-                        <div className="skeleton" style={{ height: 120 }} />
+                        <div className="space-y-2">
+                            <div className="skeleton rounded-lg" style={{ height: "36px" }} />
+                            <div className="skeleton rounded-lg" style={{ height: "36px" }} />
+                            <div className="skeleton rounded-lg" style={{ height: "36px" }} />
+                            <div className="skeleton rounded-lg" style={{ height: "36px" }} />
+                        </div>
                     ) : semesterError ? (
                         <div
                             style={{
                                 fontSize: "12px",
                                 color: "#dc2626",
+                                padding: "8px",
                             }}
                         >
                             {semesterError}
@@ -330,224 +430,180 @@ return (
                             style={{
                                 fontSize: "12px",
                                 color: "var(--color-ink-muted)",
+                                padding: "8px",
+                                margin: 0,
                             }}
                         >
                             Chưa có học kỳ nào.
                         </p>
                     ) : (
                         Object.entries(groupedSemesters).map(
-                            ([groupName, items]) => (
-                                <div key={groupName}>
-                                    <div
-                                        style={{
-                                            fontSize: "10px",
-                                            color: "var(--color-ink-soft)",
-                                            fontWeight: "bold",
-                                            textTransform: "uppercase",
-                                            letterSpacing: "1px",
-                                            marginBottom: "8px",
-                                        }}
-                                    >
-                                        {groupName}
-                                    </div>
+                            ([groupName, items]) => {
+                                const isOpen = Boolean(openGroups[groupName]);
+                                const hasActiveOrCurrent = items.some(
+                                    (sem) => sem.code === activeSemester || sem.is_current
+                                );
 
-                                    <div
-                                        style={{
-                                            display: "flex",
-                                            flexDirection: "column",
-                                            gap: "6px",
-                                        }}
-                                    >
-                                        {items.map((semester) => {
-                                            const selected =
-                                                activeSemester === semester.code;
+                                return (
+                                    <div key={groupName} className="space-y-1">
+                                        <button
+                                            type="button"
+                                            onClick={() => toggleGroup(groupName)}
+                                            className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl bg-slate-50/80 hover:bg-slate-100 text-xs font-bold uppercase tracking-wider text-slate-600 transition cursor-pointer border-0"
+                                        >
+                                            <div className="flex items-center gap-1.5">
+                                                <span>{groupName}</span>
+                                                <span className="text-[10px] font-semibold text-slate-400 bg-slate-200/60 px-1.5 py-0.2 rounded-full">
+                                                    {items.length}
+                                                </span>
+                                                {hasActiveOrCurrent && (
+                                                    <span
+                                                        className="w-1.5 h-1.5 rounded-full bg-orange-500 shrink-0 ml-0.5"
+                                                        title="Chứa học kỳ đang chọn hoặc kỳ hiện tại"
+                                                    />
+                                                )}
+                                            </div>
+                                            <ChevronDown
+                                                size={14}
+                                                className={`text-slate-400 transition-transform duration-200 shrink-0 ${
+                                                    isOpen ? "rotate-180" : ""
+                                                }`}
+                                            />
+                                        </button>
 
-                                            return (
-                                                <button
-                                                    key={semester.id}
-                                                    type="button"
-                                                    onClick={() =>
-                                                        handleSemesterChange(semester.code)
-                                                    }
-                                                    style={{
-                                                        border: "none",
-                                                        textAlign: "left",
-                                                        padding: "8px 12px",
-                                                        borderRadius: "var(--radius-sm)",
-                                                        cursor: "pointer",
-                                                        fontWeight: selected ? "600" : "500",
-                                                        fontSize: "13px",
-                                                        transition: "0.2s",
-                                                        backgroundColor: selected
-                                                            ? "var(--color-primary)"
-                                                            : "transparent",
-                                                        color: selected
-                                                            ? "#fff"
-                                                            : "var(--color-ink)",
-                                                    }}
-                                                >
-                                                    <div>{getSemesterLabel(semester)}</div>
+                                        {isOpen && (
+                                            <div className="space-y-1 pt-0.5">
+                                                {items.map((semester) => {
+                                                    const selected =
+                                                        activeSemester === semester.code;
 
-                                                    {semester.is_current && (
-                                                        <div
+                                                    return (
+                                                        <button
+                                                            key={semester.id}
+                                                            type="button"
+                                                            onClick={() =>
+                                                                handleSemesterChange(semester.code)
+                                                            }
+                                                            className={`w-full text-left px-3 py-2 rounded-xl text-xs transition-colors duration-150 flex items-center justify-between border-0 cursor-pointer ${
+                                                                selected
+                                                                    ? "font-semibold bg-orange-500 text-white shadow-xs"
+                                                                    : "hover:bg-slate-100 font-medium"
+                                                            }`}
                                                             style={{
-                                                                fontSize: "10px",
-                                                                opacity: 0.8,
-                                                                marginTop: "3px",
+                                                                backgroundColor: selected
+                                                                    ? "var(--color-primary, #f97316)"
+                                                                    : "transparent",
+                                                                color: selected
+                                                                    ? "#fff"
+                                                                    : "var(--color-ink, #1e293b)",
                                                             }}
                                                         >
-                                                            Current
-                                                        </div>
-                                                    )}
-                                                </button>
-                                            );
-                                        })}
+                                                            <span className="truncate">
+                                                                {getSemesterLabel(semester)}
+                                                            </span>
+
+                                                            {semester.is_current && (
+                                                                <span
+                                                                    className="text-[10px] px-1.5 py-0.5 rounded font-normal shrink-0 ml-1.5"
+                                                                    style={{
+                                                                        backgroundColor: selected
+                                                                            ? "rgba(255,255,255,0.25)"
+                                                                            : "#fff7ed",
+                                                                        color: selected
+                                                                            ? "#fff"
+                                                                            : "#ea580c",
+                                                                        border: selected
+                                                                            ? "none"
+                                                                            : "1px solid #ffedd5",
+                                                                    }}
+                                                                >
+                                                                    Current
+                                                                </span>
+                                                            )}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
                                     </div>
-                                </div>
-                            )
+                                );
+                            }
                         )
                     )}
                 </div>
             </div>
 
-            {/* Classes */}
-            <div style={{ flex: 1, minWidth: 0 }}>
-                {/* Search + Refresh Toolbar — separate from class cards grid */}
-                <div
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "flex-end",
-                        gap: "12px",
-                        marginBottom: "20px",
-                        width: "100%",
-                        minWidth: 0,
-                    }}
-                >
-                    <div
-                        style={{
-                            position: "relative",
-                            flex: "0 1 280px",
-                            minWidth: 0,
-                        }}
-                    >
-                        <Search
-                            size={16}
-                            style={{
-                                position: "absolute",
-                                left: "12px",
-                                top: "50%",
-                                transform: "translateY(-50%)",
-                                color: "var(--color-ink-soft)",
-                                pointerEvents: "none",
-                            }}
+            {/* Right Column: Course Cards Grid */}
+            <div
+                className="flex-1 min-w-0 h-full overflow-y-auto pr-1 custom-scroll"
+                style={{ scrollbarWidth: "thin" }}
+            >
+                {loading || semestersLoading ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 content-start">
+                        <div
+                            className="skeleton rounded-2xl"
+                            style={{ height: "190px" }}
                         />
-                        <input
-                            type="text"
-                            className="input"
-                            placeholder="Search courses..."
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            style={{
-                                width: "100%",
-                                height: "40px",
-                                paddingLeft: "36px",
-                                boxSizing: "border-box",
-                            }}
+                        <div
+                            className="skeleton rounded-2xl"
+                            style={{ height: "190px" }}
+                        />
+                        <div
+                            className="skeleton rounded-2xl"
+                            style={{ height: "190px" }}
                         />
                     </div>
-                    <button
-                        type="button"
-                        className="btn btn-secondary"
-                        onClick={handleRefresh}
-                        disabled={loading || semestersLoading}
+                ) : error || semesterError ? (
+                    <div
                         style={{
-                            height: "40px",
-                            padding: "0 16px",
-                            fontSize: "13px",
-                            display: "inline-flex",
+                            padding: "16px",
+                            backgroundColor: "#fee2e2",
+                            color: "#dc2626",
+                            borderRadius: "var(--radius-md)",
+                            display: "flex",
                             alignItems: "center",
-                            justifyContent: "center",
                             gap: "8px",
-                            whiteSpace: "nowrap",
-                            flexShrink: 0,
                         }}
                     >
-                        <RotateCw size={16} />
-                        <span>Refresh</span>
-                    </button>
-                </div>
-
-                <div
-                    style={{
-                        display: "grid",
-                        gridTemplateColumns:
-                            "repeat(auto-fill, minmax(min(100%, 280px), 1fr))",
-                        gap: "20px",
-                    }}
-                >
-                    {loading || semestersLoading ? (
-                        <>
-                            <div
-                                className="skeleton"
-                                style={{ height: "200px" }}
-                            />
-                            <div
-                                className="skeleton"
-                                style={{ height: "200px" }}
-                            />
-                            <div
-                                className="skeleton"
-                                style={{ height: "200px" }}
-                            />
-                        </>
-                    ) : error || semesterError ? (
-                        <div
+                        <AlertCircle size={20} className="shrink-0" />
+                        <span>{semesterError || error}</span>
+                    </div>
+                ) : filteredClasses.length === 0 ? (
+                    <div
+                        className="card"
+                        style={{
+                            padding: "48px 12px",
+                            textAlign: "center",
+                            color: "var(--color-ink-muted)",
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            justifyContent: "center",
+                        }}
+                    >
+                        <FolderOpen
+                            size={48}
                             style={{
-                                gridColumn: "1 / -1",
-                                padding: "16px",
-                                backgroundColor: "#fee2e2",
-                                color: "#dc2626",
-                                borderRadius: "var(--radius-md)",
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "8px",
+                                margin: "0 auto 12px",
+                                opacity: 0.2,
+                            }}
+                        />
+
+                        <p
+                            style={{
+                                fontSize: "14px",
+                                fontWeight: "500",
+                                margin: 0,
                             }}
                         >
-                            <AlertCircle size={20} />
-                            <span>{semesterError || error}</span>
-                        </div>
-                    ) : filteredClasses.length === 0 ? (
-                        <div
-                            className="card"
-                            style={{
-                                gridColumn: "1 / -1",
-                                padding: "48px 12px",
-                                textAlign: "center",
-                                color: "var(--color-ink-muted)",
-                            }}
-                        >
-                            <FolderOpen
-                                size={48}
-                                style={{
-                                    margin: "0 auto 12px",
-                                    opacity: 0.2,
-                                }}
-                            />
-
-                            <p
-                                style={{
-                                    fontSize: "14px",
-                                    fontWeight: "500",
-                                }}
-                            >
-                                {search
-                                    ? "Không tìm thấy lớp học phù hợp."
-                                    : "Không tìm thấy lớp học nào trong học kỳ này."}
-                            </p>
-                        </div>
-                    ) : (
-                        filteredClasses.map((course) => (
+                            {search
+                                ? "Không tìm thấy lớp học phù hợp."
+                                : "Không tìm thấy lớp học nào trong học kỳ này."}
+                        </p>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 content-start">
+                        {filteredClasses.map((course) => (
                             <div
                                 className="card"
                                 key={course.id || course._id}
@@ -555,7 +611,7 @@ return (
                                     padding: "20px",
                                     display: "flex",
                                     flexDirection: "column",
-                                    gap: "16px",
+                                    gap: "14px",
                                 }}
                             >
                                 <div
@@ -596,6 +652,7 @@ return (
                                         style={{
                                             fontSize: "12px",
                                             color: "var(--color-ink-muted)",
+                                            margin: 0,
                                         }}
                                     >
                                         Class:{" "}
@@ -620,7 +677,7 @@ return (
                                     }
                                     style={{
                                         marginTop: "auto",
-                                        paddingTop: "16px",
+                                        paddingTop: "14px",
                                         borderTop: "1px solid var(--color-border)",
                                         display: "flex",
                                         alignItems: "center",
@@ -629,6 +686,13 @@ return (
                                         fontWeight: "600",
                                         color: "var(--color-ink-muted)",
                                         cursor: "pointer",
+                                        transition: "color 0.15s ease",
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.color = "var(--color-primary)";
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.color = "var(--color-ink-muted)";
                                     }}
                                 >
                                     <span
@@ -645,9 +709,9 @@ return (
                                     <ArrowRight size={16} />
                                 </div>
                             </div>
-                        ))
-                    )}
-                </div>
+                        ))}
+                    </div>
+                )}
             </div>
         </div>
     </div>

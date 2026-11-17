@@ -3,7 +3,7 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useSchool } from '../contexts/SchoolContext';
 import { useLanguage } from '../contexts/LanguageContext';
-import { ROLES, SEMESTER_LABEL } from '../config/constants';
+import { ROLES } from '../config/constants';
 import { getSemesters } from '../services/semester.service';
 import SettingsToggle from '../components/common/SettingsToggle';
 import PlatformAdminMenuItem from
@@ -58,6 +58,7 @@ const NAV_BY_ROLE = {
     { id: 'notifications', icon: 'campaign', path: '/admin/notifications', key: 'notifications', label: 'Tạo thông báo' },
     { id: 'semesters', icon: 'calendar_month', path: '/admin/semesters', key: 'semesters', label: 'Học kỳ' },
     { id: 'subjects', icon: 'menu_book', path: '/admin/subjects', key: 'subjects', label: 'Môn học' },
+    { id: 'school-profile', icon: 'account_balance', path: '/admin/profile', key: 'schoolProfile', label: 'Hồ sơ trường' },
     { id: 'logs', icon: 'history', path: '/admin/logs', key: 'logs', label: 'System Logs' },
   ],
 };
@@ -101,6 +102,9 @@ export default function DashboardLayout() {
   const isGradePage = location.pathname.includes('/grade');
   const isFocusRoom = location.pathname.startsWith('/student/focus');
   const isStudentAssignment = location.pathname.startsWith('/student/assignments');
+  const isClassesPage = location.pathname.startsWith('/lecturer/classes') || location.pathname.startsWith('/student/classes');
+  const isClassesLockedPage = /^\/(lecturer|student)\/classes(?:\/[^/]+)?\/?$/.test(location.pathname);
+  const isLecturerAssignmentDetail = /^\/lecturer\/assignments\/[^/]+\/?$/.test(location.pathname);
 
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -463,7 +467,7 @@ export default function DashboardLayout() {
                         animation: 'pulse-ring 1.5s ease-in-out infinite',
                       }}
                     />
-                    {currentSemesterLabel || t?.layout?.semester || SEMESTER_LABEL}
+                    {currentSemesterLabel || (schoolStatus === 'ready' ? 'Chưa có học kỳ hiện tại' : 'Đang tải học kỳ...')}
                   </div>
                 </div>
 
@@ -729,6 +733,61 @@ export default function DashboardLayout() {
                             onNavigate={() => setShowUserMenu(false)}
                           />
 
+                          {/* SCHOOL PROFILE (FOR SCHOOL ADMIN) */}
+                          {effectiveRole === ROLES.ADMIN && (
+                            <button
+                              type="button"
+                              role="menuitem"
+                              onClick={() => {
+                                setShowUserMenu(false);
+                                navigate("/admin/profile");
+                              }}
+                              style={{
+                                width: "100%",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "10px",
+                                padding: "11px 12px",
+                                background: "none",
+                                border: "none",
+                                borderRadius: "9px",
+                                textAlign: "left",
+                                cursor: "pointer",
+                                color: "var(--color-ink)",
+                                fontFamily: "var(--font-sans)",
+                              }}
+                              onMouseEnter={(event) => {
+                                event.currentTarget.style.background =
+                                  "var(--color-primary-bg)";
+                              }}
+                              onMouseLeave={(event) => {
+                                event.currentTarget.style.background =
+                                  "none";
+                              }}
+                            >
+                              <span
+                                className="material-symbols-outlined"
+                                style={{
+                                  fontSize: "20px",
+                                  color: "var(--color-primary)",
+                                }}
+                              >
+                                account_balance
+                              </span>
+
+                              <span
+                                style={{
+                                  fontSize: "0.8125rem",
+                                  fontWeight: 600,
+                                }}
+                              >
+                                {lang === "vi"
+                                  ? "Hồ sơ trường học"
+                                  : "School Profile"}
+                              </span>
+                            </button>
+                          )}
+
                           {/* SWITCH SCHOOL */}
                           <button
                             type="button"
@@ -831,7 +890,7 @@ export default function DashboardLayout() {
         <main
           className={`flex-1 min-w-0 w-full overflow-x-hidden ${isGradePage ? 'dashboard-layout__main--grade' : ''}`}
           style={
-            isFocusRoom || isGradePage
+            isFocusRoom || isGradePage || isClassesLockedPage || isLecturerAssignmentDetail
               ? {
                 flex: 1,
                 width: '100%',
@@ -875,9 +934,11 @@ export default function DashboardLayout() {
           <Outlet />
         </main>
 
-        {/* Footer: ẩn ở trang flashcard, grading, student assignment và focus room */}
+        {/* Footer: ẩn ở trang flashcard, grading, student assignment, focus room, classes và lecturer assignment detail */}
         {!isGradePage &&
           !isStudentAssignment &&
+          !isClassesPage &&
+          !isLecturerAssignmentDetail &&
           !location.pathname.startsWith('/student/flashcards') &&
           !location.pathname.startsWith('/lecturer/flashcards') &&
           !isFocusRoom && (

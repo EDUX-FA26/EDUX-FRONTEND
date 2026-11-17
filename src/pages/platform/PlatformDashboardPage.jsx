@@ -659,11 +659,15 @@ export default function PlatformDashboardPage() {
 
                                     <MetricCard
                                         icon={ShieldCheck}
-                                        label="School Admin"
-                                        value={totalSchoolAdmins}
-                                        note="Lượt quản trị viên theo trường"
+                                        label="Manager hoạt động"
+                                        value={overview.manager_count}
+                                        note="Tài khoản vận hành nền tảng"
                                         color="purple"
                                     />
+                                    <MetricCard icon={School} label="Chờ thiết lập" value={overview.pending_setup_schools} note="Tenant chưa hoàn tất onboarding" color="orange" />
+                                    <MetricCard icon={AlertCircle} label="Trường bị khóa" value={overview.locked_schools} note="Bị Manager khóa" color="purple" />
+                                    <MetricCard icon={AlertCircle} label="Trường đình chỉ" value={overview.suspended_schools} note="Hạn chế truy cập LMS" color="purple" />
+                                    <MetricCard icon={ShieldCheck} label="Hợp đồng active" value={overview.active_contracts} note={`Sắp hết hạn: ${formatNumber(overview.expiring_contracts)}`} color="green" />
                                 </div>
                             </section>
 

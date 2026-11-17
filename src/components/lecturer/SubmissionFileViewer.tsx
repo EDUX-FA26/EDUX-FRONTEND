@@ -23,7 +23,7 @@ import {
   FileType as FileTypeIcon
 } from 'lucide-react';
 import { SubmissionFile, ZipTreeNode } from '../../types/submission';
-import { parseZipFileToTree, MOCK_ZIP_TREE_CASE_1 } from '../../services/mockSubmissionService';
+import { parseZipFileToTree } from '../../services/mockSubmissionService';
 
 /* ==========================================================================
    PROPS INTERFACE
@@ -125,14 +125,14 @@ export default function SubmissionFileViewer({
         setIsLoadingZip(true);
         parseZipFileToTree(file.rawFile)
           .then((nodes) => {
-            const finalNodes = nodes && nodes.length > 0 ? nodes : MOCK_ZIP_TREE_CASE_1;
+            const finalNodes = nodes || [];
             setTreeNodes(finalNodes);
             setSelectedFile(findFirstCodeFile(finalNodes) || null);
           })
           .catch((err) => {
             console.warn('Error parsing rawFile ZIP:', err);
-            setTreeNodes(MOCK_ZIP_TREE_CASE_1);
-            setSelectedFile(findFirstCodeFile(MOCK_ZIP_TREE_CASE_1) || null);
+            setTreeNodes([]);
+            setSelectedFile(null);
           })
           .finally(() => setIsLoadingZip(false));
       } else if (file.url) {
@@ -144,19 +144,19 @@ export default function SubmissionFileViewer({
           })
           .then((blob) => parseZipFileToTree(blob))
           .then((nodes) => {
-            const finalNodes = nodes && nodes.length > 0 ? nodes : MOCK_ZIP_TREE_CASE_1;
+            const finalNodes = nodes || [];
             setTreeNodes(finalNodes);
             setSelectedFile(findFirstCodeFile(finalNodes) || null);
           })
           .catch((err) => {
-            console.warn('Could not fetch or parse ZIP from file.url, using fallback tree:', err);
-            setTreeNodes(MOCK_ZIP_TREE_CASE_1);
-            setSelectedFile(findFirstCodeFile(MOCK_ZIP_TREE_CASE_1) || null);
+            console.warn('Could not fetch or parse ZIP from file.url:', err);
+            setTreeNodes([]);
+            setSelectedFile(null);
           })
           .finally(() => setIsLoadingZip(false));
       } else {
-        setTreeNodes(MOCK_ZIP_TREE_CASE_1);
-        setSelectedFile(findFirstCodeFile(MOCK_ZIP_TREE_CASE_1) || null);
+        setTreeNodes([]);
+        setSelectedFile(null);
       }
     } else if (isCode) {
       if (file.textContent) {
@@ -304,16 +304,6 @@ export default function SubmissionFileViewer({
           </div>
 
           <div className="flex items-center gap-2">
-            {onAiAnnotate && (
-              <button
-                type="button"
-                onClick={onAiAnnotate}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#6b21a8] text-white rounded-lg text-xs font-bold hover:bg-purple-800 transition shadow-xs cursor-pointer"
-              >
-                <Sparkles size={12} />
-                <span>AI Code Annotate</span>
-              </button>
-            )}
             <button
               type="button"
               onClick={handleDownload}
@@ -331,7 +321,7 @@ export default function SubmissionFileViewer({
             <div className="flex items-center gap-2">
               <Sparkles size={14} className="text-purple-600 shrink-0" />
               <span>
-                <strong>AI Code Annotate:</strong> Phát hiện các đoạn mã tương thích với lời khai (JWT Middleware, Redis Token Blacklist, và IStorageProvider).
+                <strong>AI Code Annotate:</strong> Phát hiện các đoạn mã tương thích với lời khai của sinh viên (Authentication Middleware, Security Token Service, và Data Storage Provider).
               </span>
             </div>
             {onCloseAiAnnotationBanner && (
@@ -475,16 +465,6 @@ export default function SubmissionFileViewer({
         </div>
 
         <div className="flex items-center gap-2">
-          {onAiAnnotate && (
-            <button
-              type="button"
-              onClick={onAiAnnotate}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#6b21a8] text-white rounded-lg text-xs font-bold hover:bg-purple-800 transition shadow-xs cursor-pointer"
-            >
-              <Sparkles size={12} />
-              <span>AI Code Annotate</span>
-            </button>
-          )}
           <button
             type="button"
             onClick={handleDownload}

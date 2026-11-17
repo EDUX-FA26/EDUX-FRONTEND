@@ -13,6 +13,7 @@ import LecturerDashboard from '../pages/lecturer/DashboardPage';
 import LecturerFlashcardsPage from '../pages/lecturer/LecturerFlashcardsPage';
 import LecturerFlashclassSelectPage from '../pages/lecturer/LecturerFlashclassSelectPage';
 import AdminDashboard from '../pages/admin/DashboardPage';
+import SchoolProfilePage from "../pages/admin/SchoolProfilePage";
 import SchoolSettingsPage from "../pages/admin/SchoolSettingsPage";
 import SchoolSetupPage from "../pages/admin/SchoolSetupPage";
 import UserManagementPage from '../pages/admin/UserManagementPage';
@@ -37,6 +38,7 @@ import ForumPage from '../pages/forum/ForumPageStitch';
 import ForumPostPage from '../pages/forum/ForumPostPage';
 import ForumCreatePage from '../pages/forum/ForumCreatePage';
 import NotificationCenterPage from '../pages/notifications/NotificationCenterPage';
+import LecturerProjectsPage from '../pages/lecturer/LecturerProjectsPage';
 
 // Layouts
 import DashboardLayout from '../layouts/DashboardLayout';
@@ -59,6 +61,13 @@ import PlatformDashboardPage from
 import ManagerDashboardPage from "../pages/manager/ManagerDashboardPage.jsx";
 import PlatformProtectedRoute from "./PlatformProtectedRoute";
 import ManagersPage from "../pages/superadmin/ManagersPage";
+import EduxLoadingScreen from "../components/common/EduxLoadingScreen";
+import SchoolRegistrationPage from "../pages/public/SchoolRegistrationPage";
+import SchoolRegistrationPaymentPage from "../pages/public/SchoolRegistrationPaymentPage";
+import SchoolRegistrationReturnPage from "../pages/public/SchoolRegistrationReturnPage";
+import SchoolEmailVerificationPage from "../pages/public/SchoolEmailVerificationPage";
+import SchoolAdminActivationPage from "../pages/public/SchoolAdminActivationPage";
+import FirstLoginChangePasswordPage from "../pages/auth/FirstLoginChangePasswordPage";
 
 function RootRedirect() {
   const { isAuthenticated, user } = useAuth();
@@ -87,9 +96,10 @@ function RootRedirect() {
     status === "idle"
   ) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p>Đang chuẩn bị EDUX...</p>
-      </div>
+      <EduxLoadingScreen
+        title="Đang chuẩn bị EDUX"
+        description="Hệ thống đang xác định không gian học tập và chuyển bạn đến trang phù hợp."
+      />
     );
   }
 
@@ -106,11 +116,11 @@ function RootRedirect() {
 
   // Existing schools remain usable during the SaaS migration. Initial setup is
   // only mandatory for a tenant that the Manager explicitly created in the
-  // pending_setup lifecycle state.
+  // pending_setup lifecycle state or a newly registered school that hasn't completed setup yet.
   if (
     uiRole === ROLES.ADMIN &&
-    currentSchool?.schoolStatus === "pending_setup" &&
-    !currentSchool?.setupCompleted
+    (currentSchool?.schoolStatus === "pending_setup" || !currentSchool?.setupCompleted) &&
+    sessionStorage.getItem("edux:setup_skipped") !== "true"
   ) {
     return <Navigate to="/admin/school-setup" replace />;
   }
@@ -147,6 +157,22 @@ export default function AppRoutes() {
         element={<PlatformProtectedRoute allowedRoles={[ROLES.MANAGER]}><ManagerDashboardPage /></PlatformProtectedRoute>}
       />
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/register-school" element={<SchoolRegistrationPage />} />
+      <Route path="/register-school/payment/:registrationId" element={<SchoolRegistrationPaymentPage />} />
+      <Route path="/register-school/payment-return" element={<SchoolRegistrationReturnPage />} />
+      <Route path="/payment/result" element={<SchoolRegistrationReturnPage />} />
+      <Route path="/verify-school-email" element={<SchoolEmailVerificationPage />} />
+      <Route path="/activate-school-admin" element={<SchoolAdminActivationPage />} />
+      <Route path="/first-login/change-password" element={<FirstLoginChangePasswordPage />} />
+      <Route path="/change-password-first-login" element={<FirstLoginChangePasswordPage />} />
+      <Route
+        path="/admin/school-setup"
+        element={
+          <ProtectedRoute allowedRoles={[ROLES.ADMIN]}>
+            <SchoolSetupPage />
+          </ProtectedRoute>
+        }
+      />
 
       {/* Multi-Tenant School Selection */}
       <Route
@@ -200,6 +226,10 @@ export default function AppRoutes() {
           </ProtectedRoute>
         }
       >
+        <Route
+          path="/lecturer/classes/:classId/projects"
+          element={<LecturerProjectsPage />}
+        />
         <Route path="dashboard" element={<LecturerDashboard />} />
         {/* Bước 1: chọn môn học */}
         <Route path="flashcards" element={<LecturerFlashclassSelectPage />} />
@@ -263,7 +293,9 @@ export default function AppRoutes() {
         <Route path="search" element={<SearchPage />} />
         <Route path="logs" element={<SystemLogsPage />} />
         <Route path="school-setup" element={<SchoolSetupPage />} />
-        <Route path="school-settings" element={<SchoolSettingsPage />} />
+        <Route path="profile" element={<SchoolProfilePage />} />
+        <Route path="school-profile" element={<SchoolProfilePage />} />
+        <Route path="school-settings" element={<SchoolProfilePage />} />
         <Route index element={<Navigate to="dashboard" replace />} />
       </Route>
 

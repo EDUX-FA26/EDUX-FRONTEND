@@ -72,6 +72,11 @@ export function AuthProvider({ children }) {
     };
   }, []);
 
+  const updateUser = useCallback((updatedUser) => {
+    localStorage.setItem("user", JSON.stringify(updatedUser));
+    setUser(updatedUser);
+  }, []);
+
   const login = useCallback(
     async (identifier, password) => {
       setLoading(true);
@@ -177,6 +182,7 @@ export function AuthProvider({ children }) {
         googleLogin,
         logout,
         clearError,
+        updateUser,
       }}
     >
       {children}

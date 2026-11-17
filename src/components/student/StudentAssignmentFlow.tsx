@@ -19,6 +19,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Download,
+  Eye,
   Trash2,
   Edit3,
   Plus,
@@ -42,6 +43,7 @@ import {
 } from 'lucide-react';
 import AssignmentService from '../../services/assignment.service';
 import SubmissionService from '../../services/submission.service';
+import MaterialPreviewModal from '../modals/MaterialPreviewModal';
 import './StudentAssignmentFlow.css';
 
 /* ==========================================================================
@@ -598,6 +600,40 @@ export const AssignmentOverview: React.FC<AssignmentOverviewProps> = ({
   score,
 }) => {
   const [isTocOpen, setIsTocOpen] = useState(true);
+  const [selectedPreviewMaterial, setSelectedPreviewMaterial] = useState<any | null>(null);
+
+  const handleDownloadFile = async (file: any) => {
+    if (file.materialId && file.assignmentId) {
+      try {
+        const res = await AssignmentService.getMaterialDownloadUrl(file.assignmentId, file.materialId);
+        const downloadUrl = res?.data?.download_url || res?.download_url;
+        if (downloadUrl) {
+          window.open(downloadUrl, '_blank');
+          return;
+        }
+      } catch (err) {
+        console.error('Download material failed:', err);
+      }
+    }
+    if (file.url && file.url !== '#') {
+      window.open(file.url, '_blank');
+    } else {
+      alert(`Tải file tài liệu: ${file.name}`);
+    }
+  };
+
+  const handlePreviewFile = (file: any) => {
+    setSelectedPreviewMaterial({
+      id: file.materialId || file.id,
+      assignmentId: file.assignmentId || assignment.id,
+      file_name: file.name,
+      file_size: file.size,
+      file_type: (file as any).file_type,
+      url: file.url,
+      preview_url: (file as any).preview_url,
+      download_url: (file as any).download_url
+    });
+  };
 
   return (
     <div className="space-y-5">
@@ -719,32 +755,15 @@ export const AssignmentOverview: React.FC<AssignmentOverviewProps> = ({
             </span>
             {assignment.additionalFiles && assignment.additionalFiles.length > 0 ? (
               assignment.additionalFiles.map((file) => (
-                <a
+                <div
                   key={file.id}
-                  href={file.url || '#'}
-                  onClick={async (e) => {
-                    e.preventDefault();
-                    if (file.materialId && file.assignmentId) {
-                      try {
-                        const res = await AssignmentService.getMaterialDownloadUrl(file.assignmentId, file.materialId);
-                        const downloadUrl = res?.data?.download_url || res?.download_url;
-                        if (downloadUrl) {
-                          window.open(downloadUrl, '_blank');
-                          return;
-                        }
-                      } catch (err) {
-                        console.error('Download material failed:', err);
-                      }
-                    }
-                    if (file.url && file.url !== '#') {
-                      window.open(file.url, '_blank');
-                    } else {
-                      alert(`Tải file tài liệu: ${file.name}`);
-                    }
-                  }}
                   className="flex items-center justify-between bg-slate-50 hover:bg-blue-50/60 p-2.5 rounded-xl border border-slate-200/80 transition group"
                 >
-                  <div className="flex items-center gap-2 min-w-0">
+                  <div
+                    onClick={() => handlePreviewFile(file)}
+                    className="flex items-center gap-2 min-w-0 flex-1 cursor-pointer"
+                    title={`Bấm để xem trực tiếp ${file.name}`}
+                  >
                     <FileText size={15} className="text-blue-500 shrink-0" />
                     <div className="min-w-0">
                       <p className="text-xs font-semibold text-slate-700 group-hover:text-blue-600 truncate">
@@ -755,11 +774,25 @@ export const AssignmentOverview: React.FC<AssignmentOverviewProps> = ({
                       </span>
                     </div>
                   </div>
-                  <Download
-                    size={14}
-                    className="text-slate-400 group-hover:text-blue-600 shrink-0"
-                  />
-                </a>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => handlePreviewFile(file)}
+                      className="p-1.5 text-slate-400 hover:text-blue-600 rounded-lg hover:bg-white/80 transition cursor-pointer"
+                      title="Xem trực tiếp tài liệu"
+                    >
+                      <Eye size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDownloadFile(file)}
+                      className="p-1.5 text-slate-400 hover:text-blue-600 rounded-lg hover:bg-white/80 transition cursor-pointer"
+                      title="Tải xuống tài liệu"
+                    >
+                      <Download size={14} />
+                    </button>
+                  </div>
+                </div>
               ))
             ) : (
               <div className="text-[11px] text-slate-400 italic">
@@ -768,6 +801,15 @@ export const AssignmentOverview: React.FC<AssignmentOverviewProps> = ({
             )}
           </div>
       </div>
+
+      {/* Modal xem trước trực tiếp tài liệu đính kèm */}
+      {selectedPreviewMaterial && (
+        <MaterialPreviewModal
+          isOpen={Boolean(selectedPreviewMaterial)}
+          onClose={() => setSelectedPreviewMaterial(null)}
+          material={selectedPreviewMaterial}
+        />
+      )}
     </div>
   );
 };
@@ -3348,7 +3390,13 @@ export default function StudentAssignmentFlow({
   };
 
   return (
-    <div className="w-full max-w-full min-w-0 min-h-[calc(100vh-64px)] bg-[#F8FAFC] px-6 pt-7 pb-8 flex flex-col space-y-6">
+    <div
+      className="w-full max-w-full min-w-0 min-h-[calc(100vh-64px)] bg-[#F8FAFC] px-6 pb-8 flex flex-col space-y-5"
+      style={{
+        marginTop: 'calc(-1 * var(--dashboard-header-height, 64px))',
+        paddingTop: '20px',
+      }}
+    >
       {/* Toast Feedback */}
       {toastMessage && (
         <div className="fixed top-6 right-6 z-50 flex items-center gap-3 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-xl animate-in slide-in-from-top-4 duration-200">
@@ -3389,12 +3437,7 @@ export default function StudentAssignmentFlow({
               <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
                 {assignment.title}
               </h1>
-              {submission.status === 'Graded' ? (
-                <span className="bg-indigo-50 text-indigo-700 text-xs font-bold px-2.5 py-0.5 rounded-full border border-indigo-200 flex items-center gap-1">
-                  <CheckCircle2 size={12} />
-                  <span>Graded</span>
-                </span>
-              ) : submission.status === 'Submitted' ? (
+              {submission.status === 'Submitted' ? (
                 <span className="bg-emerald-50 text-emerald-700 text-xs font-bold px-2.5 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
                   <Check size={12} />
                   <span>Submitted</span>
@@ -3406,12 +3449,10 @@ export default function StudentAssignmentFlow({
             </p>
           </div>
 
-          {submission.status && submission.status !== 'Draft' && (
+          {submission.status && submission.status !== 'Draft' && submission.status !== 'Graded' && (
             <span
               className={`text-xs font-bold px-3 py-1.5 rounded-full border self-start sm:self-auto ${
-                submission.status === 'Graded'
-                  ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
-                  : submission.status === 'Submitted'
+                submission.status === 'Submitted'
                   ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                   : 'bg-slate-100 text-slate-600 border-slate-200'
               }`}

@@ -20,7 +20,10 @@ export function getHomeRouteByRole(roleOrUser?: any): string {
   if (!roleOrUser) return '/login';
   const rawRole = typeof roleOrUser === 'string'
     ? roleOrUser
-    : (roleOrUser?.role || roleOrUser?.user?.role || '');
+    // Platform role is authoritative for Superadmin/Manager. `role` remains
+    // the school-facing role so original Admin/Lecturer/Student routing is
+    // unchanged.
+    : (roleOrUser?.platform_role || roleOrUser?.platformRole || roleOrUser?.role || roleOrUser?.user?.platform_role || roleOrUser?.user?.role || '');
 
   if (!rawRole) return '/login';
   const normalizedRole = String(rawRole).toUpperCase().trim();

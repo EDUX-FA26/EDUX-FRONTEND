@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { getHomeRouteByRole } from '../../config/roles.config';
@@ -27,6 +27,10 @@ export default function LoginPage() {
   };
 
   const handleLoginSuccess = (loggedInUser) => {
+    if (loggedInUser?.must_change_password) {
+      navigate('/first-login/change-password', { replace: true });
+      return;
+    }
     const targetHome = getHomeRouteByRole(loggedInUser);
     navigate(targetHome, { replace: true, state: null });
   };
@@ -415,6 +419,14 @@ export default function LoginPage() {
             <p style={{ margin: '10px 0 0', textAlign: 'center', fontSize: '0.7rem', lineHeight: 1.5, color: 'var(--color-ink-muted)' }}>
               {L.googleExistingOnly}
             </p>
+
+            <div style={{ marginTop: '18px', padding: '14px', border: '1px solid rgba(242, 112, 36, 0.25)', borderRadius: '12px', background: 'rgba(242, 112, 36, 0.06)', textAlign: 'center' }}>
+              <p style={{ margin: 0, fontSize: '0.8125rem', color: 'var(--color-ink-warm)' }}>Bạn muốn tạo hệ thống EDUX cho một trường mới?</p>
+              <Link to="/register-school" style={{ display: 'inline-flex', marginTop: '7px', fontSize: '0.8125rem', fontWeight: 700, color: 'var(--color-primary)', textDecoration: 'none' }}>
+                Tạo hệ thống trường mới
+                <span className="material-symbols-outlined" style={{ marginLeft: '4px', fontSize: '17px' }}>arrow_forward</span>
+              </Link>
+            </div>
 
             {/* Divider */}
             <div style={{ position: 'relative', margin: '24px 0', textAlign: 'center' }}>

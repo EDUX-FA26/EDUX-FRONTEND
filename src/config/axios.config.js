@@ -19,6 +19,11 @@ const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
+    // Tự động xóa Content-Type nếu dữ liệu là FormData để browser tự thiết lập multipart/form-data kèm boundary chuẩn
+    if (config.data instanceof FormData) {
+      delete config.headers["Content-Type"];
+    }
+
     const token = localStorage.getItem(
       "accessToken"
     );
