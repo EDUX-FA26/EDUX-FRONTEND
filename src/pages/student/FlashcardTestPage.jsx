@@ -8,6 +8,47 @@ import {
   ChevronLeft, ChevronRight, AlertCircle, RefreshCw, FileText
 } from 'lucide-react';
 
+const normalizeOption = (opt, index) => {
+  if (opt === null || opt === undefined) {
+    return { key: '', text: '', value: '' };
+  }
+  if (typeof opt === 'string') {
+    const trimmed = opt.trim();
+    const match = trimmed.match(/^([A-D])[\.\:\)\s]+(.*)$/i);
+    if (match) {
+      return {
+        key: match[1].toUpperCase(),
+        text: match[2].trim(),
+        value: match[1].toUpperCase(),
+      };
+    }
+    const defaultKey = String.fromCharCode(65 + index);
+    return {
+      key: defaultKey,
+      text: trimmed,
+      value: defaultKey,
+    };
+  }
+  if (typeof opt === 'object') {
+    const key = String(opt.key || opt.label || opt.id || String.fromCharCode(65 + index)).toUpperCase();
+    const text = String(opt.text ?? opt.content ?? opt.value ?? '');
+    return {
+      key,
+      text,
+      value: key || text,
+    };
+  }
+  return { key: '', text: String(opt), value: String(opt) };
+};
+
+const getSafeStringAnswer = (val) => {
+  if (val === null || val === undefined) return '';
+  if (typeof val === 'object') {
+    return String(val.key || val.text || val.value || '').trim();
+  }
+  return String(val).trim();
+};
+
 export default function FlashcardTestPage() {
   const { testId, deckId } = useParams();
   const navigate = useNavigate();
@@ -75,7 +116,7 @@ export default function FlashcardTestPage() {
     try {
       const formattedAnswers = questions.map((q) => ({
         flashcard_id: q.id,
-        answer: answers[q.id] || '',
+        answer: getSafeStringAnswer(answers[q.id]),
       }));
 
       const res = await FlashcardService.submitTest(activeTestId, formattedAnswers);
@@ -132,7 +173,7 @@ export default function FlashcardTestPage() {
   }
 
   const currentQuestion = questions[currentIdx];
-  const answeredCount = Object.values(answers).filter((a) => a && a.trim().length > 0).length;
+  const answeredCount = Object.values(answers).filter((a) => getSafeStringAnswer(a).length > 0).length;
   const progressPct = questions.length > 0 ? Math.round(((currentIdx + 1) / questions.length) * 100) : 0;
 
   return (
@@ -238,12 +279,19 @@ export default function FlashcardTestPage() {
           <div style={{ marginTop: '8px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {(currentQuestion.options || []).map((opt, optIdx) => {
-                const isSelected = answers[currentQuestion.id] === opt;
+                const optInfo = normalizeOption(opt, optIdx);
+                const currentAnswerStr = getSafeStringAnswer(answers[currentQuestion.id]);
+                const isSelected = Boolean(
+                  currentAnswerStr &&
+                  (currentAnswerStr === optInfo.key ||
+                   currentAnswerStr.toLowerCase() === (optInfo.text || '').toLowerCase() ||
+                   currentAnswerStr === optInfo.value)
+                );
                 return (
                   <button
                     key={optIdx}
                     type="button"
-                    onClick={() => handleAnswerChange(currentQuestion.id, opt)}
+                    onClick={() => handleAnswerChange(currentQuestion.id, optInfo.key || optInfo.value)}
                     style={{
                       padding: '14px 18px', borderRadius: '12px', border: '1.5px solid',
                       borderColor: isSelected ? 'var(--color-primary)' : 'var(--color-border)',
@@ -263,7 +311,16 @@ export default function FlashcardTestPage() {
                     }}>
                       {isSelected && <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'white' }} />}
                     </div>
-                    <span><MathText content={opt} inline /></span>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', flex: 1 }}>
+                      {optInfo.key && (
+                        <span style={{ fontWeight: 700, color: isSelected ? 'var(--color-primary-dark)' : 'var(--color-ink-muted)', flexShrink: 0 }}>
+                          {optInfo.key}.
+                        </span>
+                      )}
+                      <span style={{ flex: 1 }}>
+                        <MathText content={optInfo.text || optInfo.value} inline />
+                      </span>
+                    </div>
                   </button>
                 );
               })}
@@ -292,7 +349,7 @@ export default function FlashcardTestPage() {
         {/* Question Palette Grid */}
         <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'center' }}>
           {questions.map((q, idx) => {
-            const isAnswered = answers[q.id] && answers[q.id].trim().length > 0;
+            const isAnswered = getSafeStringAnswer(answers[q.id]).length > 0;
             const isCurrent = idx === currentIdx;
             return (
               <button
