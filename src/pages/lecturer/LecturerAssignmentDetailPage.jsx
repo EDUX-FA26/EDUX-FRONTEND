@@ -532,7 +532,14 @@ export default function LecturerAssignmentDetailPage() {
             <div className="shrink-0 mb-4 flex flex-col gap-2.5">
                 {/* Breadcrumbs */}
                 {(() => {
-                    const targetClassId = assignment?.class_id || assignment?.classId;
+                    const targetClassId =
+                        assignment?.class_id ||
+                        assignment?.classId ||
+                        assignment?.class?.id ||
+                        location.state?.classId ||
+                        location.state?.class_id ||
+                        assignment?.course_id ||
+                        assignment?.courseId;
                     const targetClassLink = targetClassId ? `/lecturer/classes/${targetClassId}` : '/lecturer/classes';
                     const courseName =
                         assignment?.subject_name ||

@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Brain,
   Puzzle,
@@ -80,7 +81,7 @@ export type AiDecision =
   | ''
   | string;
 
-export type SubmissionStatus = 'No submission' | 'Draft' | 'Submitted' | 'Graded';
+export type SubmissionStatus = 'No submission' | 'Draft' | 'Submitted' | 'Graded' | 'Resubmit Requested' | string;
 
 export type RubricFormField =
   | 'aiTool'
@@ -105,6 +106,8 @@ export interface Assignment {
   title: string;
   courseCode: string;
   courseTitle: string;
+  classId?: string;
+  class_id?: string;
   dueDate: string;
   deadlineRaw?: string | null;
   allowLateSubmission?: boolean;
@@ -147,11 +150,16 @@ export interface AiDeclarationRubric {
 }
 
 export interface SubmissionFile {
+  id?: string;
   name: string;
   size: number; // in bytes
   type?: string;
   lastModified?: number;
   url?: string;
+  storage_key?: string;
+  file_name?: string;
+  file_size?: number;
+  file_type?: string;
 }
 
 export interface SubmissionData {
@@ -647,10 +655,6 @@ export const AssignmentOverview: React.FC<AssignmentOverviewProps> = ({
           <p className="text-xs text-amber-900 leading-relaxed font-medium">
             ⚠️ Bài tập này bắt buộc khai báo minh bạch AI Audit Log (các công cụ và prompt AI sử dụng khi làm bài).
           </p>
-          <div className="pt-2 border-t border-amber-200/60 flex items-center gap-1.5 text-[11px] text-amber-700">
-            <CheckCircle2 size={13} className="text-amber-600 shrink-0" />
-            <span>Phải hoàn tất ít nhất 1 mục khai báo tương tác AI tại Bước 2</span>
-          </div>
         </div>
       ) : (
         <div className="saf-overview-card bg-slate-50 border border-slate-200 rounded-2xl p-4 shadow-xs space-y-1.5">
@@ -1151,9 +1155,63 @@ export const SubmissionStatusView: React.FC<SubmissionStatusViewProps> = ({
   rubricConfigs,
   aiDeclarationRequired = true,
 }) => {
-  const isDraft = submission.status === 'Draft';
-  const isGraded = submission.status === 'Graded' || submission.score != null || submission.grade?.score != null;
-  const isSubmitted = submission.status === 'Submitted' || isGraded;
+  const [selectedPreviewFile, setSelectedPreviewFile] = useState<any | null>(null);
+
+  const handleDownloadSubmittedFile = async (fileObj: SubmissionFile) => {
+    if (!fileObj) return;
+    const fileId = fileObj.id || (fileObj as any).file_id;
+    if (submission.id && fileId) {
+      try {
+        const res = await SubmissionService.getSubmissionFile(submission.id, fileId);
+        const url = res?.data?.url || res?.url;
+        if (url) {
+          const a = document.createElement('a');
+          a.href = url;
+          a.target = '_blank';
+          a.download = fileObj.name;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          return;
+        }
+      } catch (e) {
+        console.error('Failed to get presigned download URL for submission file:', e);
+      }
+    }
+    if (fileObj.url && fileObj.url !== '#') {
+      window.open(fileObj.url, '_blank');
+    } else {
+      alert(`Đang tải tệp bài làm: ${fileObj.name}`);
+    }
+  };
+
+  const handlePreviewSubmittedFile = (fileObj: SubmissionFile) => {
+    if (!fileObj) return;
+    const fileId = fileObj.id || (fileObj as any).file_id || fileObj.url;
+    setSelectedPreviewFile({
+      id: fileId,
+      submissionId: submission.id,
+      file_name: fileObj.name,
+      file_size: fileObj.size,
+      file_type: fileObj.type,
+      url: fileObj.url,
+      preview_url: fileObj.url,
+      download_url: fileObj.url,
+    });
+  };
+
+  const isResubmitRequested =
+    submission?.status?.toLowerCase() === 'resubmit_requested' ||
+    submission?.status?.toLowerCase() === 'resubmit requested';
+
+  const isGraded = !isResubmitRequested && (
+    submission?.status?.toUpperCase() === 'GRADED' ||
+    (submission?.score !== null && submission?.score !== undefined) ||
+    (submission?.grade?.score !== null && submission?.grade?.score !== undefined)
+  );
+  const statusStr = String(submission?.status || '');
+  const isDraft = statusStr.toLowerCase() === 'draft';
+  const isSubmitted = statusStr.toLowerCase() === 'submitted' || isGraded;
   const finalScore = submission.score ?? submission.grade?.score;
 
   // Chuẩn hóa điểm 5 Rubric để luôn hiển thị chính xác thang 2.0 / rubric (tổng 10.0)
@@ -1207,18 +1265,13 @@ export const SubmissionStatusView: React.FC<SubmissionStatusViewProps> = ({
                 v{submission.version}.0
               </span>
             )}
-            {isGraded && (
-              <span className="text-[10px] font-bold bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-md border border-indigo-200">
-                Score: {Number(finalScore).toFixed(2)} / 10
-              </span>
-            )}
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
             Overview of student file submission and ART-AI transparency audit log.
           </p>
         </div>
 
-        {isPendingAiSupplement ? (
+        {isGraded ? null : isPendingAiSupplement ? (
           <button
             type="button"
             onClick={onSupplementAiClick || onAddOrEditClick}
@@ -1228,8 +1281,8 @@ export const SubmissionStatusView: React.FC<SubmissionStatusViewProps> = ({
             <span>📝 BỔ SUNG KHAI BÁO AI</span>
           </button>
         ) : isLateBlocked ? (
-          <div className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-100 text-slate-400 border border-slate-200 text-xs font-bold uppercase tracking-wide cursor-not-allowed">
-            <AlertCircle size={15} />
+          <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-600 border border-rose-200 text-xs font-semibold cursor-not-allowed select-none">
+            <AlertCircle size={13} className="text-rose-500 shrink-0" />
             <span>Hết hạn nộp</span>
           </div>
         ) : (
@@ -1247,7 +1300,7 @@ export const SubmissionStatusView: React.FC<SubmissionStatusViewProps> = ({
             {isSubmitted ? (
               <>
                 <Edit3 size={15} />
-                <span>{isGraded ? 'EDIT SUBMISSION (GRADED)' : 'EDIT SUBMISSION'}</span>
+                <span>EDIT SUBMISSION</span>
               </>
             ) : isDraft ? (
               <>
@@ -1284,15 +1337,6 @@ export const SubmissionStatusView: React.FC<SubmissionStatusViewProps> = ({
         </div>
       )}
 
-      {isLateBlocked && (
-        <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-2xl flex items-center gap-3 text-xs text-rose-700 font-medium">
-          <AlertCircle size={18} className="text-rose-500 shrink-0" />
-          <div>
-            <span>Hạn nộp bài đã kết thúc{dueDate && dueDate !== 'N/A' ? ` (${dueDate})` : ''}. Bài tập này không cho phép nộp muộn.</span>
-          </div>
-        </div>
-      )}
-
       {/* Bảng thông tin trạng thái bài nộp chuẩn EduX */}
       <div className="space-y-5">
         {/* Hàng 1: SUBMISSION STATUS & SUBMISSION TIME */}
@@ -1305,6 +1349,11 @@ export const SubmissionStatusView: React.FC<SubmissionStatusViewProps> = ({
               <span className="inline-flex items-center gap-1.5 bg-indigo-50 text-indigo-700 border border-indigo-200 text-xs font-bold px-3 py-1 rounded-full">
                 <CheckCircle2 size={13} className="text-indigo-600" />
                 <span>Graded (Đã chấm điểm)</span>
+              </span>
+            ) : isResubmitRequested ? (
+              <span className="inline-flex items-center gap-1.5 bg-orange-50 text-orange-700 border border-orange-200 text-xs font-bold px-3 py-1 rounded-full">
+                <RotateCcw size={13} className="text-orange-600" />
+                <span>Resubmit Requested (Yêu cầu nộp lại)</span>
               </span>
             ) : isDraft ? (
               <span className="inline-flex items-center gap-1.5 bg-amber-50 text-amber-800 border border-amber-300 text-xs font-bold px-3 py-1 rounded-full">
@@ -1423,11 +1472,19 @@ export const SubmissionStatusView: React.FC<SubmissionStatusViewProps> = ({
               <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => alert(`Downloading: ${submission.file?.name}`)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-xs font-semibold text-slate-700 transition"
+                  onClick={() => handlePreviewSubmittedFile(submission.file!)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-blue-200 bg-blue-50/70 hover:bg-blue-100/70 text-xs font-semibold text-blue-700 transition cursor-pointer"
+                >
+                  <Eye size={13} />
+                  <span>Xem trực tiếp</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDownloadSubmittedFile(submission.file!)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-xs font-semibold text-slate-700 transition cursor-pointer"
                 >
                   <Download size={13} />
-                  <span>Download</span>
+                  <span>Tải xuống</span>
                 </button>
               </div>
             </div>
@@ -1485,6 +1542,15 @@ export const SubmissionStatusView: React.FC<SubmissionStatusViewProps> = ({
           </div>
         )}
       </div>
+
+      {/* Inline Material Preview Modal cho file bài nộp của sinh viên */}
+      {selectedPreviewFile && (
+        <MaterialPreviewModal
+          isOpen={Boolean(selectedPreviewFile)}
+          onClose={() => setSelectedPreviewFile(null)}
+          material={selectedPreviewFile}
+        />
+      )}
     </div>
   );
 };
@@ -2811,6 +2877,9 @@ export default function StudentAssignmentFlow({
   onSupplementDeclarations,
   onRunSanityCheck,
 }: StudentAssignmentFlowProps) {
+  const navigate = useNavigate();
+  const location = useLocation();
+
   // State Machine Quản lý 2 Chế độ chính
   const [viewMode, setViewMode] = useState<ViewMode>('VIEW_STATUS');
   const [formStep, setFormStep] = useState<FormStep>(1);
@@ -2818,6 +2887,29 @@ export default function StudentAssignmentFlow({
   // Core Data States
   const [assignment, setAssignment] = useState<Assignment>(initialAssignment);
   const [submission, setSubmission] = useState<SubmissionData>(initialSubmission || EMPTY_SUBMISSION_STATE);
+
+  const effectiveClassId =
+    assignment?.classId ||
+    assignment?.class_id ||
+    (assignment as any)?.class?.id ||
+    (initialAssignment as any)?.classId ||
+    (initialAssignment as any)?.class_id ||
+    location?.state?.classId ||
+    location?.state?.class_id ||
+    (assignment as any)?.course_id ||
+    (assignment as any)?.courseId;
+
+  const handleBackToCourseNavigation = () => {
+    if (onBackToCourse) {
+      onBackToCourse();
+      return;
+    }
+    if (effectiveClassId) {
+      navigate(`/student/classes/${effectiveClassId}`);
+    } else {
+      navigate('/student/classes');
+    }
+  };
 
   const activeRubricKeys = useMemo(() => {
     return getActiveRubricKeys(assignment?.rubric_configs || (assignment as any)?.rubricConfigs);
@@ -2868,8 +2960,26 @@ export default function StudentAssignmentFlow({
     }
   }, [initialSubmission]);
 
-  // Edit Mode Flag: true nếu bài đã nộp trước đó
-  const isEditMode = submission.status === 'Submitted' || submission.status === 'Graded';
+  const isResubmitRequested =
+    submission?.status?.toLowerCase() === 'resubmit_requested' ||
+    submission?.status?.toLowerCase() === 'resubmit requested';
+
+  const isGraded = !isResubmitRequested && Boolean(
+    submission?.status?.toUpperCase() === 'GRADED' ||
+    (submission?.score !== null && submission?.score !== undefined) ||
+    (submission?.grade?.score !== null && submission?.grade?.score !== undefined)
+  );
+
+  // Edit Mode Flag: true nếu bài đã nộp trước đó (và chưa bị khóa chấm điểm)
+  const isEditMode = (submission.status === 'Submitted' || isResubmitRequested) && !isGraded;
+
+  // Tự động giữ sinh viên ở VIEW_STATUS khi bài đã được chấm điểm
+  useEffect(() => {
+    if (isGraded && viewMode !== 'VIEW_STATUS') {
+      setViewMode('VIEW_STATUS');
+      setFormStep(1);
+    }
+  }, [isGraded, viewMode]);
 
   // Kiểm tra hạn nộp bài
   const isDeadlinePassed = Boolean(assignment.deadlineRaw && new Date() > new Date(assignment.deadlineRaw));
@@ -2894,7 +3004,8 @@ export default function StudentAssignmentFlow({
   }, [submission, activeRubricKeys]);
 
   const isPendingAiSupplement = Boolean(
-    (submission.status === 'Submitted' || submission.status === 'Graded') &&
+    !isGraded &&
+    (submission.status === 'Submitted' || isResubmitRequested) &&
     submission.file &&
     assignment.aiDeclarationRequired !== false &&
     !hasCompletedDeclarations
@@ -2936,6 +3047,10 @@ export default function StudentAssignmentFlow({
   };
 
   const handleOpenForm = () => {
+    if (isGraded) {
+      alert('Bài nộp này đã được giảng viên chấm điểm chính thức, không thể chỉnh sửa hoặc nộp lại.');
+      return;
+    }
     if (isLateBlocked) {
       alert('Hạn nộp bài đã kết thúc và bài tập này không cho phép nộp muộn!');
       return;
@@ -2970,6 +3085,10 @@ export default function StudentAssignmentFlow({
   };
 
   const handleStartSupplementAi = () => {
+    if (isGraded) {
+      alert('Bài nộp này đã được giảng viên chấm điểm chính thức, không thể chỉnh sửa hoặc nộp lại.');
+      return;
+    }
     setIsSupplementMode(true);
     setDraftFile(submission.file);
     setDraftRawFile(null);
@@ -3377,6 +3496,8 @@ export default function StudentAssignmentFlow({
         friendlyMsg = 'Vui lòng đính kèm tệp bài nộp hoặc ghi chú!';
       } else if (serverMessage === 'ASSIGNMENT_NOT_PUBLISHED') {
         friendlyMsg = 'Bài tập này chưa được công bố!';
+      } else if (serverMessage === 'SUBMISSION_GRADED_LOCKED') {
+        friendlyMsg = 'Bài nộp này đã được giảng viên chấm điểm chính thức, không thể chỉnh sửa hoặc nộp lại.';
       } else if (serverMessage === 'SUBMISSION_LOCKED') {
         friendlyMsg = 'Bài nộp đã bị khóa!';
       } else if (serverMessage) {
@@ -3414,21 +3535,28 @@ export default function StudentAssignmentFlow({
 
       {/* Breadcrumbs */}
       <nav className="flex items-center gap-2 text-xs font-semibold text-slate-500">
-          <button
-            type="button"
-            onClick={onBackToCourse || (() => alert('Navigate to Home'))}
-            className="hover:text-blue-600 transition flex items-center gap-1 cursor-pointer"
-          >
-            <ArrowLeft size={14} />
-            <span>Back to {assignment.courseCode || 'N/A'}</span>
-          </button>
-          <span className="text-slate-300">/</span>
-          <span className="text-slate-400 truncate max-w-xs sm:max-w-md">
-            {assignment.courseTitle || 'N/A'}
-          </span>
-          <span className="text-slate-300">/</span>
-          <span className="text-slate-700 font-bold">{assignment.title || 'N/A'}</span>
-        </nav>
+        <button
+          type="button"
+          onClick={handleBackToCourseNavigation}
+          className="hover:text-blue-600 transition flex items-center gap-1 cursor-pointer"
+        >
+          <ArrowLeft size={14} />
+          <span>Back to {assignment.courseCode || 'N/A'}</span>
+        </button>
+        <span className="text-slate-300">/</span>
+        <button
+          type="button"
+          onClick={handleBackToCourseNavigation}
+          className="hover:text-blue-600 transition text-slate-500 truncate max-w-xs sm:max-w-md cursor-pointer text-left"
+          title={assignment.courseTitle || 'N/A'}
+        >
+          {assignment.courseTitle || 'N/A'}
+        </button>
+        <span className="text-slate-300">/</span>
+        <span className="text-slate-700 font-bold truncate max-w-xs sm:max-w-md" title={assignment.title || 'N/A'}>
+          {assignment.title || 'N/A'}
+        </span>
+      </nav>
 
         {/* Header Tiêu đề & Status Badge */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -3437,7 +3565,12 @@ export default function StudentAssignmentFlow({
               <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
                 {assignment.title}
               </h1>
-              {submission.status === 'Submitted' ? (
+              {isGraded ? null : isResubmitRequested ? (
+                <span className="bg-orange-50 text-orange-700 text-xs font-bold px-2.5 py-0.5 rounded-full border border-orange-200 flex items-center gap-1">
+                  <RotateCcw size={12} className="text-orange-600" />
+                  <span>Resubmit Requested</span>
+                </span>
+              ) : submission.status === 'Submitted' ? (
                 <span className="bg-emerald-50 text-emerald-700 text-xs font-bold px-2.5 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
                   <Check size={12} />
                   <span>Submitted</span>
@@ -3449,7 +3582,7 @@ export default function StudentAssignmentFlow({
             </p>
           </div>
 
-          {submission.status && submission.status !== 'Draft' && submission.status !== 'Graded' && (
+          {submission.status && submission.status !== 'Draft' && !isGraded && (
             <span
               className={`text-xs font-bold px-3 py-1.5 rounded-full border self-start sm:self-auto ${
                 submission.status === 'Submitted'

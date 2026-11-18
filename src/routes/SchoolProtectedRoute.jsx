@@ -15,7 +15,7 @@ export default function SchoolProtectedRoute({
   allowedRoles = [],
   children,
 }) {
-  const { isAuthenticated } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const { isDark } = useTheme();
   const {
     schoolRole,

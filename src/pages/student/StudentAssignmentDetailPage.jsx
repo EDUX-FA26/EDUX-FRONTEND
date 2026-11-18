@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import AssignmentService from '../../services/assignment.service';
 import SubmissionService from '../../services/submission.service';
 import { formatDateDMY } from '../../helper/dateFormat';
@@ -11,6 +11,7 @@ import { normalizeAuditData } from '../../helper/aiAuditHelper';
 export default function StudentAssignmentDetailPage() {
     const { id } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
 
     const [assignment, setAssignment] = useState(null);
     const [submission, setSubmission] = useState(null);
@@ -77,7 +78,37 @@ export default function StudentAssignmentDetailPage() {
     const rawEffectiveScore = submission?.score ?? detailedSubmission?.score ?? null;
     const effectiveScore = rawEffectiveScore != null ? Number(rawEffectiveScore) : null;
     const effectiveFeedback = submission?.feedback ?? detailedSubmission?.feedback ?? '';
-    const isGraded = effectiveScore != null || submission?.status === 'graded' || submission?.status === 'GRADED' || submission?.status === 'Graded';
+    const isResubmitRequested =
+        submission?.status?.toLowerCase() === 'resubmit_requested' ||
+        submission?.status?.toLowerCase() === 'resubmit requested' ||
+        detailedSubmission?.status?.toLowerCase() === 'resubmit_requested' ||
+        detailedSubmission?.status?.toLowerCase() === 'resubmit requested';
+    const isGraded = !isResubmitRequested && (
+        effectiveScore != null ||
+        submission?.status === 'graded' ||
+        submission?.status === 'GRADED' ||
+        submission?.status === 'Graded' ||
+        detailedSubmission?.status === 'graded' ||
+        detailedSubmission?.status === 'GRADED' ||
+        detailedSubmission?.status === 'Graded'
+    );
+
+    const targetClassId =
+        assignment?.class_id ||
+        assignment?.classId ||
+        assignment?.class?.id ||
+        location.state?.classId ||
+        location.state?.class_id ||
+        assignment?.course_id ||
+        assignment?.courseId;
+
+    const handleBackToCourse = () => {
+        if (targetClassId) {
+            navigate(`/student/classes/${targetClassId}`);
+        } else {
+            navigate('/student/classes');
+        }
+    };
 
     // Format Assignment from DB for StudentAssignmentFlow
     const formattedAssignment = {
@@ -85,6 +116,8 @@ export default function StudentAssignmentDetailPage() {
         title: title,
         courseCode: assignment?.course_code || assignment?.subject_code || assignment?.class_code || 'N/A',
         courseTitle: assignment?.course_name || assignment?.subject_name || assignment?.class_name || 'N/A',
+        classId: targetClassId,
+        class_id: targetClassId,
         dueDate: assignment?.deadline ? formatDateDMY(assignment.deadline) : 'N/A',
         deadlineRaw: assignment?.deadline || null,
         allowLateSubmission: Boolean(assignment?.allow_late_submission),
@@ -170,7 +203,9 @@ export default function StudentAssignmentDetailPage() {
         const editedTime = submission.updated_at || latestVer?.updated_at || submission.last_submitted_at;
 
         let statusText = 'Submitted';
-        if (isGraded) {
+        if (isResubmitRequested) {
+            statusText = 'Resubmit Requested';
+        } else if (isGraded) {
             statusText = 'Graded';
         } else if (isDraft) {
             statusText = 'Draft';
@@ -283,7 +318,7 @@ export default function StudentAssignmentDetailPage() {
         <StudentAssignmentFlow
             initialAssignment={formattedAssignment}
             initialSubmission={formattedSubmission}
-            onBackToCourse={() => navigate('/student/classes')}
+            onBackToCourse={handleBackToCourse}
             onSubmitApiHandler={handleApiSubmit}
             onSaveDraftFile={handleSaveDraftFile}
             onRemoveDraftFile={handleRemoveDraftFile}

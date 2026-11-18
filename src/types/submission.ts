@@ -71,11 +71,16 @@ export interface AiAuditDeclaration {
  * Thông tin file đính kèm
  */
 export interface SubmissionFile {
+  id?: string;
   name: string;
   url: string;
   size: number; // in bytes
-  mimeType: string;
-  fileType: FileType;
+  mimeType?: string;
+  fileType?: FileType;
+  storage_key?: string;
+  file_name?: string;
+  file_size?: number;
+  file_type?: string;
   rawFile?: File; // file đối tượng nếu vừa upload từ browser
   extractedTree?: ZipTreeNode[]; // cấu trúc cây thư mục nếu là file zip
   textContent?: string; // nội dung text nếu là file code đơn lẻ
