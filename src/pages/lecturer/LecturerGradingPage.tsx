@@ -58,6 +58,8 @@ export default function LecturerGradingPage() {
   const [currentFile, setCurrentFile] = useState<SubmissionFile | undefined>(undefined);
   const [aiDeclarations, setAiDeclarations] = useState<AiDeclarationPhase[]>([]);
   const [auditRawData, setAuditRawData] = useState<any>(null);
+  const [noAiUsed, setNoAiUsed] = useState<boolean>(false);
+  const [noAiNote, setNoAiNote] = useState<string>('');
   const [existingGradeId, setExistingGradeId] = useState<string | null>(null);
   const [resolvedAssignmentId, setResolvedAssignmentId] = useState<string | null>(
     assignmentId || stateData?.assignment_id || stateData?.assignmentId || null
@@ -385,6 +387,39 @@ export default function LecturerGradingPage() {
                 setAuditRawData(subData.note);
               }
 
+              let isZeroAi = Boolean(
+                subData.no_ai_used === true ||
+                subData.no_ai_used === 'true' ||
+                subData.noAiUsed === true ||
+                subData.noAiUsed === 'true' ||
+                stateData?.no_ai_used === true ||
+                stateData?.no_ai_used === 'true' ||
+                stateData?.noAiUsed === true ||
+                stateData?.noAiUsed === 'true'
+              );
+              let studentNoAiNote =
+                subData.no_ai_note ||
+                subData.noAiNote ||
+                stateData?.no_ai_note ||
+                stateData?.noAiNote ||
+                '';
+
+              const rawNote = (subData.versions && subData.versions[0]?.note) || subData.note || stateData?.latest_note;
+              if (rawNote) {
+                try {
+                  const normalized: any = normalizeAuditData(rawNote);
+                  if (normalized?.no_ai_used) {
+                    isZeroAi = true;
+                    if (!studentNoAiNote && normalized.no_ai_note) {
+                      studentNoAiNote = normalized.no_ai_note;
+                    }
+                  }
+                } catch (e) {}
+              }
+
+              setNoAiUsed(isZeroAi);
+              setNoAiNote(studentNoAiNote);
+
               // Fallback to stateData files if versions was empty
               if ((!files || files.length === 0) && stateData?.latest_files) {
                 try {
@@ -640,6 +675,8 @@ export default function LecturerGradingPage() {
         file={currentFile}
         aiDeclarations={aiDeclarations}
         auditData={auditRawData}
+        noAiUsed={noAiUsed}
+        noAiNote={noAiNote}
         topics={topics}
         isLoadingTopics={isLoadingTopics}
         hasCourseTopics={(courseInfo as any)?.has_course_topics}

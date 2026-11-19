@@ -16,6 +16,7 @@ import {
   Zap,
   Copy,
   CheckCircle,
+  CheckCircle2,
   AlertTriangle,
   X,
   FileText,
@@ -267,6 +268,8 @@ export interface LecturerAcademicEvaluationProps {
   file?: SubmissionFile;
   aiDeclarations?: AiDeclarationPhase[];
   auditData?: any;
+  noAiUsed?: boolean;
+  noAiNote?: string;
   initialRubrics?: RubricScores;
   initialFeedback?: string;
   initialAiCompliance?: AiComplianceStatus;
@@ -323,6 +326,8 @@ export default function LecturerAcademicEvaluation({
   rubricConfigs,
   aiDeclarations = DEFAULT_AI_DECLARATIONS,
   auditData,
+  noAiUsed: noAiUsedProp,
+  noAiNote: noAiNoteProp,
   initialRubrics = DEFAULT_RUBRIC_SCORES,
   initialFeedback = '',
   initialAiCompliance = 'compliant',
@@ -560,9 +565,25 @@ export default function LecturerAcademicEvaluation({
     return false;
   }, [normalizedAudit]);
 
+  const isZeroAi = Boolean(
+    noAiUsedProp ||
+    (normalizedAudit as any)?.no_ai_used ||
+    (normalizedAudit as any)?.noAiUsed ||
+    auditData?.no_ai_used ||
+    auditData?.noAiUsed
+  );
+  const studentNoAiNote =
+    noAiNoteProp ||
+    (normalizedAudit as any)?.no_ai_note ||
+    (normalizedAudit as any)?.noAiNote ||
+    auditData?.no_ai_note ||
+    auditData?.noAiNote ||
+    '';
+
   const isPendingAiSupplement = Boolean(
     isAiRequired &&
-    !hasDeclaredAnyAi
+    !hasDeclaredAnyAi &&
+    !isZeroAi
   );
 
   // Kiểm tra xem sinh viên có khai báo AI nào không (nếu tất cả các scope đều trống text và aiDeclarations rỗng)
@@ -1017,16 +1038,24 @@ export default function LecturerAcademicEvaluation({
       const payload = {
         force,
         ai_declaration_required: isAiRequired,
+        no_ai_used: isZeroAi,
+        no_ai_note: studentNoAiNote,
         aiAuditSummary: isAiRequired ? {
-          declarationAlignment: '96.4%',
-          transparencyIndex: 'A+',
-          reflectionDepth: 'High',
-          riskLevel: student.aiRiskLevel || 'low',
-          summary: 'Khai báo chi tiết cả tool được chấp thuận và tool bị từ chối.'
+          declarationAlignment: isZeroAi ? '100%' : '96.4%',
+          transparencyIndex: isZeroAi ? '100% (Self-Reliant)' : 'A+',
+          reflectionDepth: isZeroAi ? 'Self-Authored' : 'High',
+          riskLevel: isZeroAi ? 'low' : (student.aiRiskLevel || 'low'),
+          summary: isZeroAi
+            ? 'Sinh viên cam kết tự thực hiện 100% không sử dụng AI.'
+            : 'Khai báo chi tiết cả tool được chấp thuận và tool bị từ chối.'
         } : null,
         oralExamLogs: [],
         aiDeclarations: isAiRequired ? currentScopeDeclarations : [],
-        aiAuditData: isAiRequired ? (auditData || normalizedAudit) : null,
+        aiAuditData: isAiRequired ? {
+          ...(typeof auditData === 'object' && auditData !== null ? auditData : (normalizedAudit || {})),
+          no_ai_used: isZeroAi,
+          no_ai_note: studentNoAiNote,
+        } : null,
         codeSnippet: actualFile.textContent || (codeLines.join('\n'))
       };
 
@@ -1393,14 +1422,53 @@ export default function LecturerAcademicEvaluation({
               <div className="flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-2 text-xs font-bold text-slate-800 tracking-wide uppercase">
                   <Layers size={14} className="text-orange-500" />
-                  <span>STUDENT AI DECLARATION ({scopes.length > 1 ? `${scopes.length} PHẠM VI / SCOPES` : '5 PHASES'})</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[10px] bg-slate-100 text-slate-500 font-semibold px-2 py-0.5 rounded border border-slate-200">
-                    Self-Reported
+                  <span>
+                    {isZeroAi
+                      ? 'SINH VIÊN CAM KẾT KHÔNG SỬ DỤNG AI (ZERO-AI)'
+                      : `STUDENT AI DECLARATION (${scopes.length > 1 ? `${scopes.length} PHẠM VI / SCOPES` : '5 PHASES'})`}
                   </span>
                 </div>
+                <div className="flex items-center gap-1.5">
+                  {isZeroAi ? (
+                    <span className="text-[10px] bg-emerald-50 text-emerald-700 font-bold px-2.5 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
+                      <CheckCircle2 size={12} className="text-emerald-600" />
+                      100% Transparent (Self-Reliant)
+                    </span>
+                  ) : (
+                    <span className="text-[10px] bg-slate-100 text-slate-500 font-semibold px-2 py-0.5 rounded border border-slate-200">
+                      Self-Reported
+                    </span>
+                  )}
+                </div>
               </div>
+
+              {/* BANNER ZERO-AI CAM KẾT TỰ LÀM 100% */}
+              {isZeroAi && (
+                <div className="p-4 bg-emerald-50/90 border border-emerald-200 rounded-2xl flex flex-col gap-2.5 text-emerald-950 shadow-2xs shrink-0">
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5">
+                      <CheckCircle2 size={18} />
+                    </div>
+                    <div className="space-y-1 flex-1">
+                      <div className="text-xs font-bold text-emerald-900 uppercase tracking-wide flex items-center gap-2">
+                        <span>SINH VIÊN CAM KẾT TỰ THỰC HIỆN 100% (ZERO-AI DECLARATION)</span>
+                        <span className="text-[10px] font-bold bg-emerald-200/80 text-emerald-900 px-2 py-0.5 rounded-full">
+                          Không dùng AI
+                        </span>
+                      </div>
+                      <p className="text-xs text-emerald-800 leading-relaxed">
+                        Sinh viên cam kết đã tự hoàn thành 100% mã nguồn và tài liệu của bài nộp này mà không cần đến sự hỗ trợ của các công cụ GenAI. Bài làm được bảo lưu mức độ liêm chính học thuật tối đa.
+                      </p>
+                    </div>
+                  </div>
+                  {studentNoAiNote && (
+                    <div className="mt-1 p-3 bg-white/80 border border-emerald-200 rounded-xl text-xs text-slate-800">
+                      <span className="font-bold text-emerald-900">Ghi chú / Phương pháp tự thực hiện của sinh viên: </span>
+                      <span className="italic text-slate-700">{studentNoAiNote}</span>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Thông báo nhẹ nhàng khi sinh viên chưa bổ sung khai báo AI */}
               {isPendingAiSupplement && (
@@ -1469,7 +1537,51 @@ export default function LecturerAcademicEvaluation({
               )}
 
               {/* KHUNG BẢNG 5 PHASES: CUỘN NGANG & DỌC ĐỘC LẬP BÊN TRONG HOẶC EMPTY STATE */}
-              {!hasAnyDeclaration ? (
+              {isZeroAi && !hasAnyDeclaration ? (
+                <div className="border border-emerald-200 rounded-2xl p-6 bg-gradient-to-br from-emerald-50/70 to-teal-50/40 text-center flex flex-col items-center justify-center space-y-3">
+                  <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shadow-xs">
+                    <ShieldCheck size={24} />
+                  </div>
+                  <div className="space-y-1">
+                    <h3 className="text-xs font-bold text-emerald-900 uppercase tracking-wide">
+                      Cam kết tự thực hiện 100% (No AI Used)
+                    </h3>
+                    <p className="text-[11px] text-emerald-700 font-medium max-w-md mx-auto leading-relaxed">
+                      Sinh viên cam kết không sử dụng bất kỳ công cụ AI nào khi làm bài. Không yêu cầu khai báo 5 tiêu chí tương tác AI.
+                    </p>
+                  </div>
+                  {studentNoAiNote && (
+                    <div className="bg-white border border-emerald-200/80 rounded-xl px-4 py-2 text-xs text-slate-700 max-w-lg text-left shadow-2xs">
+                      <strong className="text-emerald-800">Phương pháp thực hiện: </strong>
+                      <span>{studentNoAiNote}</span>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('grading')}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition shadow-sm cursor-pointer"
+                    >
+                      <span>Chuyển sang Chấm điểm (Grading)</span>
+                      <ChevronRight size={13} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowVivaModal(true);
+                        if (vivaQuestions.length === 0 && !isAuditingAi) {
+                          handleAuditWithAi({ force: false, applyScores: false });
+                        }
+                        if (onRunAuditViva) onRunAuditViva();
+                      }}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-sm cursor-pointer"
+                    >
+                      <Zap size={13} />
+                      <span>Tạo Câu Hỏi Vấn Đáp Xác Minh Code</span>
+                    </button>
+                  </div>
+                </div>
+              ) : !hasAnyDeclaration ? (
                 <div className="border-2 border-dashed border-slate-200 rounded-2xl p-8 bg-slate-50/50 text-center flex flex-col items-center justify-center space-y-3">
                   <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center">
                     <ShieldCheck size={24} />
@@ -1593,16 +1705,18 @@ export default function LecturerAcademicEvaluation({
                 </div>
               )}
 
-              {/* Bottom Action Box: Thanh tra trung thực AI */}
+              {/* Bottom Action Box: Thanh tra trung thực AI / Kiểm chứng code */}
               <div className="pt-2 space-y-3 shrink-0">
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800">
                       <Sparkles size={14} className="text-indigo-600" />
-                      <span>THANH TRA TRUNG THỰC AI & VẤN ĐÁP VIVA</span>
+                      <span>{isZeroAi ? 'KIỂM CHỨNG QUYỀN SỞ HỮU CODE & VẤN ĐÁP VIVA' : 'THANH TRA TRUNG THỰC AI & VẤN ĐÁP VIVA'}</span>
                     </div>
                     <p className="text-[11px] text-slate-400 mt-0.5">
-                      Kiểm định tự động độ khớp giữa lời khai và mã nguồn thực tế
+                      {isZeroAi
+                        ? 'Tự động tạo câu hỏi Viva kiểm chứng năng lực code độc lập của sinh viên'
+                        : 'Kiểm định tự động độ khớp giữa lời khai và mã nguồn thực tế'}
                     </p>
                   </div>
                   <button
@@ -1628,7 +1742,7 @@ export default function LecturerAcademicEvaluation({
                   className="w-full py-2.5 px-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-500/20 flex items-center justify-center gap-2 transition cursor-pointer"
                 >
                   <Zap size={13} />
-                  <span>Chạy Thanh Tra & Tạo Vấn Đáp</span>
+                  <span>{isZeroAi ? 'Tạo Câu Hỏi Vấn Đáp Xác Minh Code (Zero-AI)' : 'Chạy Thanh Tra & Tạo Vấn Đáp'}</span>
                 </button>
               </div>
             </div>
@@ -2248,11 +2362,17 @@ export default function LecturerAcademicEvaluation({
                 </div>
                 <div className="min-w-0">
                   <h3 className="text-sm sm:text-base font-bold text-slate-900 truncate">
-                    Báo Cáo Thanh Tra Trung Thực AI & Bộ Câu Hỏi Vấn Đáp Viva
+                    {isZeroAi
+                      ? 'Báo Cáo Kiểm Chứng Quyền Sở Hữu Code & Bộ Câu Hỏi Vấn Đáp'
+                      : 'Báo Cáo Thanh Tra Trung Thực AI & Bộ Câu Hỏi Vấn Đáp Viva'}
                   </h3>
                   <p className="text-[11px] text-slate-500 flex items-center gap-1.5 mt-0.5 truncate">
                     <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 shrink-0"></span>
-                    <span>Đối chiếu AST Code + Git Commit History + Lời khai 5 Rubrics</span>
+                    <span>
+                      {isZeroAi
+                        ? 'Sinh viên cam kết tự thực hiện 100% không dùng AI • Câu hỏi kiểm tra bản chất code'
+                        : 'Đối chiếu AST Code + Git Commit History + Lời khai 5 Rubrics'}
+                    </span>
                   </p>
                 </div>
               </div>
@@ -2295,17 +2415,19 @@ export default function LecturerAcademicEvaluation({
                   <div className={`text-[10px] font-bold uppercase tracking-wider ${
                     auditIntegrity?.penalty_applied ? 'text-rose-700' : 'text-emerald-700'
                   }`}>
-                    Độ Khớp Lời Khai
+                    {isZeroAi ? 'Cam Kết Liêm Chính' : 'Độ Khớp Lời Khai'}
                   </div>
                   <div className={`text-2xl sm:text-3xl font-extrabold mt-1 ${
                     auditIntegrity?.penalty_applied ? 'text-rose-700' : 'text-emerald-700'
                   }`}>
-                    {auditIntegrity ? `${auditIntegrity.match_percentage.toFixed(0)}%` : '96.4%'}
+                    {isZeroAi ? '100%' : (auditIntegrity ? `${auditIntegrity.match_percentage.toFixed(0)}%` : '96.4%')}
                   </div>
                   <div className={`text-[10px] mt-1 font-medium ${
                     auditIntegrity?.penalty_applied ? 'text-rose-600' : 'text-emerald-600'
                   }`}>
-                    {auditIntegrity 
+                    {isZeroAi
+                      ? 'Zero-AI (Tự làm 100%)'
+                      : auditIntegrity 
                       ? (auditIntegrity.penalty_applied ? 'Phát hiện sai lệch với code' : 'Mã nguồn khớp các phase') 
                       : 'Đang đối soát'}
                   </div>
@@ -2325,18 +2447,20 @@ export default function LecturerAcademicEvaluation({
                   <div className={`text-2xl sm:text-3xl font-extrabold mt-1 ${
                     auditIntegrity?.penalty_applied ? 'text-amber-700' : 'text-indigo-700'
                   }`}>
-                    {auditIntegrity ? auditIntegrity.ai_transparency_index : 'A+'}
+                    {isZeroAi ? '100%' : (auditIntegrity ? auditIntegrity.ai_transparency_index : 'A+')}
                   </div>
                   <div className={`text-[10px] mt-1 font-medium ${
                     auditIntegrity?.penalty_applied ? 'text-amber-600' : 'text-indigo-600'
                   }`}>
-                    {auditIntegrity 
+                    {isZeroAi
+                      ? 'Minh bạch tự thân tuyệt đối'
+                      : auditIntegrity 
                       ? (auditIntegrity.penalty_applied ? 'Khai báo đối phó/sơ sài' : 'Khai báo chi tiết các tool') 
                       : 'Kiểm toán tự động'}
                   </div>
                 </div>
 
-                {/* Thẻ 3: Self-Reflection Depth */}
+                {/* Thẻ 3: Self-Reflection Depth / AI Risk */}
                 <div className={`p-4 rounded-2xl border text-center transition ${
                   auditIntegrity?.penalty_applied 
                     ? 'bg-rose-50/70 border-rose-200' 
@@ -2345,17 +2469,19 @@ export default function LecturerAcademicEvaluation({
                   <div className={`text-[10px] font-bold uppercase tracking-wider ${
                     auditIntegrity?.penalty_applied ? 'text-rose-700' : 'text-purple-700'
                   }`}>
-                    Self-Reflection Depth
+                    {isZeroAi ? 'Mức Độ Rủi Ro AI' : 'Self-Reflection Depth'}
                   </div>
                   <div className={`text-2xl sm:text-3xl font-extrabold mt-1 ${
                     auditIntegrity?.penalty_applied ? 'text-rose-700' : 'text-purple-700'
                   }`}>
-                    {auditIntegrity ? auditIntegrity.reflection_depth : 'High'}
+                    {isZeroAi ? 'LOW RISK' : (auditIntegrity ? auditIntegrity.reflection_depth : 'High')}
                   </div>
                   <div className={`text-[10px] mt-1 font-medium ${
                     auditIntegrity?.penalty_applied ? 'text-rose-600' : 'text-purple-600'
                   }`}>
-                    {auditIntegrity 
+                    {isZeroAi
+                      ? 'Không phụ thuộc AI'
+                      : auditIntegrity 
                       ? (auditIntegrity.penalty_applied ? 'Phản tư giả mạo/lặp lại' : 'Có tư duy phản biện') 
                       : 'Kiểm tra độ sâu'}
                   </div>
@@ -2367,7 +2493,11 @@ export default function LecturerAcademicEvaluation({
                 <div className="flex items-center justify-between">
                   <div className="text-xs font-bold text-slate-800 uppercase tracking-wide flex items-center gap-1.5">
                     <HelpCircle size={15} className="text-indigo-600" />
-                    <span>Bộ Câu Hỏi Vấn Đáp (Viva Questions) Bám Sát Code Thực Tế</span>
+                    <span>
+                      {isZeroAi
+                        ? 'Bộ Câu Hỏi Vấn Đáp Xác Minh Quyền Sở Hữu Code (Code Ownership Verification)'
+                        : 'Bộ Câu Hỏi Vấn Đáp (Viva Questions) Bám Sát Code Thực Tế'}
+                    </span>
                   </div>
                   {isAuditingAi && (
                     <span className="text-[11px] text-indigo-600 flex items-center gap-1.5 font-semibold bg-indigo-50 px-2.5 py-1 rounded-full border border-indigo-100">
