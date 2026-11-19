@@ -59,8 +59,17 @@ import SchoolSelectionPage
 import PlatformDashboardPage from
   "../pages/platform/PlatformDashboardPage.jsx";
 import ManagerDashboardPage from "../pages/manager/ManagerDashboardPage.jsx";
+import ManagerSchoolsPage from "../pages/manager/ManagerSchoolsPage";
+import ManagerSubscriptionsPage from "../pages/manager/ManagerSubscriptionsPage";
+import ManagerPaymentsPage from "../pages/manager/ManagerPaymentsPage";
+import ManagerNotificationsPage from "../pages/manager/ManagerNotificationsPage";
 import PlatformProtectedRoute from "./PlatformProtectedRoute";
 import ManagersPage from "../pages/superadmin/ManagersPage";
+import SubscriptionPlansPage from "../pages/superadmin/SubscriptionPlansPage";
+import PlatformRevenuePage from "../pages/superadmin/PlatformRevenuePage";
+import PlatformRefundsPage from "../pages/superadmin/PlatformRefundsPage";
+import PlatformLogsPage from "../pages/superadmin/PlatformLogsPage";
+import SuperadminNotificationsPage from "../pages/superadmin/SuperadminNotificationsPage";
 import EduxLoadingScreen from "../components/common/EduxLoadingScreen";
 import SchoolRegistrationPage from "../pages/public/SchoolRegistrationPage";
 import SchoolRegistrationPaymentPage from "../pages/public/SchoolRegistrationPaymentPage";
@@ -145,17 +154,54 @@ export default function AppRoutes() {
       {/* Public */}
       <Route
         path="/superadmin/dashboard"
-        element={<PlatformProtectedRoute allowedRoles={[ROLES.SUPERADMIN]}><PlatformDashboardPage /></PlatformProtectedRoute>}
+        element={<PlatformProtectedRoute allowedRoles={[ROLES.SUPERADMIN]}><PlatformRevenuePage /></PlatformProtectedRoute>}
       />
       <Route
         path="/superadmin/managers"
         element={<PlatformProtectedRoute allowedRoles={[ROLES.SUPERADMIN]}><ManagersPage /></PlatformProtectedRoute>}
       />
+      <Route
+        path="/superadmin/plans"
+        element={<PlatformProtectedRoute allowedRoles={[ROLES.SUPERADMIN]}><SubscriptionPlansPage /></PlatformProtectedRoute>}
+      />
+      <Route
+        path="/superadmin/revenue"
+        element={<Navigate to="/superadmin/dashboard" replace />}
+      />
+      <Route
+        path="/superadmin/refunds"
+        element={<PlatformProtectedRoute allowedRoles={[ROLES.SUPERADMIN]}><PlatformRefundsPage /></PlatformProtectedRoute>}
+      />
+      <Route
+        path="/superadmin/notifications"
+        element={<PlatformProtectedRoute allowedRoles={[ROLES.SUPERADMIN]}><SuperadminNotificationsPage /></PlatformProtectedRoute>}
+      />
+      <Route
+        path="/superadmin/logs"
+        element={<PlatformProtectedRoute allowedRoles={[ROLES.SUPERADMIN]}><PlatformLogsPage /></PlatformProtectedRoute>}
+      />
       <Route path="/platform" element={<Navigate to="/superadmin/dashboard" replace />} />
       <Route
         path="/manager/dashboard"
-        element={<PlatformProtectedRoute allowedRoles={[ROLES.MANAGER]}><ManagerDashboardPage /></PlatformProtectedRoute>}
+        element={<PlatformProtectedRoute allowedRoles={[ROLES.MANAGER, ROLES.SUPERADMIN]}><ManagerDashboardPage /></PlatformProtectedRoute>}
       />
+      <Route
+        path="/manager/schools"
+        element={<PlatformProtectedRoute allowedRoles={[ROLES.MANAGER, ROLES.SUPERADMIN]}><ManagerSchoolsPage /></PlatformProtectedRoute>}
+      />
+      <Route
+        path="/manager/subscriptions"
+        element={<PlatformProtectedRoute allowedRoles={[ROLES.MANAGER, ROLES.SUPERADMIN]}><ManagerSubscriptionsPage /></PlatformProtectedRoute>}
+      />
+      <Route
+        path="/manager/payments"
+        element={<PlatformProtectedRoute allowedRoles={[ROLES.MANAGER, ROLES.SUPERADMIN]}><ManagerPaymentsPage /></PlatformProtectedRoute>}
+      />
+      <Route
+        path="/manager/notifications"
+        element={<PlatformProtectedRoute allowedRoles={[ROLES.MANAGER, ROLES.SUPERADMIN]}><ManagerNotificationsPage /></PlatformProtectedRoute>}
+      />
+      <Route path="/manager" element={<Navigate to="/manager/dashboard" replace />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register-school" element={<SchoolRegistrationPage />} />
       <Route path="/register-school/payment/:registrationId" element={<SchoolRegistrationPaymentPage />} />
