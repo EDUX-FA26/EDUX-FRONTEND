@@ -877,7 +877,14 @@ export default function LecturerAssignmentDetailPage() {
                                             const maxScore = assignment?.max_score || 10;
                                             const isGraded = currentScore !== undefined && currentScore !== null;
                                             const isSubmitted = sub.status !== 'Missing' && sub.status !== 'missing' && !String(sub.id || '').startsWith('missing-');
-                                            const hasDeclared = isSubmitted && isAuditDeclared(sub);
+                                            const isZeroAi = Boolean(
+                                                sub.no_ai_used === true ||
+                                                sub.no_ai_used === 'true' ||
+                                                sub.noAiUsed === true ||
+                                                sub.noAiUsed === 'true' ||
+                                                (sub.latest_note && (sub.latest_note.includes('"no_ai_used":true') || sub.latest_note.includes('"no_ai_used": true')))
+                                            );
+                                            const hasDeclared = isSubmitted && (isZeroAi || isAuditDeclared(sub));
 
                                             return (
                                                 <tr key={sub.id || index} style={{ borderBottom: '1px solid var(--color-border)' }}>
@@ -955,8 +962,50 @@ export default function LecturerAssignmentDetailPage() {
                                                             >
                                                                 <Eye className="w-4 h-4" size={15} />
                                                             </button>
+                                                        ) : isZeroAi ? (
+                                                            // 3. Sinh viên cam kết Zero-AI: Hiển thị badge xanh + nút xem
+                                                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }}>
+                                                                <span
+                                                                    title="Sinh viên cam kết tự thực hiện 100%, không dùng AI"
+                                                                    style={{
+                                                                        display: 'inline-flex',
+                                                                        alignItems: 'center',
+                                                                        gap: '3px',
+                                                                        padding: '2px 7px',
+                                                                        borderRadius: '9999px',
+                                                                        fontSize: '10px',
+                                                                        fontWeight: 700,
+                                                                        backgroundColor: '#ecfdf5',
+                                                                        color: '#047857',
+                                                                        border: '1px solid #a7f3d0'
+                                                                    }}
+                                                                >
+                                                                    <CheckCircle size={10} style={{ color: '#059669' }} />
+                                                                    <span>Zero-AI (100% Tự làm)</span>
+                                                                </span>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => handleOpenAuditModal(sub)}
+                                                                    onMouseEnter={() => handleOpenAuditModal(sub)}
+                                                                    onMouseLeave={handleCloseAuditModal}
+                                                                    title="Xem chi tiết cam kết Zero-AI của sinh viên"
+                                                                    className="w-7 h-7 inline-flex items-center justify-center rounded-full transition cursor-pointer bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:text-emerald-700"
+                                                                    style={{
+                                                                        width: '26px',
+                                                                        height: '26px',
+                                                                        borderRadius: '50%',
+                                                                        display: 'inline-flex',
+                                                                        alignItems: 'center',
+                                                                        justifyContent: 'center',
+                                                                        border: '1px solid #a7f3d0',
+                                                                        cursor: 'pointer',
+                                                                    }}
+                                                                >
+                                                                    <Eye className="w-3.5 h-3.5" size={13} />
+                                                                </button>
+                                                            </div>
                                                         ) : (
-                                                            // 3. Đã nộp bài (bất kể đã khai báo hay chưa): LUÔN ĐƯỢC ENABLE
+                                                            // 4. Khai báo AI chuẩn
                                                             <button
                                                                 type="button"
                                                                 onClick={() => handleOpenAuditModal(sub)}

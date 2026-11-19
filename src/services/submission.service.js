@@ -4,21 +4,27 @@ const SubmissionService = {
     /**
      * Nộp bài hoặc lưu nháp bài tập (tương thích ngược)
      */
-    async submitAssignment(assignmentId, file, note, isDraft = false) {
+    async submitAssignment(assignmentId, file, note, isDraft = false, extra = {}) {
         if (isDraft) {
-            return this.saveDraft(assignmentId, file, note);
+            return this.saveDraft(assignmentId, file, note, extra);
         }
-        return this.submitFinal(assignmentId, file, note);
+        return this.submitFinal(assignmentId, file, note, extra);
     },
 
     /**
      * 1. Lưu bản nháp bài nộp (Save Draft - legacy)
      */
-    async saveDraft(assignmentId, file, note) {
+    async saveDraft(assignmentId, file, note, extra = {}) {
         const formData = new FormData();
         if (file) formData.append('files', file);
         if (note) formData.append('note', note);
         formData.append('is_draft', 'true');
+        if (extra?.no_ai_used !== undefined) {
+            formData.append('no_ai_used', String(extra.no_ai_used));
+        }
+        if (extra?.no_ai_note !== undefined && extra?.no_ai_note !== null) {
+            formData.append('no_ai_note', extra.no_ai_note);
+        }
 
         const response = await api.post(`/submissions/${assignmentId}/draft`, formData, {
             headers: {
@@ -79,10 +85,16 @@ const SubmissionService = {
     /**
      * 2. Nộp bài chính thức (Submit Final)
      */
-    async submitFinal(assignmentId, file, note) {
+    async submitFinal(assignmentId, file, note, extra = {}) {
         const formData = new FormData();
         if (file) formData.append('files', file);
         if (note) formData.append('note', note);
+        if (extra?.no_ai_used !== undefined) {
+            formData.append('no_ai_used', String(extra.no_ai_used));
+        }
+        if (extra?.no_ai_note !== undefined && extra?.no_ai_note !== null) {
+            formData.append('no_ai_note', extra.no_ai_note);
+        }
 
         const response = await api.post(`/submissions/${assignmentId}/submit-final`, formData, {
             headers: {

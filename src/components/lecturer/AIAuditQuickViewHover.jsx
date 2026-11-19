@@ -127,6 +127,8 @@ export function parseDeclarationData(declarationData) {
 
   const fallbackData = {
     isDeclared: false,
+    no_ai_used: false,
+    no_ai_note: '',
     completedCount: 0,
     totalCount: 5,
     scopes: [
@@ -147,8 +149,31 @@ export function parseDeclarationData(declarationData) {
   if (!declarationData) return fallbackData;
 
   const normalized = normalizeAuditData(declarationData);
+  const no_ai_used = Boolean(
+    declarationData?.no_ai_used === true ||
+    declarationData?.no_ai_used === 'true' ||
+    declarationData?.noAiUsed === true ||
+    declarationData?.noAiUsed === 'true' ||
+    normalized?.no_ai_used === true ||
+    normalized?.no_ai_used === 'true' ||
+    normalized?.noAiUsed === true ||
+    normalized?.noAiUsed === 'true'
+  );
+  const no_ai_note =
+    declarationData?.no_ai_note ||
+    declarationData?.noAiNote ||
+    normalized?.no_ai_note ||
+    normalized?.noAiNote ||
+    '';
+
   if (!normalized || !Array.isArray(normalized.scopes) || normalized.scopes.length === 0) {
-    return fallbackData;
+    return {
+      ...fallbackData,
+      isDeclared: no_ai_used,
+      no_ai_used,
+      no_ai_note,
+      completedCount: no_ai_used ? 5 : 0,
+    };
   }
 
   const parsedScopes = normalized.scopes.map((scope, idx) => {
@@ -170,11 +195,13 @@ export function parseDeclarationData(declarationData) {
   });
 
   const totalCompleted = parsedScopes.reduce((a, s) => a + s.completedCount, 0);
-  const isDeclared = totalCompleted > 0;
+  const isDeclared = totalCompleted > 0 || no_ai_used;
 
   return {
     isDeclared,
-    completedCount: totalCompleted,
+    no_ai_used,
+    no_ai_note,
+    completedCount: no_ai_used ? parsedScopes.length * 5 : totalCompleted,
     totalCount: parsedScopes.length * 5,
     scopes: parsedScopes,
     rubrics: parsedScopes[0]?.rubrics || [],
@@ -613,7 +640,25 @@ export function AIAuditDetailModal({
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   {/* Status Badge */}
-                  {parsedData.completedCount === parsedData.totalCount ? (
+                  {parsedData.no_ai_used ? (
+                    <span
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '5px',
+                        padding: '4px 12px',
+                        borderRadius: '9999px',
+                        backgroundColor: '#ecfdf5',
+                        color: '#047857',
+                        border: '1px solid #a7f3d0',
+                        fontSize: '11px',
+                        fontWeight: '700',
+                      }}
+                    >
+                      <CheckCircle2 size={13} />
+                      Zero-AI (Tự làm 100%)
+                    </span>
+                  ) : parsedData.completedCount === parsedData.totalCount ? (
                     <span
                       style={{
                         display: 'inline-flex',
@@ -894,7 +939,63 @@ export function AIAuditDetailModal({
                   backgroundColor: '#ffffff',
                 }}
               >
-                {!parsedData.isDeclared && (
+                {parsedData.no_ai_used && (
+                  <div
+                    style={{
+                      margin: '0 0 16px 0',
+                      padding: '14px 18px',
+                      backgroundColor: '#ecfdf5',
+                      border: '1px solid #a7f3d0',
+                      borderRadius: '12px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '8px',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <div
+                        style={{
+                          width: '24px',
+                          height: '24px',
+                          borderRadius: '6px',
+                          backgroundColor: '#d1fae5',
+                          color: '#059669',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0,
+                        }}
+                      >
+                        <CheckCircle2 size={16} />
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '13px', fontWeight: '800', color: '#065f46' }}>
+                          SINH VIÊN CAM KẾT KHÔNG SỬ DỤNG AI (ZERO-AI / TỰ THỰC HIỆN 100%)
+                        </div>
+                        <div style={{ fontSize: '11px', color: '#047857', marginTop: '2px' }}>
+                          Sinh viên cam kết hoàn thành bài làm độc lập 100%, không sử dụng các công cụ AI hỗ trợ sinh mã hay giải đề.
+                        </div>
+                      </div>
+                    </div>
+                    {parsedData.no_ai_note && (
+                      <div
+                        style={{
+                          marginTop: '4px',
+                          padding: '8px 12px',
+                          backgroundColor: '#ffffff',
+                          borderRadius: '8px',
+                          border: '1px solid #d1fae5',
+                          fontSize: '11.5px',
+                          color: '#1e293b',
+                        }}
+                      >
+                        <strong style={{ color: '#047857' }}>Phương pháp tự thực hiện của sinh viên: </strong>
+                        <span style={{ fontStyle: 'italic' }}>{parsedData.no_ai_note}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+                {!parsedData.isDeclared && !parsedData.no_ai_used && (
                   <div
                     style={{
                       margin: '0 0 16px 0',
@@ -1273,10 +1374,11 @@ export default function AIAuditQuickViewHover({
   const [isOpen, setIsOpen] = useState(false);
   const hoverTimeoutRef = useRef(null);
   const parsedData = parseDeclarationData(declarationData);
+  const isZeroAi = Boolean(parsedData?.no_ai_used);
   const hasDeclared =
     typeof hasDeclaredProp === 'boolean'
       ? hasDeclaredProp
-      : Boolean(parsedData?.isDeclared && parsedData?.completedCount > 0);
+      : Boolean(isZeroAi || (parsedData?.isDeclared && parsedData?.completedCount > 0));
 
   const isDisabled = !isSubmitted;
 
@@ -1337,6 +1439,8 @@ export default function AIAuditQuickViewHover({
           className={`w-7 h-7 inline-flex items-center justify-center rounded-full transition-all ${
             isDisabled
               ? 'bg-slate-50 text-slate-300 opacity-30 cursor-not-allowed'
+              : isZeroAi
+              ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:text-emerald-700 cursor-pointer active:scale-95'
               : hasDeclared
               ? 'bg-purple-50 text-purple-600 hover:bg-purple-100 hover:text-purple-700 cursor-pointer active:scale-95'
               : 'bg-slate-100 text-slate-600 hover:text-purple-600 hover:bg-purple-50 cursor-pointer active:scale-95'
@@ -1348,13 +1452,15 @@ export default function AIAuditQuickViewHover({
             display: 'inline-flex',
             alignItems: 'center',
             justifyContent: 'center',
-            border: '1px solid #e2e8f0',
+            border: isZeroAi ? '1px solid #a7f3d0' : '1px solid #e2e8f0',
             cursor: isDisabled ? 'not-allowed' : 'pointer',
             opacity: isDisabled ? 0.3 : 1,
           }}
           aria-label={
             isDisabled
               ? "Sinh viên chưa nộp bài"
+              : isZeroAi
+              ? "Sinh viên cam kết không sử dụng AI (Zero-AI)"
               : hasDeclared
               ? "Xem chi tiết khai báo AI Audit"
               : "Xem chi tiết AI Audit (Chưa khai báo)"
@@ -1362,6 +1468,8 @@ export default function AIAuditQuickViewHover({
           title={
             isDisabled
               ? "Sinh viên chưa nộp bài"
+              : isZeroAi
+              ? "Sinh viên cam kết không sử dụng AI (Zero-AI)"
               : hasDeclared
               ? "Xem chi tiết khai báo AI Audit"
               : "Xem chi tiết AI Audit (Chưa khai báo)"
@@ -1397,6 +1505,8 @@ export default function AIAuditQuickViewHover({
           >
             {isDisabled
               ? "Sinh viên chưa nộp bài"
+              : isZeroAi
+              ? "Sinh viên cam kết không sử dụng AI (Zero-AI)"
               : hasDeclared
               ? "Xem chi tiết khai báo AI Audit"
               : "Xem chi tiết AI Audit (Chưa khai báo)"}

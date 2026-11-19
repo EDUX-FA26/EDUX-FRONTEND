@@ -177,6 +177,10 @@ export interface SubmissionData {
   score?: number | null;
   grade?: any;
   rubrics?: any;
+  no_ai_used?: boolean;
+  noAiUsed?: boolean;
+  no_ai_note?: string | null;
+  noAiNote?: string | null;
 }
 
 export interface SanityCheckResult {
@@ -853,6 +857,8 @@ interface AiAuditLogCardProps {
   version?: number;
   activeRubricKeys?: RubricKey[];
   rubricConfigs?: any[];
+  noAiUsed?: boolean;
+  noAiNote?: string | null;
 }
 
 export const AiAuditLogCard: React.FC<AiAuditLogCardProps> = ({
@@ -863,6 +869,8 @@ export const AiAuditLogCard: React.FC<AiAuditLogCardProps> = ({
   version = 1,
   activeRubricKeys,
   rubricConfigs,
+  noAiUsed = false,
+  noAiNote = null,
 }) => {
   const [expandedKey, setExpandedKey] = useState<RubricKey | null>(null);
   const [activeScopeIdx, setActiveScopeIdx] = useState(0);
@@ -920,6 +928,79 @@ export const AiAuditLogCard: React.FC<AiAuditLogCardProps> = ({
     : rubricKeys.filter(k => isRubricDeclaredComplete(declarations?.[k])).length;
   const totalRubrics = hasScopes ? scopes!.length * rubricKeys.length : rubricKeys.length;
   const completedCount = rubricKeys.filter(k => isRubricDeclaredComplete(activeDeclarations?.[k])).length;
+
+  if (noAiUsed) {
+    return (
+      <div className="rounded-2xl border border-emerald-200 bg-emerald-50/40 p-5 space-y-4">
+        {/* Header Audit Log */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-emerald-200/80">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-xs">
+              <ShieldCheck size={18} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                  AI Audit Log Status (ART-AI)
+                </h4>
+                <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-full border border-emerald-300">
+                  <ShieldCheck size={12} />
+                  <span>Zero-AI (Cam kết tự thực hiện 100%)</span>
+                </span>
+                {version > 1 && (
+                  <span className="text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200">
+                    Version {version}.0
+                  </span>
+                )}
+              </div>
+              <p className="text-[11px] text-slate-500 mt-0.5">
+                Sinh viên cam kết không sử dụng công cụ AI. Toàn bộ nội dung và mã nguồn do sinh viên tự phát triển.
+                {lastEditedAt && ` • Cập nhật lần cuối: ${lastEditedAt}`}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 self-start sm:self-auto bg-white px-3 py-1.5 rounded-xl border border-emerald-200 shadow-xs">
+            <Sparkles size={14} className="text-emerald-600" />
+            <div className="text-right">
+              <span className="text-[10px] uppercase font-bold text-slate-400 block leading-none">
+                TRANSPARENCY
+              </span>
+              <span className="text-xs font-bold text-emerald-700">
+                100% (Tự làm)
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Nội dung xác nhận Zero-AI */}
+        <div className="bg-white p-4 rounded-xl border border-emerald-200/90 shadow-2xs space-y-2">
+          <div className="flex items-start gap-2.5 text-xs text-emerald-950">
+            <CheckCircle2 size={16} className="text-emerald-600 shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <span className="font-bold text-emerald-900 block">
+                Cam kết Liêm chính Học thuật: Tự thực hiện 100% không dùng AI
+              </span>
+              <p className="text-slate-600 leading-relaxed text-[11px]">
+                Bài nộp này được sinh viên xác nhận tự nghiên cứu, tư duy logic và lập trình hoàn toàn thủ công mà không sử dụng trợ giúp từ các mô hình ngôn ngữ lớn (GenAI).
+              </p>
+            </div>
+          </div>
+
+          {noAiNote && (
+            <div className="mt-2.5 pt-2.5 border-t border-slate-100 text-xs">
+              <span className="font-semibold text-slate-700 block mb-0.5">
+                Ghi chú tiến trình / phương pháp tự thực hiện của sinh viên:
+              </span>
+              <p className="text-slate-600 italic bg-slate-50 p-2.5 rounded-lg border border-slate-200 whitespace-pre-wrap">
+                "{noAiNote}"
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-5 space-y-4">
@@ -1515,7 +1596,7 @@ export const SubmissionStatusView: React.FC<SubmissionStatusViewProps> = ({
         {/* Hàng 4: AI AUDIT LOG STATUS (Chỉ hiển thị khi bài tập yêu cầu khai báo AI) */}
         {aiDeclarationRequired && (
           <div className="pt-2 border-t border-slate-100">
-            {isSubmitted || (isDraft && (submission.scopes?.length || Object.values(submission.declarations || {}).some(d => d?.prompt || d?.isCompleted))) ? (
+            {isSubmitted || (isDraft && (submission.scopes?.length || Object.values(submission.declarations || {}).some(d => d?.prompt || d?.isCompleted) || submission.no_ai_used || submission.noAiUsed)) || submission.no_ai_used || submission.noAiUsed ? (
               <AiAuditLogCard
                 declarations={submission.declarations}
                 scopes={submission.scopes}
@@ -1524,6 +1605,8 @@ export const SubmissionStatusView: React.FC<SubmissionStatusViewProps> = ({
                 version={submission.version || 1}
                 activeRubricKeys={activeRubricKeys}
                 rubricConfigs={rubricConfigs}
+                noAiUsed={Boolean(submission.no_ai_used || submission.noAiUsed)}
+                noAiNote={submission.no_ai_note || submission.noAiNote}
               />
             ) : (
               <div className="rounded-2xl border-2 border-dashed border-slate-200 p-8 text-center space-y-2 bg-slate-50/30">
@@ -2111,6 +2194,10 @@ interface AiRubricFormProps {
   isSanityChecking?: boolean;
   activeRubricKeys?: RubricKey[];
   rubricConfigs?: any[];
+  noAiUsed?: boolean;
+  onNoAiUsedChange?: (val: boolean) => void;
+  noAiNote?: string;
+  onNoAiNoteChange?: (val: string) => void;
 }
 
 export const AiRubricForm: React.FC<AiRubricFormProps> = ({
@@ -2128,6 +2215,10 @@ export const AiRubricForm: React.FC<AiRubricFormProps> = ({
   isSanityChecking = false,
   activeRubricKeys,
   rubricConfigs,
+  noAiUsed = false,
+  onNoAiUsedChange,
+  noAiNote = '',
+  onNoAiNoteChange,
 }) => {
   const [activeScopeIdx, setActiveScopeIdx] = useState(0);
   const rubricKeys: RubricKey[] = useMemo(() => {
@@ -2292,20 +2383,95 @@ export const AiRubricForm: React.FC<AiRubricFormProps> = ({
           <Brain size={16} />
           <span>{isEditMode ? 'STEP 2: EDIT AI DECLARATIONS (MULTI-SCOPE)' : 'STEP 2: MULTI-SCOPE AI AUDIT (REQUIRED)'}</span>
         </div>
-        <span className="text-[11px] text-slate-500 border border-slate-200 rounded-full px-3 py-1 font-medium bg-slate-50">
-          {totalCompleted} / {totalRubrics} Rubrics hoàn thành ({scopes.length} Khai báo)
-        </span>
+        {noAiUsed ? (
+          <span className="text-[11px] text-emerald-700 border border-emerald-300 rounded-full px-3 py-1 font-bold bg-emerald-50 flex items-center gap-1">
+            <ShieldCheck size={12} />
+            <span>Zero-AI (Tự làm 100%)</span>
+          </span>
+        ) : (
+          <span className="text-[11px] text-slate-500 border border-slate-200 rounded-full px-3 py-1 font-medium bg-slate-50">
+            {totalCompleted} / {totalRubrics} Rubrics hoàn thành ({scopes.length} Khai báo)
+          </span>
+        )}
       </div>
 
-      {/* Edit Mode notice */}
-      {isEditMode && modifiedCount > 0 && (
-        <div className="bg-amber-50/70 border border-amber-200/80 rounded-xl p-3 flex items-center gap-2 text-xs text-amber-900">
-          <Brain size={14} className="text-amber-600 shrink-0" />
-          <span>Bạn đã chỉnh sửa <strong>{modifiedCount}</strong> tiêu chí trong phiên này.</span>
-        </div>
-      )}
+      {/* ── ZERO-AI DECLARATION TOGGLE / CHECKBOX ── */}
+      <div className={`p-4 rounded-2xl border transition-all ${
+        noAiUsed
+          ? 'bg-emerald-50/90 border-emerald-300 shadow-xs'
+          : 'bg-slate-50/70 border-slate-200/90 hover:border-slate-300'
+      }`}>
+        <label className="flex items-start gap-3 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={Boolean(noAiUsed)}
+            onChange={(e) => onNoAiUsedChange?.(e.target.checked)}
+            className="mt-0.5 w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-slate-300 cursor-pointer shrink-0"
+          />
+          <div className="space-y-1">
+            <div className="text-xs sm:text-sm font-bold text-slate-800 flex items-center gap-2 flex-wrap">
+              <span>Tôi cam kết tự thực hiện 100% bài làm này mà không sử dụng bất kỳ công cụ AI nào (Zero-AI / No AI Used)</span>
+              {noAiUsed && (
+                <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full border border-emerald-300">
+                  Zero-AI Active
+                </span>
+              )}
+            </div>
+            <p className="text-[11px] text-slate-500 leading-relaxed">
+              Chọn tùy chọn này nếu bạn hoàn toàn tự suy nghĩ, lập trình, kiểm thử và thiết kế giải pháp mà không dùng ChatGPT, Claude, GitHub Copilot hay bất kỳ trợ lý AI nào.
+            </p>
+          </div>
+        </label>
 
-      {/* ── SCOPE TABS & CONTROLS ─────────────────────────────────────────── */}
+        {/* KHI TICK CHỌN: Hiển thị Card xác nhận màu xanh ngọc (emerald) + ghi chú tùy chọn + lưu ý liêm chính */}
+        {noAiUsed && (
+          <div className="mt-4 pt-4 border-t border-emerald-200/80 space-y-3.5">
+            <div className="flex items-start gap-3 bg-white p-3.5 rounded-xl border border-emerald-200 text-xs text-emerald-900 shadow-2xs">
+              <ShieldCheck size={20} className="text-emerald-600 shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <div className="font-bold text-emerald-800">
+                  Bạn đã cam kết không sử dụng AI cho bài nộp này
+                </div>
+                <p className="text-emerald-700/90 leading-relaxed text-[11px]">
+                  Toàn bộ mã nguồn/nội dung được thực hiện độc lập. Hệ thống sẽ mở khóa nộp bài ngay lập tức mà không yêu cầu bạn phải kê khai các Phase AI.
+                </p>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                Ghi chú thêm về tiến trình / phương pháp tự thực hiện (tùy chọn)
+              </label>
+              <textarea
+                rows={3}
+                value={noAiNote || ''}
+                onChange={(e) => onNoAiNoteChange?.(e.target.value)}
+                placeholder="Ví dụ: Tự nghiên cứu tài liệu môn học, tự viết mã nguồn và kiểm thử logic biên, không dùng công cụ sinh code AI..."
+                className="saf-textarea text-xs bg-white border-emerald-200 focus:border-emerald-500 focus:ring-emerald-500/20"
+              />
+            </div>
+
+            <div className="flex items-start gap-2.5 bg-amber-50/70 border border-amber-200 rounded-xl p-3 text-xs text-amber-900">
+              <AlertTriangle size={15} className="text-amber-600 shrink-0 mt-0.5" />
+              <p className="leading-relaxed text-[11px]">
+                <strong>Lưu ý về Liêm chính Học thuật:</strong> Giảng viên có thể tiến hành phỏng vấn vấn đáp (Viva) trực tiếp để kiểm tra mức độ nắm vững mã nguồn, giải thuật và tính xác thực của cam kết này.
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {!noAiUsed && (
+        <>
+          {/* Edit Mode notice */}
+          {isEditMode && modifiedCount > 0 && (
+            <div className="bg-amber-50/70 border border-amber-200/80 rounded-xl p-3 flex items-center gap-2 text-xs text-amber-900">
+              <Brain size={14} className="text-amber-600 shrink-0" />
+              <span>Bạn đã chỉnh sửa <strong>{modifiedCount}</strong> tiêu chí trong phiên này.</span>
+            </div>
+          )}
+
+          {/* ── SCOPE TABS & CONTROLS ─────────────────────────────────────────── */}
       <div className="bg-slate-50/80 p-3.5 rounded-2xl border border-slate-200/80 space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           {/* Nút mũi tên cuộn sang trái */}
@@ -2655,6 +2821,8 @@ export const AiRubricForm: React.FC<AiRubricFormProps> = ({
           </div>
         </div>
       </div>
+      </>
+      )}
 
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-slate-100">
         <div className="flex items-center gap-3 w-full sm:w-auto">
@@ -2686,11 +2854,22 @@ export const AiRubricForm: React.FC<AiRubricFormProps> = ({
             {isSubmittingPayload ? (
               <>
                 <RefreshCw size={14} className="animate-spin" />
-                <span>{isSupplementMode ? 'Đang lưu bổ sung...' : isEditMode ? 'Đang cập nhật bài nộp...' : 'Đang nộp bài...'}</span>
+                <span>
+                  {isSupplementMode
+                    ? 'Đang lưu bổ sung...'
+                    : isEditMode
+                    ? (noAiUsed ? 'Đang cập nhật (Zero-AI)...' : 'Đang cập nhật bài nộp...')
+                    : (noAiUsed ? 'Đang nộp bài (Zero-AI)...' : 'Đang nộp bài...')}
+                </span>
               </>
             ) : (
               <>
-                <span>{isSupplementMode ? 'Lưu bổ sung khai báo AI' : isEditMode ? 'Cập nhật bài nộp & Khai báo AI' : 'Nộp bài chính thức (Submit Final)'}</span>
+                <span>
+                  {noAiUsed
+                    ? (isSupplementMode ? 'Lưu cam kết Zero-AI' : isEditMode ? 'Cập nhật bài nộp (Zero-AI)' : 'Nộp bài chính thức (Zero-AI)')
+                    : (isSupplementMode ? 'Lưu bổ sung khai báo AI' : isEditMode ? 'Cập nhật bài nộp & Khai báo AI' : 'Nộp bài chính thức (Submit Final)')
+                  }
+                </span>
                 <CheckCircle2 size={14} className="text-emerald-400" />
               </>
             )}
@@ -2842,6 +3021,8 @@ interface StudentAssignmentFlowProps {
     scopes?: AiScope[];
     isEdit: boolean;
     isDraft?: boolean;
+    no_ai_used?: boolean;
+    no_ai_note?: string;
   }) => Promise<boolean>;
   onSaveDraftApiHandler?: (payload: {
     assignmentId: string;
@@ -2850,11 +3031,13 @@ interface StudentAssignmentFlowProps {
     scopes?: AiScope[];
     isEdit: boolean;
     isDraft?: boolean;
+    no_ai_used?: boolean;
+    no_ai_note?: string;
   }) => Promise<boolean>;
   onSaveDraftFile?: (file: File, onUploadProgress?: (progressEvent: any) => void) => Promise<any>;
   onRemoveDraftFile?: () => Promise<any>;
-  onSaveDraftDeclarations?: (payload: { scopes?: any[]; declarations?: any; note?: string }) => Promise<any>;
-  onSupplementDeclarations?: (payload: { scopes?: any[]; declarations?: any; note?: string }) => Promise<any>;
+  onSaveDraftDeclarations?: (payload: { scopes?: any[]; declarations?: any; note?: string; no_ai_used?: boolean; no_ai_note?: string }) => Promise<any>;
+  onSupplementDeclarations?: (payload: { scopes?: any[]; declarations?: any; note?: string; no_ai_used?: boolean; no_ai_note?: string }) => Promise<any>;
   onRunSanityCheck?: (payload: { scopes?: any[]; ai_declarations?: any }) => Promise<any>;
 }
 
@@ -2935,6 +3118,10 @@ export default function StudentAssignmentFlow({
     };
   }, []);
 
+  // Zero-AI Declaration States
+  const [noAiUsed, setNoAiUsed] = useState<boolean>(Boolean(initialSubmission?.no_ai_used || initialSubmission?.noAiUsed));
+  const [noAiNote, setNoAiNote] = useState<string>(initialSubmission?.no_ai_note || initialSubmission?.noAiNote || '');
+
   // Sync state with incoming props
   React.useEffect(() => {
     if (initialAssignment) {
@@ -2946,6 +3133,8 @@ export default function StudentAssignmentFlow({
     if (initialSubmission) {
       setSubmission(initialSubmission);
       setDraftFile(initialSubmission.file);
+      setNoAiUsed(Boolean(initialSubmission.no_ai_used || initialSubmission.noAiUsed));
+      setNoAiNote(initialSubmission.no_ai_note || initialSubmission.noAiNote || '');
       if (initialSubmission.declarations) {
         setDraftDeclarations(initialSubmission.declarations);
       }
@@ -2955,6 +3144,8 @@ export default function StudentAssignmentFlow({
     } else {
       setSubmission(EMPTY_SUBMISSION_STATE);
       setDraftFile(null);
+      setNoAiUsed(false);
+      setNoAiNote('');
       setDraftDeclarations(INITIAL_DECLARATIONS);
       setDraftScopes(getInitialScopes(EMPTY_SUBMISSION_STATE));
     }
@@ -3008,7 +3199,9 @@ export default function StudentAssignmentFlow({
     (submission.status === 'Submitted' || isResubmitRequested) &&
     submission.file &&
     assignment.aiDeclarationRequired !== false &&
-    !hasCompletedDeclarations
+    !hasCompletedDeclarations &&
+    !submission.no_ai_used &&
+    !submission.noAiUsed
   );
 
   // Draft States trong Form
@@ -3133,7 +3326,7 @@ export default function StudentAssignmentFlow({
     }
 
     const minRequired = assignment.minAiInteractions || 1;
-    if (completedCount < minRequired) {
+    if (!noAiUsed && completedCount < minRequired) {
       alert(`Bài tập yêu cầu hoàn thiện tối thiểu ${minRequired} tiêu chí khai báo AI tương tác trước khi lưu bổ sung! (Hiện có: ${completedCount})`);
       return;
     }
@@ -3145,6 +3338,8 @@ export default function StudentAssignmentFlow({
         scopes: draftScopes,
         declarations: draftDeclarations,
         isSupplement: true,
+        no_ai_used: noAiUsed,
+        no_ai_note: noAiNote,
         savedAt: new Date().toISOString(),
       });
 
@@ -3153,20 +3348,26 @@ export default function StudentAssignmentFlow({
           scopes: draftScopes,
           declarations: draftDeclarations,
           note: notePayload,
+          no_ai_used: noAiUsed,
+          no_ai_note: noAiNote,
         });
       } else {
         await SubmissionService.supplementDeclarations(assignment.id, {
           scopes: draftScopes,
           ai_declarations: draftDeclarations,
           note: notePayload,
+          no_ai_used: noAiUsed,
+          no_ai_note: noAiNote,
         });
       }
 
       const totalPossible = Math.max(1, activeRubricKeys.length);
-      const calculatedScore = Math.min(
-        100,
-        Math.max(60, Math.round((completedCount / totalPossible) * 35 + 65))
-      );
+      const calculatedScore = noAiUsed
+        ? 100
+        : Math.min(
+            100,
+            Math.max(60, Math.round((completedCount / totalPossible) * 35 + 65))
+          );
 
       const nowStr = new Date().toISOString().replace('T', ' ').substring(0, 19);
 
@@ -3174,6 +3375,10 @@ export default function StudentAssignmentFlow({
         ...prev,
         scopes: draftScopes,
         declarations: draftDeclarations,
+        no_ai_used: noAiUsed,
+        no_ai_note: noAiNote,
+        noAiUsed: noAiUsed,
+        noAiNote: noAiNote,
         transparencyScore: calculatedScore,
         lastEditedAt: nowStr,
       }));
@@ -3307,11 +3512,11 @@ export default function StudentAssignmentFlow({
   };
 
   // Debounce Auto-Save Text Khai báo AI (1.5 giây sau khi dừng gõ)
-  const handleScopesChangeWithDebounce = (nextScopes: AiScope[]) => {
-    setDraftScopes(nextScopes);
-    if (nextScopes[0]?.declarations) {
-      setDraftDeclarations(nextScopes[0].declarations);
-    }
+  const triggerSaveDraftDeclarations = (
+    nextScopes: AiScope[],
+    currentNoAiUsed: boolean,
+    currentNoAiNote: string
+  ) => {
     setAutoSaveStatus('saving');
 
     if (debounceTimerRef.current) {
@@ -3325,6 +3530,8 @@ export default function StudentAssignmentFlow({
           scopes: nextScopes,
           declarations: nextScopes[0]?.declarations || draftDeclarations,
           isDraft: true,
+          no_ai_used: currentNoAiUsed,
+          no_ai_note: currentNoAiNote,
           savedAt: new Date().toISOString(),
         });
 
@@ -3333,12 +3540,16 @@ export default function StudentAssignmentFlow({
             scopes: nextScopes,
             declarations: nextScopes[0]?.declarations || draftDeclarations,
             note: notePayload,
+            no_ai_used: currentNoAiUsed,
+            no_ai_note: currentNoAiNote,
           });
         } else {
           await SubmissionService.saveDraftDeclarations(assignment.id, {
             scopes: nextScopes,
             ai_declarations: nextScopes[0]?.declarations || draftDeclarations,
             note: notePayload,
+            no_ai_used: currentNoAiUsed,
+            no_ai_note: currentNoAiNote,
           });
         }
 
@@ -3348,12 +3559,34 @@ export default function StudentAssignmentFlow({
           status: prev.status === 'Submitted' || prev.status === 'Graded' ? prev.status : 'Draft',
           scopes: nextScopes,
           declarations: nextScopes[0]?.declarations || draftDeclarations,
+          no_ai_used: currentNoAiUsed,
+          no_ai_note: currentNoAiNote,
+          noAiUsed: currentNoAiUsed,
+          noAiNote: currentNoAiNote,
         }));
       } catch (err) {
         console.error('Debounce auto-save declarations failed:', err);
         setAutoSaveStatus('error');
       }
     }, 1500);
+  };
+
+  const handleScopesChangeWithDebounce = (nextScopes: AiScope[]) => {
+    setDraftScopes(nextScopes);
+    if (nextScopes[0]?.declarations) {
+      setDraftDeclarations(nextScopes[0].declarations);
+    }
+    triggerSaveDraftDeclarations(nextScopes, noAiUsed, noAiNote);
+  };
+
+  const handleToggleNoAiUsed = (checked: boolean) => {
+    setNoAiUsed(checked);
+    triggerSaveDraftDeclarations(draftScopes, checked, noAiNote);
+  };
+
+  const handleChangeNoAiNote = (note: string) => {
+    setNoAiNote(note);
+    triggerSaveDraftDeclarations(draftScopes, noAiUsed, note);
   };
 
   // 2. Kích hoạt Modal xác nhận nộp bài chính thức
@@ -3370,8 +3603,8 @@ export default function StudentAssignmentFlow({
       return;
     }
 
-    // Kiểm tra khai báo AI bắt buộc
-    if (assignment.aiDeclarationRequired !== false) {
+    // Kiểm tra khai báo AI bắt buộc (Bỏ qua nếu sinh viên cam kết Zero-AI)
+    if (assignment.aiDeclarationRequired !== false && !noAiUsed) {
       let completedCount = 0;
       if (draftScopes && draftScopes.length > 0) {
         draftScopes.forEach(s => {
@@ -3428,21 +3661,25 @@ export default function StudentAssignmentFlow({
           scopes: draftScopes,
           isEdit: isEditMode,
           isDraft: false,
+          no_ai_used: noAiUsed,
+          no_ai_note: noAiNote,
         });
       } else {
         // Giả lập network latency 800ms
         await new Promise((resolve) => setTimeout(resolve, 800));
       }
 
-      // Tính toán AI Transparency Score tự động
+      // Tính toán AI Transparency Score tự động (100% nếu Zero-AI)
       const completedCount = activeRubricKeys.filter(
         (k) => isRubricDeclaredComplete(draftDeclarations[k])
       ).length;
       const totalPossible = Math.max(1, activeRubricKeys.length);
-      const calculatedScore = Math.min(
-        100,
-        Math.max(60, Math.round((completedCount / totalPossible) * 35 + 65))
-      );
+      const calculatedScore = noAiUsed
+        ? 100
+        : Math.min(
+            100,
+            Math.max(60, Math.round((completedCount / totalPossible) * 35 + 65))
+          );
 
       const now = new Date();
       const formattedTimestamp = now
@@ -3462,6 +3699,10 @@ export default function StudentAssignmentFlow({
         transparencyScore: calculatedScore,
         declarations: draftDeclarations,
         scopes: draftScopes,
+        no_ai_used: noAiUsed,
+        no_ai_note: noAiNote,
+        noAiUsed: noAiUsed,
+        noAiNote: noAiNote,
       };
 
       setSubmission(newSubmissionData);
@@ -3810,6 +4051,10 @@ export default function StudentAssignmentFlow({
                     isSanityChecking={isSanityChecking}
                     activeRubricKeys={activeRubricKeys}
                     rubricConfigs={assignment.rubric_configs || (assignment as any).rubricConfigs}
+                    noAiUsed={noAiUsed}
+                    onNoAiUsedChange={handleToggleNoAiUsed}
+                    noAiNote={noAiNote}
+                    onNoAiNoteChange={handleChangeNoAiNote}
                   />
                 )}
               </div>
@@ -3856,10 +4101,17 @@ export default function StudentAssignmentFlow({
               {assignment.aiDeclarationRequired !== false && (
                 <div className="flex items-center justify-between">
                   <span className="text-slate-500">Khai báo AI Audit:</span>
-                  <span className="font-semibold text-emerald-600 flex items-center gap-1">
-                    <Check size={13} />
-                    Đã hoàn thiện các tiêu chí khai báo AI
-                  </span>
+                  {noAiUsed ? (
+                    <span className="font-semibold text-emerald-600 flex items-center gap-1">
+                      <Check size={13} />
+                      Zero-AI (Cam kết tự thực hiện 100%) — Hợp lệ
+                    </span>
+                  ) : (
+                    <span className="font-semibold text-emerald-600 flex items-center gap-1">
+                      <Check size={13} />
+                      Đã hoàn thiện các tiêu chí khai báo AI
+                    </span>
+                  )}
                 </div>
               )}
             </div>
