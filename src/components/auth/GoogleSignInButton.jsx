@@ -56,6 +56,9 @@ export default function GoogleSignInButton({ onCredential, onError, disabled, la
             }
             onErrorRef.current(labels.failed);
           },
+          error_callback: (err) => {
+            console.warn('[GoogleSignIn] GSI error callback:', err?.type || err?.message || err);
+          },
           auto_select: false,
           cancel_on_tap_outside: true,
           hd: hostedDomain || undefined,

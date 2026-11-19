@@ -674,7 +674,7 @@ export default function LecturerClassDetailPage() {
                                                                     {asg.deadline ? new Date(asg.deadline).toLocaleDateString('vi-VN') : ''}
                                                                 </span>
                                                                 <button
-                                                                    onClick={() => navigate(`/lecturer/assignments/${asg.id}`)}
+                                                                    onClick={() => navigate(`/lecturer/assignments/${asg.id}`, { state: { classId } })}
                                                                     className="btn btn-primary"
                                                                     style={{ padding: '4px 8px', fontSize: '11px', height: '24px' }}
                                                                 >
@@ -861,7 +861,7 @@ export default function LecturerClassDetailPage() {
                     isOpen={!!selectedDescAssignment}
                     onClose={() => setSelectedDescAssignment(null)}
                     assignment={selectedDescAssignment}
-                    onOpenAssignment={(id) => navigate(`/lecturer/assignments/${id}`)}
+                    onOpenAssignment={(id) => navigate(`/lecturer/assignments/${id}`, { state: { classId } })}
                 />
             )}
 

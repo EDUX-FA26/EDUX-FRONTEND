@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import AssignmentService from '../../services/assignment.service';
 import SubmissionService from '../../services/submission.service';
 import { formatDateDMY } from '../../helper/dateFormat';
@@ -11,6 +11,7 @@ import { normalizeAuditData } from '../../helper/aiAuditHelper';
 export default function StudentAssignmentDetailPage() {
     const { id } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
 
     const [assignment, setAssignment] = useState(null);
     const [submission, setSubmission] = useState(null);
@@ -77,7 +78,37 @@ export default function StudentAssignmentDetailPage() {
     const rawEffectiveScore = submission?.score ?? detailedSubmission?.score ?? null;
     const effectiveScore = rawEffectiveScore != null ? Number(rawEffectiveScore) : null;
     const effectiveFeedback = submission?.feedback ?? detailedSubmission?.feedback ?? '';
-    const isGraded = effectiveScore != null || submission?.status === 'graded' || submission?.status === 'GRADED' || submission?.status === 'Graded';
+    const isResubmitRequested =
+        submission?.status?.toLowerCase() === 'resubmit_requested' ||
+        submission?.status?.toLowerCase() === 'resubmit requested' ||
+        detailedSubmission?.status?.toLowerCase() === 'resubmit_requested' ||
+        detailedSubmission?.status?.toLowerCase() === 'resubmit requested';
+    const isGraded = !isResubmitRequested && (
+        effectiveScore != null ||
+        submission?.status === 'graded' ||
+        submission?.status === 'GRADED' ||
+        submission?.status === 'Graded' ||
+        detailedSubmission?.status === 'graded' ||
+        detailedSubmission?.status === 'GRADED' ||
+        detailedSubmission?.status === 'Graded'
+    );
+
+    const targetClassId =
+        assignment?.class_id ||
+        assignment?.classId ||
+        assignment?.class?.id ||
+        location.state?.classId ||
+        location.state?.class_id ||
+        assignment?.course_id ||
+        assignment?.courseId;
+
+    const handleBackToCourse = () => {
+        if (targetClassId) {
+            navigate(`/student/classes/${targetClassId}`);
+        } else {
+            navigate('/student/classes');
+        }
+    };
 
     // Format Assignment from DB for StudentAssignmentFlow
     const formattedAssignment = {
@@ -85,6 +116,8 @@ export default function StudentAssignmentDetailPage() {
         title: title,
         courseCode: assignment?.course_code || assignment?.subject_code || assignment?.class_code || 'N/A',
         courseTitle: assignment?.course_name || assignment?.subject_name || assignment?.class_name || 'N/A',
+        classId: targetClassId,
+        class_id: targetClassId,
         dueDate: assignment?.deadline ? formatDateDMY(assignment.deadline) : 'N/A',
         deadlineRaw: assignment?.deadline || null,
         allowLateSubmission: Boolean(assignment?.allow_late_submission),
@@ -152,10 +185,14 @@ export default function StudentAssignmentDetailPage() {
         // Parse declarations & scopes using normalizeAuditData
         let parsedDeclarations = INITIAL_DECLARATIONS;
         let parsedScopes = null;
+        let auditNoAiUsed = false;
+        let auditNoAiNote = null;
         try {
             const noteData = latestVer?.note || submission?.latest_note || submission?.note;
             if (noteData) {
                 const normalized = normalizeAuditData(noteData);
+                auditNoAiUsed = Boolean(normalized.no_ai_used || normalized.noAiUsed);
+                auditNoAiNote = normalized.no_ai_note || normalized.noAiNote || null;
                 if (normalized.scopes && normalized.scopes.length > 0) {
                     parsedScopes = normalized.scopes;
                     parsedDeclarations = normalized.scopes[0].declarations || parsedDeclarations;
@@ -165,12 +202,24 @@ export default function StudentAssignmentDetailPage() {
             }
         } catch (e) {}
 
+        const isNoAiUsed = Boolean(
+            submission.no_ai_used === true ||
+            submission.no_ai_used === 'true' ||
+            submission.noAiUsed === true ||
+            detailedSubmission?.no_ai_used === true ||
+            detailedSubmission?.noAiUsed === true ||
+            auditNoAiUsed
+        );
+        const noAiNote = submission.no_ai_note || submission.noAiNote || detailedSubmission?.no_ai_note || detailedSubmission?.noAiNote || auditNoAiNote || null;
+
         const isDraft = submission.status === 'draft';
         const submissionTime = submission.submitted_at || latestVer?.submitted_at;
         const editedTime = submission.updated_at || latestVer?.updated_at || submission.last_submitted_at;
 
         let statusText = 'Submitted';
-        if (isGraded) {
+        if (isResubmitRequested) {
+            statusText = 'Resubmit Requested';
+        } else if (isGraded) {
             statusText = 'Graded';
         } else if (isDraft) {
             statusText = 'Draft';
@@ -184,9 +233,13 @@ export default function StudentAssignmentDetailPage() {
             version: latestVer?.version_no || detailedSubmission?.versions?.length || submission.version || 1,
             file: submittedFile,
             feedback: effectiveFeedback || (isGraded ? 'Bài nộp đã được chấm điểm hoàn tất.' : isDraft ? '' : 'Chưa có nhận xét. Bài nộp đang chờ giảng viên chấm điểm.'),
-            transparencyScore: submission.transparencyScore || (parsedScopes ? 95 : null),
+            transparencyScore: isNoAiUsed ? 100 : (submission.transparencyScore || (parsedScopes ? 95 : null)),
             declarations: parsedDeclarations,
             scopes: parsedScopes || submission.scopes,
+            no_ai_used: isNoAiUsed,
+            noAiUsed: isNoAiUsed,
+            no_ai_note: noAiNote,
+            noAiNote: noAiNote,
             score: effectiveScore,
             grade: {
                 score: effectiveScore,
@@ -197,7 +250,7 @@ export default function StudentAssignmentDetailPage() {
     }
 
     // Handle API Submit (Lưu nháp hoặc Nộp chính thức)
-    const handleApiSubmit = async ({ assignmentId, file, declarations, scopes, isEdit, isDraft }) => {
+    const handleApiSubmit = async ({ assignmentId, file, declarations, scopes, isEdit, isDraft, no_ai_used, no_ai_note }) => {
         const rawFile = file instanceof File ? file : null;
         const notePayload = JSON.stringify({
             version: "2.0",
@@ -212,14 +265,17 @@ export default function StudentAssignmentDetailPage() {
             declarations: declarations || scopes?.[0]?.declarations,
             isEdit,
             isDraft: Boolean(isDraft),
-            savedAt: new Date().toISOString()
+            savedAt: new Date().toISOString(),
+            no_ai_used: Boolean(no_ai_used),
+            no_ai_note: no_ai_note || null,
         });
 
         if (id) {
+            const extra = { no_ai_used: Boolean(no_ai_used), no_ai_note: no_ai_note || null };
             if (isDraft) {
-                await SubmissionService.saveDraft(id, rawFile, notePayload);
+                await SubmissionService.saveDraft(id, rawFile, notePayload, extra);
             } else {
-                await SubmissionService.submitFinal(id, rawFile, notePayload);
+                await SubmissionService.submitFinal(id, rawFile, notePayload, extra);
             }
         }
 
@@ -241,9 +297,15 @@ export default function StudentAssignmentDetailPage() {
     };
 
     // Handle Silent Auto-Save Draft Declarations
-    const handleSaveDraftDeclarations = async ({ scopes, declarations, note }) => {
+    const handleSaveDraftDeclarations = async ({ scopes, declarations, note, no_ai_used, no_ai_note }) => {
         if (!id) return null;
-        return await SubmissionService.saveDraftDeclarations(id, { scopes, ai_declarations: declarations, note });
+        return await SubmissionService.saveDraftDeclarations(id, {
+            scopes,
+            ai_declarations: declarations,
+            note,
+            no_ai_used: Boolean(no_ai_used),
+            no_ai_note: no_ai_note || null,
+        });
     };
 
     // Handle AI Pre-submission Sanity Check
@@ -283,7 +345,7 @@ export default function StudentAssignmentDetailPage() {
         <StudentAssignmentFlow
             initialAssignment={formattedAssignment}
             initialSubmission={formattedSubmission}
-            onBackToCourse={() => navigate('/student/classes')}
+            onBackToCourse={handleBackToCourse}
             onSubmitApiHandler={handleApiSubmit}
             onSaveDraftFile={handleSaveDraftFile}
             onRemoveDraftFile={handleRemoveDraftFile}

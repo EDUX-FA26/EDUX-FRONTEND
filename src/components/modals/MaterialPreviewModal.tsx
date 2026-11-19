@@ -22,6 +22,7 @@ const mammoth = (mammothModule as any).default || mammothModule;
 import * as XLSX from 'xlsx';
 import ClassMaterialService from '../../services/classMaterial.service';
 import AssignmentService from '../../services/assignment.service';
+import SubmissionService from '../../services/submission.service';
 import { getActiveSchoolId } from '../../services/tenantSession';
 
 /**
@@ -41,6 +42,8 @@ export interface MaterialItem {
   id?: string;
   assignmentId?: string;
   assignment_id?: string;
+  submissionId?: string;
+  submission_id?: string;
   title?: string;
   description?: string;
   file_name?: string;
@@ -258,8 +261,16 @@ export default function MaterialPreviewModal({
         // Nếu chưa có presigned URL đầy đủ và material có ID, gọi API backend lấy URL presigned chính thức
         if (!hasActualSignedUrl && material.id) {
           const asgId = material.assignmentId || material.assignment_id;
+          const subId = material.submissionId || material.submission_id;
           try {
-            if (asgId) {
+            if (subId) {
+              const res = await SubmissionService.getSubmissionFile(subId, material.id);
+              const data = res?.data || res;
+              const resolvedPreview = normalizePreviewUrl(data.url || data.preview_url || data.download_url);
+              const resolvedDownload = normalizePreviewUrl(data.url || data.download_url || data.preview_url);
+              if (resolvedPreview) pUrl = resolvedPreview;
+              if (resolvedDownload) dUrl = resolvedDownload;
+            } else if (asgId) {
               const res = await AssignmentService.getMaterialDownloadUrl(asgId, material.id);
               const data = res?.data || res;
               const resolvedPreview = normalizePreviewUrl(data.preview_url || data.url || data.download_url);
