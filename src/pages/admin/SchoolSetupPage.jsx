@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSchool } from "../../contexts/SchoolContext";
 import { completeSchoolSetup, getSchoolSettings } from "../../services/schoolApi";
+import EduxAlert from "../../components/common/EduxAlert";
 
 export default function SchoolSetupPage() {
   const navigate = useNavigate();
@@ -104,8 +105,13 @@ export default function SchoolSetupPage() {
         </p>
 
         {error && (
-          <div className="mt-5 rounded-xl border border-red-200 bg-red-50 p-3.5 text-sm text-red-700">
-            {error}
+          <div className="mt-5">
+            <EduxAlert
+              type="error"
+              title="Đã xảy ra lỗi!"
+              message={error}
+              onClose={() => setError("")}
+            />
           </div>
         )}
 

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useSchool } from "../../contexts/SchoolContext";
 import { getSchoolSettings, updateSchoolSettings } from "../../services/schoolApi";
+import EduxAlert from "../../components/common/EduxAlert";
 import {
   Building2,
   Globe,
@@ -227,17 +228,21 @@ export default function SchoolProfilePage() {
 
       {/* Alert Notices */}
       {successMessage && (
-        <div className="flex items-center gap-3 p-4 rounded-2xl border border-emerald-200 bg-emerald-50 text-emerald-800 text-sm shadow-sm animate-fade-in">
-          <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-          <span className="font-medium">{successMessage}</span>
-        </div>
+        <EduxAlert
+          type="success"
+          title="Thành công!"
+          message={successMessage}
+          onClose={() => setSuccessMessage("")}
+        />
       )}
 
       {errorMessage && (
-        <div className="flex items-center gap-3 p-4 rounded-2xl border border-red-200 bg-red-50 text-red-800 text-sm shadow-sm animate-fade-in">
-          <AlertCircle className="w-5 h-5 text-red-600 shrink-0" />
-          <span className="font-medium">{errorMessage}</span>
-        </div>
+        <EduxAlert
+          type="error"
+          title="Đã xảy ra lỗi!"
+          message={errorMessage}
+          onClose={() => setErrorMessage("")}
+        />
       )}
 
       {/* School Brand Hero Card */}

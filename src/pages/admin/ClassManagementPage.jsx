@@ -15,6 +15,7 @@ import {
 } from '../../services/admin.service';
 import { getSemesters } from '../../services/semester.service';
 import { getSubjects } from '../../services/subject.service';
+import EduxAlert from '../../components/common/EduxAlert';
 
 export default function ClassManagementPage() {
   const [searchParams] = useSearchParams();
@@ -27,6 +28,7 @@ export default function ClassManagementPage() {
   const [departmentsList, setDepartmentsList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [alertState, setAlertState] = useState(null);
   const [showGuide, setShowGuide] = useState(false);
 
   // Search & Filters
@@ -95,8 +97,17 @@ export default function ClassManagementPage() {
       setImportedResult(res.data);
       fetchClasses();
       fetchCatalogData();
+      setAlertState({
+        type: 'success',
+        title: 'Thành công!',
+        message: 'Import dữ liệu lớp học từ Excel thành công!',
+      });
     } catch (err) {
-      alert(err.response?.data?.message || "Lỗi khi import file Excel!");
+      setAlertState({
+        type: 'error',
+        title: 'Đã xảy ra lỗi!',
+        message: err.response?.data?.message || "Lỗi khi import file Excel!",
+      });
     } finally {
       setImporting(false);
       e.target.value = null;
@@ -144,9 +155,17 @@ export default function ClassManagementPage() {
       });
       setShowCreateModal(false);
       await fetchClasses();
-      alert('Tạo lớp học mới thành công!');
+      setAlertState({
+        type: 'success',
+        title: 'Thành công!',
+        message: 'Tạo lớp học mới thành công!',
+      });
     } catch (err) {
-      alert(err.response?.data?.message || 'Không thể tạo lớp học');
+      setAlertState({
+        type: 'error',
+        title: 'Đã xảy ra lỗi!',
+        message: err.response?.data?.message || 'Không thể tạo lớp học',
+      });
     } finally {
       setSubmitting(false);
     }
@@ -217,9 +236,17 @@ export default function ClassManagementPage() {
       });
       setEditingClass(null);
       fetchClasses();
-      alert("Cập nhật lớp học thành công!");
+      setAlertState({
+        type: 'success',
+        title: 'Thành công!',
+        message: 'Cập nhật lớp học thành công!',
+      });
     } catch (err) {
-      alert(err.response?.data?.message || "Lỗi khi cập nhật");
+      setAlertState({
+        type: 'error',
+        title: 'Đã xảy ra lỗi!',
+        message: err.response?.data?.message || 'Lỗi khi cập nhật',
+      });
     } finally {
       setSubmitting(false);
     }
@@ -231,8 +258,17 @@ export default function ClassManagementPage() {
     try {
       await deleteClass(id);
       fetchClasses();
+      setAlertState({
+        type: 'success',
+        title: 'Thành công!',
+        message: 'Đã xóa lớp học thành công!',
+      });
     } catch (err) {
-      alert(err.response?.data?.message || "Lỗi khi xóa lớp");
+      setAlertState({
+        type: 'error',
+        title: 'Đã xảy ra lỗi!',
+        message: err.response?.data?.message || 'Lỗi khi xóa lớp',
+      });
     }
   };
 
@@ -344,6 +380,25 @@ export default function ClassManagementPage() {
           </button>
         </div>
       </div>
+
+      {/* Alert Notifications */}
+      {alertState && (
+        <EduxAlert
+          type={alertState.type}
+          title={alertState.title}
+          message={alertState.message}
+          onClose={() => setAlertState(null)}
+        />
+      )}
+
+      {error && (
+        <EduxAlert
+          type="error"
+          title="Đã xảy ra lỗi"
+          message={error}
+          onClose={() => setError(null)}
+        />
+      )}
 
       {/* Guide Card (Collapsible) */}
       {showGuide && (

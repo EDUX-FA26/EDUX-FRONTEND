@@ -8,6 +8,7 @@ import {
   importUsers,
   getDepartments,
 } from '../../services/admin.service';
+import EduxAlert from '../../components/common/EduxAlert';
 
 function UserRow({ user: u, onEdit, onToggleStatus }) {
   const isSuspended = u.is_active === false;
@@ -79,11 +80,13 @@ function UserRow({ user: u, onEdit, onToggleStatus }) {
 }
 
 export default function UserManagementPage() {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
+  const uLang = t?.schoolAdmin?.users;
   const [users, setUsers] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [alertState, setAlertState] = useState(null);
   const [roleFilter, setRoleFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -145,9 +148,17 @@ export default function UserManagementPage() {
     try {
       await toggleUserStatus(id, suspend);
       setUsers(users.map(u => u.id === id ? { ...u, is_active: !suspend } : u));
-      alert(`Đã ${actionText} tài khoản thành công!`);
+      setAlertState({
+        type: 'success',
+        title: 'Thành công!',
+        message: `Đã ${actionText} tài khoản "${name}" thành công!`,
+      });
     } catch (err) {
-      alert(err.response?.data?.message || "Lỗi khi cập nhật trạng thái tài khoản!");
+      setAlertState({
+        type: 'error',
+        title: 'Đã xảy ra lỗi!',
+        message: err.response?.data?.message || "Lỗi khi cập nhật trạng thái tài khoản!",
+      });
     }
   };
 
@@ -165,12 +176,20 @@ export default function UserManagementPage() {
         department_id: createFormData.role !== 'admin' && createFormData.department_id ? createFormData.department_id : null,
       };
       await createUser(payload);
-      alert("Tạo người dùng thành công!");
+      setAlertState({
+        type: 'success',
+        title: 'Thành công!',
+        message: 'Tạo tài khoản người dùng mới thành công!',
+      });
       setShowCreateModal(false);
       setCreateFormData({ email: '', full_name: '', password: '', role: 'student', student_code: '', department_id: '' });
       fetchUsers();
     } catch (err) {
-      alert(err.response?.data?.message || "Lỗi khi tạo người dùng");
+      setAlertState({
+        type: 'error',
+        title: 'Đã xảy ra lỗi!',
+        message: err.response?.data?.message || "Lỗi khi tạo người dùng",
+      });
     } finally {
       setCreateLoading(false);
     }
@@ -206,9 +225,17 @@ export default function UserManagementPage() {
 
       setUsers(prev => prev.map(u => (u.id === editingUser.id ? { ...u, ...updated } : u)));
       setEditingUser(null);
-      alert("Cập nhật thông tin người dùng thành công!");
+      setAlertState({
+        type: 'success',
+        title: 'Thành công!',
+        message: 'Cập nhật thông tin người dùng thành công!',
+      });
     } catch (err) {
-      alert(err.response?.data?.message || "Lỗi khi cập nhật thông tin người dùng");
+      setAlertState({
+        type: 'error',
+        title: 'Đã xảy ra lỗi!',
+        message: err.response?.data?.message || "Lỗi khi cập nhật thông tin người dùng",
+      });
     } finally {
       setEditLoading(false);
     }
@@ -223,9 +250,18 @@ export default function UserManagementPage() {
     try {
       const res = await importUsers(file);
       setImportedResult(res.data);
+      setAlertState({
+        type: 'success',
+        title: 'Thành công!',
+        message: `Import thành công dữ liệu từ file Excel!`,
+      });
       fetchUsers();
     } catch (err) {
-      alert(err.response?.data?.message || "Lỗi khi import file Excel!");
+      setAlertState({
+        type: 'error',
+        title: 'Đã xảy ra lỗi!',
+        message: err.response?.data?.message || "Lỗi khi import file Excel!",
+      });
     } finally {
       setImporting(false);
       e.target.value = null; // reset input
@@ -259,10 +295,10 @@ export default function UserManagementPage() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
         <div>
           <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: 0, color: 'var(--color-primary)' }}>
-            Quản lý Người dùng
+            {uLang?.title || "Quản lý Người dùng"}
           </h1>
           <p style={{ fontSize: '0.95rem', color: 'var(--color-ink-muted)', marginTop: '4px' }}>
-            Xem, phân quyền và quản lý tài khoản người dùng trong hệ thống ({users.length} tài khoản)
+            {uLang?.subtitle || "Xem, phân quyền và quản lý tài khoản người dùng trong hệ thống"} ({users.length} {lang === "en" ? "accounts" : "tài khoản"})
           </p>
         </div>
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
@@ -273,7 +309,7 @@ export default function UserManagementPage() {
             style={{ display: 'flex', alignItems: 'center', gap: '6px', border: '1px solid var(--color-border)', background: 'transparent' }}
           >
             <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>info</span>
-            Mẫu file Import
+            {lang === "en" ? "Import Template" : "Mẫu file Import"}
           </button>
 
           <input 
@@ -291,7 +327,7 @@ export default function UserManagementPage() {
             style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'transparent', border: '1px solid var(--color-border)', fontWeight: 600 }}
           >
             <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>upload_file</span>
-            {importing ? 'Đang xử lý...' : 'Import User List'}
+            {importing ? (lang === "en" ? "Processing..." : "Đang xử lý...") : (uLang?.btnImport || "Import Excel")}
           </button>
           
           <button 
@@ -301,7 +337,7 @@ export default function UserManagementPage() {
             style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, boxShadow: '0 4px 12px rgba(234, 88, 12, 0.25)' }}
           >
             <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>person_add</span>
-            Thêm Người Dùng
+            {uLang?.btnCreate || "Thêm Người Dùng"}
           </button>
 
           <button 
@@ -309,12 +345,22 @@ export default function UserManagementPage() {
             onClick={fetchUsers} 
             className="btn btn-outline" 
             style={{ display: 'flex', alignItems: 'center', padding: '10px', border: '1px solid var(--color-border)' }}
-            title="Làm mới danh sách"
+            title={lang === "en" ? "Refresh list" : "Làm mới danh sách"}
           >
             <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>refresh</span>
           </button>
         </div>
       </div>
+
+      {/* Alert Notification */}
+      {alertState && (
+        <EduxAlert
+          type={alertState.type}
+          title={alertState.title}
+          message={alertState.message}
+          onClose={() => setAlertState(null)}
+        />
+      )}
 
       {/* Guide Card (SRS 3.7.5) */}
       {showGuide && (
@@ -350,7 +396,7 @@ export default function UserManagementPage() {
               <span className="material-symbols-outlined" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--color-ink-muted)', fontSize: '20px' }}>search</span>
               <input 
                 type="text" 
-                placeholder="Tìm theo tên, email hoặc MSSV..." 
+                placeholder={uLang?.searchPlaceholder || "Tìm theo tên, email hoặc MSSV..."} 
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 style={{ width: '100%', padding: '10px 12px 10px 40px', borderRadius: '8px', border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-ink)', outline: 'none', fontSize: '0.9rem' }}
@@ -361,23 +407,23 @@ export default function UserManagementPage() {
               onChange={e => setRoleFilter(e.target.value)}
               style={{ padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-ink)', outline: 'none', fontWeight: 600, fontSize: '0.875rem', cursor: 'pointer' }}
             >
-              <option value="all">Tất cả vai trò</option>
-              <option value="student">Sinh viên</option>
-              <option value="lecturer">Giảng viên</option>
-              <option value="admin">Quản trị viên</option>
+              <option value="all">{uLang?.filterRoleAll || "Tất cả vai trò"}</option>
+              <option value="student">{uLang?.filterRoleStudent || "Sinh viên"}</option>
+              <option value="lecturer">{uLang?.filterRoleLecturer || "Giảng viên"}</option>
+              <option value="admin">{uLang?.filterRoleAdmin || "Quản trị viên"}</option>
             </select>
             <select 
               value={statusFilter} 
               onChange={e => setStatusFilter(e.target.value)}
               style={{ padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-ink)', outline: 'none', fontWeight: 600, fontSize: '0.875rem', cursor: 'pointer' }}
             >
-              <option value="all">Tất cả trạng thái</option>
-              <option value="active">Đang hoạt động</option>
-              <option value="suspended">Bị tạm khóa</option>
+              <option value="all">{uLang?.filterStatusAll || "Tất cả trạng thái"}</option>
+              <option value="active">{uLang?.filterStatusActive || "Đang hoạt động"}</option>
+              <option value="suspended">{uLang?.filterStatusSuspended || "Bị tạm khóa"}</option>
             </select>
           </div>
           <div style={{ fontSize: '0.875rem', color: 'var(--color-ink-muted)', fontWeight: 600 }}>
-            Hiển thị <strong>{filteredUsers.length}</strong> kết quả
+            {lang === "en" ? "Showing" : "Hiển thị"} <strong>{filteredUsers.length}</strong> {lang === "en" ? "results" : "kết quả"}
           </div>
         </div>
 

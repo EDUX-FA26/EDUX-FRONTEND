@@ -21,6 +21,7 @@ import {
   suspendAdminUser,
   activateAdminUser,
 } from "../../services/adminService";
+import EduxAlert from "../../components/common/EduxAlert";
 
 const INITIAL_FORM = {
   email: "",
@@ -202,9 +203,8 @@ const UserManagement = () => {
       </div>
 
       {error && (
-        <div className="flex items-center gap-3 p-4 mb-6 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-400 text-sm">
-          <AlertCircle className="w-5 h-5" />
-          <span>{error}</span>
+        <div className="mb-6">
+          <EduxAlert type="error" message={error} onClose={() => setError("")} />
         </div>
       )}
 
@@ -356,9 +356,8 @@ const UserManagement = () => {
             <form onSubmit={handleSubmit} className="p-6">
               
               {formError && (
-                <div className="mb-5 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm flex gap-2 items-start">
-                  <AlertCircle className="w-5 h-5 shrink-0" />
-                  <span>{formError}</span>
+                <div className="mb-5">
+                  <EduxAlert type="error" message={formError} onClose={() => setFormError("")} />
                 </div>
               )}
 

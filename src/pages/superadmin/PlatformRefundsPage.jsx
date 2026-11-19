@@ -20,6 +20,7 @@ import {
   X,
   Send,
 } from "lucide-react";
+import EduxAlert from "../../components/common/EduxAlert";
 
 function formatCurrency(value) {
   return new Intl.NumberFormat("vi-VN", {
@@ -145,17 +146,11 @@ export default function PlatformRefundsPage() {
 
         {/* Alerts */}
         {message.text && (
-          <div
-            className={`rounded-xl p-4 text-sm flex items-center justify-between ${message.type === "success"
-              ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
-              : "bg-red-50 text-red-800 border border-red-200"
-              }`}
-          >
-            <span>{message.text}</span>
-            <button onClick={() => setMessage({ type: "", text: "" })} className="text-[#8c7166] hover:text-[#1f1b17]">
-              <X className="h-4 w-4" />
-            </button>
-          </div>
+          <EduxAlert
+            type={message.type}
+            message={message.text}
+            onClose={() => setMessage({ type: "", text: "" })}
+          />
         )}
 
         {/* Filter Tabs & Search */}

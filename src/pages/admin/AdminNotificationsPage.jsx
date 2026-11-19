@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { broadcastNotification, getSystemNotifications } from '../../services/admin.service';
+import EduxAlert from '../../components/common/EduxAlert';
 
 /* ───────────── Helpers ───────────── */
 
@@ -164,6 +165,7 @@ const STYLES = `
 export default function AdminNotificationsPage() {
   const [broadcastForm, setBroadcastForm] = useState({ title: '', message: '', target: 'all' });
   const [broadcasting, setBroadcasting] = useState(false);
+  const [alertState, setAlertState] = useState(null);
   
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -277,11 +279,19 @@ export default function AdminNotificationsPage() {
         ...broadcastForm,
         type: 'system_announcement'
       });
-      alert('Đã gửi thông báo toàn hệ thống!');
+      setAlertState({
+        type: 'success',
+        title: 'Thành công!',
+        message: 'Đã gửi thông báo toàn hệ thống thành công!',
+      });
       setBroadcastForm({ title: '', message: '', target: 'all' });
       fetchNotifications();
     } catch (err) {
-      alert(err.response?.data?.message || 'Lỗi khi gửi thông báo');
+      setAlertState({
+        type: 'error',
+        title: 'Đã xảy ra lỗi!',
+        message: err.response?.data?.message || 'Lỗi khi gửi thông báo',
+      });
     } finally {
       setBroadcasting(false);
     }
@@ -300,6 +310,16 @@ export default function AdminNotificationsPage() {
           </p>
         </div>
       </div>
+
+      {/* Alert Notification */}
+      {alertState && (
+        <EduxAlert
+          type={alertState.type}
+          title={alertState.title}
+          message={alertState.message}
+          onClose={() => setAlertState(null)}
+        />
+      )}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(400px, 100%), 1fr))', gap: '24px', alignItems: 'start' }}>
         {/* Cột 1: Form tạo thông báo */}
