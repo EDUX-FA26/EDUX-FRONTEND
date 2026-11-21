@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from "react";
 import SuperadminLayout from "../../components/platform/SuperadminLayout";
+import EduxAlert from "../../components/common/EduxAlert";
 import {
   getManagers,
   createManager,
@@ -171,18 +172,12 @@ export default function ManagersPage() {
 
         {/* Alerts */}
         {message.text && (
-          <div
-            className={`rounded-xl p-4 text-sm flex items-center justify-between ${
-              message.type === "success"
-                ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
-                : "bg-red-50 text-red-800 border border-red-200"
-            }`}
-          >
-            <span>{message.text}</span>
-            <button onClick={() => setMessage({ type: "", text: "" })} className="text-[#8c7166] hover:text-[#1f1b17]">
-              <X className="h-4 w-4" />
-            </button>
-          </div>
+          <EduxAlert
+            type={message.type === "success" ? "success" : "error"}
+            title={message.type === "success" ? "Thành công" : "Thông báo lỗi"}
+            message={message.text}
+            onClose={() => setMessage({ type: "", text: "" })}
+          />
         )}
 
         {/* Stat Cards */}
@@ -341,11 +336,10 @@ export default function ManagersPage() {
                           <button
                             type="button"
                             onClick={() => handleToggleStatus(m)}
-                            className={`rounded-lg p-1.5 transition ${
-                              m.is_active
-                                ? "text-amber-600 hover:bg-amber-50"
-                                : "text-emerald-600 hover:bg-emerald-50"
-                            }`}
+                            className={`rounded-lg p-1.5 transition ${m.is_active
+                              ? "text-amber-600 hover:bg-amber-50"
+                              : "text-emerald-600 hover:bg-emerald-50"
+                              }`}
                             title={m.is_active ? "Khóa tài khoản" : "Mở khóa tài khoản"}
                           >
                             {m.is_active ? <Lock className="h-4 w-4" /> : <Unlock className="h-4 w-4" />}

@@ -14,6 +14,7 @@ import {
   updateDepartment,
 } from '../../services/admin.service';
 import TopicRepositoryModal from '../../components/admin/TopicRepositoryModal';
+import EduxAlert from '../../components/common/EduxAlert';
 import '../module-pages.css';
 
 const EMPTY_FORM = {
@@ -178,7 +179,7 @@ function SubjectModal({ subject, departments, saving, error, onClose, onSubmit, 
             </div>
           </div>
 
-          {error && <div className="module-alert" role="alert" style={{ marginTop: 16 }}><span className="material-symbols-outlined" aria-hidden="true">error</span>{error}</div>}
+          {error && <div className="mt-4"><EduxAlert type="error" message={error} /></div>}
 
           <div className="module-modal__actions">
             <button className="btn btn-secondary" type="button" onClick={onClose}>Hủy</button>
@@ -265,7 +266,7 @@ function DepartmentModal({ department, saving, error, onClose, onSubmit }) {
             </div>
           </div>
 
-          {error && <div className="module-alert" role="alert" style={{ marginTop: 16 }}><span className="material-symbols-outlined" aria-hidden="true">error</span>{error}</div>}
+          {error && <div className="mt-4"><EduxAlert type="error" message={error} /></div>}
 
           <div className="module-modal__actions">
             <button className="btn btn-secondary" type="button" onClick={onClose}>Hủy</button>
@@ -498,7 +499,7 @@ export default function SubjectManagementPage() {
         </button>
       </div>
 
-      {error && <div className="module-alert" role="alert"><span className="material-symbols-outlined" aria-hidden="true">error</span>{error}</div>}
+      {error && <div className="mb-4"><EduxAlert type="error" message={error} /></div>}
 
       {activeTab === 'subjects' ? (
         <>

@@ -17,6 +17,7 @@ import {
   CheckCircle2
 } from "lucide-react";
 import { getAdminUsers, broadcastNotification } from "../../services/adminService";
+import EduxAlert from "../../components/common/EduxAlert";
 
 const AdminDashboardPage = () => {
   const [stats, setStats] = useState({
@@ -200,15 +201,21 @@ const AdminDashboardPage = () => {
 
             <form onSubmit={handleBroadcastSubmit} className="p-6">
               {broadcastState.error && (
-                <div className="mb-5 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm flex gap-2 items-start">
-                  <AlertCircle className="w-5 h-5 shrink-0" />
-                  <span>{broadcastState.error}</span>
+                <div className="mb-5">
+                  <EduxAlert
+                    type="error"
+                    message={broadcastState.error}
+                    onClose={() => setBroadcastState(prev => ({ ...prev, error: "" }))}
+                  />
                 </div>
               )}
               {broadcastState.success && (
-                <div className="mb-5 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm flex gap-2 items-start">
-                  <CheckCircle2 className="w-5 h-5 shrink-0" />
-                  <span>{broadcastState.success}</span>
+                <div className="mb-5">
+                  <EduxAlert
+                    type="success"
+                    message={broadcastState.success}
+                    onClose={() => setBroadcastState(prev => ({ ...prev, success: "" }))}
+                  />
                 </div>
               )}
 

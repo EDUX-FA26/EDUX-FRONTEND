@@ -10,6 +10,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import ManagerLayout from "../../components/platform/ManagerLayout";
+import EduxAlert from "../../components/common/EduxAlert";
 import { broadcastNotification } from "../../services/platformApi";
 
 export default function ManagerNotificationsPage() {
@@ -113,27 +114,19 @@ export default function ManagerNotificationsPage() {
 
         {/* Success / Error Messages */}
         {successMsg && (
-          <div className="flex items-center justify-between rounded-xl bg-[#fff8f5] border border-[#ffdbcc] p-4 text-sm text-[#f27024]">
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="h-5 w-5 text-[#f27024] shrink-0" />
-              <span>{successMsg}</span>
-            </div>
-            <button onClick={() => setSuccessMsg("")} className="text-[#f27024] hover:text-[#d95c14] font-bold ml-4">
-              &times;
-            </button>
-          </div>
+          <EduxAlert
+            type="success"
+            message={successMsg}
+            onClose={() => setSuccessMsg("")}
+          />
         )}
 
         {error && (
-          <div className="flex items-center justify-between rounded-xl bg-red-50 border border-red-200 p-4 text-sm text-red-800">
-            <div className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-red-600 shrink-0" />
-              <span>{error}</span>
-            </div>
-            <button onClick={() => setError("")} className="text-red-500 hover:text-red-700 font-bold ml-4">
-              &times;
-            </button>
-          </div>
+          <EduxAlert
+            type="error"
+            message={error}
+            onClose={() => setError("")}
+          />
         )}
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">

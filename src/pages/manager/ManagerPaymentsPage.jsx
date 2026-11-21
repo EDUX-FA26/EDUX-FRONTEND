@@ -13,6 +13,7 @@ import {
   Lock,
 } from "lucide-react";
 import ManagerLayout from "../../components/platform/ManagerLayout";
+import EduxAlert from "../../components/common/EduxAlert";
 import { getTransactions, getRefunds } from "../../services/platformApi";
 
 export default function ManagerPaymentsPage() {
@@ -120,15 +121,11 @@ export default function ManagerPaymentsPage() {
         </div>
 
         {error && (
-          <div className="flex items-center justify-between rounded-xl bg-red-50 border border-red-200 p-4 text-sm text-red-800">
-            <div className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-red-600 shrink-0" />
-              <span>{error}</span>
-            </div>
-            <button onClick={() => setError("")} className="text-red-500 hover:text-red-700 font-bold ml-4">
-              &times;
-            </button>
-          </div>
+          <EduxAlert
+            type="error"
+            message={error}
+            onClose={() => setError("")}
+          />
         )}
 
         {/* Tabs Bar */}

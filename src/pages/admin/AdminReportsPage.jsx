@@ -7,6 +7,7 @@ import {
   exportLearningActivity,
   exportAiTransparency,
 } from "../../services/report.service";
+import EduxAlert from "../../components/common/EduxAlert";
 
 const numberFormat = new Intl.NumberFormat("vi-VN");
 const dateFormat = (value) => {
@@ -364,7 +365,23 @@ export default function AdminReportsPage() {
         ))}
       </nav>
 
-      {error && <div className="reports-error" role="alert">{error}<button type="button" onClick={loadReports}>Thử lại</button></div>}
+      {error && (
+        <EduxAlert
+          type="error"
+          title="Đã xảy ra lỗi tải báo cáo"
+          message={error}
+          onClose={() => setError("")}
+          actions={
+            <button
+              type="button"
+              onClick={loadReports}
+              className="text-xs font-bold text-red-700 underline hover:text-red-900 cursor-pointer"
+            >
+              Thử tải lại
+            </button>
+          }
+        />
+      )}
       {loading ? <div className="reports-state">Đang tải dữ liệu báo cáo từ hệ thống...</div> : (
         <>
           {activeTab === "overview" && (

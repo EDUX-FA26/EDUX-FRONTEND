@@ -19,6 +19,16 @@
     margin: 0;
     padding: 0;
   }
+
+  a {
+    color: var(--color-primary);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  a:hover {
+    color: var(--color-primary-dark);
+  }
 }
 
 :root {
@@ -116,15 +126,6 @@ div[style*="linear-gradient"] p,
   color: rgba(255, 255, 255, 0.88);
 }
 
-a {
-  color: var(--color-primary);
-  text-decoration: none;
-  transition: color 0.2s;
-}
-
-a:hover {
-  color: var(--color-primary-dark);
-}
 
 /* ── Custom Scrollbar ── */
 ::-webkit-scrollbar {

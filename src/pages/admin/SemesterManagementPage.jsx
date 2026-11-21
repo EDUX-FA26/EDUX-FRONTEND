@@ -9,6 +9,7 @@ import {
   reopenSemester,
   updateSemester,
 } from '../../services/semester.service';
+import EduxAlert from '../../components/common/EduxAlert';
 import '../module-pages.css';
 
 const EMPTY_FORM = {
@@ -97,7 +98,7 @@ function SemesterModal({ semester, saving, error, onClose, onSubmit }) {
             </div>
           </div>
 
-          {error && <div className="module-alert" role="alert" style={{ marginTop: 16 }}><span className="material-symbols-outlined" aria-hidden="true">error</span>{error}</div>}
+          {error && <div className="mt-4"><EduxAlert type="error" message={error} /></div>}
 
           <div className="module-modal__actions">
             <button className="btn btn-secondary" type="button" onClick={onClose}>Hủy</button>
@@ -292,7 +293,7 @@ export default function SemesterManagementPage() {
         <button className="btn btn-secondary" type="submit">Lọc dữ liệu</button>
       </form>
 
-      {error && <div className="module-alert" role="alert"><span className="material-symbols-outlined" aria-hidden="true">error</span>{error}</div>}
+      {error && <div className="mb-4"><EduxAlert type="error" message={error} /></div>}
 
       <section className="card" aria-label="Danh sách học kỳ">
         {loading ? (
