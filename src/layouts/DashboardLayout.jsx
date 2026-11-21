@@ -106,9 +106,13 @@ export default function DashboardLayout() {
   const isClassesLockedPage = /^\/(lecturer|student)\/classes(?:\/[^/]+)?\/?$/.test(location.pathname);
   const isLecturerAssignmentDetail = /^\/lecturer\/assignments\/[^/]+\/?$/.test(location.pathname);
   const isStudyPlan = location.pathname.startsWith('/student/study-plan');
+  const isStudentFlashcardsTest =
+    /^\/student\/flashcards\/[^/]+\/test\/?$/.test(location.pathname) ||
+    /^\/student\/flashcards\/tests\/[^/]+\/?$/.test(location.pathname);
   const isStudentFlashcardsPage =
     location.pathname === '/student/flashcards' ||
-    location.pathname.startsWith('/student/flashcards/subject');
+    location.pathname.startsWith('/student/flashcards/subject') ||
+    isStudentFlashcardsTest;
 
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
