@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import LearningService from '../../services/learning.service';
 import MathText from '../common/MathText';
 import {
-  X, Sparkles, AlertTriangle, CheckCircle2,
+  X, Sparkles, AlertTriangle, AlertCircle, CheckCircle2,
   XCircle, Clock, BookOpen, Send, RefreshCw,
   HelpCircle, Award, BrainCircuit, ArrowRight
 } from 'lucide-react';
@@ -18,6 +18,7 @@ export default function StudyQuizModal({ planDayId, dayInfo, onClose, onSubmitte
   const [dayData, setDayData] = useState(null);
   const [answers, setAnswers] = useState({}); // { [questionId]: 'A' | 'B' | 'C' | 'D' }
   const [submissionResult, setSubmissionResult] = useState(null);
+  const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
 
   // Khóa cuộn trang nền (Body Scroll Lock) khi popup mở, khôi phục khi đóng/unmount
   useEffect(() => {
@@ -103,18 +104,18 @@ export default function StudyQuizModal({ planDayId, dayInfo, onClose, onSubmitte
     }));
   };
 
-  // 4. Submit answers
-  const handleSubmit = async () => {
+  // 4. Pre-submit: open confirmation modal instead of browser window.confirm
+  const handlePreSubmit = () => {
+    const questions = dayData?.questions || [];
+    if (!questions.length || submitting) return;
+    setShowSubmitConfirm(true);
+  };
+
+  // 5. Execute submission
+  const executeSubmit = async () => {
+    setShowSubmitConfirm(false);
     const questions = dayData?.questions || [];
     if (!questions.length) return;
-
-    // Check if all questions are answered
-    const unanswered = questions.some(q => !answers[q.id || q.questionId]);
-    if (unanswered) {
-      if (!window.confirm('Bạn vẫn còn câu hỏi chưa chọn đáp án. Bạn có chắc chắn muốn nộp bài ngay bây giờ?')) {
-        return;
-      }
-    }
 
     const payload = questions.map(q => {
       const qId = q.id || q.questionId;
@@ -148,12 +149,15 @@ export default function StudyQuizModal({ planDayId, dayInfo, onClose, onSubmitte
   };
 
   const questions = dayData?.questions || [];
+  const totalQuestions = questions.length;
   const answeredCount = questions.filter(q => Boolean(answers[q.id || q.questionId])).length;
-  const isAllAnswered = questions.length > 0 && answeredCount === questions.length;
+  const unansweredCount = totalQuestions - answeredCount;
+  const isAllAnswered = totalQuestions > 0 && answeredCount === totalQuestions;
 
   const modalContent = (
-    <div
-      className="fixed inset-0 z-[9999] bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6"
+    <>
+      <div
+        className="fixed inset-0 z-[9999] bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6"
       style={{
         position: 'fixed',
         inset: 0,
@@ -645,7 +649,7 @@ export default function StudyQuizModal({ planDayId, dayInfo, onClose, onSubmitte
 
             {!submissionResult && questions.length > 0 && (
               <button
-                onClick={handleSubmit}
+                onClick={handlePreSubmit}
                 disabled={submitting}
                 className="btn btn-primary"
                 style={{
@@ -673,6 +677,146 @@ export default function StudyQuizModal({ planDayId, dayInfo, onClose, onSubmitte
         </div>
       </div>
     </div>
+
+    {/* ── Sub-window Confirmation Modal ── */}
+    {showSubmitConfirm && (
+      <div
+        className="fixed inset-0 z-[10000] bg-slate-900/50 backdrop-blur-[2px] flex items-center justify-center p-4"
+        style={{
+          position: 'fixed',
+          inset: 0,
+          zIndex: 10000,
+          backgroundColor: 'rgba(15, 23, 42, 0.5)',
+          backdropFilter: 'blur(2px)',
+          WebkitBackdropFilter: 'blur(2px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '16px',
+        }}
+        onClick={(e) => {
+          // Ngăn người dùng bấm nhầm ra ngoài trong lúc hộp thoại xác nhận đang mở
+          e.stopPropagation();
+        }}
+      >
+        <div
+          className="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-100 p-6 animate-in fade-in zoom-in-95 duration-150"
+          style={{
+            width: '100%',
+            maxWidth: '28rem',
+            backgroundColor: '#ffffff',
+            borderRadius: '1rem',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+            border: '1px solid #f1f5f9',
+            padding: '24px',
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Icon cảnh báo/xác nhận nhẹ nhàng */}
+          <div
+            className="w-11 h-11 rounded-full bg-orange-50 text-orange-500 flex items-center justify-center mb-3.5"
+            style={{
+              width: '44px',
+              height: '44px',
+              borderRadius: '9999px',
+              backgroundColor: '#fff7ed',
+              color: '#f97316',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: '14px',
+            }}
+          >
+            <AlertCircle size={22} strokeWidth={2.2} />
+          </div>
+
+          {/* Tiêu đề */}
+          <h3
+            className="text-base font-bold text-slate-900"
+            style={{
+              fontSize: '1rem',
+              fontWeight: 700,
+              color: '#0f172a',
+              margin: 0,
+            }}
+          >
+            Xác nhận nộp bài luyện tập?
+          </h3>
+
+          {/* Nội dung mô tả động */}
+          <p
+            className="text-sm text-slate-600 mt-1.5 leading-relaxed"
+            style={{
+              fontSize: '0.875rem',
+              color: '#475569',
+              marginTop: '6px',
+              lineHeight: 1.6,
+              margin: '6px 0 0',
+            }}
+          >
+            {unansweredCount > 0 ? (
+              <>
+                Bạn vẫn còn <strong>{unansweredCount}/{totalQuestions}</strong> câu hỏi chưa chọn đáp án. Bạn có chắc chắn muốn nộp bài ngay bây giờ không?
+              </>
+            ) : (
+              <>
+                Bạn đã hoàn thành tất cả <strong>{totalQuestions}</strong> câu hỏi. Xác nhận nộp bài để xem kết quả và lời giải chi tiết?
+              </>
+            )}
+          </p>
+
+          {/* Hàng nút hành động ở đáy */}
+          <div
+            className="mt-6 flex items-center justify-end gap-2.5"
+            style={{
+              marginTop: '24px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'flex-end',
+              gap: '10px',
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => setShowSubmitConfirm(false)}
+              className="px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-sm font-medium transition cursor-pointer"
+              style={{
+                padding: '8px 16px',
+                borderRadius: '12px',
+                border: '1px solid #e2e8f0',
+                backgroundColor: '#ffffff',
+                color: '#334155',
+                fontSize: '0.875rem',
+                fontWeight: 500,
+                cursor: 'pointer',
+              }}
+            >
+              Hủy
+            </button>
+            <button
+              type="button"
+              onClick={executeSubmit}
+              disabled={submitting}
+              className="px-4 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold shadow-sm transition cursor-pointer"
+              style={{
+                padding: '8px 18px',
+                borderRadius: '12px',
+                border: 'none',
+                backgroundColor: '#f97316',
+                color: '#ffffff',
+                fontSize: '0.875rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+              }}
+            >
+              Xác nhận nộp bài
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+  </>
   );
 
   if (typeof document === 'undefined') return null;
