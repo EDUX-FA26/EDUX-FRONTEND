@@ -20,14 +20,14 @@ const normalizeOption = (opt, index) => {
       return {
         key: match[1].toUpperCase(),
         text: match[2].trim(),
-        value: match[1].toUpperCase(),
+        value: match[2].trim(),
       };
     }
     const defaultKey = String.fromCharCode(65 + index);
     return {
       key: defaultKey,
       text: trimmed,
-      value: defaultKey,
+      value: trimmed,
     };
   }
   if (typeof opt === 'object') {
@@ -36,7 +36,7 @@ const normalizeOption = (opt, index) => {
     return {
       key,
       text,
-      value: key || text,
+      value: text || key,
     };
   }
   return { key: '', text: String(opt), value: String(opt) };
@@ -375,15 +375,15 @@ export default function FlashcardTestPage() {
                 const currentAnswerStr = getSafeStringAnswer(answers[currentQuestion.id]);
                 const isSelected = Boolean(
                   currentAnswerStr &&
-                  (currentAnswerStr === optInfo.key ||
+                  (currentAnswerStr.toUpperCase() === optInfo.key ||
                    currentAnswerStr.toLowerCase() === (optInfo.text || '').toLowerCase() ||
-                   currentAnswerStr === optInfo.value)
+                   currentAnswerStr.toLowerCase() === (optInfo.value || '').toLowerCase())
                 );
                 return (
                   <button
                     key={optIdx}
                     type="button"
-                    onClick={() => handleAnswerChange(currentQuestion.id, optInfo.key || optInfo.value)}
+                    onClick={() => handleAnswerChange(currentQuestion.id, optInfo.text || optInfo.value || optInfo.key)}
                     className="w-full text-left py-2.5 px-4 rounded-xl border transition-all flex items-center gap-3 cursor-pointer"
                     style={{
                       borderWidth: '1.5px',

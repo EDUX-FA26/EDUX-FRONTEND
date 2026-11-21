@@ -122,19 +122,46 @@ const renderAnswerDisplay = (ans, options = []) => {
     return '(Bỏ trống - Chưa trả lời)';
   }
 
-  // If ansStr matches an option key (e.g. 'A', 'B', 'C', 'D'), find the corresponding text
   if (Array.isArray(options) && options.length > 0) {
-    const matched = options.find((opt) => {
-      if (typeof opt === 'object' && opt !== null) {
-        return (opt.key && opt.key.toUpperCase() === ansStr.trim().toUpperCase());
+    const trimmed = ansStr.trim();
+    const upperAns = trimmed.toUpperCase();
+    const lowerAns = trimmed.toLowerCase();
+
+    // Chuẩn hóa toàn bộ options (hỗ trợ cả string lẫn object)
+    const normOptions = options.map((opt, idx) => {
+      const defaultKey = String.fromCharCode(65 + idx);
+      if (opt === null || opt === undefined) return { key: defaultKey, text: '' };
+      if (typeof opt === 'string') {
+        const m = opt.trim().match(/^([A-D])[\.\:\)\s]+(.*)$/i);
+        if (m) return { key: m[1].toUpperCase(), text: m[2].trim() };
+        return { key: defaultKey, text: opt.trim() };
       }
+      if (typeof opt === 'object') {
+        return {
+          key: String(opt.key || opt.label || defaultKey).toUpperCase(),
+          text: String(opt.text ?? opt.content ?? opt.value ?? '').trim(),
+        };
+      }
+      return { key: defaultKey, text: String(opt).trim() };
+    });
+
+    const stripPrefix = (s) => s.replace(/^[a-d][.:)\s-]+/i, '').trim();
+
+    // Tìm option tương ứng (khớp theo key A/B/C/D hoặc khớp theo nội dung text)
+    const matched = normOptions.find((opt) => {
+      if (opt.key === upperAns) return true;
+      if (opt.text.toLowerCase() === lowerAns) return true;
+      const cleanOptText = stripPrefix(opt.text.toLowerCase());
+      const cleanAns = stripPrefix(lowerAns);
+      if (cleanOptText && cleanOptText === cleanAns) return true;
       return false;
     });
+
     if (matched) {
       return (
         <span>
           <strong>{matched.key}. </strong>
-          <MathText content={matched.text || matched.content || ''} inline />
+          <MathText content={matched.text} inline />
         </span>
       );
     }
