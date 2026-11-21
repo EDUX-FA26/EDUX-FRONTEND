@@ -109,6 +109,14 @@ export default function ManagerLayout({ children }) {
     return location.pathname === path || location.pathname.startsWith(`${path}/`);
   };
 
+  const isManagerDashboard =
+    location.pathname === "/manager/dashboard" ||
+    location.pathname.startsWith("/manager/dashboard");
+
+  const isManagerSchools =
+    location.pathname === "/manager/schools" ||
+    location.pathname.startsWith("/manager/schools");
+
   const initials = user?.full_name
     ? user.full_name.split(" ").slice(-1)[0][0].toUpperCase()
     : (user?.username?.[0] || user?.email?.[0] || "M").toUpperCase();
@@ -619,47 +627,66 @@ export default function ManagerLayout({ children }) {
         {/* Content Area */}
         <main
           className="flex-1 min-w-0 w-full overflow-x-hidden"
-          style={{
-            flex: 1,
-            maxWidth: "1440px",
-            width: "100%",
-            margin: "0 auto",
-            padding: "24px 24px 80px",
-          }}
+          style={
+            isManagerSchools
+              ? {
+                  flex: 1,
+                  width: "100%",
+                  maxWidth: "100%",
+                  margin: 0,
+                  padding: 0,
+                  display: "flex",
+                  flexDirection: "column",
+                  height: "calc(100vh - var(--dashboard-header-height, 64px))",
+                  minHeight: 0,
+                  minWidth: 0,
+                  overflow: "hidden",
+                  boxSizing: "border-box",
+                }
+              : {
+                  flex: 1,
+                  maxWidth: "1440px",
+                  width: "100%",
+                  margin: "0 auto",
+                  padding: "24px 24px 80px",
+                }
+          }
         >
           {children}
         </main>
 
         {/* Standard Footer */}
-        <footer
-          style={{
-            background: "var(--color-surface)",
-            borderTop: "1px solid var(--color-border)",
-            padding: "16px 24px",
-            transition: "background 0.3s",
-          }}
-        >
-          <div
+        {!isManagerDashboard && !isManagerSchools && (
+          <footer
             style={{
-              maxWidth: "1440px",
-              margin: "0 auto",
-              display: "flex",
-              flexWrap: "wrap",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: "12px",
-              fontSize: "0.8125rem",
-              color: "var(--color-ink-muted)",
+              background: "var(--color-surface)",
+              borderTop: "1px solid var(--color-border)",
+              padding: "16px 24px",
+              transition: "background 0.3s",
             }}
           >
-            <div>
-              <strong>EDUX Platform</strong> &mdash; Hệ thống Quản trị & Vận hành Cơ sở Trường học
+            <div
+              style={{
+                maxWidth: "1440px",
+                margin: "0 auto",
+                display: "flex",
+                flexWrap: "wrap",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: "12px",
+                fontSize: "0.8125rem",
+                color: "var(--color-ink-muted)",
+              }}
+            >
+              <div>
+                <strong>EDUX Platform</strong> &mdash; Hệ thống Quản trị & Vận hành Cơ sở Trường học
+              </div>
+              <div>
+                Phiên bản 2.6 &bull; Operations Manager Console
+              </div>
             </div>
-            <div>
-              Phiên bản 2.6 &bull; Operations Manager Console
-            </div>
-          </div>
-        </footer>
+          </footer>
+        )}
       </div>
     </div>
   );
