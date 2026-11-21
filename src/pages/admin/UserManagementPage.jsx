@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useLanguage } from '../../contexts/LanguageContext';
 import {
   getUsers,
@@ -290,9 +291,20 @@ export default function UserManagementPage() {
   }, [roleFilter, statusFilter, searchQuery]);
 
   return (
-    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '24px', position: 'relative' }}>
+    <div
+      className="w-full max-w-7xl mx-auto h-[calc(100vh-var(--dashboard-header-height,64px))] overflow-hidden flex flex-col px-6 pt-5 pb-4 box-border animate-fade-in"
+      style={{
+        height: 'calc(100vh - var(--dashboard-header-height, 64px))',
+        maxHeight: 'calc(100vh - var(--dashboard-header-height, 64px))',
+        overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column',
+        boxSizing: 'border-box',
+        position: 'relative',
+      }}
+    >
       {/* Header Section */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+      <div className="shrink-0 mb-4" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
         <div>
           <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: 0, color: 'var(--color-primary)' }}>
             {uLang?.title || "Quản lý Người dùng"}
@@ -354,17 +366,19 @@ export default function UserManagementPage() {
 
       {/* Alert Notification */}
       {alertState && (
-        <EduxAlert
-          type={alertState.type}
-          title={alertState.title}
-          message={alertState.message}
-          onClose={() => setAlertState(null)}
-        />
+        <div className="shrink-0 mb-3">
+          <EduxAlert
+            type={alertState.type}
+            title={alertState.title}
+            message={alertState.message}
+            onClose={() => setAlertState(null)}
+          />
+        </div>
       )}
 
       {/* Guide Card (SRS 3.7.5) */}
       {showGuide && (
-        <div className="card animate-fade-in" style={{ padding: '20px', background: 'rgba(234, 88, 12, 0.05)', border: '1px solid rgba(234, 88, 12, 0.2)', borderRadius: '14px' }}>
+        <div className="shrink-0 mb-3 card animate-fade-in" style={{ padding: '16px 20px', background: 'rgba(234, 88, 12, 0.05)', border: '1px solid rgba(234, 88, 12, 0.2)', borderRadius: '14px' }}>
           <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--color-primary)', margin: '0 0 8px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span className="material-symbols-outlined">lightbulb</span> Cấu trúc File Import Danh Sách Người Dùng (.xlsx, .csv)
           </h3>
@@ -388,9 +402,9 @@ export default function UserManagementPage() {
       )}
 
       {/* Main Table Card (SRS 3.7.8) */}
-      <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
+      <div className="card flex-1 min-h-0 bg-white rounded-2xl border border-slate-200 flex flex-col overflow-hidden" style={{ padding: '0', display: 'flex', flexDirection: 'column' }}>
         {/* Toolbar */}
-        <div style={{ padding: '20px', borderBottom: '1px solid var(--color-border)', display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', background: 'var(--color-surface-hover)' }}>
+        <div className="shrink-0" style={{ padding: '16px 20px', borderBottom: '1px solid var(--color-border)', display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', background: 'var(--color-surface-hover)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: '320px', flexWrap: 'wrap' }}>
             <div style={{ position: 'relative', flex: 1, minWidth: '240px', maxWidth: '380px' }}>
               <span className="material-symbols-outlined" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--color-ink-muted)', fontSize: '20px' }}>search</span>
@@ -428,7 +442,10 @@ export default function UserManagementPage() {
         </div>
 
         {/* List Content */}
-        <div style={{ padding: '20px' }}>
+        <div
+          className="flex-1 min-h-0 overflow-y-auto divide-y divide-slate-100 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300 hover:[&::-webkit-scrollbar-thumb]:bg-slate-400"
+          style={{ padding: '0 20px' }}
+        >
           {loading ? (
             [1,2,3,4,5].map(i => (
               <div key={i} style={{ display: 'flex', gap: '12px', paddingBottom: '14px', borderBottom: '1px solid var(--color-border)', marginBottom: '14px' }}>
@@ -466,7 +483,7 @@ export default function UserManagementPage() {
 
         {/* Pagination (SRS 3.7.8) */}
         {!loading && filteredUsers.length > 0 && (
-          <div style={{ padding: '16px 20px', borderTop: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--color-surface-hover)' }}>
+          <div className="shrink-0" style={{ padding: '14px 20px', borderTop: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--color-surface-hover)' }}>
             <span style={{ fontSize: '0.875rem', color: 'var(--color-ink-muted)', fontWeight: 600 }}>
               Trang {currentPage} / {totalPages || 1}
             </span>
@@ -521,191 +538,246 @@ export default function UserManagementPage() {
       </div>
 
       {/* Modal Thêm Người Dùng (SRS 3.7.5 / UC 86) */}
-      {showCreateModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(4px)', zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-          <div className="card animate-fade-in" style={{ width: '100%', maxWidth: '460px', padding: '28px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+      {showCreateModal && typeof document !== 'undefined' && createPortal(
+        <div
+          className="fixed inset-0 z-[9999] bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6"
+          style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(15, 23, 42, 0.5)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          onClick={(e) => { if (e.target === e.currentTarget) setShowCreateModal(false); }}
+        >
+          <div
+            className="w-full max-w-lg max-h-[88vh] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-fade-in border border-slate-200"
+            style={{ width: '100%', maxWidth: '500px', maxHeight: '88vh', background: 'var(--color-surface, #ffffff)', borderRadius: '16px', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header cố định */}
+            <div className="shrink-0 px-6 py-5 border-b border-slate-100 flex items-center justify-between" style={{ padding: '18px 24px', borderBottom: '1px solid var(--color-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, color: 'var(--color-primary)' }}>Thêm Người Dùng Mới</h2>
               <button 
                 type="button"
                 onClick={() => setShowCreateModal(false)}
-                style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--color-ink-muted)' }}
+                style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--color-ink-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
               >
                 <span className="material-symbols-outlined" style={{ fontSize: '24px' }}>close</span>
               </button>
             </div>
             
-            <form onSubmit={handleCreateUser} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div>
-                <label style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--color-ink-muted)', marginBottom: '6px', display: 'block' }}>Họ và tên *</label>
-                <input required value={createFormData.full_name} onChange={e => setCreateFormData({...createFormData, full_name: e.target.value})} type="text" placeholder="Nguyễn Văn A" style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-ink)' }} />
-              </div>
-              <div>
-                <label style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--color-ink-muted)', marginBottom: '6px', display: 'block' }}>Email đăng nhập *</label>
-                <input required value={createFormData.email} onChange={e => setCreateFormData({...createFormData, email: e.target.value})} type="email" placeholder="user@edu.vn" style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-ink)' }} />
-              </div>
-              <div>
-                <label style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--color-ink-muted)', marginBottom: '6px', display: 'block' }}>Mật khẩu khởi tạo *</label>
-                <input required minLength={6} value={createFormData.password} onChange={e => setCreateFormData({...createFormData, password: e.target.value})} type="password" placeholder="Tối thiểu 6 ký tự" style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-ink)' }} />
-              </div>
-              <div>
-                <label style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--color-ink-muted)', marginBottom: '6px', display: 'block' }}>Vai trò hệ thống *</label>
-                <select value={createFormData.role} onChange={e => setCreateFormData({...createFormData, role: e.target.value})} style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-ink)', fontWeight: 600 }}>
-                  <option value="student">Sinh viên (Student)</option>
-                  <option value="lecturer">Giảng viên (Lecturer)</option>
-                  <option value="admin">Quản trị viên (Admin)</option>
-                </select>
-              </div>
-              {createFormData.role === 'student' && (
+            {/* Form */}
+            <form onSubmit={handleCreateUser} className="flex-1 min-h-0 flex flex-col overflow-hidden" style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, margin: 0 }}>
+              {/* Thân cuộn nội bộ */}
+              <div className="flex-1 min-h-0 overflow-y-auto px-6 py-5 space-y-4" style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div>
-                  <label style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--color-ink-muted)', marginBottom: '6px', display: 'block' }}>Mã số sinh viên (MSSV)</label>
-                  <input value={createFormData.student_code} onChange={e => setCreateFormData({...createFormData, student_code: e.target.value})} type="text" placeholder="SE170001" style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-ink)' }} />
+                  <label style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--color-ink-muted)', marginBottom: '6px', display: 'block' }}>Họ và tên *</label>
+                  <input required value={createFormData.full_name} onChange={e => setCreateFormData({...createFormData, full_name: e.target.value})} type="text" placeholder="Nguyễn Văn A" style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-ink)', boxSizing: 'border-box' }} />
                 </div>
-              )}
-              {createFormData.role !== 'admin' && (
                 <div>
-                  <label style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--color-ink-muted)', marginBottom: '6px', display: 'block' }}>Khoa / Bộ môn</label>
-                  <select value={createFormData.department_id} onChange={e => setCreateFormData({...createFormData, department_id: e.target.value})} style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-ink)' }}>
-                    <option value="">-- Chưa chọn khoa --</option>
-                    {departments.map(dept => (
-                      <option key={dept.id} value={dept.id}>{dept.code} — {dept.name}</option>
-                    ))}
+                  <label style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--color-ink-muted)', marginBottom: '6px', display: 'block' }}>Email đăng nhập *</label>
+                  <input required value={createFormData.email} onChange={e => setCreateFormData({...createFormData, email: e.target.value})} type="email" placeholder="user@edu.vn" style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-ink)', boxSizing: 'border-box' }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--color-ink-muted)', marginBottom: '6px', display: 'block' }}>Mật khẩu khởi tạo *</label>
+                  <input required minLength={6} value={createFormData.password} onChange={e => setCreateFormData({...createFormData, password: e.target.value})} type="password" placeholder="Tối thiểu 6 ký tự" style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-ink)', boxSizing: 'border-box' }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--color-ink-muted)', marginBottom: '6px', display: 'block' }}>Vai trò hệ thống *</label>
+                  <select value={createFormData.role} onChange={e => setCreateFormData({...createFormData, role: e.target.value})} style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-ink)', fontWeight: 600, boxSizing: 'border-box' }}>
+                    <option value="student">Sinh viên (Student)</option>
+                    <option value="lecturer">Giảng viên (Lecturer)</option>
+                    <option value="admin">Quản trị viên (Admin)</option>
                   </select>
                 </div>
-              )}
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '12px' }}>
+                {createFormData.role === 'student' && (
+                  <div>
+                    <label style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--color-ink-muted)', marginBottom: '6px', display: 'block' }}>Mã số sinh viên (MSSV)</label>
+                    <input value={createFormData.student_code} onChange={e => setCreateFormData({...createFormData, student_code: e.target.value})} type="text" placeholder="SE170001" style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-ink)', boxSizing: 'border-box' }} />
+                  </div>
+                )}
+                {createFormData.role !== 'admin' && (
+                  <div>
+                    <label style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--color-ink-muted)', marginBottom: '6px', display: 'block' }}>Khoa / Bộ môn</label>
+                    <select value={createFormData.department_id} onChange={e => setCreateFormData({...createFormData, department_id: e.target.value})} style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-ink)', boxSizing: 'border-box' }}>
+                      <option value="">-- Chưa chọn khoa --</option>
+                      {departments.map(dept => (
+                        <option key={dept.id} value={dept.id}>{dept.code} — {dept.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+
+              {/* Hàng nút cố định ở đáy */}
+              <div className="shrink-0 px-6 py-4 border-t border-slate-100 flex items-center justify-end gap-3 bg-slate-50/50" style={{ padding: '16px 24px', borderTop: '1px solid var(--color-border)', display: 'flex', justifyContent: 'flex-end', gap: '12px', background: 'var(--color-surface-hover)' }}>
                 <button type="button" onClick={() => setShowCreateModal(false)} className="btn btn-outline" disabled={createLoading}>Hủy</button>
                 <button type="submit" disabled={createLoading} className="btn btn-primary">{createLoading ? 'Đang tạo...' : 'Tạo Tài Khoản'}</button>
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Modal Chỉnh Sửa Thông Tin User (SRS 3.7.6 / UC 87) */}
-      {editingUser && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(4px)', zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-          <div className="card animate-fade-in" style={{ width: '100%', maxWidth: '460px', padding: '28px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+      {editingUser && typeof document !== 'undefined' && createPortal(
+        <div
+          className="fixed inset-0 z-[9999] bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6"
+          style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(15, 23, 42, 0.5)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          onClick={(e) => { if (e.target === e.currentTarget) setEditingUser(null); }}
+        >
+          <div
+            className="w-full max-w-lg max-h-[88vh] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-fade-in border border-slate-200"
+            style={{ width: '100%', maxWidth: '500px', maxHeight: '88vh', background: 'var(--color-surface, #ffffff)', borderRadius: '16px', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header cố định */}
+            <div className="shrink-0 px-6 py-5 border-b border-slate-100 flex items-center justify-between" style={{ padding: '18px 24px', borderBottom: '1px solid var(--color-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, color: 'var(--color-primary)' }}>
                 Chỉnh Sửa Người Dùng
               </h2>
               <button 
                 type="button"
                 onClick={() => setEditingUser(null)}
-                style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--color-ink-muted)' }}
+                style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--color-ink-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
               >
                 <span className="material-symbols-outlined" style={{ fontSize: '24px' }}>close</span>
               </button>
             </div>
             
-            <form onSubmit={handleUpdateUser} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div>
-                <label style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--color-ink-muted)', marginBottom: '6px', display: 'block' }}>Họ và tên *</label>
-                <input required value={editFormData.full_name} onChange={e => setEditFormData({...editFormData, full_name: e.target.value})} type="text" style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-ink)' }} />
-              </div>
-              <div>
-                <label style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--color-ink-muted)', marginBottom: '6px', display: 'block' }}>Email *</label>
-                <input required value={editFormData.email} onChange={e => setEditFormData({...editFormData, email: e.target.value})} type="email" style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-ink)' }} />
-              </div>
-              <div>
-                <label style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--color-ink-muted)', marginBottom: '6px', display: 'block' }}>Vai trò hệ thống *</label>
-                <select value={editFormData.role} onChange={e => setEditFormData({...editFormData, role: e.target.value})} style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-ink)', fontWeight: 600 }}>
-                  <option value="student">Sinh viên (Student)</option>
-                  <option value="lecturer">Giảng viên (Lecturer)</option>
-                  <option value="admin">Quản trị viên (Admin)</option>
-                </select>
-              </div>
-              {editFormData.role === 'student' && (
+            {/* Form */}
+            <form onSubmit={handleUpdateUser} className="flex-1 min-h-0 flex flex-col overflow-hidden" style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, margin: 0 }}>
+              {/* Thân cuộn nội bộ */}
+              <div className="flex-1 min-h-0 overflow-y-auto px-6 py-5 space-y-4" style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div>
-                  <label style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--color-ink-muted)', marginBottom: '6px', display: 'block' }}>Mã số sinh viên (MSSV)</label>
-                  <input value={editFormData.student_code} onChange={e => setEditFormData({...editFormData, student_code: e.target.value})} type="text" style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-ink)' }} />
+                  <label style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--color-ink-muted)', marginBottom: '6px', display: 'block' }}>Họ và tên *</label>
+                  <input required value={editFormData.full_name} onChange={e => setEditFormData({...editFormData, full_name: e.target.value})} type="text" style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-ink)', boxSizing: 'border-box' }} />
                 </div>
-              )}
-              {editFormData.role !== 'admin' && (
                 <div>
-                  <label style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--color-ink-muted)', marginBottom: '6px', display: 'block' }}>Khoa / Bộ môn</label>
-                  <select value={editFormData.department_id} onChange={e => setEditFormData({...editFormData, department_id: e.target.value})} style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-ink)' }}>
-                    <option value="">-- Chưa chọn khoa --</option>
-                    {departments.map(dept => (
-                      <option key={dept.id} value={dept.id}>{dept.code} — {dept.name}</option>
-                    ))}
+                  <label style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--color-ink-muted)', marginBottom: '6px', display: 'block' }}>Email *</label>
+                  <input required value={editFormData.email} onChange={e => setEditFormData({...editFormData, email: e.target.value})} type="email" style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-ink)', boxSizing: 'border-box' }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--color-ink-muted)', marginBottom: '6px', display: 'block' }}>Vai trò hệ thống *</label>
+                  <select value={editFormData.role} onChange={e => setEditFormData({...editFormData, role: e.target.value})} style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-ink)', fontWeight: 600, boxSizing: 'border-box' }}>
+                    <option value="student">Sinh viên (Student)</option>
+                    <option value="lecturer">Giảng viên (Lecturer)</option>
+                    <option value="admin">Quản trị viên (Admin)</option>
                   </select>
                 </div>
-              )}
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '12px' }}>
+                {editFormData.role === 'student' && (
+                  <div>
+                    <label style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--color-ink-muted)', marginBottom: '6px', display: 'block' }}>Mã số sinh viên (MSSV)</label>
+                    <input value={editFormData.student_code} onChange={e => setEditFormData({...editFormData, student_code: e.target.value})} type="text" style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-ink)', boxSizing: 'border-box' }} />
+                  </div>
+                )}
+                {editFormData.role !== 'admin' && (
+                  <div>
+                    <label style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--color-ink-muted)', marginBottom: '6px', display: 'block' }}>Khoa / Bộ môn</label>
+                    <select value={editFormData.department_id} onChange={e => setEditFormData({...editFormData, department_id: e.target.value})} style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-ink)', boxSizing: 'border-box' }}>
+                      <option value="">-- Chưa chọn khoa --</option>
+                      {departments.map(dept => (
+                        <option key={dept.id} value={dept.id}>{dept.code} — {dept.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+
+              {/* Hàng nút cố định ở đáy */}
+              <div className="shrink-0 px-6 py-4 border-t border-slate-100 flex items-center justify-end gap-3 bg-slate-50/50" style={{ padding: '16px 24px', borderTop: '1px solid var(--color-border)', display: 'flex', justifyContent: 'flex-end', gap: '12px', background: 'var(--color-surface-hover)' }}>
                 <button type="button" onClick={() => setEditingUser(null)} className="btn btn-outline" disabled={editLoading}>Hủy</button>
                 <button type="submit" disabled={editLoading} className="btn btn-primary">{editLoading ? 'Đang lưu...' : 'Lưu Thay Đổi'}</button>
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Modal Kết Quả Import (SRS 3.7.5) */}
-      {importedResult && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(4px)', zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
-          <div className="card animate-fade-in" style={{ width: '100%', maxWidth: '700px', maxHeight: '90vh', overflowY: 'auto', padding: '32px' }}>
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '16px', color: 'var(--color-primary)' }}>Kết Quả Import Người Dùng</h2>
-            
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px', marginBottom: '24px' }}>
-              <div style={{ background: 'var(--color-surface-hover)', padding: '16px', borderRadius: '12px', textAlign: 'center' }}>
-                <div style={{ fontSize: '2rem', fontWeight: 800, color: '#10b981' }}>{importedResult.importedUsers || 0}</div>
-                <div style={{ fontSize: '0.875rem', color: 'var(--color-ink-muted)' }}>Tài khoản đã tạo thành công</div>
-              </div>
-              <div style={{ background: 'var(--color-surface-hover)', padding: '16px', borderRadius: '12px', textAlign: 'center' }}>
-                <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--color-ink-muted)' }}>{importedResult.skippedUsers || 0}</div>
-                <div style={{ fontSize: '0.875rem', color: 'var(--color-ink-muted)' }}>Bản ghi bỏ qua (trùng lặp)</div>
-              </div>
+      {importedResult && typeof document !== 'undefined' && createPortal(
+        <div
+          className="fixed inset-0 z-[9999] bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6"
+          style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(15, 23, 42, 0.5)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          onClick={(e) => { if (e.target === e.currentTarget) setImportedResult(null); }}
+        >
+          <div
+            className="w-full max-w-2xl max-h-[88vh] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-fade-in border border-slate-200"
+            style={{ width: '100%', maxWidth: '700px', maxHeight: '88vh', background: 'var(--color-surface, #ffffff)', borderRadius: '16px', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header cố định */}
+            <div className="shrink-0 px-6 py-5 border-b border-slate-100 flex items-center justify-between" style={{ padding: '18px 24px', borderBottom: '1px solid var(--color-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, color: 'var(--color-primary)' }}>Kết Quả Import Người Dùng</h2>
+              <button 
+                type="button"
+                onClick={() => setImportedResult(null)}
+                style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--color-ink-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: '24px' }}>close</span>
+              </button>
             </div>
 
-            {importedResult.credentials?.length > 0 && (
-              <section style={{ marginBottom: '24px' }}>
-                <h3 style={{ fontSize: '1.125rem', fontWeight: 700, marginBottom: '8px', color: 'var(--color-ink)' }}>Mật khẩu tạm thời khởi tạo — chỉ hiển thị lần này</h3>
-                <p style={{ color: 'var(--color-danger)', fontSize: '0.875rem', marginBottom: '12px' }}>
-                  Hãy sao lưu và bàn giao tài khoản an toàn cho người dùng. Đóng cửa sổ sẽ không thể xem lại mật khẩu này.
-                </p>
-                <div style={{ overflowX: 'auto', maxHeight: '260px', border: '1px solid var(--color-border)', borderRadius: '10px' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                    <thead>
-                      <tr style={{ background: 'var(--color-surface-hover)' }}>
-                        <th style={{ padding: '10px' }}>Email</th>
-                        <th style={{ padding: '10px' }}>Vai trò</th>
-                        <th style={{ padding: '10px' }}>Mật khẩu tạm</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {importedResult.credentials.map((credential) => (
-                        <tr key={credential.email} style={{ borderTop: '1px solid var(--color-border)' }}>
-                          <td style={{ padding: '10px', fontSize: '0.875rem' }}>{credential.email}</td>
-                          <td style={{ padding: '10px', fontSize: '0.875rem' }}>{credential.role}</td>
-                          <td style={{ padding: '10px', fontFamily: 'var(--font-mono)', userSelect: 'all', fontSize: '0.875rem', color: 'var(--color-primary)', fontWeight: 600 }}>{credential.password}</td>
+            {/* Thân cuộn nội bộ */}
+            <div className="flex-1 min-h-0 overflow-y-auto px-6 py-5 space-y-5" style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '24px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px', marginBottom: '20px' }}>
+                <div style={{ background: 'var(--color-surface-hover)', padding: '16px', borderRadius: '12px', textAlign: 'center' }}>
+                  <div style={{ fontSize: '2rem', fontWeight: 800, color: '#10b981' }}>{importedResult.importedUsers || 0}</div>
+                  <div style={{ fontSize: '0.875rem', color: 'var(--color-ink-muted)' }}>Tài khoản đã tạo thành công</div>
+                </div>
+                <div style={{ background: 'var(--color-surface-hover)', padding: '16px', borderRadius: '12px', textAlign: 'center' }}>
+                  <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--color-ink-muted)' }}>{importedResult.skippedUsers || 0}</div>
+                  <div style={{ fontSize: '0.875rem', color: 'var(--color-ink-muted)' }}>Bản ghi bỏ qua (trùng lặp)</div>
+                </div>
+              </div>
+
+              {importedResult.credentials?.length > 0 && (
+                <section style={{ marginBottom: '20px' }}>
+                  <h3 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: '8px', color: 'var(--color-ink)' }}>Mật khẩu tạm thời khởi tạo — chỉ hiển thị lần này</h3>
+                  <p style={{ color: 'var(--color-danger, #ef4444)', fontSize: '0.875rem', marginBottom: '12px' }}>
+                    Hãy sao lưu và bàn giao tài khoản an toàn cho người dùng. Đóng cửa sổ sẽ không thể xem lại mật khẩu này.
+                  </p>
+                  <div style={{ overflowX: 'auto', maxHeight: '240px', border: '1px solid var(--color-border)', borderRadius: '10px' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                      <thead>
+                        <tr style={{ background: 'var(--color-surface-hover)' }}>
+                          <th style={{ padding: '10px 12px' }}>Email</th>
+                          <th style={{ padding: '10px 12px' }}>Vai trò</th>
+                          <th style={{ padding: '10px 12px' }}>Mật khẩu tạm</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </section>
-            )}
+                      </thead>
+                      <tbody>
+                        {importedResult.credentials.map((credential) => (
+                          <tr key={credential.email} style={{ borderTop: '1px solid var(--color-border)' }}>
+                            <td style={{ padding: '10px 12px', fontSize: '0.875rem' }}>{credential.email}</td>
+                            <td style={{ padding: '10px 12px', fontSize: '0.875rem' }}>{credential.role}</td>
+                            <td style={{ padding: '10px 12px', fontFamily: 'var(--font-mono)', userSelect: 'all', fontSize: '0.875rem', color: 'var(--color-primary)', fontWeight: 600 }}>{credential.password}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </section>
+              )}
 
-            {importedResult.results?.length > 0 && (
-              <section>
-                <h3 style={{ fontSize: '1.125rem', fontWeight: 700, marginBottom: '12px', color: 'var(--color-ink)' }}>Chi tiết xử lý từng dòng</h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '220px', overflowY: 'auto' }}>
-                  {importedResult.results.map((row) => (
-                    <div key={`${row.row}-${row.email || 'invalid'}`} style={{ padding: '10px 12px', borderRadius: '8px', background: 'var(--color-surface-hover)', fontSize: '0.875rem' }}>
-                      Dòng {row.row}: {row.email || 'Không có email'} — {row.status === 'created' ? '✅ Đã tạo' : `⚠️ Bỏ qua: ${row.reason}`}
-                    </div>
-                  ))}
-                </div>
-              </section>
-            )}
+              {importedResult.results?.length > 0 && (
+                <section>
+                  <h3 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: '12px', color: 'var(--color-ink)' }}>Chi tiết xử lý từng dòng</h3>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '200px', overflowY: 'auto' }}>
+                    {importedResult.results.map((row) => (
+                      <div key={`${row.row}-${row.email || 'invalid'}`} style={{ padding: '10px 12px', borderRadius: '8px', background: 'var(--color-surface-hover)', fontSize: '0.875rem' }}>
+                        Dòng {row.row}: {row.email || 'Không có email'} — {row.status === 'created' ? '✅ Đã tạo' : `⚠️ Bỏ qua: ${row.reason}`}
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
+            </div>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '32px' }}>
+            {/* Hàng nút cố định ở đáy */}
+            <div className="shrink-0 px-6 py-4 border-t border-slate-100 flex items-center justify-end bg-slate-50/50" style={{ padding: '16px 24px', borderTop: '1px solid var(--color-border)', display: 'flex', justifyContent: 'flex-end', background: 'var(--color-surface-hover)' }}>
               <button onClick={() => setImportedResult(null)} className="btn btn-primary" style={{ padding: '10px 24px', fontWeight: 600 }}>Đóng</button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

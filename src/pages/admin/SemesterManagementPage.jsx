@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import {
   activateSemester,
@@ -59,8 +60,8 @@ function SemesterModal({ semester, saving, error, onClose, onSubmit }) {
   const invalidDates = form.start_date && form.end_date
     && new Date(form.start_date) >= new Date(form.end_date);
 
-  return (
-    <div className="module-modal" role="presentation" onMouseDown={(event) => {
+  return typeof document !== 'undefined' ? createPortal(
+    <div className="module-modal" style={{ zIndex: 9999, backdropFilter: 'blur(4px)' }} role="presentation" onMouseDown={(event) => {
       if (event.target === event.currentTarget) onClose();
     }}>
       <section className="module-modal__panel card" role="dialog" aria-modal="true" aria-labelledby="semester-modal-title">
@@ -108,8 +109,9 @@ function SemesterModal({ semester, saving, error, onClose, onSubmit }) {
           </div>
         </form>
       </section>
-    </div>
-  );
+    </div>,
+    document.body
+  ) : null;
 }
 
 export default function SemesterManagementPage() {
@@ -226,84 +228,123 @@ export default function SemesterManagementPage() {
   const lockedCount = allSemesters.filter((item) => item.is_locked).length;
 
   return (
-    <div className="module-page">
-      <header className="module-page__header">
+    <div className="w-full max-w-7xl mx-auto h-[calc(100vh-var(--dashboard-header-height,64px))] overflow-hidden flex flex-col px-6 pt-4 pb-4 box-border">
+      {/* 2. Page Header thu gọn */}
+      <header className="shrink-0 flex flex-wrap items-center justify-between gap-3 mb-3">
         <div>
-          <p className="module-page__eyebrow">Quản trị Đào tạo</p>
-          <h1 className="module-page__title">Quản lý học kỳ</h1>
-          <p className="module-page__subtitle">Tạo lịch học kỳ, chọn học kỳ hiện tại, đóng/mở lại và khóa dữ liệu theo vòng đời đào tạo.</p>
+          <h1 className="text-xl font-bold text-slate-900 m-0">Quản lý học kỳ</h1>
+          <p className="text-xs text-slate-500 mt-0.5 m-0">Thiết lập lịch và quản lý vòng đời các học kỳ.</p>
         </div>
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          <button className="btn btn-secondary" type="button" onClick={() => navigate('/admin/classes')}>
-            <span className="material-symbols-outlined" aria-hidden="true">school</span>
-            Quản lý Lớp học
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <button
+            className="btn btn-secondary h-9 px-3.5 text-sm inline-flex items-center gap-1.5 rounded-xl font-medium"
+            type="button"
+            onClick={() => navigate('/admin/classes')}
+          >
+            <span className="material-symbols-outlined text-lg" aria-hidden="true">school</span>
+            <span>Quản lý Lớp học</span>
           </button>
-          <button className="btn btn-primary" type="button" onClick={openCreate}>
-            <span className="material-symbols-outlined" aria-hidden="true">add</span>
-            Thêm học kỳ
+          <button
+            className="btn btn-primary h-9 px-3.5 text-sm inline-flex items-center gap-1.5 rounded-xl font-medium"
+            type="button"
+            onClick={openCreate}
+          >
+            <span className="material-symbols-outlined text-lg" aria-hidden="true">add</span>
+            <span>Thêm học kỳ</span>
           </button>
         </div>
       </header>
 
-      <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: 14 }}>
-        <div className="card" style={{ padding: '16px 18px' }}>
-          <div className="module-secondary-text" style={{ marginTop: 0 }}>Học kỳ hiện tại</div>
-          <div className="module-primary-text" style={{ fontSize: '1.1rem', marginTop: 6 }}>
-            {currentSemester ? `${currentSemester.code} — ${currentSemester.name}` : 'Chưa chọn học kỳ hiện tại'}
-          </div>
-          <div className="module-secondary-text">
-            {currentSemester ? `Năm học ${currentSemester.academic_year}` : 'Bấm biểu tượng Kích hoạt trên học kỳ đang mở'}
+      {/* 3. 4 thẻ thống kê mảnh (Compact KPI Strip - cao ~56px) */}
+      <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 shrink-0 mb-3">
+        <div className="bg-white rounded-xl border border-slate-200 py-2.5 px-4 flex flex-col justify-center min-h-[56px] shadow-2xs">
+          <div className="text-xs font-medium text-slate-500">Học kỳ hiện tại</div>
+          <div className="text-sm sm:text-base font-bold text-slate-900 truncate mt-0.5" title={currentSemester ? `${currentSemester.code} — ${currentSemester.name}` : ''}>
+            {currentSemester ? `${currentSemester.code} — ${currentSemester.name}` : 'Chưa chọn'}
           </div>
         </div>
-        <div className="card" style={{ padding: '16px 18px' }}>
-          <div className="module-secondary-text" style={{ marginTop: 0 }}>Tổng số học kỳ</div>
-          <div className="module-primary-text" style={{ fontSize: '1.35rem', marginTop: 6 }}>{allSemesters.length || total}</div>
-          <div className="module-secondary-text">Trong toàn bộ hệ thống</div>
+        <div className="bg-white rounded-xl border border-slate-200 py-2.5 px-4 flex flex-col justify-center min-h-[56px] shadow-2xs">
+          <div className="text-xs font-medium text-slate-500">Tổng số học kỳ</div>
+          <div className="text-base sm:text-lg font-bold text-slate-900 mt-0.5">
+            {allSemesters.length || total}
+          </div>
         </div>
-        <div className="card" style={{ padding: '16px 18px' }}>
-          <div className="module-secondary-text" style={{ marginTop: 0 }}>Học kỳ đang mở</div>
-          <div className="module-primary-text" style={{ fontSize: '1.35rem', marginTop: 6, color: 'var(--color-success)' }}>{openCount}</div>
-          <div className="module-secondary-text">Có thể xếp lớp & giảng dạy</div>
+        <div className="bg-white rounded-xl border border-slate-200 py-2.5 px-4 flex flex-col justify-center min-h-[56px] shadow-2xs">
+          <div className="text-xs font-medium text-slate-500">Học kỳ đang mở</div>
+          <div className="text-base sm:text-lg font-bold text-emerald-600 mt-0.5">
+            {openCount}
+          </div>
         </div>
-        <div className="card" style={{ padding: '16px 18px' }}>
-          <div className="module-secondary-text" style={{ marginTop: 0 }}>Học kỳ đã khóa</div>
-          <div className="module-primary-text" style={{ fontSize: '1.35rem', marginTop: 6, color: 'var(--color-danger)' }}>{lockedCount}</div>
-          <div className="module-secondary-text">Đã lưu trữ cố định</div>
+        <div className="bg-white rounded-xl border border-slate-200 py-2.5 px-4 flex flex-col justify-center min-h-[56px] shadow-2xs">
+          <div className="text-xs font-medium text-slate-500">Học kỳ đã khóa</div>
+          <div className="text-base sm:text-lg font-bold text-rose-600 mt-0.5">
+            {lockedCount}
+          </div>
         </div>
       </section>
 
-      <form className="module-toolbar card" onSubmit={(event) => {
-        event.preventDefault();
-        setPage(1);
-        setSearch(draftSearch.trim());
-      }}>
-        <div className="module-search">
-          <span className="material-symbols-outlined" aria-hidden="true">search</span>
+      {/* 4. Gọn hóa thanh tìm kiếm & lọc */}
+      <form
+        className="shrink-0 flex flex-wrap items-center gap-2.5 mb-3"
+        onSubmit={(event) => {
+          event.preventDefault();
+          setPage(1);
+          setSearch(draftSearch.trim());
+        }}
+      >
+        <div className="relative flex-1 min-w-[240px]">
+          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-base" style={{ fontSize: '18px' }} aria-hidden="true">
+            search
+          </span>
           <label className="sr-only" htmlFor="semester-search">Tìm học kỳ</label>
-          <input id="semester-search" className="module-input" value={draftSearch} onChange={(event) => setDraftSearch(event.target.value)} placeholder="Tìm theo mã, tên hoặc năm học" maxLength={100} />
+          <input
+            id="semester-search"
+            className="h-9 w-full bg-white border border-slate-200 rounded-xl pl-9 pr-3.5 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition"
+            value={draftSearch}
+            onChange={(event) => setDraftSearch(event.target.value)}
+            placeholder="Tìm theo mã, tên hoặc năm học"
+            maxLength={100}
+          />
         </div>
         <label className="sr-only" htmlFor="semester-status">Lọc trạng thái</label>
-        <select id="semester-status" className="module-select" value={status} onChange={(event) => { setStatus(event.target.value); setPage(1); }}>
+        <select
+          id="semester-status"
+          className="h-9 bg-white border border-slate-200 rounded-xl px-3 text-sm font-medium text-slate-700 focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition cursor-pointer shrink-0"
+          value={status}
+          onChange={(event) => { setStatus(event.target.value); setPage(1); }}
+        >
           <option value="all">Tất cả trạng thái</option>
           <option value="current">Hiện tại</option>
           <option value="active">Đang mở</option>
           <option value="closed">Đã đóng (chưa khóa)</option>
           <option value="locked">Đã khóa</option>
         </select>
-        <button className="btn btn-secondary" type="submit">Lọc dữ liệu</button>
+        <button className="btn btn-secondary h-9 px-4 rounded-xl text-sm font-medium shrink-0" type="submit">
+          Lọc dữ liệu
+        </button>
       </form>
 
-      {error && <div className="mb-4"><EduxAlert type="error" message={error} /></div>}
+      {/* Alert Error */}
+      {error && <div className="shrink-0 mb-3"><EduxAlert type="error" message={error} /></div>}
 
-      <section className="card" aria-label="Danh sách học kỳ">
+      {/* 5. Bảng danh sách học kỳ (cuộn nội bộ + sticky header) */}
+      <section className="flex-1 min-h-0 bg-white rounded-2xl border border-slate-200 flex flex-col overflow-hidden shadow-xs" aria-label="Danh sách học kỳ">
         {loading ? (
           <div className="module-state"><div><div className="module-state__icon"><span className="material-symbols-outlined">progress_activity</span></div><h2>Đang tải học kỳ...</h2></div></div>
         ) : semesters.length === 0 ? (
           <div className="module-state"><div><div className="module-state__icon"><span className="material-symbols-outlined">calendar_month</span></div><h2>Chưa có học kỳ phù hợp</h2><p>Thay đổi bộ lọc hoặc tạo học kỳ mới để bắt đầu quản lý lịch đào tạo.</p></div></div>
         ) : (
-          <div className="module-table-wrap">
-            <table className="module-table">
-              <thead><tr><th>Học kỳ</th><th>Thời gian</th><th>Quy mô lớp học</th><th>Trạng thái</th><th aria-label="Thao tác" /></tr></thead>
+          <div className="flex-1 min-h-0 overflow-y-auto overflow-x-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300 hover:[&::-webkit-scrollbar-thumb]:bg-slate-400">
+            <table className="module-table w-full">
+              <thead className="sticky top-0 bg-white z-10 border-b border-slate-200">
+                <tr>
+                  <th className="sticky top-0 bg-slate-50 z-10 border-b border-slate-200">Học kỳ</th>
+                  <th className="sticky top-0 bg-slate-50 z-10 border-b border-slate-200">Thời gian</th>
+                  <th className="sticky top-0 bg-slate-50 z-10 border-b border-slate-200">Quy mô lớp học</th>
+                  <th className="sticky top-0 bg-slate-50 z-10 border-b border-slate-200">Trạng thái</th>
+                  <th className="sticky top-0 bg-slate-50 z-10 border-b border-slate-200 text-right" aria-label="Thao tác" />
+                </tr>
+              </thead>
               <tbody>
                 {semesters.map((semester) => (
                   <tr key={semester.id}>
@@ -349,7 +390,15 @@ export default function SemesterManagementPage() {
             </table>
           </div>
         )}
-        {!loading && total > 0 && <div className="module-pagination"><span>Hiển thị {(page - 1) * limit + 1}–{Math.min(page * limit, total)} trong {total} học kỳ</span><div className="module-pagination__buttons"><button className="btn btn-secondary" type="button" disabled={page === 1} onClick={() => setPage((value) => value - 1)}>Trước</button><button className="btn btn-secondary" type="button" disabled={page >= totalPages} onClick={() => setPage((value) => value + 1)}>Sau</button></div></div>}
+        {!loading && total > 0 && (
+          <div className="shrink-0 module-pagination border-t border-slate-100 bg-slate-50/50 p-3 px-5 flex items-center justify-between">
+            <span>Hiển thị {(page - 1) * limit + 1}–{Math.min(page * limit, total)} trong {total} học kỳ</span>
+            <div className="module-pagination__buttons flex gap-2">
+              <button className="btn btn-secondary h-8 px-3 text-xs" type="button" disabled={page === 1} onClick={() => setPage((value) => value - 1)}>Trước</button>
+              <button className="btn btn-secondary h-8 px-3 text-xs" type="button" disabled={page >= totalPages} onClick={() => setPage((value) => value + 1)}>Sau</button>
+            </div>
+          </div>
+        )}
       </section>
 
       {modal && <SemesterModal semester={modal.semester} saving={saving} error={formError} onClose={() => !saving && setModal(null)} onSubmit={submitForm} />}
