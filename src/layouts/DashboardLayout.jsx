@@ -105,6 +105,7 @@ export default function DashboardLayout() {
   const isClassesPage = location.pathname.startsWith('/lecturer/classes') || location.pathname.startsWith('/student/classes');
   const isClassesLockedPage = /^\/(lecturer|student)\/classes(?:\/[^/]+)?\/?$/.test(location.pathname);
   const isLecturerAssignmentDetail = /^\/lecturer\/assignments\/[^/]+\/?$/.test(location.pathname);
+  const isStudyPlan = location.pathname.startsWith('/student/study-plan');
 
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -934,14 +935,15 @@ export default function DashboardLayout() {
           <Outlet />
         </main>
 
-        {/* Footer: ẩn ở trang flashcard, grading, student assignment, focus room, classes và lecturer assignment detail */}
+        {/* Footer: ẩn ở trang flashcard, grading, student assignment, focus room, classes, lecturer assignment detail và study-plan */}
         {!isGradePage &&
           !isStudentAssignment &&
           !isClassesPage &&
           !isLecturerAssignmentDetail &&
           !location.pathname.startsWith('/student/flashcards') &&
           !location.pathname.startsWith('/lecturer/flashcards') &&
-          !isFocusRoom && (
+          !isFocusRoom &&
+          !isStudyPlan && (
             <footer
               style={{
                 background: 'var(--color-surface)',
