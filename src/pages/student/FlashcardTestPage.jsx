@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLanguage } from '../../contexts/LanguageContext';
 import FlashcardService from '../../services/flashcard.service';
@@ -138,26 +139,81 @@ export default function FlashcardTestPage() {
     }
   };
 
+  // Lock body scroll and listen for Escape key when confirmation modal is open
+  useEffect(() => {
+    if (!showConfirmModal) return;
+
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && !submitting) {
+        setShowConfirmModal(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [showConfirmModal, submitting]);
+
   if (loading) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', padding: '20px 0' }}>
-        <div className="skeleton" style={{ width: '240px', height: '20px', borderRadius: '8px' }} />
-        <div className="skeleton" style={{ width: '100%', height: '360px', borderRadius: '20px' }} />
+      <div
+        className="w-full max-w-4xl mx-auto h-[calc(100vh-64px)] overflow-hidden flex flex-col justify-between px-6 py-3 box-border"
+        style={{
+          height: 'calc(100vh - var(--dashboard-header-height, 64px))',
+          boxSizing: 'border-box',
+        }}
+      >
+        <div className="shrink-0 py-2.5 flex items-center justify-between">
+          <div className="skeleton" style={{ width: '120px', height: '20px', borderRadius: '6px' }} />
+          <div className="skeleton" style={{ width: '160px', height: '32px', borderRadius: '8px' }} />
+        </div>
+        <div className="shrink-0 p-3.5 mb-2.5 rounded-xl border border-slate-200 bg-white">
+          <div className="skeleton" style={{ width: '280px', height: '20px', borderRadius: '6px', marginBottom: '10px' }} />
+          <div className="skeleton" style={{ width: '100%', height: '6px', borderRadius: '9999px' }} />
+        </div>
+        <div className="flex-1 rounded-2xl border border-slate-200 bg-white p-5 flex flex-col justify-between">
+          <div className="skeleton" style={{ width: '100%', height: '40px', borderRadius: '8px', marginBottom: '16px' }} />
+          <div className="space-y-2">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="skeleton" style={{ width: '100%', height: '44px', borderRadius: '10px' }} />
+            ))}
+          </div>
+        </div>
+        <div className="shrink-0 pt-2.5 flex items-center justify-between">
+          <div className="skeleton" style={{ width: '100px', height: '32px', borderRadius: '8px' }} />
+          <div className="skeleton" style={{ width: '100px', height: '32px', borderRadius: '8px' }} />
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxWidth: '600px', margin: '40px auto' }}>
-        <div style={{
-          padding: '24px', borderRadius: '16px',
-          background: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.25)',
-          color: '#ef4444', textAlign: 'center',
-        }}>
+      <div
+        className="w-full max-w-4xl mx-auto h-[calc(100vh-64px)] overflow-hidden flex items-center justify-center px-6 py-3 box-border"
+        style={{
+          height: 'calc(100vh - var(--dashboard-header-height, 64px))',
+          boxSizing: 'border-box',
+        }}
+      >
+        <div
+          className="animate-fade-in w-full max-w-md p-6 rounded-2xl text-center"
+          style={{
+            background: 'rgba(220,38,38,0.08)',
+            border: '1px solid rgba(220,38,38,0.25)',
+            color: '#ef4444',
+          }}
+        >
           <AlertCircle style={{ width: '36px', height: '36px', display: 'block', margin: '0 auto 12px' }} />
-          <p style={{ fontSize: '0.9375rem', fontWeight: 600, margin: '0 0 12px' }}>{error}</p>
+          <p style={{ fontSize: '0.9375rem', fontWeight: 600, margin: '0 0 16px' }}>{error}</p>
           <button
+            type="button"
             onClick={() => navigate(-1)}
             style={{
               padding: '8px 18px', borderRadius: '10px',
@@ -177,107 +233,143 @@ export default function FlashcardTestPage() {
   const progressPct = questions.length > 0 ? Math.round(((currentIdx + 1) / questions.length) * 100) : 0;
 
   return (
-    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '24px', maxWidth: '840px', margin: '0 auto' }}>
-      
-      {/* ── Top Bar ── */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+    <div
+      className="w-full max-w-4xl mx-auto h-[calc(100vh-64px)] overflow-hidden flex flex-col justify-between px-6 py-3 box-border"
+      style={{
+        height: 'calc(100vh - var(--dashboard-header-height, 64px))',
+        maxHeight: 'calc(100vh - var(--dashboard-header-height, 64px))',
+        overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        boxSizing: 'border-box',
+      }}
+    >
+      {/* ── Top Bar (shrink-0 py-2.5) ── */}
+      <div className="shrink-0 py-2.5 flex items-center justify-between gap-3">
         <button
+          type="button"
           onClick={() => navigate(-1)}
+          className="inline-flex items-center gap-1.5 bg-transparent border-0 cursor-pointer text-xs font-semibold text-slate-500 hover:text-slate-800 transition"
           style={{
-            display: 'inline-flex', alignItems: 'center', gap: '6px',
-            background: 'none', border: 'none', cursor: 'pointer',
-            fontSize: '0.8125rem', fontWeight: 600, color: 'var(--color-ink-muted)',
             fontFamily: 'var(--font-sans)',
+            color: 'var(--color-ink-muted)',
           }}
         >
-          <ArrowLeft style={{ width: '16px', height: '16px' }} />
+          <ArrowLeft className="w-4 h-4" />
           Thoát làm bài
         </button>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--color-ink-muted)' }}>
+        <div className="flex items-center gap-3">
+          <span
+            className="text-xs font-semibold"
+            style={{ color: 'var(--color-ink-muted)' }}
+          >
             Đã làm: <strong style={{ color: 'var(--color-primary-dark)' }}>{answeredCount}/{questions.length}</strong>
           </span>
 
           <button
+            type="button"
             onClick={() => setShowConfirmModal(true)}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-white font-bold text-xs cursor-pointer shadow-sm hover:opacity-95 transition"
             style={{
-              display: 'inline-flex', alignItems: 'center', gap: '6px',
-              padding: '9px 18px', borderRadius: '10px',
-              background: 'linear-gradient(135deg, var(--color-primary) 0%, #6366f1 100%)',
-              color: 'white', border: 'none', fontSize: '0.875rem', fontWeight: 700,
-              cursor: 'pointer', boxShadow: 'var(--shadow-md)', transition: 'transform 0.15s',
+              background: 'linear-gradient(135deg, var(--color-primary, #6366f1) 0%, #4f46e5 100%)',
             }}
-            onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-1px)'}
-            onMouseLeave={(e) => e.currentTarget.style.transform = 'none'}
           >
-            <Send style={{ width: '15px', height: '15px' }} />
+            <Send className="w-3.5 h-3.5" />
             Nộp bài
           </button>
         </div>
       </div>
 
-      {/* ── Test Header Info ── */}
-      <div style={{
-        padding: '20px 24px', borderRadius: '16px',
-        background: 'var(--color-surface)', border: '1px solid var(--color-border)',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px',
-      }}>
-        <div>
-          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-primary-dark)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Bài kiểm tra Flashcard
-          </span>
-          <h1 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--color-ink)', margin: '4px 0 0' }}>
-            {testData?.deck_title || 'Kiểm tra bộ thẻ'}
-          </h1>
+      {/* ── Card tiêu đề bộ thẻ (shrink-0 p-3.5 mb-2.5) ── */}
+      <div
+        className="shrink-0 p-3.5 mb-2.5 rounded-xl border border-slate-200 bg-white flex flex-col gap-2.5 shadow-2xs"
+        style={{
+          background: 'var(--color-surface)',
+          borderColor: 'var(--color-border)',
+        }}
+      >
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-primary-dark)' }}>
+                BÀI KIỂM TRA FLASHCARD
+              </span>
+              <span className="text-slate-300 font-bold">•</span>
+              <h1 className="text-sm font-bold m-0 truncate" style={{ color: 'var(--color-ink)' }}>
+                {testData?.deck_title || 'Kiểm tra bộ thẻ'}
+              </h1>
+            </div>
+          </div>
+
+          <div
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold shrink-0"
+            style={{
+              background: 'var(--color-primary-bg, #eef2ff)',
+              border: '1px solid var(--color-border)',
+              color: 'var(--color-ink)',
+            }}
+          >
+            <FileText className="w-3.5 h-3.5" style={{ color: 'var(--color-primary)' }} />
+            <span>
+              Câu {currentIdx + 1} / {questions.length}
+            </span>
+          </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 14px', borderRadius: '10px', background: 'var(--color-primary-bg)', border: '1px solid var(--color-border)' }}>
-          <FileText style={{ width: '16px', height: '16px', color: 'var(--color-primary)' }} />
-          <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--color-ink)' }}>
-            Câu {currentIdx + 1} / {questions.length}
-          </span>
+        {/* Thanh progress bar */}
+        <div className="h-1.5 w-full rounded-full overflow-hidden" style={{ background: 'var(--color-border)' }}>
+          <div
+            className="h-full rounded-full transition-all duration-300"
+            style={{
+              width: `${progressPct}%`,
+              background: 'linear-gradient(90deg, var(--color-primary, #6366f1) 0%, #4f46e5 100%)',
+            }}
+          />
         </div>
       </div>
 
-      {/* ── Progress Bar ── */}
-      <div style={{ height: '6px', borderRadius: '9999px', background: 'var(--color-border)', overflow: 'hidden' }}>
-        <div style={{
-          height: '100%', borderRadius: '9999px',
-          width: `${progressPct}%`,
-          background: 'linear-gradient(90deg, var(--color-primary) 0%, #6366f1 100%)',
-          transition: 'width 0.3s ease',
-        }} />
-      </div>
-
-      {/* ── Question Card ── */}
+      {/* ── Question Card (flex-1 min-h-0 overflow-y-auto) ── */}
       {currentQuestion && (
-        <div style={{
-          padding: '28px 32px', borderRadius: '20px',
-          background: 'var(--color-surface)', border: '1px solid var(--color-border)',
-          boxShadow: 'var(--shadow-md)', display: 'flex', flexDirection: 'column', gap: '20px',
-        }}>
-          {/* Question Meta */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{
-              fontSize: '0.6875rem', fontWeight: 700, padding: '3px 10px', borderRadius: '6px',
-              background: 'var(--color-primary-card)', color: 'var(--color-primary-dark)',
-            }}>
-              Trắc nghiệm
-            </span>
-            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-ink-muted)' }}>
-              Câu hỏi #{currentIdx + 1}
-            </span>
-          </div>
+        <div
+          className="flex-1 min-h-0 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-5 shadow-2xs flex flex-col justify-between"
+          style={{
+            background: 'var(--color-surface)',
+            borderColor: 'var(--color-border)',
+            scrollbarWidth: 'thin',
+          }}
+        >
+          <div>
+            {/* Question Meta */}
+            <div className="flex items-center justify-between mb-2.5">
+              <span
+                className="text-[11px] font-bold px-2 py-0.5 rounded-md"
+                style={{
+                  background: 'var(--color-primary-card, #eef2ff)',
+                  color: 'var(--color-primary-dark, #4f46e5)',
+                }}
+              >
+                Trắc nghiệm
+              </span>
+              <span
+                className="text-xs font-semibold"
+                style={{ color: 'var(--color-ink-muted)' }}
+              >
+                Câu hỏi #{currentIdx + 1}
+              </span>
+            </div>
 
-          {/* Question Text */}
-          <div style={{ fontSize: '1.125rem', fontWeight: 700, color: 'var(--color-ink)', lineHeight: 1.6, margin: 0 }}>
-            <MathText content={currentQuestion.question} />
-          </div>
+            {/* Question Text */}
+            <div
+              className="text-base font-bold leading-snug mb-3.5"
+              style={{ color: 'var(--color-ink)' }}
+            >
+              <MathText content={currentQuestion.question} />
+            </div>
 
-          {/* Answer Inputs — Multiple Choice only */}
-          <div style={{ marginTop: '8px' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {/* Answer Inputs (space-y-2) */}
+            <div className="space-y-2">
               {(currentQuestion.options || []).map((opt, optIdx) => {
                 const optInfo = normalizeOption(opt, optIdx);
                 const currentAnswerStr = getSafeStringAnswer(answers[currentQuestion.id]);
@@ -292,32 +384,37 @@ export default function FlashcardTestPage() {
                     key={optIdx}
                     type="button"
                     onClick={() => handleAnswerChange(currentQuestion.id, optInfo.key || optInfo.value)}
+                    className="w-full text-left py-2.5 px-4 rounded-xl border transition-all flex items-center gap-3 cursor-pointer"
                     style={{
-                      padding: '14px 18px', borderRadius: '12px', border: '1.5px solid',
-                      borderColor: isSelected ? 'var(--color-primary)' : 'var(--color-border)',
-                      background: isSelected ? 'var(--color-primary-card)' : 'var(--color-surface)',
-                      color: isSelected ? 'var(--color-primary-dark)' : 'var(--color-ink)',
-                      fontSize: '0.9375rem', fontWeight: isSelected ? 700 : 500,
-                      textAlign: 'left', cursor: 'pointer', fontFamily: 'var(--font-sans)',
-                      display: 'flex', alignItems: 'center', gap: '12px',
-                      transition: 'all 0.15s',
+                      borderWidth: '1.5px',
+                      borderColor: isSelected ? 'var(--color-primary, #6366f1)' : 'var(--color-border)',
+                      background: isSelected ? 'var(--color-primary-card, #eef2ff)' : 'var(--color-surface)',
+                      color: isSelected ? 'var(--color-primary-dark, #4f46e5)' : 'var(--color-ink)',
+                      fontWeight: isSelected ? 600 : 500,
+                      fontFamily: 'var(--font-sans)',
                     }}
                   >
-                    <div style={{
-                      width: '22px', height: '22px', borderRadius: '50%', border: '2px solid',
-                      borderColor: isSelected ? 'var(--color-primary)' : 'var(--color-border-medium)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      flexShrink: 0, background: isSelected ? 'var(--color-primary)' : 'transparent',
-                    }}>
-                      {isSelected && <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'white' }} />}
+                    <div
+                      className="w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition"
+                      style={{
+                        borderColor: isSelected ? 'var(--color-primary, #6366f1)' : 'var(--color-border-medium, #cbd5e1)',
+                        background: isSelected ? 'var(--color-primary, #6366f1)' : 'transparent',
+                      }}
+                    >
+                      {isSelected && <div className="w-2 h-2 rounded-full bg-white" />}
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', flex: 1 }}>
+                    <div className="flex items-baseline gap-2 flex-1 min-w-0">
                       {optInfo.key && (
-                        <span style={{ fontWeight: 700, color: isSelected ? 'var(--color-primary-dark)' : 'var(--color-ink-muted)', flexShrink: 0 }}>
+                        <span
+                          className="font-bold shrink-0 text-sm"
+                          style={{
+                            color: isSelected ? 'var(--color-primary-dark, #4f46e5)' : 'var(--color-ink-muted)',
+                          }}
+                        >
                           {optInfo.key}.
                         </span>
                       )}
-                      <span style={{ flex: 1 }}>
+                      <span className="flex-1 text-sm leading-snug">
                         <MathText content={optInfo.text || optInfo.value} inline />
                       </span>
                     </div>
@@ -329,36 +426,36 @@ export default function FlashcardTestPage() {
         </div>
       )}
 
-      {/* ── Navigation Controls & Question Palette ── */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
+      {/* ── Navigation Controls & Question Palette (shrink-0 pt-2.5) ── */}
+      <div className="shrink-0 pt-2.5 flex items-center justify-between gap-3">
         <button
+          type="button"
           onClick={() => setCurrentIdx((i) => Math.max(0, i - 1))}
           disabled={currentIdx === 0}
+          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition cursor-pointer shadow-2xs"
           style={{
-            display: 'inline-flex', alignItems: 'center', gap: '6px',
-            padding: '10px 18px', borderRadius: '10px',
-            border: '1px solid var(--color-border)', background: 'var(--color-surface)',
-            color: 'var(--color-ink)', fontSize: '0.875rem', fontWeight: 600,
-            cursor: currentIdx === 0 ? 'not-allowed' : 'pointer', opacity: currentIdx === 0 ? 0.5 : 1,
+            borderColor: 'var(--color-border)',
+            background: 'var(--color-surface)',
+            color: 'var(--color-ink)',
           }}
         >
-          <ChevronLeft style={{ width: '16px', height: '16px' }} />
+          <ChevronLeft className="w-4 h-4" />
           Câu trước
         </button>
 
         {/* Question Palette Grid */}
-        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'center' }}>
+        <div className="flex gap-1.5 flex-wrap justify-center max-h-12 overflow-y-auto">
           {questions.map((q, idx) => {
             const isAnswered = getSafeStringAnswer(answers[q.id]).length > 0;
             const isCurrent = idx === currentIdx;
             return (
               <button
                 key={q.id}
+                type="button"
                 onClick={() => setCurrentIdx(idx)}
+                className="w-7 h-7 rounded-lg border text-xs font-bold font-mono transition cursor-pointer flex items-center justify-center"
                 style={{
-                  width: '34px', height: '34px', borderRadius: '8px', border: '1.5px solid',
-                  fontSize: '0.8125rem', fontWeight: 700, cursor: 'pointer',
-                  fontFamily: 'var(--font-mono)', transition: 'all 0.15s',
+                  borderWidth: '1.5px',
                   borderColor: isCurrent ? 'var(--color-primary)' : isAnswered ? '#16a34a' : 'var(--color-border)',
                   background: isCurrent
                     ? 'var(--color-primary-card)'
@@ -379,70 +476,145 @@ export default function FlashcardTestPage() {
         </div>
 
         <button
+          type="button"
           onClick={() => setCurrentIdx((i) => Math.min(questions.length - 1, i + 1))}
           disabled={currentIdx === questions.length - 1}
+          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition cursor-pointer shadow-2xs"
           style={{
-            display: 'inline-flex', alignItems: 'center', gap: '6px',
-            padding: '10px 18px', borderRadius: '10px',
-            border: '1px solid var(--color-border)', background: 'var(--color-surface)',
-            color: 'var(--color-ink)', fontSize: '0.875rem', fontWeight: 600,
-            cursor: currentIdx === questions.length - 1 ? 'not-allowed' : 'pointer', opacity: currentIdx === questions.length - 1 ? 0.5 : 1,
+            borderColor: 'var(--color-border)',
+            background: 'var(--color-surface)',
+            color: 'var(--color-ink)',
           }}
         >
           Câu sau
-          <ChevronRight style={{ width: '16px', height: '16px' }} />
+          <ChevronRight className="w-4 h-4" />
         </button>
       </div>
 
-      {/* ── Confirmation Modal ── */}
-      {showConfirmModal && (
-        <div style={{
-          position: 'fixed', inset: 0, zIndex: 9999,
-          background: 'rgba(0, 0, 0, 0.5)', backdropFilter: 'blur(4px)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px',
-        }}>
-          <div style={{
-            background: 'var(--color-surface)', borderRadius: '20px',
-            padding: '28px 24px', width: '100%', maxWidth: '400px',
-            textAlign: 'center', boxShadow: 'var(--shadow-lg)',
-          }}>
-            <HelpCircle style={{ width: '48px', height: '48px', color: 'var(--color-primary)', margin: '0 auto 12px' }} />
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--color-ink)', margin: '0 0 8px' }}>
+      {/* ── Confirmation Modal (React Portal to document.body) ── */}
+      {showConfirmModal && createPortal(
+        <div
+          className="fixed inset-0 z-[9999] bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 9999,
+            backgroundColor: 'rgba(15, 23, 42, 0.5)',
+            backdropFilter: 'blur(4px)',
+            WebkitBackdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px',
+          }}
+          onClick={(e) => {
+            if (!submitting) {
+              setShowConfirmModal(false);
+            }
+          }}
+        >
+          <div
+            className="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-100 p-6 text-center animate-in zoom-in-95 duration-150"
+            style={{
+              background: 'var(--color-surface, #ffffff)',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+              border: '1px solid var(--color-border, #f1f5f9)',
+              borderRadius: '16px',
+              padding: '24px',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              className="w-12 h-12 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto mb-3"
+              style={{
+                width: '48px',
+                height: '48px',
+                borderRadius: '9999px',
+                backgroundColor: 'var(--color-primary-card, #eef2ff)',
+                color: 'var(--color-primary, #6366f1)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 12px',
+              }}
+            >
+              <HelpCircle className="w-6 h-6" style={{ width: '24px', height: '24px' }} />
+            </div>
+
+            <h3
+              className="text-lg font-bold text-slate-900 mb-2"
+              style={{
+                fontSize: '1.125rem',
+                fontWeight: 800,
+                color: 'var(--color-ink, #0f172a)',
+                margin: '0 0 8px',
+              }}
+            >
               Xác nhận nộp bài?
             </h3>
-            <p style={{ fontSize: '0.875rem', color: 'var(--color-ink-muted)', margin: '0 0 20px', lineHeight: 1.5 }}>
-              Bạn đã hoàn thành <strong>{answeredCount}/{questions.length}</strong> câu hỏi. Sau khi nộp bài, hệ thống sẽ tự động chấm điểm và bạn không thể sửa câu trả lời.
+
+            <p
+              className="text-sm text-slate-500 mb-6 leading-relaxed"
+              style={{
+                fontSize: '0.875rem',
+                color: 'var(--color-ink-muted, #64748b)',
+                margin: '0 0 20px',
+                lineHeight: 1.5,
+              }}
+            >
+              Bạn đã hoàn thành <strong style={{ color: 'var(--color-primary-dark, #4f46e5)' }}>{answeredCount}/{questions.length}</strong> câu hỏi. Sau khi nộp bài, hệ thống sẽ tự động chấm điểm và bạn không thể sửa câu trả lời.
             </p>
-            <div style={{ display: 'flex', gap: '10px' }}>
+
+            <div className="flex gap-2.5">
               <button
+                type="button"
                 onClick={() => setShowConfirmModal(false)}
                 disabled={submitting}
+                className="flex-1 py-2.5 px-4 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-sm transition cursor-pointer disabled:opacity-50"
                 style={{
-                  flex: 1, padding: '11px', borderRadius: '10px',
-                  border: '1px solid var(--color-border)', background: 'var(--color-surface)',
-                  color: 'var(--color-ink)', fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer',
+                  flex: 1,
+                  padding: '10px 16px',
+                  borderRadius: '10px',
+                  border: '1px solid var(--color-border)',
+                  background: 'var(--color-surface)',
+                  color: 'var(--color-ink)',
+                  fontSize: '0.875rem',
+                  fontWeight: 600,
+                  cursor: submitting ? 'not-allowed' : 'pointer',
                 }}
               >
                 Hủy
               </button>
+
               <button
+                type="button"
                 onClick={handleSubmitTest}
                 disabled={submitting}
+                className="flex-1 py-2.5 px-4 rounded-xl text-white font-bold text-sm shadow-sm transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                 style={{
-                  flex: 1, padding: '11px', borderRadius: '10px',
-                  border: 'none', background: 'var(--color-primary)',
-                  color: 'white', fontSize: '0.875rem', fontWeight: 700, cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                  flex: 1,
+                  padding: '10px 16px',
+                  borderRadius: '10px',
+                  border: 'none',
+                  background: 'var(--color-primary, #6366f1)',
+                  color: '#ffffff',
+                  fontSize: '0.875rem',
+                  fontWeight: 700,
+                  cursor: submitting ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
                 }}
               >
-                {submitting && <RefreshCw style={{ width: '14px', height: '14px' }} className="animate-spin" />}
+                {submitting && <RefreshCw className="w-4 h-4 animate-spin" />}
                 Xác nhận nộp
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
-
     </div>
   );
 }

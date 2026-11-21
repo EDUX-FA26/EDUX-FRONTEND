@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import ClassService from '../../services/class.service';
 import {
   BookOpen, ChevronRight,
-  Search, AlertTriangle, RefreshCw, BookMarked,
+  Search, AlertTriangle, RefreshCw, BookMarked, X
 } from 'lucide-react';
 
 // ─── Màu gradient ────────────────────────────────────────────────────────────
@@ -172,145 +172,134 @@ export default function LecturerFlashclassSelectPage() {
   }, [subjects, search]);
 
   return (
-    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-
-      {/* ── Hero Banner ── */}
-      <div style={{
-        borderRadius: '20px', padding: '28px 32px', color: 'white',
-        position: 'relative', overflow: 'hidden',
-        background: 'linear-gradient(135deg, #0f2027 0%, #1e3a5f 50%, #0f2027 100%)',
-      }}>
-        <div style={{
-          position: 'absolute', top: 0, right: 0,
-          width: '280px', height: '280px',
-          background: 'rgba(249,115,22,0.2)', borderRadius: '50%',
-          filter: 'blur(80px)', transform: 'translate(70px, -70px)',
-        }} />
-        <div style={{ position: 'relative', zIndex: 1 }}>
-          <div style={{
-            display: 'inline-flex', alignItems: 'center', gap: '8px',
-            padding: '4px 14px', borderRadius: '9999px',
-            background: 'rgba(255,255,255,0.1)',
-            fontSize: '0.75rem', color: '#fed7aa', fontWeight: 600, marginBottom: '12px',
-          }}>
-            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#f97316', display: 'inline-block' }} />
+    <div
+      className="w-full max-w-7xl mx-auto h-[calc(100vh-64px)] overflow-hidden flex flex-col px-6 pt-5 pb-4 box-border animate-fade-in"
+      style={{
+        height: 'calc(100vh - var(--dashboard-header-height, 64px))',
+        overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
+      {/* ── 1. Minimalist Page Header ── */}
+      <div className="shrink-0 flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-200">
+        <div>
+          <h1 className="text-xl font-bold text-slate-900 m-0 tracking-tight">
             Quản lý Flashcard · Giảng viên
-          </div>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: 0, letterSpacing: '-0.02em', color: '#ffffff' }}>
-            Chọn môn học
           </h1>
-          <p style={{ marginTop: '8px', color: 'rgba(255, 255, 255, 0.9)', fontSize: '0.9375rem', lineHeight: '1.5', maxWidth: '500px', margin: '8px 0 0 0' }}>
+          <p className="text-sm text-slate-500 mt-0.5 m-0">
             Chọn môn học để tạo và quản lý bộ flashcard cho sinh viên.
           </p>
         </div>
-      </div>
 
-      {/* ── Search + Refresh ── */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-        <div style={{ position: 'relative', flex: 1 }}>
-          <Search style={{
-            position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)',
-            width: '16px', height: '16px', color: 'var(--color-ink-muted)',
-          }} />
-          <input
-            id="subject-search"
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Tìm môn học theo tên hoặc mã môn..."
-            style={{
-              width: '100%', boxSizing: 'border-box',
-              padding: '10px 12px 10px 38px',
-              borderRadius: '12px', border: '1px solid var(--color-border)',
-              background: 'var(--color-surface)', color: 'var(--color-ink)',
-              fontSize: '0.875rem', fontFamily: 'var(--font-sans)', outline: 'none',
-              transition: 'border-color 0.15s',
-            }}
-            onFocus={(e) => (e.target.style.borderColor = 'var(--color-primary)')}
-            onBlur={(e) => (e.target.style.borderColor = 'var(--color-border)')}
-          />
-        </div>
-        <button
-          onClick={fetchClasses}
-          title="Làm mới"
-          style={{
-            display: 'flex', alignItems: 'center', gap: '6px',
-            padding: '10px 16px', borderRadius: '12px',
-            border: '1px solid var(--color-border)', background: 'var(--color-surface)',
-            color: 'var(--color-ink-muted)', fontSize: '0.8125rem', fontWeight: 600,
-            cursor: 'pointer', fontFamily: 'var(--font-sans)', flexShrink: 0,
-            transition: 'all 0.15s',
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--color-primary)'; e.currentTarget.style.color = 'var(--color-primary-dark)'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.color = 'var(--color-ink-muted)'; }}
-        >
-          <RefreshCw style={{ width: '14px', height: '14px' }} className={loading ? 'animate-spin' : ''} />
-          Làm mới
-        </button>
-      </div>
+        {/* Ô tìm kiếm + Nút làm mới */}
+        <div className="flex items-center gap-2.5">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+            <input
+              id="lecturer-subject-search"
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Tìm môn học theo tên hoặc mã môn..."
+              className="w-72 bg-white border border-slate-200 rounded-xl pl-9 pr-8 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition"
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 rounded cursor-pointer"
+                title="Xóa tìm kiếm"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
 
-      {/* ── Count ── */}
-      {!loading && !error && (
-        <div style={{ fontSize: '0.8125rem', color: 'var(--color-ink-muted)', fontWeight: 600 }}>
-          {filtered.length === 0 && search
-            ? `Không tìm thấy môn nào khớp với "${search}"`
-            : `${filtered.length} môn học bạn đang phụ trách`}
-        </div>
-      )}
-
-      {/* ── Content ── */}
-      {loading ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {[1, 2, 3].map((i) => <CardSkeleton key={i} />)}
-        </div>
-      ) : error ? (
-        <div style={{
-          padding: '28px', borderRadius: '16px', textAlign: 'center',
-          background: 'rgba(220,38,38,0.06)', color: '#ef4444',
-          border: '1px solid rgba(220,38,38,0.2)',
-          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px',
-        }}>
-          <AlertTriangle style={{ width: '28px', height: '28px' }} />
-          <p style={{ margin: 0, fontSize: '0.875rem', fontWeight: 600 }}>{error}</p>
           <button
+            type="button"
             onClick={fetchClasses}
-            style={{
-              marginTop: '4px', padding: '8px 18px', borderRadius: '9px',
-              background: 'var(--color-primary)', color: 'white',
-              border: 'none', fontSize: '0.8125rem', fontWeight: 700,
-              cursor: 'pointer', fontFamily: 'var(--font-sans)',
-            }}
+            title="Làm mới"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-slate-200 hover:border-orange-300 hover:bg-orange-50/50 text-slate-700 hover:text-orange-600 text-sm font-medium transition cursor-pointer"
           >
-            Thử lại
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+            Làm mới
           </button>
         </div>
-      ) : filtered.length === 0 ? (
-        <div style={{
-          textAlign: 'center', padding: '60px 20px',
-          background: 'var(--color-surface)', borderRadius: '16px',
-          border: '1px dashed var(--color-border)',
-        }}>
-          <BookMarked style={{ width: '48px', height: '48px', opacity: 0.25, display: 'block', margin: '0 auto 12px', color: 'var(--color-primary)' }} />
-          <p style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--color-ink)', margin: '0 0 6px' }}>
-            {search ? `Không tìm thấy môn "${search}"` : 'Bạn chưa phụ trách môn nào'}
-          </p>
-          <p style={{ fontSize: '0.8125rem', color: 'var(--color-ink-muted)', margin: 0 }}>
-            {search ? 'Thử từ khoá khác.' : 'Liên hệ Admin để được phân công lớp học.'}
-          </p>
-        </div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {filtered.map((subject) => (
-            <SubjectCard
-              key={subject.id}
-              subject={subject}
-              onClick={() => {
-                navigate(`/lecturer/flashcards/subject/${subject.id}`);
+      </div>
+
+      {/* ── 2. Fixed Count Bar ── */}
+      <div className="shrink-0 py-3 flex items-center justify-between">
+        <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+          {!loading && !error
+            ? search && filtered.length === 0
+              ? `Không tìm thấy môn nào khớp với "${search}"`
+              : `${filtered.length} môn học bạn đang phụ trách`
+            : 'Đang chuẩn bị danh sách môn học...'}
+        </span>
+      </div>
+
+      {/* ── 3. Scrollable Course List Area ── */}
+      <div
+        className="flex-1 overflow-y-auto min-h-0 pr-1 space-y-2.5 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300 hover:[&::-webkit-scrollbar-thumb]:bg-slate-400"
+        style={{
+          scrollbarWidth: 'thin',
+          scrollbarColor: '#cbd5e1 transparent',
+        }}
+      >
+        {loading ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {[1, 2, 3].map((i) => <CardSkeleton key={i} />)}
+          </div>
+        ) : error ? (
+          <div style={{
+            padding: '28px', borderRadius: '16px', textAlign: 'center',
+            background: 'rgba(220,38,38,0.06)', color: '#ef4444',
+            border: '1px solid rgba(220,38,38,0.2)',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px',
+          }}>
+            <AlertTriangle style={{ width: '28px', height: '28px' }} />
+            <p style={{ margin: 0, fontSize: '0.875rem', fontWeight: 600 }}>{error}</p>
+            <button
+              onClick={fetchClasses}
+              style={{
+                marginTop: '4px', padding: '8px 18px', borderRadius: '9999px',
+                background: 'var(--color-primary)', color: 'white',
+                border: 'none', fontSize: '0.8125rem', fontWeight: 700,
+                cursor: 'pointer', fontFamily: 'var(--font-sans)',
               }}
-            />
-          ))}
-        </div>
-      )}
+            >
+              Thử lại
+            </button>
+          </div>
+        ) : filtered.length === 0 ? (
+          <div style={{
+            textAlign: 'center', padding: '60px 20px',
+            background: 'var(--color-surface)', borderRadius: '16px',
+            border: '1px dashed var(--color-border)',
+          }}>
+            <BookMarked style={{ width: '48px', height: '48px', opacity: 0.25, display: 'block', margin: '0 auto 12px', color: 'var(--color-primary)' }} />
+            <p style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--color-ink)', margin: '0 0 6px' }}>
+              {search ? `Không tìm thấy môn "${search}"` : 'Bạn chưa phụ trách môn nào'}
+            </p>
+            <p style={{ fontSize: '0.8125rem', color: 'var(--color-ink-muted)', margin: 0 }}>
+              {search ? 'Thử từ khoá khác.' : 'Liên hệ Admin để được phân công lớp học.'}
+            </p>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {filtered.map((subject) => (
+              <SubjectCard
+                key={subject.id}
+                subject={subject}
+                onClick={() => {
+                  navigate(`/lecturer/flashcards/subject/${subject.id}`);
+                }}
+              />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

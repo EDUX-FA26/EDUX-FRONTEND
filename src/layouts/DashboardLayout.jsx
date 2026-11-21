@@ -105,6 +105,19 @@ export default function DashboardLayout() {
   const isClassesPage = location.pathname.startsWith('/lecturer/classes') || location.pathname.startsWith('/student/classes');
   const isClassesLockedPage = /^\/(lecturer|student)\/classes(?:\/[^/]+)?\/?$/.test(location.pathname);
   const isLecturerAssignmentDetail = /^\/lecturer\/assignments\/[^/]+\/?$/.test(location.pathname);
+  const isStudyPlan = location.pathname.startsWith('/student/study-plan');
+  const isStudentFlashcardsStudy =
+    /^\/student\/flashcards\/[^/]+\/study\/?$/.test(location.pathname);
+  const isStudentFlashcardsTest =
+    /^\/student\/flashcards\/[^/]+\/test\/?$/.test(location.pathname) ||
+    /^\/student\/flashcards\/tests\/[^/]+\/?$/.test(location.pathname);
+  const isStudentFlashcardsPage =
+    location.pathname === '/student/flashcards' ||
+    location.pathname.startsWith('/student/flashcards/subject') ||
+    location.pathname === '/lecturer/flashcards' ||
+    location.pathname.startsWith('/lecturer/flashcards/subject') ||
+    isStudentFlashcardsStudy ||
+    isStudentFlashcardsTest;
 
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -890,7 +903,7 @@ export default function DashboardLayout() {
         <main
           className={`flex-1 min-w-0 w-full overflow-x-hidden ${isGradePage ? 'dashboard-layout__main--grade' : ''}`}
           style={
-            isFocusRoom || isGradePage || isClassesLockedPage || isLecturerAssignmentDetail
+            isStudentFlashcardsPage || isFocusRoom || isGradePage || isClassesLockedPage || isLecturerAssignmentDetail
               ? {
                 flex: 1,
                 width: '100%',
@@ -934,14 +947,15 @@ export default function DashboardLayout() {
           <Outlet />
         </main>
 
-        {/* Footer: ẩn ở trang flashcard, grading, student assignment, focus room, classes và lecturer assignment detail */}
+        {/* Footer: ẩn ở trang flashcard, grading, student assignment, focus room, classes, lecturer assignment detail và study-plan */}
         {!isGradePage &&
           !isStudentAssignment &&
           !isClassesPage &&
           !isLecturerAssignmentDetail &&
           !location.pathname.startsWith('/student/flashcards') &&
           !location.pathname.startsWith('/lecturer/flashcards') &&
-          !isFocusRoom && (
+          !isFocusRoom &&
+          !isStudyPlan && (
             <footer
               style={{
                 background: 'var(--color-surface)',
