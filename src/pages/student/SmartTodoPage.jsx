@@ -98,7 +98,7 @@ export default function SmartTodoPage() {
   };
 
   return (
-    <div className="flex flex-col gap-6 animate-fade-in pb-12 max-w-6xl mx-auto">
+    <div className="flex flex-col gap-6 animate-fade-in pb-12 w-full max-w-[1600px] mx-auto min-w-0">
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-gray-200/60 pb-5">
         <div>
@@ -132,7 +132,7 @@ export default function SmartTodoPage() {
 
       {/* Stats Cards */}
       {stats && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3.5 lg:gap-4">
           <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
             <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Tổng nhiệm vụ</span>
             <div className="mt-1 flex items-baseline justify-between">

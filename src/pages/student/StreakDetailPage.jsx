@@ -100,7 +100,7 @@ export default function StreakDetailPage() {
         }
     }
     return (
-        <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '24px', width: '100%', boxSizing: 'border-box' }}>
+        <div className="animate-fade-in w-full max-w-[1600px] mx-auto min-w-0" style={{ display: 'flex', flexDirection: 'column', gap: '24px', boxSizing: 'border-box' }}>
 
             {/* Header Banner */}
             <div className="card" style={{
@@ -230,7 +230,7 @@ export default function StreakDetailPage() {
                 <h2 style={{ fontSize: '1.125rem', fontWeight: 700, color: 'var(--color-ink)', marginBottom: '16px' }}>
                     {S.sectionTitle || 'Trạng thái Streak theo từng Môn học'}
                 </h2>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '20px', width: '100%' }}>
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 w-full">
                     {streakList.length === 0 ? (
                         <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '60px 20px', color: 'var(--color-ink-muted)' }}>
                             <BookOpen style={{ width: '48px', height: '48px', opacity: 0.4, display: 'block', margin: '0 auto 12px' }} />

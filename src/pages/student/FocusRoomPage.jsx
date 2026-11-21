@@ -671,7 +671,7 @@ export default function FocusRoomPage() {
 
         {/* Thanh phát nhạc Lo-fi ở chính giữa (Image 1 & User Screenshot) */}
         <div
-          className="w-[500px] max-w-[calc(100vw-180px)] rounded-3xl bg-[#21182e]/70 hover:bg-[#251b34]/85 backdrop-blur-xl border border-white/20 text-white shadow-xl flex flex-col justify-center transition"
+          className="w-full max-w-[500px] rounded-3xl bg-[#21182e]/70 hover:bg-[#251b34]/85 backdrop-blur-xl border border-white/20 text-white shadow-xl flex flex-col justify-center transition"
           style={{ padding: '16px 32px', gap: '10px' }}
         >
           {/* Top row: Track Info (left) + Buttons (right) */}

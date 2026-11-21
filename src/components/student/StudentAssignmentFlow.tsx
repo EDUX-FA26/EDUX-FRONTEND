@@ -3753,7 +3753,7 @@ export default function StudentAssignmentFlow({
 
   return (
     <div
-      className="w-full max-w-full min-w-0 min-h-[calc(100vh-64px)] bg-[#F8FAFC] px-6 pb-8 flex flex-col space-y-5"
+      className="w-full max-w-[1600px] mx-auto min-w-0 min-h-[calc(100vh-64px)] bg-[#F8FAFC] px-4 sm:px-5 lg:px-6 xl:px-8 pb-8 flex flex-col space-y-5"
       style={{
         marginTop: 'calc(-1 * var(--dashboard-header-height, 64px))',
         paddingTop: '20px',
@@ -3837,7 +3837,7 @@ export default function StudentAssignmentFlow({
         </div>
 
         {/* Layout 2 Cột (Trái: 1/3, Phải: 2/3) */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start w-full min-w-0 flex-1">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 items-start w-full min-w-0 flex-1">
           {/* CỘT TRÁI */}
           <div className="col-span-12 lg:col-span-4 min-w-0">
             <AssignmentOverview

@@ -303,7 +303,7 @@ export default function StudyPlannerPage() {
   const completedDays = plan?.completedDays ?? 0;
 
   return (
-    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+    <div className="animate-fade-in w-full max-w-[1600px] mx-auto min-w-0" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
       {/* Hero Banner */}
       <div style={{

@@ -46,8 +46,9 @@ function AssignmentRow({ assignment, t }) {
     <div style={{
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       padding: '14px 0', borderBottom: '1px solid var(--color-border)',
+      gap: '12px',
     }}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }} className="min-w-0 flex-1">
         <div style={{
           width: '36px', height: '36px', flexShrink: 0, borderRadius: '10px',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -60,19 +61,21 @@ function AssignmentRow({ assignment, t }) {
             {assignment.is_submitted ? 'task_alt' : (isOverdue ? 'warning' : 'pending')}
           </span>
         </div>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-            <span style={{ fontSize: '0.6875rem', fontWeight: 700, fontFamily: 'var(--font-mono)', background: 'var(--color-primary-card)', color: 'var(--color-primary-dark)', padding: '1px 8px', borderRadius: '4px' }}>
+        <div className="min-w-0 flex-1">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }} className="min-w-0">
+            <span style={{ fontSize: '0.6875rem', fontWeight: 700, fontFamily: 'var(--font-mono)', background: 'var(--color-primary-card)', color: 'var(--color-primary-dark)', padding: '1px 8px', borderRadius: '4px', flexShrink: 0 }}>
               {assignment.class_code}
             </span>
-            <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--color-ink)' }}>{assignment.title}</span>
+            <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--color-ink)' }} className="truncate block min-w-0 flex-1" title={assignment.title}>
+              {assignment.title}
+            </span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '0.75rem', color: 'var(--color-ink-muted)' }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '0.75rem', color: 'var(--color-ink-muted)' }} className="flex-wrap min-w-0">
+            <span style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
               <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>schedule</span>
               {new Date(assignment.deadline).toLocaleDateString('vi-VN')}
             </span>
-            <span>{assignment.subject_name}</span>
+            <span className="truncate">{assignment.subject_name}</span>
           </div>
         </div>
       </div>
@@ -227,7 +230,7 @@ export default function StudentDashboardPage() {
   const S = t.stats;
 
   return (
-    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+    <div className="animate-fade-in w-full max-w-[1600px] mx-auto min-w-0" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
       {/* ── Hero Banner ── */}
       <div style={{
@@ -295,7 +298,7 @@ export default function StudentDashboardPage() {
       </div>
 
       {/* ── Stats Grid ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3.5 lg:gap-4">
         {loading ? (
           <><StatSkeleton /><StatSkeleton /><StatSkeleton /><StatSkeleton /></>
         ) : error ? (
@@ -329,10 +332,10 @@ export default function StudentDashboardPage() {
       </div>
 
       {/* ── Main Grid ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '20px' }}>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-5">
 
         {/* Assignments */}
-        <div className="card" style={{ padding: '20px' }}>
+        <div className="card lg:col-span-8 min-w-0" style={{ padding: '20px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span className="material-symbols-outlined" style={{ color: 'var(--color-primary)' }}>assignment</span>
@@ -364,7 +367,7 @@ export default function StudentDashboardPage() {
         </div>
 
         {/* Notifications */}
-        <div className="card" style={{ padding: '20px' }}>
+        <div className="card lg:col-span-4 min-w-0" style={{ padding: '20px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span className="material-symbols-outlined" style={{ color: 'var(--color-primary)' }}>notifications</span>
