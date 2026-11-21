@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -59,21 +60,51 @@ function IconBtn({ onClick, title, danger, disabled, children }) {
   );
 }
 
-// ─── Modal backdrop ───────────────────────────────────────────────────────────
+// ─── Modal backdrop (React Portal + Full Viewport Blur) ───────────────────────────
 
-function Modal({ title, onClose, children, width = '560px', padding = '16px 20px', zIndex = 200 }) {
-  return (
-    <div style={{
-      position: 'fixed', inset: 0, zIndex,
-      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px',
-      background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)',
-    }}>
-      <div className="animate-fade-in" style={{
-        background: 'var(--color-surface)', borderRadius: '20px',
-        border: '1px solid var(--color-border)',
-        boxShadow: 'var(--shadow-lg)', width: '100%', maxWidth: width,
-        maxHeight: '92vh', display: 'flex', flexDirection: 'column', overflow: 'hidden',
-      }}>
+function Modal({ title, onClose, children, width = '560px', padding = '16px 20px', zIndex = 9999 }) {
+  useEffect(() => {
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && onClose) {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [onClose]);
+
+  const modalContent = (
+    <div
+      className="fixed inset-0 z-[9999] bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4"
+      style={{ zIndex }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget && onClose) {
+          onClose();
+        }
+      }}
+    >
+      <div
+        className="animate-fade-in"
+        style={{
+          background: 'var(--color-surface)',
+          borderRadius: '20px',
+          border: '1px solid var(--color-border)',
+          boxShadow: 'var(--shadow-lg)',
+          width: '100%',
+          maxWidth: width,
+          maxHeight: '92vh',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -83,7 +114,12 @@ function Modal({ title, onClose, children, width = '560px', padding = '16px 20px
           <h3 style={{ fontSize: '0.9375rem', fontWeight: 700, color: 'var(--color-ink)', margin: 0 }}>
             {title}
           </h3>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-ink-muted)', display: 'flex', alignItems: 'center' }}>
+          <button
+            type="button"
+            onClick={onClose}
+            title="Đóng"
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-ink-muted)', display: 'flex', alignItems: 'center' }}
+          >
             <X style={{ width: '18px', height: '18px' }} />
           </button>
         </div>
@@ -94,6 +130,8 @@ function Modal({ title, onClose, children, width = '560px', padding = '16px 20px
       </div>
     </div>
   );
+
+  return typeof document !== 'undefined' ? createPortal(modalContent, document.body) : modalContent;
 }
 
 // ─── Form field ───────────────────────────────────────────────────────────────
@@ -2262,75 +2300,53 @@ export default function LecturerFlashcardsPage() {
         />
       )}
 
-      <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-
-        {/* ── Breadcrumb ── */}
-        {subjectId && (
+      <div
+        className="w-full max-w-7xl mx-auto h-[calc(100vh-64px)] overflow-hidden flex flex-col px-6 pt-5 pb-4 box-border animate-fade-in"
+        style={{
+          height: 'calc(100vh - var(--dashboard-header-height, 64px))',
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
+        {/* ── 1. Minimalist Lecturer Subject Header ── */}
+        <div className="shrink-0 flex items-center gap-3.5 pb-4 mb-4 border-b border-slate-200">
+          {/* Nút quay lại */}
           <button
+            type="button"
             onClick={() => {
               localStorage.removeItem('lecturer_last_subject_id');
               navigate('/lecturer/flashcards');
             }}
-            style={{
-              display: 'inline-flex', alignItems: 'center', gap: '6px',
-              padding: '7px 14px', borderRadius: '9px',
-              border: '1px solid var(--color-border)', background: 'var(--color-surface)',
-              color: 'var(--color-ink-muted)', fontSize: '0.8125rem', fontWeight: 600,
-              cursor: 'pointer', fontFamily: 'var(--font-sans)', alignSelf: 'flex-start',
-              transition: 'all 0.15s',
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--color-primary)'; e.currentTarget.style.color = 'var(--color-primary-dark)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.color = 'var(--color-ink-muted)'; }}
+            title="Quay lại danh sách môn học"
+            className="w-9 h-9 rounded-lg border border-slate-200 bg-white flex items-center justify-center text-slate-600 hover:bg-slate-50 shrink-0 transition cursor-pointer"
           >
-            <ArrowLeft style={{ width: '14px', height: '14px' }} />
-            Chọn môn khác
+            <ArrowLeft className="w-4 h-4" />
           </button>
-        )}
 
-        {/* ── Hero Banner ── */}
-        <div style={{
-          borderRadius: '20px', padding: '28px 32px', color: 'white', position: 'relative', overflow: 'hidden',
-          background: 'linear-gradient(135deg, #0f2027 0%, #1e3a5f 50%, #0f2027 100%)',
-        }}>
-          <div style={{ position: 'absolute', top: 0, right: 0, width: '260px', height: '260px', background: 'rgba(249,115,22,0.2)', borderRadius: '50%', filter: 'blur(70px)', transform: 'translate(60px, -60px)' }} />
-          <div style={{ position: 'relative', zIndex: 1 }}>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '4px 14px', borderRadius: '9999px', background: 'rgba(255,255,255,0.1)', fontSize: '0.75rem', color: '#fed7aa', fontWeight: 600, marginBottom: '12px' }}>
-              <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#f97316', display: 'inline-block' }} />
-              Quản lý Flashcard · Giảng viên
-            </div>
-            <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: 0, letterSpacing: '-0.02em' }}>
-              Bộ thẻ ghi nhớ của tôi
-            </h1>
-            {/* Hiển thị tên môn học nếu đã chọn */}
-            {subjectId && subjectInfo && (
-              <div style={{
-                display: 'inline-flex', alignItems: 'center', gap: '8px', marginTop: '10px',
-                padding: '5px 14px', borderRadius: '9999px',
-                background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)',
-              }}>
-                <span style={{ fontSize: '0.75rem', color: '#e2e8f0', fontWeight: 600 }}>
-                  📚 {subjectInfo.name}
+          {/* Cụm thông tin môn học */}
+          <div className="min-w-0 flex-1">
+            {/* Hàng 1 */}
+            <div className="flex items-center gap-2.5 flex-wrap">
+              {subjectInfo?.code && (
+                <span className="px-2.5 py-0.5 rounded-md text-xs font-bold bg-orange-50 text-orange-600 border border-orange-200 font-mono">
+                  {subjectInfo.code}
                 </span>
-                {subjectInfo.code && (
-                  <span style={{ fontSize: '0.6875rem', color: '#94a3b8' }}>· {subjectInfo.code}</span>
-                )}
-              </div>
-            )}
-            {subjectId && !subjectInfo && !subjectLoading && (
-              <p style={{ marginTop: '8px', color: '#94a3b8', fontSize: '0.875rem' }}>
-                Tạo và quản lý các bộ flashcard cho sinh viên.
-              </p>
-            )}
-            {!subjectId && (
-              <p style={{ marginTop: '8px', color: '#94a3b8', fontSize: '0.875rem', maxWidth: '520px' }}>
-                Tạo và quản lý các bộ flashcard cho sinh viên. Theo dõi tiến độ ôn luyện và công bố bộ thẻ khi hoàn chỉnh.
-              </p>
-            )}
+              )}
+              <h1 className="text-xl font-bold text-slate-900 m-0 tracking-tight">
+                {subjectInfo?.name || (subjectLoading ? 'Đang tải môn học...' : 'Bộ thẻ ghi nhớ của tôi')}
+              </h1>
+            </div>
+
+            {/* Hàng 2 */}
+            <p className="text-sm text-slate-500 mt-0.5 m-0">
+              Quản lý và biên soạn các bộ thẻ flashcard cho môn học này.
+            </p>
           </div>
         </div>
 
-        {/* ── Toolbar ── */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+        {/* ── 2. Toolbar ── */}
+        <div className="shrink-0 mb-3" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
           <div style={{ fontSize: '0.8125rem', color: 'var(--color-ink-muted)', fontWeight: 600 }}>
             {loading ? '...' : `${total} bộ thẻ`}
           </div>
@@ -2353,56 +2369,64 @@ export default function LecturerFlashcardsPage() {
           </div>
         </div>
 
-        {/* ── Deck list ── */}
-        {loading ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {[1,2,3].map(i => <div key={i} className="skeleton" style={{ width: '100%', height: '72px', borderRadius: '16px' }} />)}
-          </div>
-        ) : error ? (
-          <div style={{ padding: '24px', borderRadius: '14px', background: 'rgba(220,38,38,0.08)', color: '#ef4444', textAlign: 'center', border: '1px solid rgba(220,38,38,0.2)' }}>
-            <AlertTriangle style={{ width: '24px', height: '24px', display: 'block', margin: '0 auto 8px' }} />
-            {error}
-          </div>
-        ) : decks.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '60px 20px', background: 'var(--color-surface)', borderRadius: '16px', border: '1px dashed var(--color-border)' }}>
-            <Layers style={{ width: '48px', height: '48px', opacity: 0.3, display: 'block', margin: '0 auto 12px' }} />
-            <p style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--color-ink)', margin: '0 0 6px' }}>Chưa có bộ thẻ nào</p>
-            <p style={{ fontSize: '0.8125rem', color: 'var(--color-ink-muted)', margin: '0 0 16px' }}>Bắt đầu bằng cách tạo bộ thẻ đầu tiên.</p>
-            <button onClick={() => setDeckModal('create')} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '9px 20px', borderRadius: '9px', background: 'var(--color-primary)', color: 'white', border: 'none', fontSize: '0.875rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font-sans)' }}>
-              <Plus style={{ width: '15px', height: '15px' }} /> Tạo bộ thẻ đầu tiên
-            </button>
-          </div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {decks.map(deck => (
-              <DeckRow
-                key={deck.id}
-                deck={deck}
-                user={user}
-                onEdit={setDeckModal}
-                onDelete={handleDelete}
-                onRefresh={fetchDecks}
-              />
-            ))}
-          </div>
-        )}
-
-        {/* ── Pagination ── */}
-        {!loading && !error && totalPages > 1 && (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-            <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} style={{ padding: '7px 14px', borderRadius: '8px', border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-ink-muted)', fontSize: '0.8125rem', fontWeight: 600, cursor: page === 1 ? 'not-allowed' : 'pointer', opacity: page === 1 ? 0.5 : 1, fontFamily: 'var(--font-sans)' }}>
-              ← Trước
-            </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
-              <button key={p} onClick={() => setPage(p)} style={{ width: '36px', height: '36px', borderRadius: '8px', border: '1px solid', fontSize: '0.875rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font-mono)', borderColor: p === page ? 'var(--color-primary)' : 'var(--color-border)', background: p === page ? 'var(--color-primary-card)' : 'var(--color-surface)', color: p === page ? 'var(--color-primary-dark)' : 'var(--color-ink-muted)' }}>
-                {p}
+        {/* ── 3. Scrollable Deck List Area ── */}
+        <div
+          className="flex-1 overflow-y-auto min-h-0 pr-1 space-y-2.5 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300 hover:[&::-webkit-scrollbar-thumb]:bg-slate-400"
+          style={{
+            scrollbarWidth: 'thin',
+            scrollbarColor: '#cbd5e1 transparent',
+          }}
+        >
+          {/* Deck list */}
+          {loading ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {[1,2,3].map(i => <div key={i} className="skeleton" style={{ width: '100%', height: '72px', borderRadius: '16px' }} />)}
+            </div>
+          ) : error ? (
+            <div style={{ padding: '24px', borderRadius: '14px', background: 'rgba(220,38,38,0.08)', color: '#ef4444', textAlign: 'center', border: '1px solid rgba(220,38,38,0.2)' }}>
+              <AlertTriangle style={{ width: '24px', height: '24px', display: 'block', margin: '0 auto 8px' }} />
+              {error}
+            </div>
+          ) : decks.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '60px 20px', background: 'var(--color-surface)', borderRadius: '16px', border: '1px dashed var(--color-border)' }}>
+              <Layers style={{ width: '48px', height: '48px', opacity: 0.3, display: 'block', margin: '0 auto 12px' }} />
+              <p style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--color-ink)', margin: '0 0 6px' }}>Chưa có bộ thẻ nào</p>
+              <p style={{ fontSize: '0.8125rem', color: 'var(--color-ink-muted)', margin: '0 0 16px' }}>Bắt đầu bằng cách tạo bộ thẻ đầu tiên.</p>
+              <button onClick={() => setDeckModal('create')} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '9px 20px', borderRadius: '9px', background: 'var(--color-primary)', color: 'white', border: 'none', fontSize: '0.875rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font-sans)' }}>
+                <Plus style={{ width: '15px', height: '15px' }} /> Tạo bộ thẻ đầu tiên
               </button>
-            ))}
-            <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} style={{ padding: '7px 14px', borderRadius: '8px', border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-ink-muted)', fontSize: '0.8125rem', fontWeight: 600, cursor: page === totalPages ? 'not-allowed' : 'pointer', opacity: page === totalPages ? 0.5 : 1, fontFamily: 'var(--font-sans)' }}>
-              Tiếp →
-            </button>
-          </div>
-        )}
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {decks.map(deck => (
+                <DeckRow
+                  key={deck.id}
+                  deck={deck}
+                  onEdit={setDeckModal}
+                  onDelete={handleDelete}
+                  onRefresh={fetchDecks}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Pagination */}
+          {!loading && !error && totalPages > 1 && (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', paddingTop: '10px', paddingBottom: '10px' }}>
+              <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} style={{ padding: '7px 14px', borderRadius: '8px', border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-ink-muted)', fontSize: '0.8125rem', fontWeight: 600, cursor: page === 1 ? 'not-allowed' : 'pointer', opacity: page === 1 ? 0.5 : 1, fontFamily: 'var(--font-sans)' }}>
+                ← Trước
+              </button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+                <button key={p} onClick={() => setPage(p)} style={{ width: '36px', height: '36px', borderRadius: '8px', border: '1px solid', fontSize: '0.875rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font-mono)', borderColor: p === page ? 'var(--color-primary)' : 'var(--color-border)', background: p === page ? 'var(--color-primary-card)' : 'var(--color-surface)', color: p === page ? 'var(--color-primary-dark)' : 'var(--color-ink-muted)' }}>
+                  {p}
+                </button>
+              ))}
+              <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} style={{ padding: '7px 14px', borderRadius: '8px', border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-ink-muted)', fontSize: '0.8125rem', fontWeight: 600, cursor: page === totalPages ? 'not-allowed' : 'pointer', opacity: page === totalPages ? 0.5 : 1, fontFamily: 'var(--font-sans)' }}>
+                Tiếp →
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </>
   );

@@ -16,7 +16,8 @@ import {
     Image as ImageIcon,
     Archive,
     FileCode,
-    File
+    File,
+    FolderKanban
 } from 'lucide-react';
 import { PlusCircle, FileText, Upload, Trash2 } from 'lucide-react';
 import AssignmentSubwindowModal from '../../components/student/AssignmentSubwindowModal';
@@ -472,6 +473,28 @@ export default function LecturerClassDetailPage() {
                     </button>
                     <button className="btn" onClick={() => navigate(`/lecturer/classes/${classId}/materials`)} style={{ backgroundColor: 'var(--color-accent-teal)', color: '#fff', padding: '0 12px', height: '32px', fontSize: '12px', borderRadius: 'var(--radius-sm)' }}>
                         <Folder size={14} /> Materials
+                    </button>
+                    {/* PROJECT MANAGEMENT */}
+                    <button
+                        type="button"
+                        className="btn"
+                        onClick={() =>
+                            navigate(`/lecturer/classes/${classId}/projects`)
+                        }
+                        style={{
+                            backgroundColor: "#f36a20",
+                            color: "#fff",
+                            padding: "0 12px",
+                            height: "32px",
+                            fontSize: "12px",
+                            borderRadius: "var(--radius-sm)",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "6px",
+                        }}
+                    >
+                        <FolderKanban size={14} />
+                        Projects
                     </button>
                     {/* NÚT MEMBERS MỚI THÊM */}
                     <button

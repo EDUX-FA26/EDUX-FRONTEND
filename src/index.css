@@ -111,14 +111,19 @@ h6 {
   color: #ffffff;
 }
 
-/* Ensure headings & text inside dark hero banners stay bright white */
-.card[style*="linear-gradient"] h1,
-.card[style*="linear-gradient"] h2,
-.card[style*="linear-gradient"] h3,
-div[style*="linear-gradient"] h1,
-div[style*="linear-gradient"] h2,
-div[style*="linear-gradient"] h3 {
+/* Ensure headings & text inside dark hero banners stay bright white (exclude light modal and text-slate-900) */
+.card[style*="linear-gradient"]:not(.study-quiz-modal-window) h1:not(.text-slate-900),
+.card[style*="linear-gradient"]:not(.study-quiz-modal-window) h2:not(.text-slate-900),
+.card[style*="linear-gradient"]:not(.study-quiz-modal-window) h3:not(.text-slate-900),
+div[style*="linear-gradient"]:not(.study-quiz-modal-window) h1:not(.text-slate-900),
+div[style*="linear-gradient"]:not(.study-quiz-modal-window) h2:not(.text-slate-900),
+div[style*="linear-gradient"]:not(.study-quiz-modal-window) h3:not(.text-slate-900) {
   color: #ffffff !important;
+}
+
+.study-quiz-modal-window h2,
+h2.text-slate-900 {
+  color: #0f172a !important;
 }
 
 div[style*="linear-gradient"] p,

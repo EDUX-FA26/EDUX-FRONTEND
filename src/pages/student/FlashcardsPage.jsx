@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useLanguage } from '../../contexts/LanguageContext';
 import FlashcardService from '../../services/flashcard.service';
+import ClassService from '../../services/class.service';
 import {
   BookOpen, Layers, Globe, Lock, Search, BarChart2,
   CheckCircle, Clock, Zap, ChevronRight, RefreshCw, ArrowLeft, FileCheck,
@@ -227,15 +228,29 @@ export default function FlashcardsPage() {
     }
   }, [page, filterPublic, subjectId]);
 
+  const [subjectInfo, setSubjectInfo] = useState(null);
+
   useEffect(() => {
     fetchDecks();
     if (subjectId) {
       localStorage.setItem('student_last_subject_id', subjectId);
+      ClassService.getMyClasses().then((res) => {
+        const clsList = Array.isArray(res.data) ? res.data : (res.data?.data || []);
+        const match = clsList.find((c) => c.subject_id === subjectId);
+        if (match) {
+          setSubjectInfo({
+            code: match.subject_code,
+            name: match.subject_name,
+          });
+        }
+      }).catch(() => {});
     }
   }, [fetchDecks, subjectId]);
 
-  // Subject title from first deck if available
-  const currentSubjectInfo = decks.find((d) => d.subject_name) || null;
+  // Subject title from subjectInfo or first deck
+  const currentSubjectInfo = subjectInfo || decks.find((d) => d.subject_name) || null;
+  const subjectCode = currentSubjectInfo?.subject_code || currentSubjectInfo?.code || '';
+  const subjectName = currentSubjectInfo?.subject_name || currentSubjectInfo?.name || '';
 
   // Client-side search filter
   const filtered = decks.filter((d) =>
@@ -248,71 +263,53 @@ export default function FlashcardsPage() {
   const totalPages = Math.ceil(total / LIMIT) || 1;
 
   return (
-    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-
-      {/* ── Top Back Button ── */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+    <div
+      className="w-full max-w-7xl mx-auto h-[calc(100vh-64px)] overflow-hidden flex flex-col px-6 pt-5 pb-4 box-border"
+      style={{
+        height: 'calc(100vh - var(--dashboard-header-height, 64px))',
+        overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
+      {/* ── 1. Minimalist Subject Header ── */}
+      <div className="shrink-0 flex items-center gap-3.5 pb-4 mb-4 border-b border-slate-200">
+        {/* Nút quay lại */}
         <button
+          type="button"
           onClick={() => {
             localStorage.removeItem('student_last_subject_id');
             navigate('/student/flashcards');
           }}
-          style={{
-            display: 'inline-flex', alignItems: 'center', gap: '6px',
-            padding: '8px 16px', borderRadius: '10px',
-            border: '1px solid var(--color-border)', background: 'var(--color-surface)',
-            color: 'var(--color-ink)', fontSize: '0.8125rem', fontWeight: 600,
-            cursor: 'pointer', fontFamily: 'var(--font-sans)',
-            transition: 'all 0.15s',
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--color-primary)'; e.currentTarget.style.color = 'var(--color-primary-dark)'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.color = 'var(--color-ink)'; }}
+          title="Quay lại danh sách môn học"
+          className="w-9 h-9 rounded-lg border border-slate-200 bg-white flex items-center justify-center text-slate-600 hover:bg-slate-50 shrink-0 transition cursor-pointer"
         >
-          <ArrowLeft style={{ width: '15px', height: '15px' }} />
-          Chọn môn học khác
+          <ArrowLeft className="w-4 h-4" />
         </button>
-      </div>
 
-      {/* ── Hero Banner ── */}
-      <div style={{
-        borderRadius: '20px',
-        background: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 60%, #2e1065 100%)',
-        color: '#ffffff', padding: '28px 32px', position: 'relative', overflow: 'hidden',
-        border: '1px solid rgba(255,255,255,0.08)',
-        boxShadow: '0 8px 24px -4px rgba(15, 23, 42, 0.25)',
-      }}>
-        <div style={{
-          position: 'absolute', top: 0, right: 0, width: '260px', height: '260px',
-          background: 'rgba(99,102,241,0.25)', borderRadius: '50%',
-          filter: 'blur(70px)', transform: 'translate(60px, -60px)',
-        }} />
-        <div style={{
-          position: 'absolute', bottom: 0, left: '30%', width: '200px', height: '200px',
-          background: 'rgba(249,115,22,0.15)', borderRadius: '50%',
-          filter: 'blur(60px)', transform: 'translateY(50px)',
-        }} />
-        <div style={{ position: 'relative', zIndex: 1 }}>
-          <div style={{
-            display: 'inline-flex', alignItems: 'center', gap: '8px',
-            padding: '5px 14px', borderRadius: '9999px',
-            background: 'rgba(255,255,255,0.12)',
-            border: '1px solid rgba(255,255,255,0.2)',
-            fontSize: '0.75rem', color: '#e0e7ff', fontWeight: 600, marginBottom: '12px',
-          }}>
-            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#818cf8', display: 'inline-block' }} />
-            {currentSubjectInfo?.subject_code ? `${currentSubjectInfo.subject_code} · ${currentSubjectInfo.subject_name}` : (F.heroBadge || 'Hệ thống Flashcard · SRS')}
+        {/* Cụm thông tin môn học */}
+        <div className="min-w-0 flex-1">
+          {/* Hàng 1 */}
+          <div className="flex items-center gap-2.5 flex-wrap">
+            {subjectCode && (
+              <span className="px-2.5 py-0.5 rounded-md text-xs font-bold bg-orange-50 text-orange-600 border border-orange-200 font-mono">
+                {subjectCode}
+              </span>
+            )}
+            <h1 className="text-xl font-bold text-slate-900 m-0 tracking-tight">
+              {subjectName || F.heroTitle || 'Bộ thẻ ghi nhớ'}
+            </h1>
           </div>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: 0, letterSpacing: '-0.02em', color: '#ffffff' }}>
-            {currentSubjectInfo?.subject_name ? `Bộ thẻ: ${currentSubjectInfo.subject_name}` : (F.heroTitle || 'Bộ thẻ ghi nhớ')}
-          </h1>
-          <p style={{ marginTop: '8px', color: 'rgba(255, 255, 255, 0.9)', fontSize: '0.9375rem', lineHeight: '1.5', maxWidth: '560px', margin: '8px 0 0 0' }}>
+
+          {/* Hàng 2 */}
+          <p className="text-sm text-slate-500 mt-0.5 m-0">
             {F.heroDesc || 'Học flashcard theo thuật toán SRS để ghi nhớ sâu và duy trì streak mỗi ngày.'}
           </p>
         </div>
       </div>
 
-      {/* ── Filter Bar ── */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+      {/* ── 2. Filter Bar (Giữ nguyên 100% UI, shrink-0) ── */}
+      <div className="shrink-0 mb-4" style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
         {/* Search */}
         <div style={{ position: 'relative', flex: '1 1 220px', minWidth: '180px', maxWidth: '360px' }}>
           <Search style={{
@@ -386,102 +383,111 @@ export default function FlashcardsPage() {
         </span>
       </div>
 
-      {/* ── Deck Grid ── */}
-      {loading ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div className="skeleton" style={{ width: '40px', height: '40px', borderRadius: '12px' }} />
-              <div className="skeleton" style={{ width: '70%', height: '16px' }} />
-              <div className="skeleton" style={{ width: '50%', height: '12px' }} />
-              <div className="skeleton" style={{ width: '100%', height: '4px', borderRadius: '9999px' }} />
-            </div>
-          ))}
-        </div>
-      ) : error ? (
-        <div style={{
-          padding: '24px', borderRadius: '14px',
-          background: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.25)',
-          color: '#ef4444', textAlign: 'center', fontSize: '0.875rem',
-        }}>
-          <span className="material-symbols-outlined" style={{ fontSize: '28px', display: 'block', marginBottom: '8px' }}>error</span>
-          {error}
-        </div>
-      ) : filtered.length === 0 ? (
-        <div style={{
-          textAlign: 'center', padding: '60px 20px', color: 'var(--color-ink-muted)',
-          background: 'var(--color-surface)', borderRadius: '16px', border: '1px solid var(--color-border)',
-        }}>
-          <Layers style={{ width: '48px', height: '48px', opacity: 0.3, display: 'block', margin: '0 auto 12px' }} />
-          <p style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--color-ink)' }}>
-            {F.emptyTitle || 'Chưa có bộ thẻ nào'}
-          </p>
-          <p style={{ fontSize: '0.8125rem', marginTop: '4px' }}>
-            {search
-              ? (F.emptySearch || 'Không tìm thấy kết quả phù hợp.')
-              : (F.emptyDesc || 'Hiện tại chưa có bộ thẻ nào được chia sẻ.')}
-          </p>
-        </div>
-      ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
-          {filtered.map((deck) => (
-            <DeckCard
-              key={deck.id}
-              deck={deck}
-              stats={deckStats[deck.id]}
-              onStudy={(id) => navigate(`/student/flashcards/${id}/study`)}
-              onTest={(id) => navigate(`/student/flashcards/${id}/test`)}
-              t={t}
-            />
-          ))}
-        </div>
-      )}
+      {/* ── 3. Scrollable Deck List Area (Chỉ cuộn danh sách bộ thẻ bên dưới) ── */}
+      <div
+        className="flex-1 overflow-y-auto min-h-0 pr-1 pb-4 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300 hover:[&::-webkit-scrollbar-thumb]:bg-slate-400"
+        style={{
+          scrollbarWidth: 'thin',
+          scrollbarColor: '#cbd5e1 transparent',
+        }}
+      >
+        {/* Deck Grid */}
+        {loading ? (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div className="skeleton" style={{ width: '40px', height: '40px', borderRadius: '12px' }} />
+                <div className="skeleton" style={{ width: '70%', height: '16px' }} />
+                <div className="skeleton" style={{ width: '50%', height: '12px' }} />
+                <div className="skeleton" style={{ width: '100%', height: '4px', borderRadius: '9999px' }} />
+              </div>
+            ))}
+          </div>
+        ) : error ? (
+          <div style={{
+            padding: '24px', borderRadius: '14px',
+            background: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.25)',
+            color: '#ef4444', textAlign: 'center', fontSize: '0.875rem',
+          }}>
+            <span className="material-symbols-outlined" style={{ fontSize: '28px', display: 'block', marginBottom: '8px' }}>error</span>
+            {error}
+          </div>
+        ) : filtered.length === 0 ? (
+          <div style={{
+            textAlign: 'center', padding: '60px 20px', color: 'var(--color-ink-muted)',
+            background: 'var(--color-surface)', borderRadius: '16px', border: '1px solid var(--color-border)',
+          }}>
+            <Layers style={{ width: '48px', height: '48px', opacity: 0.3, display: 'block', margin: '0 auto 12px' }} />
+            <p style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--color-ink)' }}>
+              {F.emptyTitle || 'Chưa có bộ thẻ nào'}
+            </p>
+            <p style={{ fontSize: '0.8125rem', marginTop: '4px' }}>
+              {search
+                ? (F.emptySearch || 'Không tìm thấy kết quả phù hợp.')
+                : (F.emptyDesc || 'Hiện tại chưa có bộ thẻ nào được chia sẻ.')}
+            </p>
+          </div>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
+            {filtered.map((deck) => (
+              <DeckCard
+                key={deck.id}
+                deck={deck}
+                stats={deckStats[deck.id]}
+                onStudy={(id) => navigate(`/student/flashcards/${id}/study`)}
+                onTest={(id) => navigate(`/student/flashcards/${id}/test`)}
+                t={t}
+              />
+            ))}
+          </div>
+        )}
 
-      {/* ── Pagination ── */}
-      {!loading && !error && totalPages > 1 && (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-          <button
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={page === 1}
-            style={{
-              padding: '7px 14px', borderRadius: '8px', border: '1px solid var(--color-border)',
-              background: 'var(--color-surface)', color: 'var(--color-ink-muted)',
-              fontSize: '0.8125rem', fontWeight: 600, cursor: page === 1 ? 'not-allowed' : 'pointer',
-              opacity: page === 1 ? 0.5 : 1, fontFamily: 'var(--font-sans)',
-            }}
-          >
-            ← {F.prev || 'Trước'}
-          </button>
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+        {/* ── Pagination ── */}
+        {!loading && !error && totalPages > 1 && (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginTop: '24px' }}>
             <button
-              key={p}
-              onClick={() => setPage(p)}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
               style={{
-                width: '36px', height: '36px', borderRadius: '8px', border: '1px solid',
-                fontSize: '0.875rem', fontWeight: 700, cursor: 'pointer',
-                fontFamily: 'var(--font-mono)',
-                borderColor: p === page ? 'var(--color-primary)' : 'var(--color-border)',
-                background: p === page ? 'var(--color-primary-card)' : 'var(--color-surface)',
-                color: p === page ? 'var(--color-primary-dark)' : 'var(--color-ink-muted)',
+                padding: '7px 14px', borderRadius: '8px', border: '1px solid var(--color-border)',
+                background: 'var(--color-surface)', color: 'var(--color-ink-muted)',
+                fontSize: '0.8125rem', fontWeight: 600, cursor: page === 1 ? 'not-allowed' : 'pointer',
+                opacity: page === 1 ? 0.5 : 1, fontFamily: 'var(--font-sans)',
               }}
             >
-              {p}
+              ← {F.prev || 'Trước'}
             </button>
-          ))}
-          <button
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-            disabled={page === totalPages}
-            style={{
-              padding: '7px 14px', borderRadius: '8px', border: '1px solid var(--color-border)',
-              background: 'var(--color-surface)', color: 'var(--color-ink-muted)',
-              fontSize: '0.8125rem', fontWeight: 600, cursor: page === totalPages ? 'not-allowed' : 'pointer',
-              opacity: page === totalPages ? 0.5 : 1, fontFamily: 'var(--font-sans)',
-            }}
-          >
-            {F.next || 'Tiếp'} →
-          </button>
-        </div>
-      )}
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+              <button
+                key={p}
+                onClick={() => setPage(p)}
+                style={{
+                  width: '36px', height: '36px', borderRadius: '8px', border: '1px solid',
+                  fontSize: '0.875rem', fontWeight: 700, cursor: 'pointer',
+                  fontFamily: 'var(--font-mono)',
+                  borderColor: p === page ? 'var(--color-primary)' : 'var(--color-border)',
+                  background: p === page ? 'var(--color-primary-card)' : 'var(--color-surface)',
+                  color: p === page ? 'var(--color-primary-dark)' : 'var(--color-ink-muted)',
+                }}
+              >
+                {p}
+              </button>
+            ))}
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+              style={{
+                padding: '7px 14px', borderRadius: '8px', border: '1px solid var(--color-border)',
+                background: 'var(--color-surface)', color: 'var(--color-ink-muted)',
+                fontSize: '0.8125rem', fontWeight: 600, cursor: page === totalPages ? 'not-allowed' : 'pointer',
+                opacity: page === totalPages ? 0.5 : 1, fontFamily: 'var(--font-sans)',
+              }}
+            >
+              {F.next || 'Tiếp'} →
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

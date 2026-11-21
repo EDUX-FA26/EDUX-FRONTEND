@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import LearningService from '../../services/learning.service';
 import MathText from '../common/MathText';
 import {
@@ -40,40 +41,73 @@ export default function StudyResultModal({ planDayId, dayInfo, onClose }) {
     return () => { cancelled = true; };
   }, [planDayId]);
 
+  // Khóa cuộn trang nền (Body Scroll Lock) khi popup mở, khôi phục khi đóng/unmount
+  useEffect(() => {
+    const originalBodyOverflow = document.body.style.overflow;
+    const originalHtmlOverflow = document.documentElement.style.overflow;
+
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = originalBodyOverflow;
+      document.documentElement.style.overflow = originalHtmlOverflow;
+    };
+  }, []);
+
   if (!planDayId) return null;
 
   const score = resultData?.scorePercent ?? 0;
   const isHigh = score >= 70;
   const isMedium = score >= 50 && score < 70;
 
-  return (
-    <div style={{
-      position: 'fixed', inset: 0, zIndex: 9999,
-      backgroundColor: 'rgba(15, 23, 42, 0.65)',
-      backdropFilter: 'blur(4px)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      padding: '16px', overflowY: 'auto',
-    }}>
-      <div style={{
-        backgroundColor: 'var(--color-surface, #ffffff)',
-        borderRadius: '24px',
-        maxWidth: '760px',
-        width: '100%',
-        maxHeight: '90vh',
+  const modalContent = (
+    <div
+      className="fixed inset-0 z-[9999] bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6"
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 9999,
+        backgroundColor: 'rgba(15, 23, 42, 0.6)',
+        backdropFilter: 'blur(4px)',
+        WebkitBackdropFilter: 'blur(4px)',
         display: 'flex',
-        flexDirection: 'column',
-        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-        border: '1px solid var(--color-border, #f1f5f9)',
-        overflow: 'hidden',
-        animation: 'fadeIn 0.2s ease-out'
-      }}>
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '16px',
+      }}
+      onClick={(e) => {
+        // Strict Modal Trap: Chặn click ra nền ngoài
+        e.stopPropagation();
+      }}
+    >
+      <div
+        className="relative w-full max-w-2xl max-h-[88vh] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+        style={{
+          position: 'relative',
+          width: '100%',
+          maxWidth: '42rem',
+          maxHeight: '88vh',
+          backgroundColor: '#ffffff',
+          borderRadius: '1rem',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+          animation: 'fadeIn 0.2s ease-out'
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
-        <div style={{
-          padding: '20px 24px',
-          borderBottom: '1px solid var(--color-border, #e2e8f0)',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          background: 'linear-gradient(135deg, #fff8f5 0%, #ffffff 100%)',
-        }}>
+        <div
+          className="border-b border-slate-200 bg-white"
+          style={{
+            padding: '20px 24px',
+            borderBottom: '1px solid #e2e8f0',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            backgroundColor: '#ffffff',
+          }}
+        >
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div style={{
               width: '42px', height: '42px', borderRadius: '12px',
@@ -84,10 +118,16 @@ export default function StudyResultModal({ planDayId, dayInfo, onClose }) {
               <Award size={24} />
             </div>
             <div>
-              <h2 style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--color-ink, #0f172a)', margin: 0 }}>
-                Kết quả bài ôn tập: {dayInfo?.topicName || 'Chi tiết buổi học'}
+              <h2
+                className="text-slate-900 font-bold text-base sm:text-lg leading-snug m-0"
+                style={{ color: '#0f172a', margin: 0 }}
+              >
+                Kết quả bài ôn tập: {dayInfo?.topicName || dayInfo?.title || resultData?.topicName || 'Chi tiết buổi học'}
               </h2>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '0.8125rem', color: 'var(--color-ink-muted, #64748b)', marginTop: '2px' }}>
+              <div
+                className="text-slate-600"
+                style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '0.8125rem', color: '#475569', marginTop: '2px' }}
+              >
                 {dayInfo?.day && <span>Ngày {dayInfo.day}</span>}
                 {resultData?.submittedAt && (
                   <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -100,11 +140,20 @@ export default function StudyResultModal({ planDayId, dayInfo, onClose }) {
           </div>
 
           <button
+            type="button"
             onClick={onClose}
+            aria-label="Đóng popup"
+            className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-all duration-150 cursor-pointer"
             style={{
-              background: 'transparent', border: 'none', cursor: 'pointer',
-              color: 'var(--color-ink-muted, #94a3b8)', padding: '6px',
-              borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              color: 'var(--color-ink-muted, #94a3b8)',
+              padding: '8px',
+              borderRadius: '10px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
           >
             <X size={20} />
@@ -112,7 +161,10 @@ export default function StudyResultModal({ planDayId, dayInfo, onClose }) {
         </div>
 
         {/* Content Body */}
-        <div style={{ padding: '24px', overflowY: 'auto', flex: 1 }}>
+        <div
+          className="flex-1 overflow-y-auto"
+          style={{ padding: '24px', overflowY: 'auto', flex: 1 }}
+        >
           {loading ? (
             <div style={{ textAlign: 'center', padding: '60px 20px' }}>
               <RefreshCw className="animate-spin" size={36} style={{ color: 'var(--color-primary, #f27024)', margin: '0 auto 16px' }} />
@@ -185,7 +237,10 @@ export default function StudyResultModal({ planDayId, dayInfo, onClose }) {
 
               {/* Questions Review */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--color-ink, #0f172a)', margin: 0 }}>
+                <h3
+                  className="text-slate-900"
+                  style={{ fontSize: '1rem', fontWeight: 700, color: '#0f172a', margin: 0 }}
+                >
                   Chi tiết từng câu hỏi ({resultData.results?.length || 0})
                 </h3>
 
@@ -217,7 +272,10 @@ export default function StudyResultModal({ planDayId, dayInfo, onClose }) {
                           }}>
                             Câu {q.questionOrder || idx + 1}
                           </span>
-                          <div style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--color-ink, #1e293b)', lineHeight: 1.5 }}>
+                          <div
+                            className="text-slate-900"
+                            style={{ fontSize: '0.9375rem', fontWeight: 600, color: '#0f172a', lineHeight: 1.5 }}
+                          >
                             <MathText content={q.question} />
                           </div>
                         </div>
@@ -248,7 +306,7 @@ export default function StudyResultModal({ planDayId, dayInfo, onClose }) {
 
                           let bg = '#ffffff';
                           let borderColor = 'var(--color-border, #e2e8f0)';
-                          let textColor = 'var(--color-ink, #1e293b)';
+                          let textColor = '#1e293b';
 
                           if (isCorrectOpt) {
                             bg = 'rgba(22, 163, 74, 0.12)';
@@ -308,7 +366,7 @@ export default function StudyResultModal({ planDayId, dayInfo, onClose }) {
                           backgroundColor: '#ffffff',
                           border: '1px solid var(--color-border, #e2e8f0)',
                           fontSize: '0.8125rem',
-                          color: 'var(--color-ink-muted, #475569)',
+                          color: '#475569',
                         }}>
                           <div style={{
                             display: 'flex', alignItems: 'center', gap: '6px',
@@ -353,5 +411,8 @@ export default function StudyResultModal({ planDayId, dayInfo, onClose }) {
       </div>
     </div>
   );
+
+  if (typeof document === 'undefined') return null;
+  return createPortal(modalContent, document.body);
 }
 
