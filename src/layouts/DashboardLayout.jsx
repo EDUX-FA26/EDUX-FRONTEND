@@ -113,6 +113,7 @@ export default function DashboardLayout() {
   const isAdminLogs = location.pathname === '/admin/logs' || location.pathname.startsWith('/admin/logs');
   const isAdminSemesters = location.pathname === '/admin/semesters' || location.pathname.startsWith('/admin/semesters');
   const isAdminSubjects = location.pathname === '/admin/subjects' || location.pathname.startsWith('/admin/subjects');
+  const isAdminReports = location.pathname === '/admin/reports' || location.pathname.startsWith('/admin/reports');
   const isStudentFlashcardsStudy =
     /^\/student\/flashcards\/[^/]+\/study\/?$/.test(location.pathname);
   const isStudentFlashcardsTest =
@@ -910,7 +911,7 @@ export default function DashboardLayout() {
         <main
           className={`flex-1 min-w-0 w-full overflow-x-hidden ${isGradePage ? 'dashboard-layout__main--grade' : ''}`}
           style={
-            isStudentFlashcardsPage || isFocusRoom || isGradePage || isClassesLockedPage || isLecturerAssignmentDetail || isAdminUsers || isAdminClasses || isAdminNotifications || isAdminSemesters || isAdminSubjects
+            isStudentFlashcardsPage || isFocusRoom || isGradePage || isClassesLockedPage || isLecturerAssignmentDetail || isAdminUsers || isAdminClasses || isAdminNotifications || isAdminSemesters || isAdminSubjects || isAdminReports
               ? {
                 flex: 1,
                 width: '100%',
@@ -969,7 +970,8 @@ export default function DashboardLayout() {
           !isAdminNotifications &&
           !isAdminLogs &&
           !isAdminSemesters &&
-          !isAdminSubjects && (
+          !isAdminSubjects &&
+          !isAdminReports && (
             <footer
               style={{
                 background: 'var(--color-surface)',
