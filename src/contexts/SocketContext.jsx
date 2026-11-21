@@ -55,6 +55,10 @@ export function SocketProvider({ children }) {
 
     setSocket(instance);
 
+    if (!instance) {
+      return;
+    }
+
     // =========================================
     // EVENT HANDLERS
     // =========================================
