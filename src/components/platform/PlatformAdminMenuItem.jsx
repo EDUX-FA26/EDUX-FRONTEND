@@ -24,7 +24,11 @@ export default function PlatformAdminMenuItem({
 
     setIsPlatformAdmin(false);
 
-    if (!isAuthenticated || !user?.id) {
+    if (
+      !isAuthenticated ||
+      !user?.id ||
+      !["superadmin", "manager"].includes(user?.platform_role)
+    ) {
       return;
     }
 
