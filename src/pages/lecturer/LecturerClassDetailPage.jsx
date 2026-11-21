@@ -16,7 +16,8 @@ import {
     Image as ImageIcon,
     Archive,
     FileCode,
-    File
+    File,
+    FolderKanban
 } from 'lucide-react';
 import { PlusCircle, FileText, Upload, Trash2 } from 'lucide-react';
 import AssignmentSubwindowModal from '../../components/student/AssignmentSubwindowModal';
