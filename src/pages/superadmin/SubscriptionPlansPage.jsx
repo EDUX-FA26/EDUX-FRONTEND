@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
+import { createPortal } from "react-dom";
 import SuperadminLayout from "../../components/platform/SuperadminLayout";
 import {
   getPlans,
@@ -160,12 +161,12 @@ export default function SubscriptionPlansPage() {
 
   return (
     <SuperadminLayout>
-      <div className="space-y-6">
+      <div className="w-full max-w-7xl mx-auto h-[calc(100vh-var(--dashboard-header-height,64px))] overflow-hidden flex flex-col px-6 pt-4 pb-4 box-border">
         {/* Header */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="shrink-0 flex flex-wrap items-center justify-between gap-3 mb-3">
           <div>
-            <h1 className="text-2xl font-extrabold tracking-tight text-[#1f1b17]">Quản lý Gói dịch vụ (Subscription Plans)</h1>
-            <p className="mt-1 text-sm text-[#545f73]">
+            <h1 className="text-xl font-bold tracking-tight text-slate-900">Quản lý Gói dịch vụ (Subscription Plans)</h1>
+            <p className="mt-0.5 text-xs text-slate-500">
               Cấu hình các gói dịch vụ SaaS, giá thuê theo tháng/năm và hạn mức tài nguyên (sinh viên, dung lượng S3, yêu cầu AI).
             </p>
           </div>
@@ -175,7 +176,7 @@ export default function SubscriptionPlansPage() {
               setCreateForm(DEFAULT_PLAN_FORM);
               setShowCreateModal(true);
             }}
-            className="inline-flex items-center gap-2 rounded-xl bg-[#f27024] px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-orange-500/20 hover:bg-[#d95c14] transition"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-[#f27024] px-3.5 h-9 text-xs sm:text-sm font-semibold text-white shadow-sm shadow-orange-500/20 hover:bg-[#d95c14] transition"
           >
             <Plus className="h-4 w-4" />
             Tạo gói dịch vụ mới
@@ -184,474 +185,496 @@ export default function SubscriptionPlansPage() {
 
         {/* Alert Notification */}
         {message.text && (
-          <EduxAlert
-            type={message.type}
-            message={message.text}
-            onClose={() => setMessage({ type: "", text: "" })}
-          />
+          <div className="shrink-0 mb-3">
+            <EduxAlert
+              type={message.type}
+              message={message.text}
+              onClose={() => setMessage({ type: "", text: "" })}
+            />
+          </div>
         )}
 
         {/* Stat Cards */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <div className="rounded-2xl border border-[#f5ebe1] bg-white p-5 shadow-xs">
-            <p className="text-xs font-semibold uppercase tracking-wider text-[#8c7166]">Tổng số gói</p>
-            <p className="mt-2 text-3xl font-extrabold text-[#1f1b17]">{plans.length}</p>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 shrink-0 mb-3">
+          <div className="py-2.5 px-4 bg-white rounded-xl border border-slate-200/80 shadow-xs flex items-center justify-between">
+            <span className="text-xs font-medium text-slate-500">Tổng số gói</span>
+            <span className="text-lg font-bold text-slate-900">{plans.length}</span>
           </div>
-          <div className="rounded-2xl border border-[#f5ebe1] bg-white p-5 shadow-xs">
-            <p className="text-xs font-semibold uppercase tracking-wider text-[#8c7166]">Gói đang mở bán</p>
-            <p className="mt-2 text-3xl font-extrabold text-emerald-600">{plans.filter((p) => p.is_active).length}</p>
+          <div className="py-2.5 px-4 bg-white rounded-xl border border-slate-200/80 shadow-xs flex items-center justify-between">
+            <span className="text-xs font-medium text-slate-500">Gói đang mở bán</span>
+            <span className="text-lg font-bold text-emerald-600">{plans.filter((p) => p.is_active).length}</span>
           </div>
-          <div className="rounded-2xl border border-[#f5ebe1] bg-white p-5 shadow-xs">
-            <p className="text-xs font-semibold uppercase tracking-wider text-[#8c7166]">Trường đang thuê dịch vụ</p>
-            <p className="mt-2 text-3xl font-extrabold text-[#f27024]">{totalActiveSchools}</p>
+          <div className="py-2.5 px-4 bg-white rounded-xl border border-slate-200/80 shadow-xs flex items-center justify-between">
+            <span className="text-xs font-medium text-slate-500">Trường đang thuê dịch vụ</span>
+            <span className="text-lg font-bold text-[#f27024]">{totalActiveSchools}</span>
           </div>
         </div>
 
-        {/* Plan Cards Grid */}
-        {loading ? (
-          <div className="rounded-2xl border border-[#f5ebe1] bg-white p-12 text-center text-[#545f73]">
-            <RefreshCw className="mx-auto h-6 w-6 animate-spin text-[#f27024] mb-2" />
-            Đang tải thông tin gói thuê…
-          </div>
-        ) : plans.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-[#f5ebe1] bg-white p-12 text-center text-[#8c7166]">
-            Chưa có gói thuê nào được cấu hình. Nhấn &quot;Tạo gói dịch vụ mới&quot; để thêm.
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {plans.map((p) => {
-              const features = typeof p.features === "object" && p.features !== null ? p.features : {};
-              return (
-                <div
-                  key={p.id}
-                  className={`relative flex flex-col justify-between rounded-3xl border bg-white p-6 shadow-sm transition hover:shadow-md ${
-                    p.is_active ? "border-[#f5ebe1]" : "border-[#f5ebe1] opacity-60 bg-[#fff8f5]/50"
-                  }`}
-                >
-                  <div>
-                    {/* Header: Name, Active Badge & Actions */}
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h3 className="text-xl font-bold text-[#1f1b17]">{p.name}</h3>
-                          <span className="font-mono text-[11px] text-[#8c7166]">({p.id})</span>
+        {/* Plan Cards Grid Scroll Area */}
+        <div className="flex-1 min-h-0 overflow-y-auto pr-1">
+          {loading ? (
+            <div className="h-full flex flex-col items-center justify-center p-8 text-center text-slate-500">
+              <RefreshCw className="mx-auto h-6 w-6 animate-spin text-[#f27024] mb-2" />
+              Đang tải thông tin gói thuê…
+            </div>
+          ) : plans.length === 0 ? (
+            <div className="h-full flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-white p-8 text-center text-slate-500">
+              Chưa có gói thuê nào được cấu hình. Nhấn &quot;Tạo gói dịch vụ mới&quot; để thêm.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-2">
+              {plans.map((p) => {
+                const features = typeof p.features === "object" && p.features !== null ? p.features : {};
+                return (
+                  <div
+                    key={p.id}
+                    className={`relative flex flex-col justify-between rounded-2xl border bg-white p-4 shadow-xs transition hover:shadow-md ${
+                      p.is_active ? "border-slate-200" : "border-slate-200/80 opacity-70 bg-slate-50/60"
+                    }`}
+                  >
+                    <div>
+                      {/* Header: Name, Active Badge & Actions */}
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <h3 className="text-base font-bold text-slate-900 truncate">{p.name}</h3>
+                            <span className="font-mono text-[11px] text-slate-400">({p.id})</span>
+                          </div>
+                          <p className="mt-1 text-xs text-slate-500 line-clamp-2 leading-relaxed">
+                            {p.description || "Gói dịch vụ nền tảng EDUX."}
+                          </p>
                         </div>
-                        <p className="mt-1 text-xs text-[#545f73] line-clamp-2">{p.description || "Gói dịch vụ nền tảng EDUX."}</p>
+                        <span
+                          className={`inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+                            p.is_active ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"
+                          }`}
+                        >
+                          {p.is_active ? "Đang mở bán" : "Đã ẩn"}
+                        </span>
                       </div>
-                      <span
-                        className={`inline-flex shrink-0 items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                          p.is_active ? "bg-emerald-50 text-emerald-700" : "bg-[#fcf2eb] text-[#8c7166]"
+
+                      {/* Pricing */}
+                      <div className="mt-2.5 rounded-xl bg-orange-50/40 border border-orange-100/60 py-2 px-3 space-y-1 text-xs">
+                        <div className="flex items-baseline justify-between text-slate-600">
+                          <span className="text-xs text-slate-500">Theo tháng:</span>
+                          <span className="text-sm font-bold text-slate-900">{formatCurrency(p.price_monthly)}</span>
+                        </div>
+                        <div className="flex items-baseline justify-between border-t border-orange-100/60 pt-1 text-slate-600">
+                          <span className="text-xs text-slate-500">Theo năm:</span>
+                          <span className="text-sm font-bold text-[#f27024]">{formatCurrency(p.price_yearly)}</span>
+                        </div>
+                      </div>
+
+                      {/* Resource Quotas */}
+                      <div className="mt-2.5 space-y-1.5 text-xs text-slate-600">
+                        <div className="flex items-center justify-between">
+                          <span className="flex items-center gap-1.5">
+                            <Users className="h-3.5 w-3.5 text-[#f27024]" />
+                            Hạn mức sinh viên:
+                          </span>
+                          <strong className="text-slate-900">{Number(p.student_limit).toLocaleString("vi-VN")} SV</strong>
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                          <span className="flex items-center gap-1.5">
+                            <HardDrive className="h-3.5 w-3.5 text-amber-500" />
+                            Dung lượng lưu trữ:
+                          </span>
+                          <strong className="text-slate-900">{p.storage_limit_gb} GB</strong>
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                          <span className="flex items-center gap-1.5">
+                            <Sparkles className="h-3.5 w-3.5 text-[#f27024]" />
+                            Yêu cầu AI / tháng:
+                          </span>
+                          <strong className="text-slate-900">{Number(p.ai_requests_limit).toLocaleString("vi-VN")} lượt</strong>
+                        </div>
+
+                        <div className="flex items-center justify-between border-t border-slate-100 pt-1.5">
+                          <span className="flex items-center gap-1.5">
+                            <Building className="h-3.5 w-3.5 text-emerald-500" />
+                            Trường đang sử dụng:
+                          </span>
+                          <strong className="text-emerald-700">{p.active_school_count || 0} trường</strong>
+                        </div>
+                      </div>
+
+                      {/* Features Badges */}
+                      <div className="mt-2.5 border-t border-slate-100 pt-2">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Tính năng mở rộng</p>
+                        <div className="flex flex-wrap gap-1">
+                          {Object.entries(features).map(([key, val]) => (
+                            <span
+                              key={key}
+                              className={`rounded-md px-1.5 py-0.5 text-[10px] font-medium flex items-center gap-1 ${
+                                val ? "bg-emerald-50 text-emerald-800" : "bg-slate-100 text-slate-400 line-through"
+                              }`}
+                            >
+                              {val ? <Check className="h-2.5 w-2.5 text-emerald-600" /> : <X className="h-2.5 w-2.5" />}
+                              {key}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Actions Footer */}
+                    <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-2.5">
+                      <button
+                        type="button"
+                        onClick={() => handleToggleActive(p)}
+                        className={`text-xs font-semibold hover:underline ${
+                          p.is_active ? "text-amber-600" : "text-emerald-600"
                         }`}
                       >
-                        {p.is_active ? "Đang mở bán" : "Đã ẩn"}
-                      </span>
-                    </div>
+                        {p.is_active ? "Ẩn gói này" : "Mở bán lại"}
+                      </button>
 
-                    {/* Pricing */}
-                    <div className="mt-5 rounded-2xl bg-[#fff8f5] border border-[#f5ebe1] p-4">
-                      <div className="flex items-baseline justify-between">
-                        <span className="text-xs text-[#545f73]">Theo tháng:</span>
-                        <span className="text-lg font-extrabold text-[#1f1b17]">{formatCurrency(p.price_monthly)}</span>
-                      </div>
-                      <div className="mt-2 flex items-baseline justify-between border-t border-[#f5ebe1] pt-2">
-                        <span className="text-xs text-[#545f73]">Theo năm:</span>
-                        <span className="text-base font-bold text-[#f27024]">{formatCurrency(p.price_yearly)}</span>
-                      </div>
-                    </div>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingPlan(p);
+                            setEditForm({
+                              ...p,
+                              features: typeof p.features === "object" && p.features !== null ? p.features : {},
+                            });
+                          }}
+                          className="rounded-lg border border-slate-200 bg-white p-1.5 text-slate-500 hover:bg-slate-50 hover:text-[#f27024] transition"
+                          title="Chỉnh sửa gói"
+                        >
+                          <Edit3 className="h-3.5 w-3.5" />
+                        </button>
 
-                    {/* Resource Quotas */}
-                    <div className="mt-5 space-y-2.5 text-xs">
-                      <div className="flex items-center justify-between text-[#545f73]">
-                        <span className="flex items-center gap-2">
-                          <Users className="h-4 w-4 text-[#f27024]" />
-                          Hạn mức sinh viên:
-                        </span>
-                        <strong className="text-[#1f1b17]">{Number(p.student_limit).toLocaleString("vi-VN")} SV</strong>
-                      </div>
-
-                      <div className="flex items-center justify-between text-[#545f73]">
-                        <span className="flex items-center gap-2">
-                          <HardDrive className="h-4 w-4 text-amber-500" />
-                          Dung lượng lưu trữ:
-                        </span>
-                        <strong className="text-[#1f1b17]">{p.storage_limit_gb} GB</strong>
-                      </div>
-
-                      <div className="flex items-center justify-between text-[#545f73]">
-                        <span className="flex items-center gap-2">
-                          <Sparkles className="h-4 w-4 text-[#f27024]" />
-                          Yêu cầu AI / tháng:
-                        </span>
-                        <strong className="text-[#1f1b17]">{Number(p.ai_requests_limit).toLocaleString("vi-VN")} lượt</strong>
-                      </div>
-
-                      <div className="flex items-center justify-between text-[#545f73] border-t border-[#f5ebe1] pt-2">
-                        <span className="flex items-center gap-2">
-                          <Building className="h-4 w-4 text-emerald-500" />
-                          Trường đang sử dụng:
-                        </span>
-                        <strong className="text-emerald-700">{p.active_school_count || 0} trường</strong>
-                      </div>
-                    </div>
-
-                    {/* Features Badges */}
-                    <div className="mt-4 border-t border-[#f5ebe1] pt-3">
-                      <p className="text-[11px] font-bold uppercase tracking-wider text-[#8c7166] mb-2">Tính năng mở rộng</p>
-                      <div className="flex flex-wrap gap-1.5">
-                        {Object.entries(features).map(([key, val]) => (
-                          <span
-                            key={key}
-                            className={`rounded-md px-2 py-0.5 text-[11px] font-medium flex items-center gap-1 ${
-                              val ? "bg-emerald-50 text-emerald-800" : "bg-[#fcf2eb] text-[#8c7166] line-through"
-                            }`}
-                          >
-                            {val ? <Check className="h-3 w-3 text-emerald-600" /> : <X className="h-3 w-3" />}
-                            {key}
-                          </span>
-                        ))}
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(p)}
+                          className="rounded-lg border border-red-200 bg-white p-1.5 text-red-600 hover:bg-red-50 transition"
+                          title="Xóa / Ngừng cung cấp gói"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
                       </div>
                     </div>
                   </div>
-
-                  {/* Actions Footer */}
-                  <div className="mt-6 flex items-center justify-between border-t border-[#f5ebe1] pt-4">
-                    <button
-                      type="button"
-                      onClick={() => handleToggleActive(p)}
-                      className={`text-xs font-semibold hover:underline ${
-                        p.is_active ? "text-amber-600" : "text-emerald-600"
-                      }`}
-                    >
-                      {p.is_active ? "Ẩn gói này" : "Mở bán lại"}
-                    </button>
-
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setEditingPlan(p);
-                          setEditForm({
-                            ...p,
-                            features: typeof p.features === "object" && p.features !== null ? p.features : {},
-                          });
-                        }}
-                        className="rounded-lg border border-[#f5ebe1] bg-white p-2 text-[#545f73] hover:bg-[#fff8f5] hover:text-[#f27024]"
-                        title="Chỉnh sửa gói"
-                      >
-                        <Edit3 className="h-4 w-4" />
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(p)}
-                        className="rounded-lg border border-red-200 bg-white p-2 text-red-600 hover:bg-red-50"
-                        title="Xóa / Ngừng cung cấp gói"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Modal: Tạo gói mới */}
-      {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs overflow-y-auto">
-          <div className="w-full max-w-2xl rounded-3xl bg-white p-6 sm:p-8 shadow-2xl border border-[#f5ebe1] my-8">
-            <div className="flex items-center justify-between border-b border-[#f5ebe1] pb-4">
-              <div>
-                <h2 className="text-xl font-bold text-[#1f1b17]">Tạo gói dịch vụ SaaS mới</h2>
-                <p className="text-xs text-[#545f73]">Gói mới sẽ hiển thị trên trang đăng ký trường và bảng giá hệ thống.</p>
-              </div>
-              <button onClick={() => setShowCreateModal(false)} className="rounded-lg p-1 text-[#8c7166] hover:bg-[#fff8f5]">
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleCreate} className="mt-5 space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {showCreateModal &&
+        createPortal(
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 overflow-y-auto">
+            <div className="w-full max-w-2xl rounded-2xl bg-white p-6 shadow-2xl border border-slate-200 my-auto max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <div>
-                  <label className="block text-xs font-semibold text-[#1f1b17]">Mã gói (ID định danh - viết liền, không dấu)</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="enterprise, basic_plus..."
-                    value={createForm.id}
-                    onChange={(e) => setCreateForm({ ...createForm, id: e.target.value })}
-                    className="mt-1 w-full rounded-xl border border-[#f5ebe1] bg-white p-2.5 font-mono text-sm text-[#1f1b17] focus:border-[#f27024] focus:outline-hidden"
-                  />
+                  <h2 className="text-lg font-bold text-slate-900">Tạo gói dịch vụ SaaS mới</h2>
+                  <p className="text-xs text-slate-500">Gói mới sẽ hiển thị trên trang đăng ký trường và bảng giá hệ thống.</p>
                 </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-[#1f1b17]">Tên gói hiển thị</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Gói Doanh nghiệp, Gói Nâng cao..."
-                    value={createForm.name}
-                    onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
-                    className="mt-1 w-full rounded-xl border border-[#f5ebe1] bg-white p-2.5 text-sm text-[#1f1b17] focus:border-[#f27024] focus:outline-hidden"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-[#1f1b17]">Mô tả ngắn về gói</label>
-                <textarea
-                  rows="2"
-                  placeholder="Mô tả đối tượng phù hợp và lợi ích của gói…"
-                  value={createForm.description}
-                  onChange={(e) => setCreateForm({ ...createForm, description: e.target.value })}
-                  className="mt-1 w-full rounded-xl border border-[#f5ebe1] bg-white p-2.5 text-sm text-[#1f1b17] focus:border-[#f27024] focus:outline-hidden"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-[#fff8f5] p-4 rounded-2xl border border-[#f5ebe1]">
-                <div>
-                  <label className="block text-xs font-semibold text-[#1f1b17]">Giá theo tháng (VND)</label>
-                  <input
-                    type="number"
-                    required
-                    min="0"
-                    step="10000"
-                    value={createForm.price_monthly}
-                    onChange={(e) => setCreateForm({ ...createForm, price_monthly: e.target.value })}
-                    className="mt-1 w-full rounded-xl border border-[#f5ebe1] bg-white p-2.5 font-semibold text-sm text-[#1f1b17] focus:border-[#f27024] focus:outline-hidden"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-[#1f1b17]">Giá theo năm (VND)</label>
-                  <input
-                    type="number"
-                    required
-                    min="0"
-                    step="50000"
-                    value={createForm.price_yearly}
-                    onChange={(e) => setCreateForm({ ...createForm, price_yearly: e.target.value })}
-                    className="mt-1 w-full rounded-xl border border-[#f5ebe1] bg-white p-2.5 font-semibold text-sm text-[#1f1b17] focus:border-[#f27024] focus:outline-hidden"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-[#1f1b17]">Giới hạn Sinh viên</label>
-                  <input
-                    type="number"
-                    required
-                    min="10"
-                    value={createForm.student_limit}
-                    onChange={(e) => setCreateForm({ ...createForm, student_limit: e.target.value })}
-                    className="mt-1 w-full rounded-xl border border-[#f5ebe1] bg-white p-2.5 text-sm text-[#1f1b17] focus:border-[#f27024] focus:outline-hidden"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-[#1f1b17]">Dung lượng S3 (GB)</label>
-                  <input
-                    type="number"
-                    required
-                    min="1"
-                    value={createForm.storage_limit_gb}
-                    onChange={(e) => setCreateForm({ ...createForm, storage_limit_gb: e.target.value })}
-                    className="mt-1 w-full rounded-xl border border-[#f5ebe1] bg-white p-2.5 text-sm text-[#1f1b17] focus:border-[#f27024] focus:outline-hidden"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-[#1f1b17]">Yêu cầu AI / tháng</label>
-                  <input
-                    type="number"
-                    required
-                    min="100"
-                    value={createForm.ai_requests_limit}
-                    onChange={(e) => setCreateForm({ ...createForm, ai_requests_limit: e.target.value })}
-                    className="mt-1 w-full rounded-xl border border-[#f5ebe1] bg-white p-2.5 text-sm text-[#1f1b17] focus:border-[#f27024] focus:outline-hidden"
-                  />
-                </div>
-              </div>
-
-              <div className="border-t border-[#f5ebe1] pt-4">
-                <label className="block text-xs font-semibold text-[#1f1b17] mb-2">Bật/Tắt tính năng trong gói</label>
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  {Object.entries(createForm.features).map(([key, val]) => (
-                    <label key={key} className="flex items-center gap-2 rounded-lg border border-[#f5ebe1] bg-white p-2.5 hover:bg-[#fff8f5] cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={val}
-                        onChange={(e) => setCreateForm({
-                          ...createForm,
-                          features: { ...createForm.features, [key]: e.target.checked },
-                        })}
-                        className="rounded text-[#f27024] focus:ring-[#f27024]"
-                      />
-                      <span className="font-medium text-[#1f1b17]">{key}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              <div className="mt-6 flex items-center justify-end gap-3 border-t border-[#f5ebe1] pt-4">
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
-                  className="rounded-xl border border-[#f5ebe1] bg-white px-4 py-2 text-sm font-semibold text-[#545f73] hover:bg-[#fff8f5]"
+                  className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition"
                 >
-                  Hủy
-                </button>
-                <button
-                  type="submit"
-                  disabled={createSubmitting}
-                  className="rounded-xl bg-[#f27024] px-5 py-2 text-sm font-semibold text-white hover:bg-[#d95c14] disabled:opacity-50 transition"
-                >
-                  {createSubmitting ? "Đang tạo…" : "Xác nhận tạo gói"}
+                  <X className="h-5 w-5" />
                 </button>
               </div>
-            </form>
-          </div>
-        </div>
-      )}
+
+              <form onSubmit={handleCreate} className="mt-4 space-y-3.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700">Mã gói (ID định danh - viết liền, không dấu)</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="enterprise, basic_plus..."
+                      value={createForm.id}
+                      onChange={(e) => setCreateForm({ ...createForm, id: e.target.value })}
+                      className="mt-1 w-full rounded-xl border border-slate-200 bg-white p-2 font-mono text-sm text-slate-900 focus:border-[#f27024] focus:outline-hidden"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700">Tên gói hiển thị</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Gói Doanh nghiệp, Gói Nâng cao..."
+                      value={createForm.name}
+                      onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
+                      className="mt-1 w-full rounded-xl border border-slate-200 bg-white p-2 text-sm text-slate-900 focus:border-[#f27024] focus:outline-hidden"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700">Mô tả ngắn về gói</label>
+                  <textarea
+                    rows="2"
+                    placeholder="Mô tả đối tượng phù hợp và lợi ích của gói…"
+                    value={createForm.description}
+                    onChange={(e) => setCreateForm({ ...createForm, description: e.target.value })}
+                    className="mt-1 w-full rounded-xl border border-slate-200 bg-white p-2 text-sm text-slate-900 focus:border-[#f27024] focus:outline-hidden"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-orange-50/40 p-3 rounded-xl border border-orange-100/60">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700">Giá theo tháng (VND)</label>
+                    <input
+                      type="number"
+                      required
+                      min="0"
+                      step="10000"
+                      value={createForm.price_monthly}
+                      onChange={(e) => setCreateForm({ ...createForm, price_monthly: e.target.value })}
+                      className="mt-1 w-full rounded-xl border border-slate-200 bg-white p-2 font-semibold text-sm text-slate-900 focus:border-[#f27024] focus:outline-hidden"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700">Giá theo năm (VND)</label>
+                    <input
+                      type="number"
+                      required
+                      min="0"
+                      step="50000"
+                      value={createForm.price_yearly}
+                      onChange={(e) => setCreateForm({ ...createForm, price_yearly: e.target.value })}
+                      className="mt-1 w-full rounded-xl border border-slate-200 bg-white p-2 font-semibold text-sm text-[#f27024] focus:border-[#f27024] focus:outline-hidden"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700">Giới hạn Sinh viên</label>
+                    <input
+                      type="number"
+                      required
+                      min="10"
+                      value={createForm.student_limit}
+                      onChange={(e) => setCreateForm({ ...createForm, student_limit: e.target.value })}
+                      className="mt-1 w-full rounded-xl border border-slate-200 bg-white p-2 text-sm text-slate-900 focus:border-[#f27024] focus:outline-hidden"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700">Dung lượng S3 (GB)</label>
+                    <input
+                      type="number"
+                      required
+                      min="1"
+                      value={createForm.storage_limit_gb}
+                      onChange={(e) => setCreateForm({ ...createForm, storage_limit_gb: e.target.value })}
+                      className="mt-1 w-full rounded-xl border border-slate-200 bg-white p-2 text-sm text-slate-900 focus:border-[#f27024] focus:outline-hidden"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700">Yêu cầu AI / tháng</label>
+                    <input
+                      type="number"
+                      required
+                      min="100"
+                      value={createForm.ai_requests_limit}
+                      onChange={(e) => setCreateForm({ ...createForm, ai_requests_limit: e.target.value })}
+                      className="mt-1 w-full rounded-xl border border-slate-200 bg-white p-2 text-sm text-slate-900 focus:border-[#f27024] focus:outline-hidden"
+                    />
+                  </div>
+                </div>
+
+                <div className="border-t border-slate-100 pt-3">
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Bật/Tắt tính năng trong gói</label>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    {Object.entries(createForm.features).map(([key, val]) => (
+                      <label key={key} className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white p-2 hover:bg-slate-50 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={val}
+                          onChange={(e) =>
+                            setCreateForm({
+                              ...createForm,
+                              features: { ...createForm.features, [key]: e.target.checked },
+                            })
+                          }
+                          className="rounded text-[#f27024] focus:ring-[#f27024]"
+                        />
+                        <span className="font-medium text-slate-800">{key}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="mt-5 flex items-center justify-end gap-2.5 border-t border-slate-100 pt-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowCreateModal(false)}
+                    className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs sm:text-sm font-semibold text-slate-600 hover:bg-slate-50"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={createSubmitting}
+                    className="rounded-xl bg-[#f27024] px-4 py-2 text-xs sm:text-sm font-semibold text-white hover:bg-[#d95c14] disabled:opacity-50 transition"
+                  >
+                    {createSubmitting ? "Đang tạo…" : "Xác nhận tạo gói"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>,
+          document.body
+        )}
 
       {/* Modal: Chỉnh sửa gói */}
-      {editingPlan && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs overflow-y-auto">
-          <div className="w-full max-w-2xl rounded-3xl bg-white p-6 sm:p-8 shadow-2xl border border-[#f5ebe1] my-8">
-            <div className="flex items-center justify-between border-b border-[#f5ebe1] pb-4">
-              <div>
-                <h2 className="text-xl font-bold text-[#1f1b17]">Chỉnh sửa gói: {editingPlan.name}</h2>
-                <p className="text-xs text-[#545f73]">Mã định danh: <code>{editingPlan.id}</code> (Giá mới áp dụng cho các đăng ký mới, bảo toàn giá cũ của các trường đang hoạt động).</p>
-              </div>
-              <button onClick={() => setEditingPlan(null)} className="rounded-lg p-1 text-[#8c7166] hover:bg-[#fff8f5]">
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleUpdate} className="mt-5 space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-[#1f1b17]">Tên gói</label>
-                <input
-                  type="text"
-                  required
-                  value={editForm.name}
-                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                  className="mt-1 w-full rounded-xl border border-[#f5ebe1] bg-white p-2.5 text-sm text-[#1f1b17] focus:border-[#f27024] focus:outline-hidden"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-[#1f1b17]">Mô tả gói</label>
-                <textarea
-                  rows="2"
-                  value={editForm.description}
-                  onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                  className="mt-1 w-full rounded-xl border border-[#f5ebe1] bg-white p-2.5 text-sm text-[#1f1b17] focus:border-[#f27024] focus:outline-hidden"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-[#fff8f5] p-4 rounded-2xl border border-[#f5ebe1]">
+      {editingPlan &&
+        createPortal(
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 overflow-y-auto">
+            <div className="w-full max-w-2xl rounded-2xl bg-white p-6 shadow-2xl border border-slate-200 my-auto max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <div>
-                  <label className="block text-xs font-semibold text-[#1f1b17]">Giá theo tháng (VND)</label>
-                  <input
-                    type="number"
-                    required
-                    min="0"
-                    step="10000"
-                    value={editForm.price_monthly}
-                    onChange={(e) => setEditForm({ ...editForm, price_monthly: e.target.value })}
-                    className="mt-1 w-full rounded-xl border border-[#f5ebe1] bg-white p-2.5 font-semibold text-sm text-[#1f1b17] focus:border-[#f27024] focus:outline-hidden"
-                  />
+                  <h2 className="text-lg font-bold text-slate-900">Chỉnh sửa gói: {editingPlan.name}</h2>
+                  <p className="text-xs text-slate-500">
+                    Mã định danh: <code>{editingPlan.id}</code> (Giá mới áp dụng cho các đăng ký mới, bảo toàn giá cũ của các trường đang hoạt động).
+                  </p>
                 </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-[#1f1b17]">Giá theo năm (VND)</label>
-                  <input
-                    type="number"
-                    required
-                    min="0"
-                    step="50000"
-                    value={editForm.price_yearly}
-                    onChange={(e) => setEditForm({ ...editForm, price_yearly: e.target.value })}
-                    className="mt-1 w-full rounded-xl border border-[#f5ebe1] bg-white p-2.5 font-semibold text-sm text-[#1f1b17] focus:border-[#f27024] focus:outline-hidden"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-[#1f1b17]">Giới hạn Sinh viên</label>
-                  <input
-                    type="number"
-                    required
-                    min="10"
-                    value={editForm.student_limit}
-                    onChange={(e) => setEditForm({ ...editForm, student_limit: e.target.value })}
-                    className="mt-1 w-full rounded-xl border border-[#f5ebe1] bg-white p-2.5 text-sm text-[#1f1b17] focus:border-[#f27024] focus:outline-hidden"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-[#1f1b17]">Dung lượng S3 (GB)</label>
-                  <input
-                    type="number"
-                    required
-                    min="1"
-                    value={editForm.storage_limit_gb}
-                    onChange={(e) => setEditForm({ ...editForm, storage_limit_gb: e.target.value })}
-                    className="mt-1 w-full rounded-xl border border-[#f5ebe1] bg-white p-2.5 text-sm text-[#1f1b17] focus:border-[#f27024] focus:outline-hidden"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-[#1f1b17]">Yêu cầu AI / tháng</label>
-                  <input
-                    type="number"
-                    required
-                    min="100"
-                    value={editForm.ai_requests_limit}
-                    onChange={(e) => setEditForm({ ...editForm, ai_requests_limit: e.target.value })}
-                    className="mt-1 w-full rounded-xl border border-[#f5ebe1] bg-white p-2.5 text-sm text-[#1f1b17] focus:border-[#f27024] focus:outline-hidden"
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 pt-2">
-                <input
-                  type="checkbox"
-                  id="edit_is_active"
-                  checked={editForm.is_active}
-                  onChange={(e) => setEditForm({ ...editForm, is_active: e.target.checked })}
-                  className="rounded text-[#f27024] focus:ring-[#f27024]"
-                />
-                <label htmlFor="edit_is_active" className="text-sm font-semibold text-[#1f1b17] cursor-pointer">
-                  Kích hoạt mở bán gói này cho khách hàng tự đăng ký
-                </label>
-              </div>
-
-              <div className="mt-6 flex items-center justify-end gap-3 border-t border-[#f5ebe1] pt-4">
                 <button
                   type="button"
                   onClick={() => setEditingPlan(null)}
-                  className="rounded-xl border border-[#f5ebe1] bg-white px-4 py-2 text-sm font-semibold text-[#545f73] hover:bg-[#fff8f5]"
+                  className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition"
                 >
-                  Hủy
-                </button>
-                <button
-                  type="submit"
-                  disabled={editSubmitting}
-                  className="rounded-xl bg-[#f27024] px-5 py-2 text-sm font-semibold text-white hover:bg-[#d95c14] disabled:opacity-50 transition"
-                >
-                  {editSubmitting ? "Đang lưu…" : "Lưu thay đổi"}
+                  <X className="h-5 w-5" />
                 </button>
               </div>
-            </form>
-          </div>
-        </div>
-      )}
+
+              <form onSubmit={handleUpdate} className="mt-4 space-y-3.5">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700">Tên gói</label>
+                  <input
+                    type="text"
+                    required
+                    value={editForm.name}
+                    onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                    className="mt-1 w-full rounded-xl border border-slate-200 bg-white p-2 text-sm text-slate-900 focus:border-[#f27024] focus:outline-hidden"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700">Mô tả gói</label>
+                  <textarea
+                    rows="2"
+                    value={editForm.description}
+                    onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                    className="mt-1 w-full rounded-xl border border-slate-200 bg-white p-2 text-sm text-slate-900 focus:border-[#f27024] focus:outline-hidden"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-orange-50/40 p-3 rounded-xl border border-orange-100/60">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700">Giá theo tháng (VND)</label>
+                    <input
+                      type="number"
+                      required
+                      min="0"
+                      step="10000"
+                      value={editForm.price_monthly}
+                      onChange={(e) => setEditForm({ ...editForm, price_monthly: e.target.value })}
+                      className="mt-1 w-full rounded-xl border border-slate-200 bg-white p-2 font-semibold text-sm text-slate-900 focus:border-[#f27024] focus:outline-hidden"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700">Giá theo năm (VND)</label>
+                    <input
+                      type="number"
+                      required
+                      min="0"
+                      step="50000"
+                      value={editForm.price_yearly}
+                      onChange={(e) => setEditForm({ ...editForm, price_yearly: e.target.value })}
+                      className="mt-1 w-full rounded-xl border border-slate-200 bg-white p-2 font-semibold text-sm text-[#f27024] focus:border-[#f27024] focus:outline-hidden"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700">Giới hạn Sinh viên</label>
+                    <input
+                      type="number"
+                      required
+                      min="10"
+                      value={editForm.student_limit}
+                      onChange={(e) => setEditForm({ ...editForm, student_limit: e.target.value })}
+                      className="mt-1 w-full rounded-xl border border-slate-200 bg-white p-2 text-sm text-slate-900 focus:border-[#f27024] focus:outline-hidden"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700">Dung lượng S3 (GB)</label>
+                    <input
+                      type="number"
+                      required
+                      min="1"
+                      value={editForm.storage_limit_gb}
+                      onChange={(e) => setEditForm({ ...editForm, storage_limit_gb: e.target.value })}
+                      className="mt-1 w-full rounded-xl border border-slate-200 bg-white p-2 text-sm text-slate-900 focus:border-[#f27024] focus:outline-hidden"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700">Yêu cầu AI / tháng</label>
+                    <input
+                      type="number"
+                      required
+                      min="100"
+                      value={editForm.ai_requests_limit}
+                      onChange={(e) => setEditForm({ ...editForm, ai_requests_limit: e.target.value })}
+                      className="mt-1 w-full rounded-xl border border-slate-200 bg-white p-2 text-sm text-slate-900 focus:border-[#f27024] focus:outline-hidden"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 pt-2">
+                  <input
+                    type="checkbox"
+                    id="edit_is_active"
+                    checked={editForm.is_active}
+                    onChange={(e) => setEditForm({ ...editForm, is_active: e.target.checked })}
+                    className="rounded text-[#f27024] focus:ring-[#f27024]"
+                  />
+                  <label htmlFor="edit_is_active" className="text-xs sm:text-sm font-semibold text-slate-800 cursor-pointer">
+                    Kích hoạt mở bán gói này cho khách hàng tự đăng ký
+                  </label>
+                </div>
+
+                <div className="mt-5 flex items-center justify-end gap-2.5 border-t border-slate-100 pt-3">
+                  <button
+                    type="button"
+                    onClick={() => setEditingPlan(null)}
+                    className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs sm:text-sm font-semibold text-slate-600 hover:bg-slate-50"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={editSubmitting}
+                    className="rounded-xl bg-[#f27024] px-4 py-2 text-xs sm:text-sm font-semibold text-white hover:bg-[#d95c14] disabled:opacity-50 transition"
+                  >
+                    {editSubmitting ? "Đang lưu…" : "Lưu thay đổi"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>,
+          document.body
+        )}
     </SuperadminLayout>
   );
 }

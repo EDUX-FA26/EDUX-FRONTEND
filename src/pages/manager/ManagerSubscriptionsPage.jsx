@@ -11,6 +11,7 @@ import {
   Calendar,
   Building2,
   Info,
+  RotateCcw,
 } from "lucide-react";
 import ManagerLayout from "../../components/platform/ManagerLayout";
 import EduxAlert from "../../components/common/EduxAlert";
@@ -26,15 +27,15 @@ export default function ManagerSubscriptionsPage() {
   const [successMsg, setSuccessMsg] = useState("");
   const [remindingId, setRemindingId] = useState(null);
 
-  const loadContracts = async (page = 1) => {
+  const loadContracts = async (page = 1, currentSearch = search, currentStatus = statusFilter) => {
     setLoading(true);
     setError("");
     try {
       const res = await getSubscriptions({
         page,
         limit: pagination.limit,
-        search: search.trim() || undefined,
-        status: statusFilter || undefined,
+        search: currentSearch.trim() || undefined,
+        status: currentStatus || undefined,
       });
       setContracts(res.data.items || []);
       setPagination(res.data.pagination || { page: 1, limit: 10, total: 0, totalPages: 1 });
@@ -46,12 +47,20 @@ export default function ManagerSubscriptionsPage() {
   };
 
   useEffect(() => {
-    loadContracts(1);
+    loadContracts(1, search, statusFilter);
   }, [statusFilter]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
-    loadContracts(1);
+    loadContracts(1, search, statusFilter);
+  };
+
+  const handleClearFilter = () => {
+    if (search || statusFilter) {
+      setSearch("");
+      setStatusFilter("");
+      loadContracts(1, "", "");
+    }
   };
 
   const handleRemind = async (subId, schoolName) => {
@@ -90,22 +99,22 @@ export default function ManagerSubscriptionsPage() {
 
   return (
     <ManagerLayout>
-      <div className="space-y-6">
+      <div className="w-full max-w-7xl mx-auto h-[calc(100vh-var(--dashboard-header-height,64px))] overflow-hidden flex flex-col px-6 pt-4 pb-4 box-border">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="shrink-0 flex flex-wrap items-center justify-between gap-3 mb-3">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#1f1b17]">
+            <h1 className="text-xl font-bold tracking-tight text-slate-900">
               Quản lý Hợp đồng & Thuê bao Trường học
             </h1>
-            <p className="mt-1 text-sm text-[#545f73]">
+            <p className="mt-0.5 text-xs text-slate-500">
               Theo dõi tình trạng hợp đồng, gói dịch vụ và thời hạn thuê bao của tất cả trường trên nền tảng.
             </p>
           </div>
 
           <button
-            onClick={() => loadContracts(pagination.page)}
+            onClick={() => loadContracts(pagination.page, search, statusFilter)}
             disabled={loading}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-[#f5ebe1] bg-white px-3.5 py-2 text-xs sm:text-sm font-medium text-[#545f73] shadow-xs hover:bg-[#fff8f5] hover:text-[#f27024] transition"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 h-9 text-xs sm:text-sm font-medium text-slate-600 shadow-xs hover:bg-slate-50 hover:text-[#f27024] transition disabled:opacity-50 cursor-pointer"
           >
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin text-[#f27024]" : ""}`} />
             Làm mới
@@ -114,64 +123,77 @@ export default function ManagerSubscriptionsPage() {
 
         {/* Notifications */}
         {successMsg && (
-          <EduxAlert
-            type="success"
-            message={successMsg}
-            onClose={() => setSuccessMsg("")}
-          />
+          <div className="shrink-0 mb-3">
+            <EduxAlert
+              type="success"
+              message={successMsg}
+              onClose={() => setSuccessMsg("")}
+            />
+          </div>
         )}
 
         {error && (
-          <EduxAlert
-            type="error"
-            message={error}
-            onClose={() => setError("")}
-          />
+          <div className="shrink-0 mb-3">
+            <EduxAlert
+              type="error"
+              message={error}
+              onClose={() => setError("")}
+            />
+          </div>
         )}
 
         {/* Read-Only Notice Banner */}
-        <div className="flex items-start gap-3 rounded-2xl border border-[#ffdbcc] bg-[#fff8f5] p-4 sm:p-5 shadow-xs">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#f27024] text-white shadow-xs">
-            <ShieldCheck className="h-5 w-5" />
-          </div>
-          <div className="text-xs sm:text-sm leading-relaxed text-[#545f73]">
-            <strong className="text-[#1f1b17]">Chế độ theo dõi chỉ đọc (Read-only): </strong>
+        <div className="shrink-0 mb-3 flex items-start gap-2.5 rounded-xl border border-[#ffdbcc] bg-[#fff8f5] py-2 px-3.5 text-xs text-[#1f1b17]">
+          <ShieldCheck className="h-4 w-4 shrink-0 text-[#f27024] mt-0.5" />
+          <span>
+            <strong>Chế độ theo dõi chỉ đọc (Read-only): </strong>
             Manager theo dõi thời hạn hợp đồng và gửi thông báo nhắc gia hạn trực tiếp cho School Admin. Thẩm quyền định giá gói dịch vụ, cấu hình biểu phí và tạo mới gói thuê thuộc về <strong>Superadmin</strong>.
-          </div>
+          </span>
         </div>
 
-        {/* Filter and Search Bar */}
-        <div className="flex flex-col sm:flex-row gap-3">
-          <form onSubmit={handleSearchSubmit} className="relative flex-1">
-            <Search className="absolute left-3.5 top-3 h-4 w-4 text-[#8c7166]" />
-            <input
-              type="text"
-              placeholder="Tìm theo tên trường, mã trường, tên gói..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full rounded-xl border border-[#f5ebe1] bg-white pl-10 pr-4 py-2.5 text-sm shadow-xs focus:border-[#f27024] focus:ring-1 focus:ring-[#f27024] text-[#1f1b17] placeholder-[#8c7166]"
-            />
-          </form>
+        {/* Card Container: Filter + Table */}
+        <div className="flex-1 min-h-0 bg-white rounded-2xl border border-slate-200 flex flex-col overflow-hidden shadow-xs">
+          {/* Filter and Search Bar */}
+          <div className="shrink-0 p-3.5 border-b border-slate-100 flex flex-wrap items-center gap-2.5">
+            <form onSubmit={handleSearchSubmit} className="relative flex-1 min-w-[240px]">
+              <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Tìm theo tên trường, mã trường, tên gói..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="h-9 w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-9 pr-3 text-xs shadow-xs focus:border-[#f27024] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#f27024] text-slate-800 placeholder-slate-400"
+              />
+            </form>
 
-          <div className="flex items-center gap-2">
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="rounded-xl border border-[#f5ebe1] bg-white px-3.5 py-2.5 text-sm shadow-xs font-medium text-[#545f73] focus:border-[#f27024]"
+            <div className="relative">
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="h-9 w-48 rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 shadow-xs focus:border-[#f27024] focus:outline-none"
+              >
+                <option value="">Tất cả trạng thái hợp đồng</option>
+                <option value="active">Đang hiệu lực (Active)</option>
+                <option value="expired">Đã hết hạn (Expired)</option>
+                <option value="cancelled">Đã hủy (Cancelled)</option>
+              </select>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleClearFilter}
+              className="h-9 px-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-xs font-medium text-slate-600 shrink-0 inline-flex items-center gap-1.5 transition cursor-pointer"
+              title="Xóa bộ lọc"
             >
-              <option value="">Tất cả trạng thái hợp đồng</option>
-              <option value="active">Đang hiệu lực (Active)</option>
-              <option value="expired">Đã hết hạn (Expired)</option>
-              <option value="cancelled">Đã hủy (Cancelled)</option>
-            </select>
+              <RotateCcw className="h-3.5 w-3.5" />
+              Xóa lọc
+            </button>
           </div>
-        </div>
 
-        {/* Contracts Table */}
-        <div className="rounded-2xl border border-[#f5ebe1] bg-white shadow-xs overflow-hidden">
-          <div className="overflow-x-auto">
+          {/* Contracts Table: Scrollable independently */}
+          <div className="flex-1 min-h-0 overflow-y-auto">
             <table className="w-full text-left text-sm">
-              <thead className="bg-[#fff8f5] text-xs font-bold text-[#8c7166] uppercase tracking-wider border-b border-[#f5ebe1]">
+              <thead className="sticky top-0 bg-[#fff8f5] z-10 text-xs font-bold text-[#8c7166] uppercase tracking-wider border-b border-[#f5ebe1]">
                 <tr>
                   <th className="py-3 px-4">Trường học</th>
                   <th className="py-3 px-4">Gói dịch vụ</th>
@@ -266,7 +288,7 @@ export default function ManagerSubscriptionsPage() {
                           <button
                             onClick={() => handleRemind(sub.id, sub.school_name)}
                             disabled={remindingId === sub.id}
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-[#f5ebe1] bg-white px-3 py-1.5 text-xs font-medium text-[#545f73] shadow-xs hover:bg-[#fff8f5] hover:text-[#f27024] hover:border-[#ffdbcc] transition disabled:opacity-50"
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-[#f5ebe1] bg-white px-3 py-1.5 text-xs font-medium text-[#545f73] shadow-xs hover:bg-[#fff8f5] hover:text-[#f27024] hover:border-[#ffdbcc] transition disabled:opacity-50 cursor-pointer"
                             title="Gửi thông báo nhắc School Admin gia hạn gói"
                           >
                             <Bell className={`h-3.5 w-3.5 ${remindingId === sub.id ? "animate-spin" : "text-[#f27024]"}`} />
@@ -283,22 +305,22 @@ export default function ManagerSubscriptionsPage() {
 
           {/* Pagination */}
           {pagination.totalPages > 1 && (
-            <div className="flex items-center justify-between border-t border-[#f5ebe1] bg-[#fff8f5] px-4 py-3">
+            <div className="shrink-0 flex items-center justify-between border-t border-[#f5ebe1] bg-[#fff8f5] px-4 py-2.5">
               <span className="text-xs text-[#545f73]">
                 Trang {pagination.page} / {pagination.totalPages} (Tổng {pagination.total} hợp đồng)
               </span>
               <div className="flex items-center gap-1">
                 <button
                   disabled={pagination.page <= 1}
-                  onClick={() => loadContracts(pagination.page - 1)}
-                  className="rounded-lg border border-[#f5ebe1] bg-white px-3 py-1.5 text-xs font-semibold text-[#545f73] hover:bg-[#fff8f5] disabled:opacity-40"
+                  onClick={() => loadContracts(pagination.page - 1, search, statusFilter)}
+                  className="rounded-lg border border-[#f5ebe1] bg-white px-3 py-1.5 text-xs font-semibold text-[#545f73] hover:bg-[#fff8f5] disabled:opacity-40 cursor-pointer"
                 >
                   Trước
                 </button>
                 <button
                   disabled={pagination.page >= pagination.totalPages}
-                  onClick={() => loadContracts(pagination.page + 1)}
-                  className="rounded-lg border border-[#f5ebe1] bg-white px-3 py-1.5 text-xs font-semibold text-[#545f73] hover:bg-[#fff8f5] disabled:opacity-40"
+                  onClick={() => loadContracts(pagination.page + 1, search, statusFilter)}
+                  className="rounded-lg border border-[#f5ebe1] bg-white px-3 py-1.5 text-xs font-semibold text-[#545f73] hover:bg-[#fff8f5] disabled:opacity-40 cursor-pointer"
                 >
                   Sau
                 </button>
