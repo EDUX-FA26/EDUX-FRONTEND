@@ -114,6 +114,11 @@ export default function DashboardLayout() {
   const isAdminSemesters = location.pathname === '/admin/semesters' || location.pathname.startsWith('/admin/semesters');
   const isAdminSubjects = location.pathname === '/admin/subjects' || location.pathname.startsWith('/admin/subjects');
   const isAdminReports = location.pathname === '/admin/reports' || location.pathname.startsWith('/admin/reports');
+  const isAdminProfile =
+    location.pathname === '/admin/profile' ||
+    location.pathname.startsWith('/admin/profile') ||
+    location.pathname.startsWith('/admin/school-profile') ||
+    location.pathname.startsWith('/admin/school-settings');
   const isStudentFlashcardsStudy =
     /^\/student\/flashcards\/[^/]+\/study\/?$/.test(location.pathname);
   const isStudentFlashcardsTest =
@@ -971,7 +976,8 @@ export default function DashboardLayout() {
           !isAdminLogs &&
           !isAdminSemesters &&
           !isAdminSubjects &&
-          !isAdminReports && (
+          !isAdminReports &&
+          !isAdminProfile && (
             <footer
               style={{
                 background: 'var(--color-surface)',

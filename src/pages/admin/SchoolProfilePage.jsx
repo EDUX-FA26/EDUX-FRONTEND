@@ -9,17 +9,10 @@ import {
   Phone,
   MapPin,
   FileText,
-  CheckCircle2,
-  AlertCircle,
   Save,
-  Layers,
   Sparkles,
   ExternalLink,
   RotateCcw,
-  ShieldCheck,
-  Calendar,
-  HardDrive,
-  Users
 } from "lucide-react";
 
 export default function SchoolProfilePage() {
@@ -164,61 +157,55 @@ export default function SchoolProfilePage() {
 
   if (loading) {
     return (
-      <main className="p-8 max-w-6xl mx-auto space-y-6 animate-pulse">
-        <div className="h-10 bg-slate-200 rounded-xl w-1/3"></div>
+      <main className="p-6 md:p-8 max-w-6xl mx-auto space-y-5 animate-pulse">
+        <div className="h-9 bg-slate-200 rounded-xl w-1/3"></div>
         <div className="h-4 bg-slate-200 rounded w-1/2"></div>
-        <div className="h-40 bg-slate-200 rounded-3xl mt-6"></div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-          <div className="h-80 bg-slate-200 rounded-3xl"></div>
-          <div className="h-80 bg-slate-200 rounded-3xl"></div>
+        <div className="h-24 bg-slate-200 rounded-2xl mt-5"></div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mt-5">
+          <div className="h-72 bg-slate-200 rounded-2xl"></div>
+          <div className="h-72 bg-slate-200 rounded-2xl"></div>
         </div>
       </main>
     );
   }
 
   return (
-    <main className="p-6 md:p-8 max-w-6xl mx-auto space-y-6 text-slate-800">
-      {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <main className="p-6 md:p-8 max-w-6xl mx-auto text-slate-800">
+      {/* Sticky Action Bar / Page Header */}
+      <div className="sticky top-0 z-20 bg-[#FDF8F5]/95 backdrop-blur py-3 mb-5 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-orange-100 text-orange-700">
-              <ShieldCheck className="w-3.5 h-3.5" /> Quản trị trường học
-            </span>
-            <span className="text-xs text-slate-400 font-mono">ID: {currentSchool?.schoolId || currentSchool?.id}</span>
-          </div>
-          <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 mt-2">
+          <h1 className="text-xl md:text-2xl font-bold text-slate-900">
             Hồ sơ & Thông tin Trường học
           </h1>
-          <p className="text-sm text-slate-500 mt-1">
-            Quản lý tên trường, nhận diện thương hiệu, thông tin liên lạc và gói dịch vụ hệ thống EDUX.
+          <p className="text-xs text-slate-500 mt-0.5">
+            Quản lý tên trường, nhận diện thương hiệu, thông tin liên lạc và gói dịch vụ EDUX.
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
           <button
             type="button"
             onClick={handleReset}
             disabled={saving}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-300 bg-white text-sm font-semibold text-slate-700 hover:bg-slate-50 transition shadow-sm disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 px-3.5 h-9 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-700 hover:bg-slate-50 transition shadow-sm disabled:opacity-50"
           >
-            <RotateCcw className="w-4 h-4" />
+            <RotateCcw className="w-3.5 h-3.5" />
             Khôi phục
           </button>
           <button
             type="button"
             onClick={handleSubmit}
             disabled={saving}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-sm font-bold shadow-md shadow-orange-500/20 transition disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 px-3.5 h-9 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-sm font-bold shadow-sm transition disabled:opacity-50"
           >
             {saving ? (
               <>
-                <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
                 Đang lưu...
               </>
             ) : (
               <>
-                <Save className="w-4 h-4" />
+                <Save className="w-3.5 h-3.5" />
                 Lưu thay đổi
               </>
             )}
@@ -228,110 +215,118 @@ export default function SchoolProfilePage() {
 
       {/* Alert Notices */}
       {successMessage && (
-        <EduxAlert
-          type="success"
-          title="Thành công!"
-          message={successMessage}
-          onClose={() => setSuccessMessage("")}
-        />
+        <div className="mb-4">
+          <EduxAlert
+            type="success"
+            title="Thành công!"
+            message={successMessage}
+            onClose={() => setSuccessMessage("")}
+          />
+        </div>
       )}
 
       {errorMessage && (
-        <EduxAlert
-          type="error"
-          title="Đã xảy ra lỗi!"
-          message={errorMessage}
-          onClose={() => setErrorMessage("")}
-        />
+        <div className="mb-4">
+          <EduxAlert
+            type="error"
+            title="Đã xảy ra lỗi!"
+            message={errorMessage}
+            onClose={() => setErrorMessage("")}
+          />
+        </div>
       )}
 
-      {/* School Brand Hero Card */}
-      <section className="rounded-3xl border border-slate-200 bg-white p-6 md:p-8 shadow-sm">
-        <div className="flex flex-col md:flex-row items-start md:items-center gap-6 justify-between">
-          <div className="flex items-center gap-5">
-            {/* Logo box */}
-            <div className="w-20 h-20 md:w-24 md:h-24 rounded-2xl border-2 border-orange-100 bg-orange-50/50 flex items-center justify-center overflow-hidden shrink-0 shadow-inner">
-              {form.logo_url ? (
-                <img
-                  src={form.logo_url}
-                  alt={form.name}
-                  className="w-full h-full object-contain p-2"
-                  onError={(e) => {
-                    e.currentTarget.style.display = "none";
-                    e.currentTarget.nextElementSibling.style.display = "flex";
-                  }}
-                />
-              ) : null}
-              <div
-                style={{ display: form.logo_url ? "none" : "flex" }}
-                className="w-full h-full items-center justify-center text-orange-500"
-              >
-                <Building2 className="w-10 h-10" />
-              </div>
-            </div>
-
-            <div>
-              <div className="flex items-center gap-2.5 flex-wrap">
-                <h2 className="text-xl md:text-2xl font-black text-slate-900">
-                  {form.name || "Chưa đặt tên trường"}
-                </h2>
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
-                  Đang hoạt động
-                </span>
-              </div>
-              <p className="text-sm text-slate-500 font-medium mt-1">
-                {form.display_name && form.display_name !== form.name ? (
-                  <span>Tên viết tắt: <strong className="text-slate-700">{form.display_name}</strong> • </span>
-                ) : null}
-                Mã định danh hệ thống: <span className="font-mono font-bold text-orange-600">{form.code || "—"}</span>
-              </p>
-              {form.website && (
-                <a
-                  href={form.website}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-1.5 text-xs text-orange-600 hover:text-orange-700 font-semibold mt-2 hover:underline"
-                >
-                  <Globe className="w-3.5 h-3.5" />
-                  {form.website}
-                  <ExternalLink className="w-3 h-3" />
-                </a>
-              )}
+      {/* School Brand Banner */}
+      <section className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm mb-5 flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          {/* Logo box */}
+          <div className="w-14 h-14 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-center overflow-hidden shrink-0">
+            {form.logo_url ? (
+              <img
+                src={form.logo_url}
+                alt={form.name}
+                className="w-full h-full object-contain p-1.5"
+                onError={(e) => {
+                  e.currentTarget.style.display = "none";
+                  e.currentTarget.nextElementSibling.style.display = "flex";
+                }}
+              />
+            ) : null}
+            <div
+              style={{ display: form.logo_url ? "none" : "flex" }}
+              className="w-full h-full items-center justify-center text-orange-500"
+            >
+              <Building2 className="w-7 h-7" />
             </div>
           </div>
 
-          {/* Quick Subscription Badge */}
-          {subscriptionInfo && (
-            <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 w-full md:w-auto md:min-w-[240px]">
-              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500">
-                <Sparkles className="w-3.5 h-3.5 text-amber-500" /> Gói tài khoản
-              </div>
-              <p className="text-base font-bold text-slate-900 mt-1">
-                {subscriptionInfo.plan_name}
-              </p>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Chu kỳ: <span className="font-semibold text-slate-700">{subscriptionInfo.billing_cycle === "yearly" ? "Theo năm" : "Theo tháng"}</span>
-              </p>
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="text-xl font-bold text-slate-900">
+                {form.name || "Chưa đặt tên trường"}
+              </h2>
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                Đang hoạt động
+              </span>
             </div>
-          )}
+            <p className="text-xs text-slate-500 font-medium mt-1">
+              {form.display_name && form.display_name !== form.name ? (
+                <span>Tên viết tắt: <strong className="text-slate-700">{form.display_name}</strong> · </span>
+              ) : null}
+              Mã định danh hệ thống: <span className="font-mono font-bold text-orange-600">{form.code || "—"}</span>
+            </p>
+            {form.website && (
+              <a
+                href={form.website}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1 text-xs text-orange-600 hover:text-orange-700 font-semibold mt-1 hover:underline"
+              >
+                <Globe className="w-3 h-3" />
+                {form.website}
+                <ExternalLink className="w-2.5 h-2.5" />
+              </a>
+            )}
+          </div>
         </div>
+
+        {/* Quick Subscription Summary */}
+        {subscriptionInfo && (
+          <div className="px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200/80 text-right shrink-0">
+            <div className="flex items-center justify-end gap-1.5 text-xs font-bold text-slate-700">
+              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+              <span>{subscriptionInfo.plan_name}</span>
+              <span className="inline-block px-1.5 py-0.2 rounded text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-700">
+                {subscriptionInfo.subscription_status || "Active"}
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 mt-1">
+              Chu kỳ: <span className="font-semibold text-slate-700">{subscriptionInfo.billing_cycle === "yearly" ? "Theo năm" : "Theo tháng"}</span>
+            </p>
+            <p className="text-xs text-slate-500 mt-0.5">
+              SV: <span className="font-semibold text-slate-700">{subscriptionInfo.student_limit ? `${subscriptionInfo.student_limit} người` : "Không giới hạn"}</span>
+              {" · "}
+              Dung lượng: <span className="font-semibold text-slate-700">{subscriptionInfo.storage_limit_gb ? `${subscriptionInfo.storage_limit_gb} GB` : "Theo gói"}</span>
+            </p>
+          </div>
+        )}
       </section>
 
-      {/* Main Form Fields */}
-      <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column (2 cols wide on large screens) */}
-        <div className="lg:col-span-2 space-y-6">
+      {/* 2-Column Balanced Form Grid */}
+      <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
+        {/* Left Column */}
+        <div className="space-y-5">
           {/* Card 1: School Identity */}
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 md:p-7 shadow-sm space-y-5">
-            <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100">
-              <Building2 className="w-5 h-5 text-orange-600" />
-              <h3 className="text-base font-bold text-slate-900">Thông tin pháp lý & Định danh</h3>
+          <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm space-y-3.5">
+            <div className="flex items-center gap-2 pb-2.5 border-b border-slate-100">
+              <Building2 className="w-4 h-4 text-orange-600" />
+              <h3 className="text-sm font-bold text-slate-900">Thông tin pháp lý & Định danh</h3>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-3">
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                <label className="block text-xs font-semibold text-slate-600 mb-1">
                   Tên trường học chính thức <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -340,16 +335,16 @@ export default function SchoolProfilePage() {
                   value={form.name}
                   onChange={(e) => handleChange("name", e.target.value)}
                   placeholder="Ví dụ: Trường Đại học Bách Khoa Đà Nẵng"
-                  className="w-full rounded-xl border border-slate-300 bg-slate-50/50 px-4 py-2.5 text-sm font-semibold text-slate-900 transition focus:border-orange-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20"
+                  className="w-full h-10 rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 text-sm font-medium text-slate-900 transition focus:border-orange-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20"
                 />
-                <p className="text-xs text-slate-400 mt-1">
+                <p className="text-[11px] text-slate-400 mt-1">
                   Tên này sẽ hiển thị trên tất cả chứng từ, bằng cấp, báo cáo và bảng điều khiển.
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                  <label className="block text-xs font-semibold text-slate-600 mb-1">
                     Tên viết tắt / Tên hiển thị
                   </label>
                   <input
@@ -357,15 +352,15 @@ export default function SchoolProfilePage() {
                     value={form.display_name}
                     onChange={(e) => handleChange("display_name", e.target.value)}
                     placeholder="Ví dụ: DUT - ĐHBK"
-                    className="w-full rounded-xl border border-slate-300 bg-slate-50/50 px-4 py-2.5 text-sm font-medium text-slate-900 transition focus:border-orange-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20"
+                    className="w-full h-10 rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 text-sm font-medium text-slate-900 transition focus:border-orange-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20"
                   />
-                  <p className="text-xs text-slate-400 mt-1">
+                  <p className="text-[11px] text-slate-400 mt-1">
                     Dùng cho thanh tiêu đề nhỏ và menu điều hướng.
                   </p>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                  <label className="block text-xs font-semibold text-slate-600 mb-1">
                     Mã trường hệ thống
                   </label>
                   <input
@@ -373,60 +368,164 @@ export default function SchoolProfilePage() {
                     disabled
                     readOnly
                     value={form.code}
-                    className="w-full rounded-xl border border-slate-200 bg-slate-100 px-4 py-2.5 text-sm font-mono font-bold text-slate-600 cursor-not-allowed"
+                    className="w-full h-10 rounded-xl border border-slate-200 bg-slate-100 px-3.5 text-sm font-mono font-bold text-slate-500 cursor-not-allowed"
                   />
-                  <p className="text-xs text-slate-400 mt-1">
-                    Mã duy nhất không thể thay đổi sau khi đăng ký.
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    Mã định danh duy nhất không thể thay đổi.
                   </p>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Card 2: Logo and Branding */}
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 md:p-7 shadow-sm space-y-5">
-            <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100">
-              <Globe className="w-5 h-5 text-orange-600" />
-              <h3 className="text-base font-bold text-slate-900">Nhận diện trực tuyến & Logo</h3>
+          {/* Card 2: Description */}
+          <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm space-y-3.5">
+            <div className="flex items-center gap-2 pb-2.5 border-b border-slate-100">
+              <FileText className="w-4 h-4 text-orange-600" />
+              <h3 className="text-sm font-bold text-slate-900">Giới thiệu & Sứ mệnh trường học</h3>
             </div>
 
-            <div className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">
+                Mô tả giới thiệu trường
+              </label>
+              <textarea
+                rows={3}
+                value={form.description}
+                onChange={(e) => handleChange("description", e.target.value)}
+                placeholder="Tóm tắt về lịch sử thành lập, tầm nhìn giáo dục, các ngành đào tạo nổi bật..."
+                className="w-full rounded-xl border border-slate-200 bg-slate-50/50 p-3 text-sm font-medium text-slate-900 transition focus:border-orange-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column */}
+        <div className="space-y-5">
+          {/* Card 3: Contact & Address */}
+          <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm space-y-3.5">
+            <div className="flex items-center gap-2 pb-2.5 border-b border-slate-100">
+              <Mail className="w-4 h-4 text-orange-600" />
+              <h3 className="text-sm font-bold text-slate-900">Liên hệ & Địa chỉ</h3>
+            </div>
+
+            <div className="space-y-3">
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                <label className="block text-xs font-semibold text-slate-600 mb-1">
+                  Email liên hệ chính thức
+                </label>
+                <div className="relative">
+                  <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                  <input
+                    type="email"
+                    value={form.contact_email}
+                    onChange={(e) => handleChange("contact_email", e.target.value)}
+                    placeholder="contact@school.edu.vn"
+                    className="w-full h-10 rounded-xl border border-slate-200 bg-slate-50/50 pl-9 pr-3.5 text-sm font-medium text-slate-900 transition focus:border-orange-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">
+                  Số điện thoại đường dây nóng
+                </label>
+                <div className="relative">
+                  <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                  <input
+                    type="tel"
+                    value={form.contact_phone}
+                    onChange={(e) => handleChange("contact_phone", e.target.value)}
+                    placeholder="0236 3836 169"
+                    className="w-full h-10 rounded-xl border border-slate-200 bg-slate-50/50 pl-9 pr-3.5 text-sm font-medium text-slate-900 transition focus:border-orange-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">
+                  Địa chỉ trụ sở trường
+                </label>
+                <div className="relative">
+                  <MapPin className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                  <textarea
+                    rows={3}
+                    value={form.address}
+                    onChange={(e) => handleChange("address", e.target.value)}
+                    placeholder="71 Ngũ Hành Sơn, Mỹ An, Ngũ Hành Sơn, Đà Nẵng"
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-9 pr-3.5 py-2.5 text-sm font-medium text-slate-900 transition focus:border-orange-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Card 4: Online Identity & Logo */}
+          <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm space-y-3.5">
+            <div className="flex items-center gap-2 pb-2.5 border-b border-slate-100">
+              <Globe className="w-4 h-4 text-orange-600" />
+              <h3 className="text-sm font-bold text-slate-900">Nhận diện trực tuyến & Logo</h3>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">
                   Đường dẫn ảnh Logo (Logo URL)
                 </label>
-                <div className="flex gap-2">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-10 h-10 rounded-xl border border-slate-200 bg-slate-50 shrink-0 flex items-center justify-center overflow-hidden">
+                    {form.logo_url ? (
+                      <img
+                        src={form.logo_url}
+                        alt="Logo preview"
+                        className="w-full h-full object-contain p-1"
+                        onError={(e) => {
+                          e.currentTarget.style.display = "none";
+                          e.currentTarget.nextElementSibling.style.display = "flex";
+                        }}
+                      />
+                    ) : null}
+                    <div
+                      style={{ display: form.logo_url ? "none" : "flex" }}
+                      className="w-full h-full items-center justify-center text-slate-400"
+                    >
+                      <Building2 className="w-5 h-5" />
+                    </div>
+                  </div>
                   <input
                     type="url"
                     value={form.logo_url}
                     onChange={(e) => handleChange("logo_url", e.target.value)}
                     placeholder="https://example.com/logo.png"
-                    className="flex-1 rounded-xl border border-slate-300 bg-slate-50/50 px-4 py-2.5 text-sm font-medium text-slate-900 transition focus:border-orange-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20"
+                    className="flex-1 h-10 rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 text-sm font-medium text-slate-900 transition focus:border-orange-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20"
                   />
                 </div>
-                <p className="text-xs text-slate-400 mt-1">
+                <p className="text-[11px] text-slate-400 mt-1">
                   Đề xuất định dạng PNG trong suốt (khuyên dùng tỉ lệ 1:1, tối thiểu 200x200px).
                 </p>
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                <label className="block text-xs font-semibold text-slate-600 mb-1">
                   Website chính thức
                 </label>
-                <div className="flex gap-2">
-                  <input
-                    type="url"
-                    value={form.website}
-                    onChange={(e) => handleChange("website", e.target.value)}
-                    placeholder="https://due.udn.vn"
-                    className="flex-1 rounded-xl border border-slate-300 bg-slate-50/50 px-4 py-2.5 text-sm font-medium text-slate-900 transition focus:border-orange-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20"
-                  />
+                <div className="flex items-center gap-2">
+                  <div className="relative flex-1">
+                    <Globe className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                    <input
+                      type="url"
+                      value={form.website}
+                      onChange={(e) => handleChange("website", e.target.value)}
+                      placeholder="https://due.udn.vn"
+                      className="w-full h-10 rounded-xl border border-slate-200 bg-slate-50/50 pl-9 pr-3.5 text-sm font-medium text-slate-900 transition focus:border-orange-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20"
+                    />
+                  </div>
                   {form.website && (
                     <a
                       href={form.website}
                       target="_blank"
                       rel="noreferrer"
-                      className="inline-flex items-center justify-center px-4 py-2.5 rounded-xl border border-slate-300 bg-slate-50 text-slate-700 hover:bg-slate-100 transition text-sm font-medium"
+                      className="h-10 px-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 transition flex items-center justify-center text-sm font-medium shrink-0"
                       title="Mở liên kết"
                     >
                       <ExternalLink className="w-4 h-4" />
@@ -436,179 +535,8 @@ export default function SchoolProfilePage() {
               </div>
             </div>
           </div>
-
-          {/* Card 3: Description */}
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 md:p-7 shadow-sm space-y-5">
-            <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100">
-              <FileText className="w-5 h-5 text-orange-600" />
-              <h3 className="text-base font-bold text-slate-900">Giới thiệu & Sứ mệnh trường học</h3>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-                Mô tả giới thiệu trường
-              </label>
-              <textarea
-                rows={4}
-                value={form.description}
-                onChange={(e) => handleChange("description", e.target.value)}
-                placeholder="Tóm tắt về lịch sử thành lập, tầm nhìn giáo dục, các ngành đào tạo nổi bật..."
-                className="w-full rounded-xl border border-slate-300 bg-slate-50/50 px-4 py-2.5 text-sm font-medium text-slate-900 transition focus:border-orange-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Right Column (1 col wide) */}
-        <div className="space-y-6">
-          {/* Card 4: Contact & Address */}
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 md:p-7 shadow-sm space-y-5">
-            <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100">
-              <Mail className="w-5 h-5 text-orange-600" />
-              <h3 className="text-base font-bold text-slate-900">Liên hệ & Địa chỉ</h3>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-                  Email liên hệ chính thức
-                </label>
-                <div className="relative">
-                  <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
-                  <input
-                    type="email"
-                    value={form.contact_email}
-                    onChange={(e) => handleChange("contact_email", e.target.value)}
-                    placeholder="contact@school.edu.vn"
-                    className="w-full rounded-xl border border-slate-300 bg-slate-50/50 pl-10 pr-4 py-2.5 text-sm font-medium text-slate-900 transition focus:border-orange-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-                  Số điện thoại đường dây nóng
-                </label>
-                <div className="relative">
-                  <Phone className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
-                  <input
-                    type="tel"
-                    value={form.contact_phone}
-                    onChange={(e) => handleChange("contact_phone", e.target.value)}
-                    placeholder="0236 3836 169"
-                    className="w-full rounded-xl border border-slate-300 bg-slate-50/50 pl-10 pr-4 py-2.5 text-sm font-medium text-slate-900 transition focus:border-orange-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-                  Địa chỉ trụ sở trường
-                </label>
-                <div className="relative">
-                  <MapPin className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
-                  <textarea
-                    rows={3}
-                    value={form.address}
-                    onChange={(e) => handleChange("address", e.target.value)}
-                    placeholder="71 Ngũ Hành Sơn, Mỹ An, Ngũ Hành Sơn, Đà Nẵng"
-                    className="w-full rounded-xl border border-slate-300 bg-slate-50/50 pl-10 pr-4 py-2.5 text-sm font-medium text-slate-900 transition focus:border-orange-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Card 5: Subscription Plan Details */}
-          {subscriptionInfo && (
-            <div className="rounded-3xl border border-slate-200 bg-gradient-to-br from-slate-900 to-slate-800 text-white p-6 md:p-7 shadow-sm space-y-5">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-700">
-                <div className="flex items-center gap-2">
-                  <Layers className="w-5 h-5 text-orange-400" />
-                  <h3 className="text-base font-bold text-white">Gói dịch vụ EDUX</h3>
-                </div>
-                <span className="px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-orange-500/20 text-orange-400 border border-orange-500/30">
-                  {subscriptionInfo.subscription_status}
-                </span>
-              </div>
-
-              <div className="space-y-3.5 text-sm">
-                <div>
-                  <p className="text-xs text-slate-400 uppercase font-semibold">Tên gói đăng ký</p>
-                  <p className="text-lg font-bold text-white mt-0.5">{subscriptionInfo.plan_name}</p>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-700/60">
-                  <div>
-                    <p className="text-xs text-slate-400 flex items-center gap-1">
-                      <Users className="w-3.5 h-3.5 text-orange-400" /> Số sinh viên
-                    </p>
-                    <p className="text-sm font-bold text-slate-200 mt-0.5">
-                      {subscriptionInfo.student_limit ? `${subscriptionInfo.student_limit} người` : "Không giới hạn"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-slate-400 flex items-center gap-1">
-                      <HardDrive className="w-3.5 h-3.5 text-orange-400" /> Dung lượng
-                    </p>
-                    <p className="text-sm font-bold text-slate-200 mt-0.5">
-                      {subscriptionInfo.storage_limit_gb ? `${subscriptionInfo.storage_limit_gb} GB` : "Theo gói"}
-                    </p>
-                  </div>
-                </div>
-
-                {subscriptionInfo.ai_requests_limit && (
-                  <div className="pt-2 border-t border-slate-700/60">
-                    <p className="text-xs text-slate-400 flex items-center gap-1">
-                      <Sparkles className="w-3.5 h-3.5 text-amber-400" /> Lượt AI EduX / tháng
-                    </p>
-                    <p className="text-sm font-bold text-slate-200 mt-0.5">
-                      {subscriptionInfo.ai_requests_limit.toLocaleString("vi-VN")} lượt
-                    </p>
-                  </div>
-                )}
-
-                {subscriptionInfo.created_at && (
-                  <div className="pt-2 border-t border-slate-700/60 text-xs text-slate-400 flex items-center gap-1.5">
-                    <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                    Khởi tạo: {new Date(subscriptionInfo.created_at).toLocaleDateString("vi-VN")}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
         </div>
       </form>
-
-      {/* Bottom Floating/Fixed Save Bar */}
-      <div className="pt-4 border-t border-slate-200 flex items-center justify-end gap-3">
-        <button
-          type="button"
-          onClick={handleReset}
-          disabled={saving}
-          className="px-5 py-2.5 rounded-xl border border-slate-300 bg-white text-sm font-semibold text-slate-700 hover:bg-slate-50 transition shadow-sm disabled:opacity-50"
-        >
-          Khôi phục dữ liệu ban đầu
-        </button>
-        <button
-          type="button"
-          onClick={handleSubmit}
-          disabled={saving}
-          className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-sm font-bold shadow-md shadow-orange-500/20 transition disabled:opacity-50"
-        >
-          {saving ? (
-            <>
-              <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-              Đang lưu thay đổi...
-            </>
-          ) : (
-            <>
-              <Save className="w-4 h-4" />
-              Lưu thay đổi hồ sơ
-            </>
-          )}
-        </button>
-      </div>
     </main>
   );
 }
