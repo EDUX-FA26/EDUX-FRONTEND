@@ -111,6 +111,8 @@ export default function DashboardLayout() {
   const isAdminClasses = location.pathname === '/admin/classes' || location.pathname.startsWith('/admin/classes');
   const isAdminNotifications = location.pathname === '/admin/notifications' || location.pathname.startsWith('/admin/notifications');
   const isAdminLogs = location.pathname === '/admin/logs' || location.pathname.startsWith('/admin/logs');
+  const isAdminSemesters = location.pathname === '/admin/semesters' || location.pathname.startsWith('/admin/semesters');
+  const isAdminSubjects = location.pathname === '/admin/subjects' || location.pathname.startsWith('/admin/subjects');
   const isStudentFlashcardsStudy =
     /^\/student\/flashcards\/[^/]+\/study\/?$/.test(location.pathname);
   const isStudentFlashcardsTest =
@@ -908,7 +910,7 @@ export default function DashboardLayout() {
         <main
           className={`flex-1 min-w-0 w-full overflow-x-hidden ${isGradePage ? 'dashboard-layout__main--grade' : ''}`}
           style={
-            isStudentFlashcardsPage || isFocusRoom || isGradePage || isClassesLockedPage || isLecturerAssignmentDetail || isAdminUsers || isAdminClasses || isAdminNotifications
+            isStudentFlashcardsPage || isFocusRoom || isGradePage || isClassesLockedPage || isLecturerAssignmentDetail || isAdminUsers || isAdminClasses || isAdminNotifications || isAdminSemesters || isAdminSubjects
               ? {
                 flex: 1,
                 width: '100%',
@@ -952,7 +954,7 @@ export default function DashboardLayout() {
           <Outlet />
         </main>
 
-        {/* Footer: ẩn ở trang flashcard, grading, student assignment, focus room, classes, lecturer assignment detail, study-plan, admin dashboard, admin users, admin classes, admin notifications và admin logs */}
+        {/* Footer: ẩn ở trang flashcard, grading, student assignment, focus room, classes, lecturer assignment detail, study-plan, admin dashboard, admin users, admin classes, admin notifications, admin logs, admin semesters và admin subjects */}
         {!isGradePage &&
           !isStudentAssignment &&
           !isClassesPage &&
@@ -965,7 +967,9 @@ export default function DashboardLayout() {
           !isAdminUsers &&
           !isAdminClasses &&
           !isAdminNotifications &&
-          !isAdminLogs && (
+          !isAdminLogs &&
+          !isAdminSemesters &&
+          !isAdminSubjects && (
             <footer
               style={{
                 background: 'var(--color-surface)',
