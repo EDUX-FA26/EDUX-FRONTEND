@@ -121,7 +121,7 @@ export default function StudyQuizModal({ planDayId, dayInfo, onClose, onSubmitte
       const qId = q.id || q.questionId;
       return {
         questionId: qId,
-        selectedAnswer: answers[qId] || 'A' // fallback if user confirmed
+        selectedAnswer: answers[qId] || 'NONE' // unselected questions graded as incorrect
       };
     });
 
@@ -393,7 +393,7 @@ export default function StudyQuizModal({ planDayId, dayInfo, onClose, onSubmitte
                           fontSize: '0.8125rem', fontWeight: 700,
                           color: q.isCorrect ? '#16a34a' : '#ef4444', flexShrink: 0
                         }}>
-                          {q.isCorrect ? '✓ Đúng' : '✗ Sai'}
+                          {q.isCorrect ? '✓ Đúng' : (!q.selectedAnswer || q.selectedAnswer === 'NONE' ? '✗ Chưa chọn' : '✗ Sai')}
                         </span>
                       </div>
 
@@ -791,7 +791,7 @@ export default function StudyQuizModal({ planDayId, dayInfo, onClose, onSubmitte
           >
             {unansweredCount > 0 ? (
               <>
-                Bạn vẫn còn <strong>{unansweredCount}/{totalQuestions}</strong> câu hỏi chưa chọn đáp án. Bạn có chắc chắn muốn nộp bài ngay bây giờ không?
+                Bạn vẫn còn <strong>{unansweredCount}/{totalQuestions}</strong> câu hỏi chưa chọn đáp án. Nếu nộp bài ngay bây giờ, các câu chưa trả lời sẽ được tính là <strong>sai (0 điểm)</strong>. Bạn có chắc chắn muốn nộp không?
               </>
             ) : (
               <>
