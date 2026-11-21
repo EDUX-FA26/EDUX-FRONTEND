@@ -109,6 +109,8 @@ export default function DashboardLayout() {
   const isAdminDashboard = location.pathname === '/admin/dashboard' || location.pathname.startsWith('/admin/dashboard');
   const isAdminUsers = location.pathname === '/admin/users' || location.pathname.startsWith('/admin/users');
   const isAdminClasses = location.pathname === '/admin/classes' || location.pathname.startsWith('/admin/classes');
+  const isAdminNotifications = location.pathname === '/admin/notifications' || location.pathname.startsWith('/admin/notifications');
+  const isAdminLogs = location.pathname === '/admin/logs' || location.pathname.startsWith('/admin/logs');
   const isStudentFlashcardsStudy =
     /^\/student\/flashcards\/[^/]+\/study\/?$/.test(location.pathname);
   const isStudentFlashcardsTest =
@@ -906,7 +908,7 @@ export default function DashboardLayout() {
         <main
           className={`flex-1 min-w-0 w-full overflow-x-hidden ${isGradePage ? 'dashboard-layout__main--grade' : ''}`}
           style={
-            isStudentFlashcardsPage || isFocusRoom || isGradePage || isClassesLockedPage || isLecturerAssignmentDetail || isAdminUsers || isAdminClasses
+            isStudentFlashcardsPage || isFocusRoom || isGradePage || isClassesLockedPage || isLecturerAssignmentDetail || isAdminUsers || isAdminClasses || isAdminNotifications
               ? {
                 flex: 1,
                 width: '100%',
@@ -950,7 +952,7 @@ export default function DashboardLayout() {
           <Outlet />
         </main>
 
-        {/* Footer: ẩn ở trang flashcard, grading, student assignment, focus room, classes, lecturer assignment detail, study-plan, admin dashboard, admin users và admin classes */}
+        {/* Footer: ẩn ở trang flashcard, grading, student assignment, focus room, classes, lecturer assignment detail, study-plan, admin dashboard, admin users, admin classes, admin notifications và admin logs */}
         {!isGradePage &&
           !isStudentAssignment &&
           !isClassesPage &&
@@ -961,7 +963,9 @@ export default function DashboardLayout() {
           !isStudyPlan &&
           !isAdminDashboard &&
           !isAdminUsers &&
-          !isAdminClasses && (
+          !isAdminClasses &&
+          !isAdminNotifications &&
+          !isAdminLogs && (
             <footer
               style={{
                 background: 'var(--color-surface)',

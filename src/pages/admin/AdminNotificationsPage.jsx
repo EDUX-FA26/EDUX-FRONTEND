@@ -84,7 +84,7 @@ const STYLES = `
 .nt-more { display: inline-flex; align-items: center; gap: 4px; margin-top: 8px; padding: 2px 10px; font-size: 11.5px; font-weight: 700; color: var(--color-primary-dark); background: var(--color-primary-light); border-radius: 999px; }
 
 /* Modal */
-.nt-overlay { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 24px; background: rgba(23, 15, 8, .62); backdrop-filter: blur(6px); animation: nt-fade .2s ease both; }
+.nt-overlay { position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 24px; background: rgba(23, 15, 8, .62); backdrop-filter: blur(6px); animation: nt-fade .2s ease both; }
 .nt-panel { width: 100%; max-width: 680px; max-height: min(88vh, 780px); display: flex; flex-direction: column; background: var(--color-surface, #fff); border-radius: 24px; overflow: hidden; box-shadow: 0 40px 80px -24px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.08); animation: nt-pop .32s cubic-bezier(.2,.9,.3,1.1) both; outline: none; }
 .nt-head { position: relative; display: flex; align-items: center; gap: 18px; padding: 24px 24px 22px; color: #fff; background: radial-gradient(120% 140% at 0% 0%, rgba(255,255,255,.22) 0%, rgba(255,255,255,0) 55%), linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%); }
 .nt-tile { flex: 0 0 auto; width: 76px; border-radius: 18px; overflow: hidden; text-align: center; background: #fff; color: var(--color-ink); box-shadow: 0 10px 24px -8px rgba(0,0,0,.4); }
@@ -298,14 +298,16 @@ export default function AdminNotificationsPage() {
   };
 
   return (
-    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+    <div className="w-full max-w-7xl mx-auto h-[calc(100vh-var(--dashboard-header-height,64px))] overflow-hidden flex flex-col px-6 pt-5 pb-4 box-border">
       <style>{STYLES}</style>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+      
+      {/* Header trang cố định */}
+      <div className="shrink-0 mb-4 flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 style={{ fontSize: '1.5rem', fontWeight: 800, margin: 0, color: 'var(--color-ink)' }}>
             Quản Lý Thông Báo
           </h1>
-          <p style={{ fontSize: '0.875rem', color: 'var(--color-ink-muted)', marginTop: '4px' }}>
+          <p style={{ fontSize: '0.875rem', color: 'var(--color-ink-muted)', marginTop: '4px', margin: 0 }}>
             Phát thông báo hệ thống và xem lịch sử các thông báo đã gửi
           </p>
         </div>
@@ -313,71 +315,79 @@ export default function AdminNotificationsPage() {
 
       {/* Alert Notification */}
       {alertState && (
-        <EduxAlert
-          type={alertState.type}
-          title={alertState.title}
-          message={alertState.message}
-          onClose={() => setAlertState(null)}
-        />
+        <div className="shrink-0 mb-3">
+          <EduxAlert
+            type={alertState.type}
+            title={alertState.title}
+            message={alertState.message}
+            onClose={() => setAlertState(null)}
+          />
+        </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(400px, 100%), 1fr))', gap: '24px', alignItems: 'start' }}>
+      {/* Vùng lưới 2 cột cuộn nội bộ độc lập */}
+      <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
         {/* Cột 1: Form tạo thông báo */}
-        <div className="card" style={{ padding: '24px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px', paddingBottom: '16px', borderBottom: '1px solid var(--color-border)' }}>
-            <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'var(--color-primary-light)', color: 'var(--color-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="lg:col-span-5 h-full min-h-0 bg-white rounded-2xl border border-slate-200 flex flex-col overflow-hidden shadow-xs">
+          {/* Tiêu đề card cố định */}
+          <div className="shrink-0 p-5 pb-3 border-b border-slate-100 flex items-center gap-3">
+            <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'var(--color-primary-light)', color: 'var(--color-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <span className="material-symbols-outlined" style={{ fontSize: '24px' }}>campaign</span>
             </div>
             <div>
               <h2 style={{ fontSize: '1.125rem', fontWeight: 700, margin: 0, color: 'var(--color-ink)' }}>Thông Báo Mới</h2>
-              <p style={{ fontSize: '0.8125rem', color: 'var(--color-ink-muted)', margin: '4px 0 0' }}>Gửi tin nhắn broadcast đến người dùng</p>
+              <p style={{ fontSize: '0.8125rem', color: 'var(--color-ink-muted)', margin: '2px 0 0' }}>Gửi tin nhắn broadcast đến người dùng</p>
             </div>
           </div>
 
-          <form onSubmit={handleBroadcast} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            <div>
-              <label style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--color-ink-muted)', marginBottom: '8px', display: 'block' }}>Tiêu đề thông báo</label>
-              <input 
-                required 
-                value={broadcastForm.title} 
-                onChange={e => setBroadcastForm({...broadcastForm, title: e.target.value})} 
-                type="text" 
-                style={{ width: '100%', padding: '12px 16px', borderRadius: '8px', border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-ink)', fontSize: '0.9375rem' }} 
-                placeholder="Ví dụ: Lịch bảo trì hệ thống cuối tuần" 
-              />
-            </div>
-            
-            <div>
-              <label style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--color-ink-muted)', marginBottom: '8px', display: 'block' }}>Đối tượng nhận</label>
-              <select 
-                value={broadcastForm.target} 
-                onChange={e => setBroadcastForm({...broadcastForm, target: e.target.value})} 
-                style={{ width: '100%', padding: '12px 16px', borderRadius: '8px', border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-ink)', fontSize: '0.9375rem' }}
-              >
-                <option value="all">Tất cả người dùng</option>
-                <option value="student">Chỉ Sinh viên</option>
-                <option value="lecturer">Chỉ Giảng viên</option>
-              </select>
-            </div>
+          <form onSubmit={handleBroadcast} className="flex-1 min-h-0 flex flex-col overflow-hidden">
+            {/* Phần thân form cuộn nội bộ */}
+            <div className="flex-1 min-h-0 overflow-y-auto px-5 py-4 space-y-4 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300 hover:[&::-webkit-scrollbar-thumb]:bg-slate-400">
+              <div>
+                <label style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--color-ink-muted)', marginBottom: '8px', display: 'block' }}>Tiêu đề thông báo</label>
+                <input 
+                  required 
+                  value={broadcastForm.title} 
+                  onChange={e => setBroadcastForm({...broadcastForm, title: e.target.value})} 
+                  type="text" 
+                  style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-ink)', fontSize: '0.9rem' }} 
+                  placeholder="Ví dụ: Lịch bảo trì hệ thống cuối tuần" 
+                />
+              </div>
+              
+              <div>
+                <label style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--color-ink-muted)', marginBottom: '8px', display: 'block' }}>Đối tượng nhận</label>
+                <select 
+                  value={broadcastForm.target} 
+                  onChange={e => setBroadcastForm({...broadcastForm, target: e.target.value})} 
+                  style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-ink)', fontSize: '0.9rem' }}
+                >
+                  <option value="all">Tất cả người dùng</option>
+                  <option value="student">Chỉ Sinh viên</option>
+                  <option value="lecturer">Chỉ Giảng viên</option>
+                </select>
+              </div>
 
-            <div>
-              <label style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--color-ink-muted)', marginBottom: '8px', display: 'block' }}>Nội dung chi tiết</label>
-              <textarea 
-                required 
-                value={broadcastForm.message} 
-                onChange={e => setBroadcastForm({...broadcastForm, message: e.target.value})} 
-                rows="6" 
-                style={{ width: '100%', padding: '12px 16px', borderRadius: '8px', border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-ink)', fontSize: '0.9375rem', resize: 'vertical' }} 
-                placeholder="Nhập nội dung thông báo..." 
-              />
+              <div>
+                <label style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--color-ink-muted)', marginBottom: '8px', display: 'block' }}>Nội dung chi tiết</label>
+                <textarea 
+                  required 
+                  value={broadcastForm.message} 
+                  onChange={e => setBroadcastForm({...broadcastForm, message: e.target.value})} 
+                  rows="6" 
+                  style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-ink)', fontSize: '0.9rem', resize: 'vertical' }} 
+                  placeholder="Nhập nội dung thông báo..." 
+                />
+              </div>
             </div>
             
-            <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '8px' }}>
+            {/* Thanh chứa nút gửi thông báo ở đáy cố định */}
+            <div className="shrink-0 p-5 pt-3 border-t border-slate-100 flex justify-end bg-slate-50/50" style={{ background: 'var(--color-surface-hover)' }}>
               <button 
                 type="submit" 
                 disabled={broadcasting} 
                 className="btn btn-primary" 
-                style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 24px', fontSize: '0.9375rem' }}
+                style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 24px', fontSize: '0.9375rem', fontWeight: 600 }}
               >
                 <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>send</span>
                 {broadcasting ? 'Đang gửi...' : 'Phát Thông Báo'}
@@ -387,13 +397,22 @@ export default function AdminNotificationsPage() {
         </div>
 
         {/* Cột 2: Lịch sử thông báo */}
-        <div className="card" style={{ padding: '24px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px' }}>
-            <span className="material-symbols-outlined" style={{ color: 'var(--color-ink-muted)' }}>history</span>
-            <h2 style={{ fontSize: '1.125rem', fontWeight: 700, margin: 0, color: 'var(--color-ink)' }}>Lịch Sử Đã Gửi</h2>
+        <div className="lg:col-span-7 h-full min-h-0 bg-white rounded-2xl border border-slate-200 flex flex-col overflow-hidden shadow-xs">
+          {/* Tiêu đề card cố định */}
+          <div className="shrink-0 p-5 pb-3 border-b border-slate-100 flex items-center justify-between">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span className="material-symbols-outlined" style={{ color: 'var(--color-primary)', fontSize: '22px' }}>history</span>
+              <h2 style={{ fontSize: '1.125rem', fontWeight: 700, margin: 0, color: 'var(--color-ink)' }}>Lịch Sử Đã Gửi</h2>
+            </div>
+            {!loading && notifications.length > 0 && (
+              <span style={{ fontSize: '0.8125rem', color: 'var(--color-ink-muted)', fontWeight: 600 }}>
+                {notifications.length} thông báo
+              </span>
+            )}
           </div>
           
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '600px', overflowY: 'auto', padding: '4px' }} className="no-scrollbar">
+          {/* Danh sách thông báo cuộn dọc độc lập */}
+          <div className="flex-1 min-h-0 overflow-y-auto p-5 space-y-3 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300 hover:[&::-webkit-scrollbar-thumb]:bg-slate-400">
             {loading ? (
               [1, 2, 3].map(i => (
                 <div key={i} style={{ padding: '16px', borderRadius: '12px', border: '1px solid var(--color-border)' }}>
