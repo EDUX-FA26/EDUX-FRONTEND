@@ -114,6 +114,7 @@ export default function DashboardLayout() {
   const isStudentFlashcardsPage =
     location.pathname === '/student/flashcards' ||
     location.pathname.startsWith('/student/flashcards/subject') ||
+    location.pathname === '/lecturer/flashcards' ||
     isStudentFlashcardsStudy ||
     isStudentFlashcardsTest;
 
