@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import FlashcardService from '../../services/flashcard.service';
 import ClassService from '../../services/class.service';
@@ -947,18 +948,28 @@ function ClassAccessModal({ deck, onClose, onSaved }) {
     let cancelled = false;
     (async () => {
       setLoadingInit(true);
+      setError(null);
       try {
-        const [classRes, accessRes] = await Promise.all([
-          ClassService.getMyClasses(),
-          FlashcardService.getClassAccess(deck.id),
-        ]);
-        if (cancelled) return;
+        const targetSubjectId = deck.subject_id || deck.subjectId;
 
-        // Chỉ giữ lớp cùng môn với deck
-        const filtered = (classRes.data || []).filter(
-          (c) => c.subject_id === deck.subject_id
+        // Tải danh sách lớp của GV
+        let classList = [];
+        try {
+          const classRes = await ClassService.getMyClasses();
+          classList = Array.isArray(classRes.data) ? classRes.data : (classRes.data?.data || []);
+        } catch (clsErr) {
+          console.error('Không thể tải danh sách lớp:', clsErr);
+        }
+
+        if (cancelled) return;
+        const filtered = classList.filter(
+          (c) => String(c.subject_id) === String(targetSubjectId)
         );
         setAllClasses(filtered);
+
+        // Tải danh sách lớp được chia sẻ
+        const accessRes = await FlashcardService.getClassAccess(deck.id);
+        if (cancelled) return;
 
         const currentIds = new Set((accessRes.data || []).map((a) => a.class_id));
         setCheckedIds(currentIds);
@@ -969,7 +980,7 @@ function ClassAccessModal({ deck, onClose, onSaved }) {
       }
     })();
     return () => { cancelled = true; };
-  }, [deck.id, deck.subject_id]);
+  }, [deck.id, deck.subject_id, deck.subjectId]);
 
   const toggle = (id) => {
     setCheckedIds((prev) => {
@@ -1893,7 +1904,7 @@ function ExcelImportModal({ deckId, subjectId, onClose, onSaved }) {
   );
 }
 
-function DeckRow({ deck, onEdit, onDelete, onRefresh }) {
+function DeckRow({ deck, onEdit, onDelete, onRefresh, user }) {
   const [open, setOpen] = useState(false);
   const [cards, setCards] = useState([]);
   const [loadingCards, setLoadingCards] = useState(false);
@@ -1904,6 +1915,8 @@ function DeckRow({ deck, onEdit, onDelete, onRefresh }) {
   const [notice, setNotice] = useState(null);
   const [accessCount, setAccessCount] = useState(null); // số lớp được phép
 
+  const isOwner = !deck.created_by || !user?.id || deck.created_by === user.id || user?.role === 'school_admin' || user?.role === 'admin';
+
   const loadDeckDetails = useCallback(async () => {
     setLoadingCards(true);
     try {
@@ -1913,12 +1926,13 @@ function DeckRow({ deck, onEdit, onDelete, onRefresh }) {
     finally { setLoadingCards(false); }
   }, [deck.id]);
 
-  // Load số lớp được share khi mount
+  // Load số lớp được share khi mount (chỉ gọi nếu là chủ sở hữu hoặc admin)
   useEffect(() => {
+    if (!isOwner) return;
     FlashcardService.getClassAccess(deck.id)
       .then((res) => setAccessCount((res.data || []).length))
       .catch(() => {});
-  }, [deck.id]);
+  }, [deck.id, isOwner]);
 
   const handleToggle = () => {
     if (!open) loadDeckDetails();
@@ -2005,28 +2019,30 @@ function DeckRow({ deck, onEdit, onDelete, onRefresh }) {
             </div>
           </div>
 
-          {/* Actions */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }} onClick={(e) => e.stopPropagation()}>
-            {/* Nút Chia sẻ — thay thế Publish cũ */}
-            <button
-              onClick={() => setShareModal(true)}
-              title="Quản lý quyền xem theo lớp"
-              style={{
-                display: 'flex', alignItems: 'center', gap: '5px',
-                padding: '6px 12px', borderRadius: '8px',
-                background: accessCount ? 'rgba(8,145,178,0.1)' : 'rgba(249,115,22,0.1)',
-                color: accessCount ? '#0891b2' : 'var(--color-primary-dark)',
-                border: `1px solid ${accessCount ? 'rgba(8,145,178,0.3)' : 'rgba(249,115,22,0.3)'}`,
-                fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer',
-                fontFamily: 'var(--font-sans)',
-              }}
-            >
-              <Share2 style={{ width: '13px', height: '13px' }} />
-              Chia sẻ
-            </button>
-            <IconBtn onClick={() => onEdit(deck)} title="Sửa bộ thẻ"><Pencil style={{ width: '14px', height: '14px' }} /></IconBtn>
-            <IconBtn onClick={() => onDelete(deck)} title="Xóa bộ thẻ" danger><Trash2 style={{ width: '14px', height: '14px' }} /></IconBtn>
-          </div>
+          {/* Actions - Chỉ hiển thị cho chủ sở hữu hoặc admin */}
+          {isOwner && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }} onClick={(e) => e.stopPropagation()}>
+              {/* Nút Chia sẻ — thay thế Publish cũ */}
+              <button
+                onClick={() => setShareModal(true)}
+                title="Quản lý quyền xem theo lớp"
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '5px',
+                  padding: '6px 12px', borderRadius: '8px',
+                  background: accessCount ? 'rgba(8,145,178,0.1)' : 'rgba(249,115,22,0.1)',
+                  color: accessCount ? '#0891b2' : 'var(--color-primary-dark)',
+                  border: `1px solid ${accessCount ? 'rgba(8,145,178,0.3)' : 'rgba(249,115,22,0.3)'}`,
+                  fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer',
+                  fontFamily: 'var(--font-sans)',
+                }}
+              >
+                <Share2 style={{ width: '13px', height: '13px' }} />
+                Chia sẻ
+              </button>
+              <IconBtn onClick={() => onEdit(deck)} title="Sửa bộ thẻ"><Pencil style={{ width: '14px', height: '14px' }} /></IconBtn>
+              <IconBtn onClick={() => onDelete(deck)} title="Xóa bộ thẻ" danger><Trash2 style={{ width: '14px', height: '14px' }} /></IconBtn>
+            </div>
+          )}
 
           {/* Chevron */}
           <div style={{ color: 'var(--color-ink-soft)', flexShrink: 0 }}>
@@ -2167,6 +2183,7 @@ function DeckRow({ deck, onEdit, onDelete, onRefresh }) {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function LecturerFlashcardsPage() {
+  const { user } = useAuth();
   const { t } = useLanguage();
   const { subjectId } = useParams();
   const navigate = useNavigate();
@@ -2361,6 +2378,7 @@ export default function LecturerFlashcardsPage() {
               <DeckRow
                 key={deck.id}
                 deck={deck}
+                user={user}
                 onEdit={setDeckModal}
                 onDelete={handleDelete}
                 onRefresh={fetchDecks}
