@@ -106,12 +106,15 @@ export default function DashboardLayout() {
   const isClassesLockedPage = /^\/(lecturer|student)\/classes(?:\/[^/]+)?\/?$/.test(location.pathname);
   const isLecturerAssignmentDetail = /^\/lecturer\/assignments\/[^/]+\/?$/.test(location.pathname);
   const isStudyPlan = location.pathname.startsWith('/student/study-plan');
+  const isStudentFlashcardsStudy =
+    /^\/student\/flashcards\/[^/]+\/study\/?$/.test(location.pathname);
   const isStudentFlashcardsTest =
     /^\/student\/flashcards\/[^/]+\/test\/?$/.test(location.pathname) ||
     /^\/student\/flashcards\/tests\/[^/]+\/?$/.test(location.pathname);
   const isStudentFlashcardsPage =
     location.pathname === '/student/flashcards' ||
     location.pathname.startsWith('/student/flashcards/subject') ||
+    isStudentFlashcardsStudy ||
     isStudentFlashcardsTest;
 
   const [showUserMenu, setShowUserMenu] = useState(false);
