@@ -562,6 +562,7 @@ export default function LecturerGradingPage() {
       isDraft: false,
       rubrics: payload.rubrics,
       aiCompliance: payload.aiComplianceStatus,
+      reviewTopics: payload.reviewTopics,
     };
 
     try {
@@ -668,6 +669,7 @@ export default function LecturerGradingPage() {
   return (
     <div className="flex-1 min-h-0 flex flex-col h-full w-full max-w-full min-w-0 overflow-hidden overflow-x-hidden m-0 p-0">
       <LecturerAcademicEvaluation
+        submissionId={submissionId}
         student={studentInfo}
         courseInfo={courseInfo}
         rubricConfigs={(courseInfo as any)?.rubric_configs || (courseInfo as any)?.rubricConfigs}

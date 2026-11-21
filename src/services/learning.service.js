@@ -138,6 +138,15 @@ const LearningService = {
     });
     return response.data;
   },
+
+  /** Lấy danh sách topic cần ôn tập được Giảng viên phê duyệt cho môn học */
+  async getStudentReviewTopics(subjectId) {
+    const response = await api.get('/learning/review-topics', {
+      params: subjectId ? { subjectId } : {},
+      schoolScoped: true,
+    });
+    return response.data;
+  },
 };
 
 export default LearningService;

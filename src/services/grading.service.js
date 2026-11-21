@@ -64,6 +64,20 @@ const GradingService = {
 
         return response.data;
     },
+
+    async getSubmissionReviewTopics(submissionId) {
+        const response = await api.get(`/grades/submissions/${submissionId}/review-topics`, {
+            schoolScoped: true,
+        });
+        return response.data;
+    },
+
+    async updateSubmissionReviewTopics(submissionId, topics) {
+        const response = await api.patch(`/grades/submissions/${submissionId}/review-topics`, { topics }, {
+            schoolScoped: true,
+        });
+        return response.data;
+    },
 };
 
 export default GradingService;

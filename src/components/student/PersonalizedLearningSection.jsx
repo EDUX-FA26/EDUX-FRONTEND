@@ -24,6 +24,7 @@ export default function PersonalizedLearningSection() {
   const [detailedDays, setDetailedDays] = useState([]);
   const [topicsPerf, setTopicsPerf] = useState(null);
   const [learningProfile, setLearningProfile] = useState(null);
+  const [reviewTopics, setReviewTopics] = useState([]);
 
   const [loadingPlan, setLoadingPlan] = useState(false);
   const [generatingPlan, setGeneratingPlan] = useState(false);
@@ -42,6 +43,7 @@ export default function PersonalizedLearningSection() {
     setDetailedDays([]);
     setTopicsPerf(null);
     setLearningProfile(null);
+    setReviewTopics([]);
     setError(null);
   }, [user?.id]);
 
@@ -92,80 +94,88 @@ export default function PersonalizedLearningSection() {
     setError(null);
 
     try {
-      // Step A: Lấy thống kê chủ đề và hồ sơ học tập
-      const [perfRes, profileRes] = await Promise.allSettled([
+      // Step A: Lấy thống kê chủ đề, hồ sơ học tập và chủ đề Giảng viên yêu cầu củng cố
+      const [perfRes, profileRes, reviewRes] = await Promise.allSettled([
         LearningService.getTopicPerformance(subjectId),
         LearningService.getLearningProfile(subjectId),
+        LearningService.getStudentReviewTopics(subjectId),
       ]);
 
       const topics =
         perfRes.status === 'fulfilled'
           ? (perfRes.value.data?.topics || [])
           : [];
-      console.log('[Topic Performance] Response:', perfRes);
-      console.table(topics);
       const profile =
         profileRes.status === 'fulfilled'
           ? (profileRes.value.data || null)
           : null;
+      const revTopics =
+        reviewRes.status === 'fulfilled'
+          ? (reviewRes.value.data || [])
+          : [];
 
       setTopicsPerf(topics);
       setLearningProfile(profile);
+      setReviewTopics(revTopics);
 
       const topicNameMap = new Map();
       topics.forEach((t) => {
         topicNameMap.set(t.topicId, t.topicName);
       });
+      revTopics.forEach((t) => {
+        const tid = t.topicId || t.topic_id || t.id;
+        const tname = t.topicName || t.topic_name;
+        if (tid && tname) topicNameMap.set(tid, tname);
+      });
 
-      // Step B: Kiểm tra người học đã làm bài chưa
-      const totalAttempts = topics.reduce((sum, topic) => {
-        return sum + Number(topic.totalAttempts || 0);
-      }, 0);
+      // Step B: Kiểm tra kế hoạch hiện có hoặc hoạt động học tập
+      let planData = null;
+      try {
+        const activePlanRes = await LearningService.getActivePlan(subjectId);
+        if (activePlanRes?.data && Array.isArray(activePlanRes.data.days) && activePlanRes.data.days.length > 0) {
+          planData = activePlanRes.data;
+        }
+      } catch (_) { }
 
-      const totalReviews = topics.reduce((sum, topic) => {
-        return sum + Number(topic.totalReviews || 0);
-      }, 0);
+      if (!planData) {
+        const totalAttempts = topics.reduce((sum, topic) => {
+          return sum + Number(topic.totalAttempts || 0);
+        }, 0);
 
-      // Chỉ dùng nếu profile thực sự trả về thống kê này.
-      const totalTestAnswers = Number(
-        profile?.flashcardTests?.totalAnswers || 0
-      );
+        const totalReviews = topics.reduce((sum, topic) => {
+          return sum + Number(topic.totalReviews || 0);
+        }, 0);
 
-      const hasLearningActivity =
-        totalAttempts > 0 || totalTestAnswers > 0 || totalReviews > 0;
-
-      if (!hasLearningActivity) {
-        console.log(
-          '[StudyPlan] Người học chưa có dữ liệu làm bài.'
+        const totalTestAnswers = Number(
+          profile?.flashcardTests?.totalAnswers || 0
         );
 
-        setStudyPlan(null);
-        setDetailedDays([]);
-        setSelectedDayNumber(1);
-        return;
-      }
+        const hasLearningActivity =
+          totalAttempts > 0 || totalTestAnswers > 0 || totalReviews > 0 || revTopics.length > 0;
 
-      // Step C: Chỉ gọi API study plan khi đã có dữ liệu làm bài
-      let planData = null;
-
-      try {
-        const planRes =
-          await LearningService.generateStudyPlan(subjectId);
-
-        planData = planRes.data;
-      } catch (planErr) {
-        const msg = planErr.response?.data?.message;
-
-        if (
-          msg === 'NO_TOPICS_AVAILABLE' ||
-          msg === 'NO_SCHEDULABLE_TOPICS'
-        ) {
+        if (!hasLearningActivity) {
+          console.log('[StudyPlan] Người học chưa có dữ liệu làm bài và chưa có chủ đề duyệt.');
           setStudyPlan(null);
           setDetailedDays([]);
+          setSelectedDayNumber(1);
           return;
         }
 
-        console.warn('Plan fetch issue:', planErr);
+        try {
+          const planRes = await LearningService.generateStudyPlan(subjectId);
+          planData = planRes.data;
+        } catch (planErr) {
+          const msg = planErr.response?.data?.message;
+          if (
+            msg === 'NO_TOPICS_AVAILABLE' ||
+            msg === 'NO_SCHEDULABLE_TOPICS'
+          ) {
+            setStudyPlan(null);
+            setDetailedDays([]);
+            return;
+          }
+          console.warn('Plan fetch issue:', planErr);
+        }
       }
 
       if (!planData || !Array.isArray(planData.days)) {
@@ -185,7 +195,7 @@ export default function PersonalizedLearningSection() {
         const date = new Date(`${d.studyDate}T00:00:00Z`);
         const dayOfWeek = dayOfWeekNames[date.getUTCDay()];
         const topicName =
-          topicNameMap.get(d.topicId) || 'Chủ đề ôn tập';
+          topicNameMap.get(d.topicId) || d.topicName || 'Chủ đề ôn tập';
 
         try {
           const dayRes =
@@ -250,7 +260,6 @@ export default function PersonalizedLearningSection() {
     }
   }, []);
 
-
   useEffect(() => {
     if (selectedSubjectId) {
       loadLearningData(selectedSubjectId);
@@ -258,17 +267,20 @@ export default function PersonalizedLearningSection() {
   }, [selectedSubjectId, loadLearningData]);
 
   // 3. User manually triggers plan generation (hoặc tạo lại từ đầu)
-  const handleGeneratePlan = async (force = false) => {
+  const handleGeneratePlan = async (force = true) => {
     if (!selectedSubjectId) return;
     try {
       setGeneratingPlan(true);
       setError(null);
-      if (force) {
-        await LearningService.generateStudyPlan(selectedSubjectId, { force: true });
-      }
+      await LearningService.generateStudyPlan(selectedSubjectId, { force });
       await loadLearningData(selectedSubjectId);
     } catch (err) {
-      setError('Không thể tạo lịch ôn tập. Vui lòng thử lại sau.');
+      const msg = err.response?.data?.message;
+      if (msg === 'NO_TOPICS_AVAILABLE' || msg === 'NO_SCHEDULABLE_TOPICS') {
+        setError('Môn học này chưa có chủ đề bài học nào. Hãy học Flashcard trước hoặc liên hệ Giảng viên!');
+      } else {
+        setError(msg || 'Không thể tạo lịch ôn tập. Vui lòng thử lại sau.');
+      }
     } finally {
       setGeneratingPlan(false);
     }
@@ -391,7 +403,16 @@ export default function PersonalizedLearningSection() {
           </div>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--color-ink, #1f1b17)', margin: 0, letterSpacing: '-0.02em' }}>
+              <h2
+                style={{
+                  fontSize: '1.25rem',
+                  fontWeight: 800,
+                  color: '#000000',
+                  WebkitTextFillColor: '#000000',
+                  margin: 0,
+                  letterSpacing: '-0.02em',
+                }}
+              >
                 EduX – Học tập cá nhân hóa
               </h2>
               <span style={{
@@ -462,6 +483,82 @@ export default function PersonalizedLearningSection() {
           </div>
         ) : (
           <>
+            {/* ── Chủ đề Giảng viên yêu cầu củng cố ── */}
+            {reviewTopics.length > 0 && (
+              <div style={{
+                borderRadius: '16px',
+                padding: '18px 22px',
+                background: 'linear-gradient(135deg, rgba(242,112,36,0.08) 0%, rgba(249,115,22,0.02) 100%)',
+                border: '1.5px solid rgba(242,112,36,0.25)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{
+                      width: '34px', height: '34px', borderRadius: '10px',
+                      background: 'rgba(242,112,36,0.15)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center'
+                    }}>
+                      <Sparkles size={18} style={{ color: 'var(--color-primary, #f27024)' }} />
+                    </div>
+                    <div>
+                      <h4 style={{ fontSize: '0.9375rem', fontWeight: 800, margin: 0, color: 'var(--color-ink, #1f1b17)' }}>
+                        Chủ đề Giảng viên yêu cầu củng cố ({reviewTopics.length})
+                      </h4>
+                      <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--color-ink-muted, #545f73)' }}>
+                        Được Giảng viên phê duyệt sau khi chấm bài kiểm tra gần nhất
+                      </p>
+                    </div>
+                  </div>
+                  {studyPlan && (
+                    <button
+                      onClick={() => handleGeneratePlan(true)}
+                      disabled={generatingPlan}
+                      className="btn"
+                      style={{
+                        padding: '6px 14px', borderRadius: '8px', fontSize: '0.8125rem', fontWeight: 700,
+                        background: 'var(--color-primary, #f27024)', color: 'white', border: 'none',
+                        cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px'
+                      }}
+                    >
+                      <RefreshCw size={13} className={generatingPlan ? 'animate-spin' : ''} />
+                      {generatingPlan ? 'Đang đồng bộ...' : 'Đồng bộ lại lịch học'}
+                    </button>
+                  )}
+                </div>
+
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                  {reviewTopics.map(t => (
+                    <div
+                      key={t.id || t.topicId}
+                      style={{
+                        display: 'inline-flex', alignItems: 'center', gap: '8px',
+                        padding: '6px 12px', borderRadius: '10px',
+                        backgroundColor: '#ffffff',
+                        border: '1px solid var(--color-border, #f5ebe1)',
+                        fontSize: '0.8125rem', boxShadow: '0 1px 2px rgba(0,0,0,0.04)'
+                      }}
+                    >
+                      <span style={{ fontWeight: 700, color: 'var(--color-ink, #1f1b17)' }}>{t.topicName || t.topic_name}</span>
+                      <span style={{
+                        fontSize: '0.6875rem', padding: '2px 6px', borderRadius: '4px', fontWeight: 700,
+                        backgroundColor: t.priority === 'high' ? 'rgba(239, 68, 68, 0.12)' : 'rgba(59, 130, 246, 0.12)',
+                        color: t.priority === 'high' ? '#dc2626' : '#2563eb'
+                      }}>
+                        {t.priority === 'high' ? 'Ưu tiên cao' : 'Khuyến nghị'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--color-ink-muted, #545f73)', fontStyle: 'italic' }}>
+                  💡 Hệ thống AI sẽ tự động đưa các chủ đề này vào ngày học sớm nhất và nhắc lại sau 2-3 ngày theo phương pháp lặp lại ngắt quãng (Spaced Repetition).
+                </p>
+              </div>
+            )}
+
             {/* ── 3 Key Stat Cards (Minh họa giao diện) ── */}
             <div style={{
               display: 'grid',
@@ -507,8 +604,8 @@ export default function PersonalizedLearningSection() {
                     {metrics.countedTopics > 0
                       ? 'Mức độ làm chủ kiến thức môn học'
                       : (metrics.hasActivity
-                          ? 'Đã có lượt ôn thẻ, chưa đủ bài test trắc nghiệm để đánh giá'
-                          : 'Chưa có dữ liệu làm bài để tính điểm')}
+                        ? 'Đã có lượt ôn thẻ, chưa đủ bài test trắc nghiệm để đánh giá'
+                        : 'Chưa có dữ liệu làm bài để tính điểm')}
                   </span>
                 </div>
               </div>
@@ -633,7 +730,7 @@ export default function PersonalizedLearningSection() {
 
                 {(!studyPlan || !detailedDays.length) ? (
                   <button
-                    onClick={() => handleGeneratePlan(false)}
+                    onClick={() => handleGeneratePlan(true)}
                     disabled={generatingPlan}
                     className="btn btn-primary"
                     style={{
@@ -793,6 +890,18 @@ export default function PersonalizedLearningSection() {
                               ? 'Đã hoàn thành'
                               : (selectedDay.activity === 'diagnostic' ? 'Khảo sát năng lực' : 'Sẵn sàng học')}
                           </span>
+                          {selectedDay.reason && selectedDay.reason.includes('Giảng viên') && (
+                            <span style={{
+                              fontSize: '0.6875rem', fontWeight: 700,
+                              padding: '2px 8px', borderRadius: '6px',
+                              backgroundColor: 'rgba(242, 112, 36, 0.12)',
+                              color: 'var(--color-primary, #f27024)',
+                              border: '1px solid rgba(242, 112, 36, 0.25)',
+                              display: 'inline-flex', alignItems: 'center', gap: '4px'
+                            }}>
+                              🎯 Giảng viên đề xuất
+                            </span>
+                          )}
                           <span style={{ fontSize: '0.8125rem', color: 'var(--color-ink-soft)' }}>
                             {selectedDay.studyDate} ({selectedDay.dayOfWeek})
                           </span>

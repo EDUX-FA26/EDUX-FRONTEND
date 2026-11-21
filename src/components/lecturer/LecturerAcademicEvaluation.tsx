@@ -31,6 +31,7 @@ import SubmissionFileViewer from './SubmissionFileViewer';
 import { SubmissionFile, AuditIntegrity, VivaQuestion } from '../../types/submission';
 import { normalizeAuditData, formatCleanVietnamese } from '../../helper/aiAuditHelper';
 import TopicService from '../../services/topic.service';
+import GradingService from '../../services/grading.service';
 
 /* ==========================================================================
    1. TYPESCRIPT INTERFACES
@@ -257,6 +258,7 @@ export interface GradePayload {
   rubrics: RubricScores;
   aiComplianceStatus: AiComplianceStatus;
   isDraft: boolean;
+  reviewTopics?: any[];
 }
 
 export interface LecturerAcademicEvaluationProps {
@@ -486,6 +488,148 @@ export default function LecturerAcademicEvaluation({
       return t;
     });
   }, [rawTopics, recommendedTopics, savedEvaluation, courseInfo]);
+
+  // Quản lý trạng thái duyệt các chủ đề cần ôn từ AI Audit / DB
+  const [reviewTopics, setReviewTopics] = useState<any[]>([]);
+  const [isSavingReviewTopics, setIsSavingReviewTopics] = useState<boolean>(false);
+
+  // Nạp danh sách chủ đề cần ôn từ Backend DB nếu đã từng lưu
+  React.useEffect(() => {
+    if (!activeSubmissionId) return;
+
+    let isMounted = true;
+    GradingService.getSubmissionReviewTopics(activeSubmissionId)
+      .then((res: any) => {
+        if (!isMounted) return;
+        const list = res?.data || res || [];
+        if (Array.isArray(list) && list.length > 0) {
+          setReviewTopics(
+            list.map((item: any) => ({
+              id: item.topic_id || item.id,
+              topic_id: item.topic_id || item.id,
+              name: item.topic_name || item.topicName || item.name || '',
+              description: item.topicDescription || item.description || '',
+              reason: item.reason || '',
+              priority: (item.priority || 'medium').toLowerCase(),
+              status: item.status || 'pending_review',
+              isSelected: item.status !== 'rejected',
+            }))
+          );
+        }
+      })
+      .catch((err) => {
+        console.warn('[ReviewTopics] Error fetching review topics:', err);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [activeSubmissionId]);
+
+  // Danh sách chủ đề hiển thị: ưu tiên reviewTopics, nếu chưa có thì nạp từ displayTopics
+  const displayTopicsList = useMemo(() => {
+    if (reviewTopics.length > 0) {
+      return reviewTopics;
+    }
+    return displayTopics.map((t: any, idx: number) => {
+      const isHighPriority =
+        t.priority === 'high' ||
+        t.priority === 'urgent' ||
+        t.priority_label?.includes('AI đề xuất') ||
+        idx < 2;
+      return {
+        ...t,
+        id: t.id || t.topic_id,
+        topic_id: t.id || t.topic_id,
+        priority: isHighPriority ? 'high' : 'medium',
+        status: 'pending_review',
+        isSelected: isHighPriority,
+        reason: t.description || 'Chủ đề kiến thức cần củng cố thêm.',
+      };
+    });
+  }, [reviewTopics, displayTopics]);
+
+  // Bật/tắt duyệt cho một chủ đề
+  const toggleTopicApproved = (topicId: string) => {
+    setReviewTopics((prev) => {
+      const base = prev.length > 0 ? prev : displayTopicsList;
+      return base.map((t) => {
+        if ((t.topic_id || t.id) === topicId) {
+          const nextSelected = !t.isSelected;
+          return {
+            ...t,
+            isSelected: nextSelected,
+            status: nextSelected ? 'approved' : 'rejected',
+          };
+        }
+        return t;
+      });
+    });
+  };
+
+  // Đổi mức độ ưu tiên: 'high' vs 'medium'
+  const setTopicPriority = (topicId: string, priority: 'high' | 'medium') => {
+    setReviewTopics((prev) => {
+      const base = prev.length > 0 ? prev : displayTopicsList;
+      return base.map((t) => {
+        if ((t.topic_id || t.id) === topicId) {
+          return { ...t, priority };
+        }
+        return t;
+      });
+    });
+  };
+
+  // Chọn tất cả hoặc bỏ chọn tất cả
+  const handleToggleAllTopics = () => {
+    const allSelected = displayTopicsList.every((t) => t.isSelected);
+    setReviewTopics((prev) => {
+      const base = prev.length > 0 ? prev : displayTopicsList;
+      return base.map((t) => ({
+        ...t,
+        isSelected: !allSelected,
+        status: !allSelected ? 'approved' : 'rejected',
+      }));
+    });
+  };
+
+  // Lưu duyệt chủ đề độc lập
+  const handleSaveReviewTopics = async () => {
+    if (!activeSubmissionId) {
+      showToastNotification('Lỗi', 'Không tìm thấy mã bài nộp để lưu chủ đề.', 'error');
+      return;
+    }
+    const topicsToSave = displayTopicsList;
+    if (topicsToSave.length === 0) return;
+
+    setIsSavingReviewTopics(true);
+    try {
+      const payload = topicsToSave.map((t) => ({
+        topic_id: t.topic_id || t.id,
+        name: t.name || t.topic_name || '',
+        priority: t.priority || 'medium',
+        reason: t.reason || t.description || 'Giảng viên yêu cầu củng cố kiến thức.',
+        status: t.isSelected ? 'approved' : 'rejected',
+      }));
+      await GradingService.updateSubmissionReviewTopics(activeSubmissionId, payload);
+
+      setReviewTopics(
+        topicsToSave.map((t) => ({
+          ...t,
+          status: t.isSelected ? 'approved' : 'rejected',
+        }))
+      );
+      showToastNotification(
+        'Đã lưu duyệt chủ đề',
+        `Đã lưu và duyệt ${topicsToSave.filter((t) => t.isSelected).length} chủ đề cần củng cố cho sinh viên.`
+      );
+    } catch (err: any) {
+      console.warn('[ReviewTopics] Save failed:', err);
+      showToastNotification('Lỗi lưu chủ đề', err?.response?.data?.message || err.message, 'error');
+    } finally {
+      setIsSavingReviewTopics(false);
+    }
+  };
 
   const isAiRequired = useMemo(() => {
     if ((courseInfo as any)?.ai_declaration_required === false) return false;
@@ -1134,6 +1278,22 @@ export default function LecturerAcademicEvaluation({
         setAiVerdictText(cleanVerdict);
       }
 
+      // 2b. Cập nhật danh sách chủ đề cần củng cố do AI đề xuất
+      if (Array.isArray(aiData.recommended_topics) && aiData.recommended_topics.length > 0) {
+        setReviewTopics(
+          aiData.recommended_topics.map((t: any) => ({
+            id: t.topic_id || t.id,
+            topic_id: t.topic_id || t.id,
+            name: t.name || t.topic_name || '',
+            description: t.description || t.reason || '',
+            reason: t.reason || '',
+            priority: (t.priority || 'high').toLowerCase(),
+            status: 'pending_review',
+            isSelected: true,
+          }))
+        );
+      }
+
       // 3. Điểm số và nhận xét đã tự động cập nhật trực tiếp lên giao diện (không bật toast làm vướng màn hình)
     } catch (err: any) {
       console.error('[ART-AI] AI Audit error:', err);
@@ -1197,12 +1357,31 @@ export default function LecturerAcademicEvaluation({
       return;
     }
     setIsPublishing(true);
+
+    let topicsPayload: any[] = [];
+    if (activeSubmissionId && displayTopicsList.length > 0) {
+      topicsPayload = displayTopicsList.map((t: any) => ({
+        topic_id: t.topic_id || t.id,
+        name: t.name || t.topic_name || '',
+        priority: t.priority || 'medium',
+        reason: t.reason || t.description || 'Giảng viên yêu cầu củng cố kiến thức.',
+        status: t.isSelected ? 'approved' : 'rejected',
+      }));
+
+      try {
+        await GradingService.updateSubmissionReviewTopics(activeSubmissionId, topicsPayload);
+      } catch (topicErr: any) {
+        console.error('[handlePublishGrade] Lưu topic thất bại nhưng tiếp tục công bố điểm:', topicErr?.message);
+      }
+    }
+
     const payload: GradePayload = {
       score: totalScore,
       feedback,
       rubrics: scores,
       aiComplianceStatus: aiCompliance,
       isDraft: false,
+      reviewTopics: topicsPayload,
     };
     try {
       if (onPublishGrade) {
@@ -1851,35 +2030,62 @@ export default function LecturerAcademicEvaluation({
               {/* KHỐI CHỦ ĐỀ TRỌNG TÂM CẦN ÔN TẬP (RECOMMENDED TOPICS TO IMPROVE) - CHỈ HIỂN THỊ KHI MÔN HỌC CÓ CẤU HÌNH TOPICS */}
               {hasCourseTopics && (
                 <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs shrink-0 space-y-3.5 transition-all">
-                  <div className="flex items-start justify-between gap-2.5 pb-2.5 border-b border-slate-100">
+                  <div className="flex items-start justify-between gap-2.5 pb-2.5 border-b border-slate-100 flex-wrap">
                     <div className="flex items-start gap-2.5 min-w-0 flex-1">
                       <div className="w-7 h-7 rounded-lg bg-orange-50 text-orange-600 border border-orange-200/80 flex items-center justify-center shrink-0 shadow-2xs mt-0.5">
                         <BookOpen size={15} />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wide leading-snug">
-                          Chủ đề trọng tâm cần ôn tập
-                        </h3>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wide leading-snug">
+                            Chủ đề trọng tâm cần ôn tập
+                          </h3>
+                          <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full shrink-0">
+                            {displayTopicsList.filter((t: any) => t.isSelected && t.status !== 'rejected').length} / {displayTopicsList.length} được duyệt gửi
+                          </span>
+                        </div>
                         <div className="text-[10px] text-slate-400 font-medium mt-0.5">
-                          Recommended Topics to Improve
+                          Recommended Topics to Improve • Giảng viên phê duyệt trước khi gửi sang kế hoạch học tập của sinh viên
                         </div>
                         <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
-                          Các chủ đề kiến thức thuộc môn học mà sinh viên cần củng cố thêm dựa trên bài làm này.
+                          Tích chọn chủ đề cần củng cố và điều chỉnh mức độ ưu tiên. Khi bấm <strong className="text-slate-700 font-semibold">Công bố điểm</strong>, các chủ đề được duyệt sẽ tự động gửi vào lộ trình học tập cá nhân hóa của sinh viên.
                         </p>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-1.5 shrink-0 self-start pt-0.5">
-                      {displayTopics.length > 0 && (
-                        <span className="text-[10px] font-bold text-slate-600 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full shrink-0">
-                          {displayTopics.length} chủ đề
-                        </span>
+                    <div className="flex items-center gap-1.5 shrink-0 self-start pt-0.5 flex-wrap">
+                      {/* Nút chọn tất cả / bỏ chọn */}
+                      {displayTopicsList.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={handleToggleAllTopics}
+                          className="text-[10px] font-semibold text-slate-600 hover:text-slate-800 bg-slate-100 hover:bg-slate-200/80 border border-slate-200 px-2.5 py-1 rounded-lg transition cursor-pointer"
+                        >
+                          {displayTopicsList.every((t: any) => t.isSelected && t.status !== 'rejected') ? 'Bỏ chọn hết' : 'Duyệt tất cả'}
+                        </button>
                       )}
-                      {displayTopics.length > 0 && (
+
+                      {/* Nút lưu duyệt chủ đề */}
+                      {displayTopicsList.length > 0 && (
+                        <button
+                          type="button"
+                          disabled={isSavingReviewTopics}
+                          onClick={handleSaveReviewTopics}
+                          className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2.5 py-1 rounded-lg transition cursor-pointer shrink-0 disabled:opacity-50 shadow-2xs"
+                          title="Lưu trạng thái phê duyệt các chủ đề này ngay bây giờ"
+                        >
+                          <CheckCircle size={11} className="text-emerald-600" />
+                          <span>{isSavingReviewTopics ? 'Đang lưu...' : 'Lưu duyệt'}</span>
+                        </button>
+                      )}
+
+                      {/* Nút thêm vào nhận xét */}
+                      {displayTopicsList.length > 0 && (
                         <button
                           type="button"
                           onClick={() => {
-                            const topicNames = displayTopics.map((t: any) => t.name).join(', ');
+                            const approved = displayTopicsList.filter((t: any) => t.isSelected && t.status !== 'rejected');
+                            const topicNames = (approved.length > 0 ? approved : displayTopicsList).map((t: any) => t.name).join(', ');
                             const note = `\n\n📌 Chủ đề trọng tâm cần củng cố thêm: ${topicNames}.`;
                             isUserModifiedRef.current = true;
                             setFeedback((prev) => (prev ? `${prev.trim()}${note}` : note.trim()));
@@ -1897,53 +2103,92 @@ export default function LecturerAcademicEvaluation({
                   {/* Danh sách Topics / Loading / Empty State */}
                   {loadingTopics ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 animate-pulse">
-                      <div className="h-20 bg-slate-100 rounded-xl"></div>
-                      <div className="h-20 bg-slate-100 rounded-xl"></div>
+                      <div className="h-24 bg-slate-100 rounded-xl"></div>
+                      <div className="h-24 bg-slate-100 rounded-xl"></div>
                     </div>
-                  ) : displayTopics && displayTopics.length > 0 ? (
-                    <div className="max-h-[300px] overflow-y-auto custom-scroll pr-1">
+                  ) : displayTopicsList && displayTopicsList.length > 0 ? (
+                    <div className="max-h-[340px] overflow-y-auto custom-scroll pr-1">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                        {displayTopics.map((topic: any, idx: number) => {
-                          const isHighPriority =
-                            topic.priority === 'high' ||
-                            topic.priority === 'urgent' ||
-                            topic.level === 'high' ||
-                            idx < 2;
-
-                          const priorityLabel =
-                            topic.priority_label ||
-                            (isHighPriority ? 'Ưu tiên cao' : 'Khuyến nghị');
+                        {displayTopicsList.map((topic: any, idx: number) => {
+                          const isApproved = topic.status === 'approved' || (topic.status !== 'rejected' && topic.isSelected);
+                          const isHigh = topic.priority === 'high';
 
                           return (
                             <div
-                              key={topic.id || idx}
-                              className="p-3 bg-slate-50/70 border border-slate-200/80 rounded-xl hover:border-orange-300 hover:bg-orange-50/15 transition-all shadow-2xs flex flex-col justify-between gap-2"
+                              key={topic.id || topic.topic_id || idx}
+                              onClick={() => toggleTopicApproved(topic.topic_id || topic.id)}
+                              className={`p-3 rounded-xl border transition-all shadow-2xs flex flex-col justify-between gap-2.5 cursor-pointer select-none ${
+                                isApproved
+                                  ? 'bg-orange-50/25 border-orange-300 ring-1 ring-orange-200/60'
+                                  : 'bg-slate-50/60 border-slate-200 opacity-60 hover:opacity-90'
+                              }`}
                             >
                               <div>
                                 <div className="flex items-start justify-between gap-2 mb-1.5">
-                                  <h4
-                                    className="font-semibold text-xs sm:text-sm text-gray-800 leading-snug break-words flex-1 min-w-0 pr-1"
-                                    title={topic.name}
-                                  >
-                                    {topic.name}
-                                  </h4>
+                                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                                    <input
+                                      type="checkbox"
+                                      checked={isApproved}
+                                      onChange={() => toggleTopicApproved(topic.topic_id || topic.id)}
+                                      onClick={(e) => e.stopPropagation()}
+                                      className="w-4 h-4 text-orange-600 rounded border-slate-300 focus:ring-orange-500 cursor-pointer shrink-0"
+                                    />
+                                    <h4
+                                      className="font-semibold text-xs sm:text-sm text-gray-800 leading-snug break-words flex-1 min-w-0"
+                                      title={topic.name}
+                                    >
+                                      {topic.name}
+                                    </h4>
+                                  </div>
+
                                   <span
                                     className={`shrink-0 px-2 py-0.5 text-[10px] font-semibold rounded-full border whitespace-nowrap self-start ${
-                                      isHighPriority
-                                        ? 'bg-rose-50 text-rose-700 border-rose-200'
-                                        : 'bg-amber-50 text-amber-700 border-amber-200'
+                                      isApproved
+                                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                        : 'bg-slate-100 text-slate-500 border-slate-200'
                                     }`}
                                   >
-                                    {priorityLabel}
+                                    {isApproved ? '✓ Đã duyệt gửi' : '✕ Bác bỏ'}
                                   </span>
                                 </div>
+
                                 <p
-                                  className="text-[11px] text-slate-500 leading-relaxed break-words"
-                                  title={topic.description}
+                                  className="text-[11px] text-slate-500 leading-relaxed break-words pl-6"
+                                  title={topic.reason || topic.description}
                                 >
-                                  {topic.description ||
-                                    'Chủ đề kiến thức cốt lõi thuộc môn học cần sinh viên củng cố và rèn luyện thêm.'}
+                                  {topic.reason || topic.description || 'Chủ đề kiến thức cốt lõi thuộc môn học cần củng cố và rèn luyện thêm.'}
                                 </p>
+                              </div>
+
+                              <div
+                                className="flex items-center justify-between pt-2 border-t border-slate-100/80 pl-6 text-[10px]"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <span className="text-slate-400 font-medium">Mức độ ưu tiên:</span>
+                                <div className="flex items-center gap-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => setTopicPriority(topic.topic_id || topic.id, 'high')}
+                                    className={`px-2 py-0.5 rounded-md font-semibold transition cursor-pointer border ${
+                                      isHigh
+                                        ? 'bg-rose-50 text-rose-700 border-rose-200 shadow-2xs'
+                                        : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
+                                    }`}
+                                  >
+                                    Ưu tiên cao
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setTopicPriority(topic.topic_id || topic.id, 'medium')}
+                                    className={`px-2 py-0.5 rounded-md font-semibold transition cursor-pointer border ${
+                                      !isHigh
+                                        ? 'bg-amber-50 text-amber-700 border-amber-200 shadow-2xs'
+                                        : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
+                                    }`}
+                                  >
+                                    Khuyến nghị
+                                  </button>
+                                </div>
                               </div>
                             </div>
                           );

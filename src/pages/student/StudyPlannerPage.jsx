@@ -53,6 +53,7 @@ function DayCard({ day, dayIndex, onOpen }) {
   const isReady = day.contentStatus === 'ready';
   const isPending = day.contentStatus === 'pending';
   const isUnavailable = day.contentStatus === 'unavailable';
+  const isLecturerRecommended = day.reason && day.reason.includes('Giảng viên');
 
   let statusBadge = null;
   let statusColor = 'var(--color-ink-muted)';
@@ -116,6 +117,22 @@ function DayCard({ day, dayIndex, onOpen }) {
             {day.activity === 'review' ? '🔄 Ôn luyện' : day.activity === 'practice' ? '✏️ Luyện tập' : '📖 Học mới'}
           </span>
           {statusBadge}
+          {isLecturerRecommended && (
+            <span style={{
+              fontSize: '0.6875rem',
+              fontWeight: 700,
+              padding: '2px 8px',
+              borderRadius: '6px',
+              background: 'rgba(242, 112, 36, 0.12)',
+              color: 'var(--color-primary)',
+              border: '1px solid rgba(242, 112, 36, 0.25)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px'
+            }}>
+              🎯 Giảng viên đề xuất
+            </span>
+          )}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
           <span style={{ fontSize: '0.75rem', color: 'var(--color-ink-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -197,6 +214,9 @@ export default function StudyPlannerPage() {
   const [generating, setGenerating] = useState(false);
   const [genError, setGenError] = useState(null);
 
+  // Review topics from lecturer grading audit
+  const [reviewTopics, setReviewTopics] = useState([]);
+
   // Load subjects
   useEffect(() => {
     let cancelled = false;
@@ -222,27 +242,47 @@ export default function StudyPlannerPage() {
     return Array.from(map.values());
   }, [classes]);
 
-  // Load plan when subject changes
+  // Load plan and lecturer review topics when subject changes
   useEffect(() => {
     if (!selectedSubjectId) return;
     let cancelled = false;
     setPlanLoading(true);
     setPlanError(null);
     setPlan(null);
-    LearningService.getActivePlan(selectedSubjectId)
-      .then(res => { if (!cancelled) setPlan(res.data); })
-      .catch(err => { if (!cancelled) setPlanError(err.response?.data?.message || 'Không thể tải kế hoạch học.'); })
-      .finally(() => { if (!cancelled) setPlanLoading(false); });
+    setReviewTopics([]);
+
+    Promise.allSettled([
+      LearningService.getActivePlan(selectedSubjectId),
+      LearningService.getStudentReviewTopics(selectedSubjectId),
+    ]).then(([planRes, reviewRes]) => {
+      if (cancelled) return;
+      if (planRes.status === 'fulfilled') {
+        setPlan(planRes.value.data);
+      } else {
+        setPlanError(planRes.reason?.response?.data?.message || 'Không thể tải kế hoạch học.');
+      }
+      if (reviewRes.status === 'fulfilled') {
+        setReviewTopics(reviewRes.value.data || []);
+      }
+    }).finally(() => {
+      if (!cancelled) setPlanLoading(false);
+    });
+
     return () => { cancelled = true; };
   }, [selectedSubjectId]);
 
-  const handleGeneratePlan = async () => {
+  const handleGeneratePlan = async (force = false) => {
     if (!selectedSubjectId) return;
     setGenerating(true);
     setGenError(null);
     try {
-      const res = await LearningService.generateStudyPlan(selectedSubjectId);
+      const res = await LearningService.generateStudyPlan(selectedSubjectId, { force });
       setPlan(res.data);
+      // Refresh review topics
+      try {
+        const revRes = await LearningService.getStudentReviewTopics(selectedSubjectId);
+        setReviewTopics(revRes.data || []);
+      } catch (_) {}
     } catch (err) {
       const msg = err.response?.data?.message || 'Không thể tạo kế hoạch.';
       if (msg === 'NO_TOPICS_AVAILABLE' || msg === 'NO_SCHEDULABLE_TOPICS') {
@@ -303,6 +343,91 @@ export default function StudyPlannerPage() {
           loading={classLoading}
         />
       </div>
+
+      {/* Lecturer Recommended Topics Banner */}
+      {reviewTopics.length > 0 && (
+        <div style={{
+          borderRadius: '16px',
+          padding: '18px 24px',
+          background: 'linear-gradient(135deg, rgba(242,112,36,0.08) 0%, rgba(249,115,22,0.03) 100%)',
+          border: '1.5px solid rgba(242,112,36,0.25)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '12px',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{
+                width: '34px', height: '34px', borderRadius: '10px',
+                background: 'rgba(242,112,36,0.15)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center'
+              }}>
+                <Sparkles style={{ width: '18px', height: '18px', color: 'var(--color-primary)' }} />
+              </div>
+              <div>
+                <h3 style={{ fontSize: '0.9375rem', fontWeight: 700, margin: 0, color: 'var(--color-ink)' }}>
+                  Chủ đề Giảng viên yêu cầu củng cố ({reviewTopics.length})
+                </h3>
+                <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--color-ink-muted)' }}>
+                  Được Giảng viên phê duyệt sau khi chấm bài kiểm tra gần nhất
+                </p>
+              </div>
+            </div>
+            {plan && (
+              <button
+                onClick={() => handleGeneratePlan(true)}
+                disabled={generating}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '6px',
+                  padding: '6px 14px', borderRadius: '8px', fontSize: '0.8125rem', fontWeight: 600,
+                  background: 'var(--color-primary)', color: 'white', border: 'none',
+                  cursor: generating ? 'wait' : 'pointer',
+                  opacity: generating ? 0.7 : 1,
+                  fontFamily: 'var(--font-sans)', transition: 'all 0.15s',
+                }}
+              >
+                <RefreshCw style={{ width: '13px', height: '13px' }} className={generating ? 'animate-spin' : ''} />
+                {generating ? 'Đang đồng bộ...' : 'Đồng bộ lại lịch học'}
+              </button>
+            )}
+          </div>
+
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '2px' }}>
+            {reviewTopics.map(t => (
+              <div
+                key={t.id || t.topicId}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '6px 12px',
+                  borderRadius: '10px',
+                  background: 'var(--color-surface)',
+                  border: '1px solid var(--color-border)',
+                  fontSize: '0.8125rem',
+                  boxShadow: 'var(--shadow-xs)'
+                }}
+              >
+                <span style={{ fontWeight: 600, color: 'var(--color-ink)' }}>{t.topicName || t.topic_name}</span>
+                <span style={{
+                  fontSize: '0.6875rem',
+                  padding: '2px 6px',
+                  borderRadius: '4px',
+                  fontWeight: 700,
+                  background: t.priority === 'high' ? 'rgba(239, 68, 68, 0.12)' : 'rgba(59, 130, 246, 0.12)',
+                  color: t.priority === 'high' ? '#dc2626' : '#2563eb'
+                }}>
+                  {t.priority === 'high' ? 'Ưu tiên cao' : 'Khuyến nghị'}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          <p style={{ margin: '2px 0 0', fontSize: '0.75rem', color: 'var(--color-ink-muted)', fontStyle: 'italic' }}>
+            💡 AI đã tự động đưa các chủ đề này vào ngày học đầu tiên và nhắc lại sau 2-3 ngày theo phương pháp lặp lại ngắt quãng (Spaced Repetition).
+          </p>
+        </div>
+      )}
 
       {/* Plan Content */}
       {planLoading ? (
@@ -414,7 +539,7 @@ export default function StudyPlannerPage() {
           {/* Regenerate button */}
           <div style={{ textAlign: 'center', padding: '8px 0' }}>
             <button
-              onClick={handleGeneratePlan}
+              onClick={() => handleGeneratePlan(true)}
               disabled={generating}
               style={{
                 display: 'inline-flex', alignItems: 'center', gap: '6px',
