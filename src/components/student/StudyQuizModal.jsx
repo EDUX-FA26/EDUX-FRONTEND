@@ -153,6 +153,14 @@ export default function StudyQuizModal({ planDayId, dayInfo, onClose, onSubmitte
   const answeredCount = questions.filter(q => Boolean(answers[q.id || q.questionId])).length;
   const unansweredCount = totalQuestions - answeredCount;
   const isAllAnswered = totalQuestions > 0 && answeredCount === totalQuestions;
+  const topicTitle =
+    dayData?.topicName ||
+    dayData?.title ||
+    dayData?.topic ||
+    dayInfo?.topicName ||
+    dayInfo?.title ||
+    dayInfo?.topic ||
+    'Luyện tập AI';
 
   const modalContent = (
     <>
@@ -176,7 +184,7 @@ export default function StudyQuizModal({ planDayId, dayInfo, onClose, onSubmitte
       }}
     >
       <div
-        className="relative w-full max-w-2xl max-h-[88vh] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+        className="study-quiz-modal-window relative w-full max-w-2xl max-h-[88vh] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden"
         style={{
           position: 'relative',
           width: '100%',
@@ -193,12 +201,15 @@ export default function StudyQuizModal({ planDayId, dayInfo, onClose, onSubmitte
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
-        <div style={{
-          padding: '20px 24px',
-          borderBottom: '1px solid var(--color-border, #e2e8f0)',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          background: 'linear-gradient(135deg, #fff8f5 0%, #ffffff 100%)',
-        }}>
+        <div
+          className="border-b border-slate-200 bg-white"
+          style={{
+            padding: '20px 24px',
+            borderBottom: '1px solid #e2e8f0',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            backgroundColor: '#ffffff',
+          }}
+        >
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div style={{
               width: '44px', height: '44px', borderRadius: '12px',
@@ -216,13 +227,19 @@ export default function StudyQuizModal({ planDayId, dayInfo, onClose, onSubmitte
                   backgroundColor: 'var(--color-primary-card, #fcf2eb)',
                   color: 'var(--color-primary-dark, #a04100)'
                 }}>
-                  {dayData?.day ? `Ngày ${dayData.day}` : 'Buổi học'}
+                  {dayData?.day ? `Ngày ${dayData.day}` : (dayInfo?.day ? `Ngày ${dayInfo.day}` : 'Buổi học')}
                 </span>
-                <h2 style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--color-ink, #0f172a)', margin: 0 }}>
-                  {dayData?.topicName || dayInfo?.topicName || 'Luyện tập AI'}
+                <h2
+                  className="text-slate-900 font-bold text-base sm:text-lg leading-snug m-0"
+                  style={{ color: '#0f172a', margin: 0 }}
+                >
+                  {topicTitle}
                 </h2>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '14px', fontSize: '0.8125rem', color: 'var(--color-ink-muted, #64748b)', marginTop: '4px' }}>
+              <div
+                className="text-slate-600"
+                style={{ display: 'flex', alignItems: 'center', gap: '14px', fontSize: '0.8125rem', color: '#475569', marginTop: '4px' }}
+              >
                 <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                   <BookOpen size={13} /> {questions.length} câu hỏi
                 </span>
@@ -334,7 +351,10 @@ export default function StudyQuizModal({ planDayId, dayInfo, onClose, onSubmitte
 
               {/* Review Questions */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--color-ink, #0f172a)', margin: 0 }}>
+                <h3
+                  className="text-slate-900"
+                  style={{ fontSize: '1rem', fontWeight: 700, color: '#0f172a', margin: 0 }}
+                >
                   Xem lại lời giải chi tiết
                 </h3>
 
@@ -362,7 +382,10 @@ export default function StudyQuizModal({ planDayId, dayInfo, onClose, onSubmitte
                           }}>
                             Câu {q.questionOrder || idx + 1}
                           </span>
-                          <div style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--color-ink, #1e293b)' }}>
+                          <div
+                            className="text-slate-900"
+                            style={{ fontSize: '0.9375rem', fontWeight: 600, color: '#0f172a' }}
+                          >
                             <MathText content={q.question} />
                           </div>
                         </div>
@@ -382,7 +405,7 @@ export default function StudyQuizModal({ planDayId, dayInfo, onClose, onSubmitte
 
                           let bg = '#ffffff';
                           let borderColor = 'var(--color-border, #e2e8f0)';
-                          let textColor = 'var(--color-ink, #1e293b)';
+                          let textColor = '#1e293b';
 
                           if (isCorrectOpt) {
                             bg = 'rgba(22, 163, 74, 0.12)';
@@ -428,7 +451,7 @@ export default function StudyQuizModal({ planDayId, dayInfo, onClose, onSubmitte
                         <div style={{
                           marginTop: '4px', padding: '10px 12px', borderRadius: '8px',
                           backgroundColor: '#ffffff', border: '1px solid var(--color-border, #e2e8f0)',
-                          fontSize: '0.8125rem', color: 'var(--color-ink-muted, #475569)'
+                          fontSize: '0.8125rem', color: '#475569'
                         }}>
                           <div style={{ fontWeight: 700, color: 'var(--color-primary-dark, #a04100)', marginBottom: '3px' }}>
                             💡 Lời giải chi tiết:
@@ -456,11 +479,17 @@ export default function StudyQuizModal({ planDayId, dayInfo, onClose, onSubmitte
               }}>
                 <BrainCircuit size={28} />
               </div>
-              <h3 style={{ fontSize: '1.125rem', fontWeight: 800, color: '#0f172a', margin: '0 0 6px' }}>
+              <h3
+                className="text-slate-900"
+                style={{ fontSize: '1.125rem', fontWeight: 800, color: '#0f172a', margin: '0 0 6px' }}
+              >
                 Buổi học chưa có bộ câu hỏi
               </h3>
-              <p style={{ fontSize: '0.875rem', color: '#64748b', maxWidth: '440px', margin: '0 auto 20px', lineHeight: 1.6 }}>
-                Hệ thống AI sẽ tạo bộ 5 câu hỏi ôn tập cho chủ đề <strong>{dayData?.topicName}</strong>.
+              <p
+                className="text-slate-600"
+                style={{ fontSize: '0.875rem', color: '#475569', maxWidth: '440px', margin: '0 auto 20px', lineHeight: 1.6 }}
+              >
+                Hệ thống AI sẽ tạo bộ 5 câu hỏi ôn tập cho chủ đề <strong className="text-slate-900" style={{ color: '#0f172a' }}>{dayData?.topicName}</strong>.
               </p>
 
               {error && (
@@ -572,7 +601,10 @@ export default function StudyQuizModal({ planDayId, dayInfo, onClose, onSubmitte
                       }}>
                         {q.questionOrder || qIndex + 1}
                       </span>
-                      <div style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--color-ink, #0f172a)', lineHeight: 1.6, flex: 1 }}>
+                      <div
+                        className="text-slate-900"
+                        style={{ fontSize: '0.9375rem', fontWeight: 600, color: '#0f172a', lineHeight: 1.6, flex: 1 }}
+                      >
                         <MathText content={q.question} />
                       </div>
                     </div>
@@ -591,7 +623,7 @@ export default function StudyQuizModal({ planDayId, dayInfo, onClose, onSubmitte
                               padding: '12px 16px', borderRadius: '12px',
                               border: `1.5px solid ${isChosen ? 'var(--color-primary, #f27024)' : 'var(--color-border, #e2e8f0)'}`,
                               backgroundColor: isChosen ? 'var(--color-primary-bg, #fff8f5)' : '#ffffff',
-                              color: isChosen ? 'var(--color-primary-dark, #a04100)' : 'var(--color-ink, #1e293b)',
+                              color: isChosen ? 'var(--color-primary-dark, #a04100)' : '#1e293b',
                               fontSize: '0.875rem', cursor: 'pointer', textAlign: 'left',
                               transition: 'all 0.15s ease'
                             }}
@@ -629,7 +661,10 @@ export default function StudyQuizModal({ planDayId, dayInfo, onClose, onSubmitte
         }}>
           <div>
             {!submissionResult && questions.length > 0 && (
-              <span style={{ fontSize: '0.8125rem', color: 'var(--color-ink-muted, #64748b)' }}>
+              <span
+                className="text-slate-600"
+                style={{ fontSize: '0.8125rem', color: '#475569' }}
+              >
                 {isAllAnswered ? 'Đã hoàn thành tất cả các câu!' : `Còn ${questions.length - answeredCount} câu chưa chọn`}
               </span>
             )}
