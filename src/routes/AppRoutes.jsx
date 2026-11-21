@@ -18,7 +18,6 @@ import SchoolSettingsPage from "../pages/admin/SchoolSettingsPage";
 import SchoolSetupPage from "../pages/admin/SchoolSetupPage";
 import UserManagementPage from '../pages/admin/UserManagementPage';
 import ClassManagementPage from '../pages/admin/ClassManagementPage';
-import SystemLogsPage from '../pages/admin/SystemLogsPage';
 import AdminReportsPage from '../pages/admin/AdminReportsPage';
 import AdminNotificationsPage from '../pages/admin/AdminNotificationsPage';
 import SemesterManagementPage from '../pages/admin/SemesterManagementPage';
@@ -337,7 +336,7 @@ export default function AppRoutes() {
         <Route path="semesters" element={<SemesterManagementPage />} />
         <Route path="subjects" element={<SubjectManagementPage />} />
         <Route path="search" element={<SearchPage />} />
-        <Route path="logs" element={<SystemLogsPage />} />
+        <Route path="logs" element={<Navigate to="/admin/dashboard" replace />} />
         <Route path="school-setup" element={<SchoolSetupPage />} />
         <Route path="profile" element={<SchoolProfilePage />} />
         <Route path="school-profile" element={<SchoolProfilePage />} />

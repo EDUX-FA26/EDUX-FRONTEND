@@ -59,7 +59,6 @@ const NAV_BY_ROLE = {
     { id: 'semesters', icon: 'calendar_month', path: '/admin/semesters', key: 'semesters', label: 'Học kỳ' },
     { id: 'subjects', icon: 'menu_book', path: '/admin/subjects', key: 'subjects', label: 'Môn học' },
     { id: 'school-profile', icon: 'account_balance', path: '/admin/profile', key: 'schoolProfile', label: 'Hồ sơ trường' },
-    { id: 'logs', icon: 'history', path: '/admin/logs', key: 'logs', label: 'System Logs' },
   ],
 };
 
@@ -110,7 +109,6 @@ export default function DashboardLayout() {
   const isAdminUsers = location.pathname === '/admin/users' || location.pathname.startsWith('/admin/users');
   const isAdminClasses = location.pathname === '/admin/classes' || location.pathname.startsWith('/admin/classes');
   const isAdminNotifications = location.pathname === '/admin/notifications' || location.pathname.startsWith('/admin/notifications');
-  const isAdminLogs = location.pathname === '/admin/logs' || location.pathname.startsWith('/admin/logs');
   const isAdminSemesters = location.pathname === '/admin/semesters' || location.pathname.startsWith('/admin/semesters');
   const isAdminSubjects = location.pathname === '/admin/subjects' || location.pathname.startsWith('/admin/subjects');
   const isAdminReports = location.pathname === '/admin/reports' || location.pathname.startsWith('/admin/reports');
@@ -973,7 +971,6 @@ export default function DashboardLayout() {
           !isAdminUsers &&
           !isAdminClasses &&
           !isAdminNotifications &&
-          !isAdminLogs &&
           !isAdminSemesters &&
           !isAdminSubjects &&
           !isAdminReports &&
