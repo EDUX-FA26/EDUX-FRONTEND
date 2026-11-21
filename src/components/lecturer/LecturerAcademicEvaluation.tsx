@@ -2523,81 +2523,84 @@ export default function LecturerAcademicEvaluation({
         )}
 
       {/* ==================== MODAL: CONFIRM REGENERATE AI EVALUATION ==================== */}
-      {showRegenerateModal && (
-        <div className="fixed inset-0 z-[999] bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-sm w-full p-5 space-y-4 animate-in zoom-in-95 duration-150">
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 border border-purple-200/80 flex items-center justify-center shrink-0 shadow-2xs">
-                <Sparkles size={20} className="text-purple-600" />
-              </div>
-              <div className="space-y-1 min-w-0 flex-1">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-bold text-slate-800 leading-snug">
-                    Xác nhận phân tích lại bằng AI?
-                  </h3>
-                  <button
-                    type="button"
-                    disabled={isAuditingAi}
-                    onClick={() => setShowRegenerateModal(false)}
-                    className="text-slate-400 hover:text-slate-600 transition -mr-1 -mt-1 p-1 disabled:opacity-30 disabled:cursor-not-allowed"
-                  >
-                    <X size={15} />
-                  </button>
+      {showRegenerateModal &&
+        createPortal(
+          <div className="fixed inset-0 z-[9999] bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-sm w-full p-5 space-y-4 animate-in zoom-in-95 duration-150">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 border border-purple-200/80 flex items-center justify-center shrink-0 shadow-2xs">
+                  <Sparkles size={20} className="text-purple-600" />
                 </div>
-                <p className="text-xs text-slate-600 leading-relaxed pt-0.5">
-                  Thao tác này sẽ gọi AI tạo điểm gợi ý và nhận xét mới, đồng thời ghi đè lên kết quả đánh giá hiện tại.
-                </p>
+                <div className="space-y-1 min-w-0 flex-1">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-bold text-slate-800 leading-snug">
+                      Xác nhận phân tích lại bằng AI?
+                    </h3>
+                    <button
+                      type="button"
+                      disabled={isAuditingAi}
+                      onClick={() => setShowRegenerateModal(false)}
+                      className="text-slate-400 hover:text-slate-600 transition -mr-1 -mt-1 p-1 disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
+                      <X size={15} />
+                    </button>
+                  </div>
+                  <p className="text-xs text-slate-600 leading-relaxed pt-0.5">
+                    Thao tác này sẽ gọi AI tạo điểm gợi ý và nhận xét mới, đồng thời ghi đè lên kết quả đánh giá hiện tại.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  disabled={isAuditingAi}
+                  onClick={() => setShowRegenerateModal(false)}
+                  className="px-3.5 py-2 border border-slate-200 text-slate-600 hover:bg-slate-50 rounded-xl text-xs font-semibold transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Hủy bỏ
+                </button>
+                <button
+                  type="button"
+                  disabled={isAuditingAi}
+                  onClick={async () => {
+                    try {
+                      await handleRegradeAi();
+                    } finally {
+                      setShowRegenerateModal(false);
+                    }
+                  }}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold transition shadow-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isAuditingAi ? (
+                    <>
+                      <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Đang phân tích...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles size={13} />
+                      <span>Xác nhận phân tích</span>
+                    </>
+                  )}
+                </button>
               </div>
             </div>
-
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
-              <button
-                type="button"
-                disabled={isAuditingAi}
-                onClick={() => setShowRegenerateModal(false)}
-                className="px-3.5 py-2 border border-slate-200 text-slate-600 hover:bg-slate-50 rounded-xl text-xs font-semibold transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Hủy bỏ
-              </button>
-              <button
-                type="button"
-                disabled={isAuditingAi}
-                onClick={async () => {
-                  try {
-                    await handleRegradeAi();
-                  } finally {
-                    setShowRegenerateModal(false);
-                  }
-                }}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold transition shadow-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isAuditingAi ? (
-                  <>
-                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    <span>Đang phân tích...</span>
-                  </>
-                ) : (
-                  <>
-                    <Sparkles size={13} />
-                    <span>Xác nhận phân tích</span>
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
 
       {/* ==================== MODAL 2: VIVA & AUDIT INSPECTOR ==================== */}
-      {showVivaModal && (
-        <div 
-          className="fixed top-16 right-0 bottom-0 left-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-900/45 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-200"
-          onClick={() => setShowVivaModal(false)}
-        >
+      {showVivaModal &&
+        createPortal(
           <div 
-            className="w-full max-w-3xl bg-white rounded-2xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden max-h-[calc(100vh-112px)] my-auto animate-in zoom-in-95 duration-200"
-            onClick={(e) => e.stopPropagation()}
+            className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-5 bg-slate-950/60 backdrop-blur-xs overflow-hidden animate-in fade-in duration-200"
+            onClick={() => setShowVivaModal(false)}
           >
+            <div 
+              className="w-full max-w-3xl bg-white rounded-2xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden max-h-[90vh] my-auto animate-in zoom-in-95 duration-200"
+              onClick={(e) => e.stopPropagation()}
+            >
             
             {/* 1. FIXED MODAL HEADER - Luôn hiển thị ở trên cùng, không bị che khuất bởi navbar */}
             <div className="px-5 sm:px-6 py-4 border-b border-slate-100 bg-white flex items-center justify-between shrink-0 shadow-xs">
@@ -2868,7 +2871,8 @@ export default function LecturerAcademicEvaluation({
             </div>
 
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

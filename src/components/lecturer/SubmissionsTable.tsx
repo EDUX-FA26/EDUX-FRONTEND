@@ -125,12 +125,12 @@ export default function SubmissionsTable({
         <thead>
           <tr className="border-b border-slate-200 text-slate-500 font-semibold">
             <th className="p-2">Student</th>
-            <th className="p-2">Status</th>
-            <th className="p-2">Submitted At</th>
-            <th className="p-2">File/Link</th>
-            <th className="p-2 text-center">AI Audit</th>
-            <th className="p-2">Score</th>
-            <th className="p-2">Action</th>
+            <th className="p-2 whitespace-nowrap">Status</th>
+            <th className="p-2 whitespace-nowrap">Submitted At</th>
+            <th className="p-2 whitespace-nowrap">File/Link</th>
+            <th className="p-2 text-center whitespace-nowrap">AI Audit</th>
+            <th className="p-2 whitespace-nowrap">Score</th>
+            <th className="p-2 whitespace-nowrap">Action</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100">
@@ -169,7 +169,7 @@ export default function SubmissionsTable({
                     </td>
 
                     {/* Cột Trạng thái bài nộp */}
-                    <td className="p-2">
+                    <td className="p-2 whitespace-nowrap">
                       {isGraded ? (
                         <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
                           Graded
@@ -186,7 +186,7 @@ export default function SubmissionsTable({
                     </td>
 
                     {/* Cột Thời gian nộp */}
-                    <td className="p-2 text-slate-600">
+                    <td className="p-2 text-slate-600 whitespace-nowrap">
                       {sub.submitted_at ? formatDateDMY(sub.submitted_at) : 'N/A'}
                     </td>
 
@@ -216,7 +216,7 @@ export default function SubmissionsTable({
                     </td>
 
                     {/* 5. CỘT AI AUDIT (CHÍNH LÀ NƠI CHỨA ICON CON MẮT) */}
-                    <td className="py-3 px-4 text-center">
+                    <td className="py-3 px-4 text-center whitespace-nowrap">
                       {!isAiTrackingEnabled ? (
                         // 1. Bài tập không áp dụng khai báo AI Audit Log
                         <span 
@@ -255,7 +255,7 @@ export default function SubmissionsTable({
                     </td>
 
                   {/* 6. Cột Điểm số */}
-                  <td className="p-2">
+                  <td className="p-2 whitespace-nowrap">
                     {isGraded ? (
                       <div className="flex flex-col gap-0.5">
                         <div className="flex items-baseline gap-1">
@@ -276,7 +276,7 @@ export default function SubmissionsTable({
                   </td>
 
                   {/* 7. Cột Thao tác */}
-                  <td className="py-3 px-4">
+                  <td className="py-3 px-4 whitespace-nowrap">
                     <button
                       type="button"
                       className="px-3 py-1 bg-orange-400 hover:bg-orange-500 text-white rounded-lg text-xs font-medium transition shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"

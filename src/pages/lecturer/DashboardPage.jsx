@@ -43,16 +43,16 @@ function SubmissionRow({ submission, t, onClick }) {
       }}
       className={onClick ? 'hover:bg-black/5' : ''}
     >
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }} className="min-w-0 flex-1 pr-3">
         <div style={{ width: '36px', height: '36px', flexShrink: 0, borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--color-primary-card)' }}>
           <span className="material-symbols-outlined" style={{ fontSize: '18px', color: 'var(--color-primary)' }}>description</span>
         </div>
-        <div>
-          <p style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--color-ink)', margin: '0 0 4px' }}>{submission.student_name}</p>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', fontSize: '0.75rem', color: 'var(--color-ink-muted)' }}>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6875rem' }}>{submission.student_code}</span>
-            <span>{submission.assignment_title}</span>
-            <span style={{ background: 'var(--color-primary-card)', padding: '0 8px', borderRadius: '4px', fontWeight: 600, color: 'var(--color-primary-dark)' }}>{submission.class_code}</span>
+        <div className="min-w-0 flex-1">
+          <p className="truncate" style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--color-ink)', margin: '0 0 4px' }}>{submission.student_name}</p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', fontSize: '0.75rem', color: 'var(--color-ink-muted)' }}>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6875rem' }} className="shrink-0">{submission.student_code}</span>
+            <span className="truncate max-w-[180px] sm:max-w-xs">{submission.assignment_title}</span>
+            <span className="shrink-0" style={{ background: 'var(--color-primary-card)', padding: '0 8px', borderRadius: '4px', fontWeight: 600, color: 'var(--color-primary-dark)' }}>{submission.class_code}</span>
           </div>
         </div>
       </div>
@@ -178,7 +178,7 @@ export default function LecturerDashboardPage() {
   const S = t.stats;
 
   return (
-    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+    <div className="animate-fade-in w-full max-w-[1600px] mx-auto min-w-0 px-4 sm:px-5 lg:px-6 xl:px-8 py-5" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       {/* Hero */}
       <div style={{ borderRadius: '20px', background: 'linear-gradient(135deg, #0f2027 0%, #1a3040 50%, #0f2027 100%)', color: 'white', padding: '28px 32px', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', top: 0, right: 0, width: '240px', height: '240px', background: 'rgba(0,106,97,0.25)', borderRadius: '50%', filter: 'blur(60px)', transform: 'translate(40px, -40px)' }} />
@@ -195,7 +195,7 @@ export default function LecturerDashboardPage() {
       </div>
 
       {/* Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3.5 lg:gap-4">
         {loading ? [1, 2, 3, 4].map(i => (
           <div key={i} className="stat-card">
             <div className="skeleton" style={{ width: '80px', height: '14px', marginBottom: '12px' }} />
@@ -252,8 +252,8 @@ export default function LecturerDashboardPage() {
       </div>
 
       {/* Main Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '20px' }}>
-        <div className="card" style={{ padding: '20px' }}>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-5">
+        <div className="card lg:col-span-8 min-w-0" style={{ padding: '20px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span className="material-symbols-outlined" style={{ color: 'var(--color-accent-teal)' }}>grading</span>
@@ -292,7 +292,7 @@ export default function LecturerDashboardPage() {
           ))}
         </div>
 
-        <div className="card" style={{ padding: '20px' }}>
+        <div className="card lg:col-span-4 min-w-0" style={{ padding: '20px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span className="material-symbols-outlined" style={{ color: 'var(--color-primary)' }}>notifications</span>

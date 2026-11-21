@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   Bot, 
   Sparkles, 
@@ -81,13 +82,13 @@ export const ClassAiAdvisorModal: React.FC<ClassAiAdvisorModalProps> = ({
   if (!isOpen) return null;
 
   if (!advisorData?.has_data || !advisorData?.advisories?.length) {
-    return (
+    return createPortal(
       <div 
-        className="fixed top-16 right-0 bottom-0 left-0 z-50 flex items-center justify-center p-4 md:p-6 bg-slate-900/40 backdrop-blur-xs transition-all animate-fadeIn"
+        className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-5 bg-slate-900/50 backdrop-blur-xs transition-all animate-fadeIn"
         onClick={onClose}
       >
         <div 
-          className="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-purple-100 p-8 flex flex-col items-center justify-center text-center space-y-4 my-auto animate-scaleUp"
+          className="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-purple-100 p-6 sm:p-8 flex flex-col items-center justify-center text-center space-y-4 my-auto animate-scaleUp"
           onClick={(e) => e.stopPropagation()}
         >
           {isRefreshing ? (
@@ -113,7 +114,8 @@ export const ClassAiAdvisorModal: React.FC<ClassAiAdvisorModalProps> = ({
             </>
           )}
         </div>
-      </div>
+      </div>,
+      document.body
     );
   }
 
@@ -129,14 +131,14 @@ export const ClassAiAdvisorModal: React.FC<ClassAiAdvisorModalProps> = ({
       })
     : '';
 
-  return (
+  return createPortal(
     <div 
-      className="fixed top-16 right-0 bottom-0 left-0 z-50 flex items-center justify-center p-4 md:p-6 bg-slate-900/40 backdrop-blur-xs overflow-y-auto transition-all animate-fadeIn"
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-5 bg-slate-900/50 backdrop-blur-xs overflow-hidden transition-all animate-fadeIn"
       onClick={onClose}
     >
       {/* Subwindow Dialog Container */}
       <div 
-        className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl border border-purple-100 overflow-hidden flex flex-col my-auto max-h-[calc(100vh-100px)] animate-scaleUp"
+        className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl border border-purple-100 overflow-hidden flex flex-col my-auto max-h-[90vh] animate-scaleUp"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header Subwindow */}
@@ -332,7 +334,8 @@ export const ClassAiAdvisorModal: React.FC<ClassAiAdvisorModalProps> = ({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

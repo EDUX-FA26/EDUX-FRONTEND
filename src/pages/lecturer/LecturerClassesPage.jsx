@@ -286,7 +286,7 @@ const filteredClasses = useMemo(() => {
 }, [classes, search]);
 
 return (
-    <div className="animate-fade-in h-[calc(100vh-64px)] w-full max-w-full min-w-0 overflow-hidden flex flex-col px-6 pt-5 pb-5 box-border">
+    <div className="animate-fade-in h-[calc(100vh-64px)] w-full max-w-[1600px] mx-auto min-w-0 overflow-hidden flex flex-col px-4 sm:px-5 lg:px-6 xl:px-8 pt-4 sm:pt-5 pb-4 sm:pb-5 box-border">
         {/* Header: Title + Search & Refresh */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 shrink-0">
             <div>
@@ -315,11 +315,7 @@ return (
 
             <div className="flex items-center gap-3">
                 <div
-                    style={{
-                        position: "relative",
-                        width: "280px",
-                        maxWidth: "100%",
-                    }}
+                    className="relative w-48 sm:w-64 md:w-72 max-w-full"
                 >
                     <Search
                         size={16}
@@ -374,10 +370,10 @@ return (
         </div>
 
         {/* Main 2-column area */}
-        <div className="flex-1 min-h-0 flex gap-6 w-full overflow-hidden">
+        <div className="flex-1 min-h-0 flex gap-4 lg:gap-6 w-full overflow-hidden">
             {/* Left Column: Semesters Card */}
             <div
-                className="w-60 shrink-0 h-full flex flex-col bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden"
+                className="w-52 lg:w-56 xl:w-60 shrink-0 h-full flex flex-col bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden"
                 style={{
                     background: "var(--color-surface, #fff)",
                     borderColor: "var(--color-border, rgba(226, 232, 240, 0.8))",
@@ -539,7 +535,7 @@ return (
                 style={{ scrollbarWidth: "thin" }}
             >
                 {loading || semestersLoading ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 content-start">
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 content-start">
                         <div
                             className="skeleton rounded-2xl"
                             style={{ height: "190px" }}
@@ -602,7 +598,7 @@ return (
                         </p>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 content-start">
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 content-start">
                         {filteredClasses.map((course) => (
                             <div
                                 className="card"
