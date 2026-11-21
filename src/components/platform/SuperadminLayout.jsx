@@ -121,6 +121,14 @@ export default function SuperadminLayout({ children }) {
     location.pathname === "/superadmin/managers" ||
     location.pathname.startsWith("/superadmin/managers");
 
+  const isSuperadminPlans =
+    location.pathname === "/superadmin/plans" ||
+    location.pathname.startsWith("/superadmin/plans");
+
+  const isSuperadminRefunds =
+    location.pathname === "/superadmin/refunds" ||
+    location.pathname.startsWith("/superadmin/refunds");
+
   const initials = user?.full_name
     ? user.full_name.split(" ").slice(-1)[0][0].toUpperCase()
     : (user?.username?.[0] || user?.email?.[0] || "S").toUpperCase();
@@ -632,7 +640,7 @@ export default function SuperadminLayout({ children }) {
         <main
           className="flex-1 min-w-0 w-full overflow-x-hidden"
           style={
-            isSuperadminManagers
+            isSuperadminManagers || isSuperadminPlans || isSuperadminRefunds
               ? {
                   flex: 1,
                   width: "100%",
@@ -660,7 +668,7 @@ export default function SuperadminLayout({ children }) {
         </main>
 
         {/* Standard Footer */}
-        {!isSuperadminDashboard && !isSuperadminManagers && (
+        {!isSuperadminDashboard && !isSuperadminManagers && !isSuperadminPlans && !isSuperadminRefunds && (
           <footer
             style={{
               background: "var(--color-surface)",

@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
+import { createPortal } from "react-dom";
 import SuperadminLayout from "../../components/platform/SuperadminLayout";
 import {
   getRefunds,
@@ -125,19 +126,19 @@ export default function PlatformRefundsPage() {
 
   return (
     <SuperadminLayout>
-      <div className="space-y-6">
+      <div className="w-full max-w-7xl mx-auto h-[calc(100vh-var(--dashboard-header-height,64px))] overflow-hidden flex flex-col px-6 pt-4 pb-4 box-border">
         {/* Header */}
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="shrink-0 flex flex-wrap items-center justify-between gap-3 mb-3">
           <div>
-            <h1 className="text-2xl font-extrabold tracking-tight text-[#1f1b17]">Quản lý Hoàn tiền (Refunds)</h1>
-            <p className="mt-1 text-sm text-[#545f73]">
+            <h1 className="text-xl font-bold tracking-tight text-slate-900">Quản lý Hoàn tiền (Refunds)</h1>
+            <p className="mt-0.5 text-xs text-slate-500">
               Quy trình phê duyệt và thực hiện lệnh chi hoàn tiền cho các giao dịch SaaS theo chính sách nền tảng EDUX.
             </p>
           </div>
           <button
             type="button"
             onClick={() => loadRefunds(pagination.page)}
-            className="inline-flex items-center gap-2 rounded-xl border border-[#f5ebe1] bg-white px-3.5 py-2 text-xs font-semibold text-[#545f73] shadow-xs hover:bg-[#fff8f5] hover:text-[#f27024] transition"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white h-9 px-3.5 text-xs sm:text-sm font-semibold text-slate-600 shadow-xs hover:bg-slate-50 hover:text-[#f27024] transition"
           >
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin text-[#f27024]" : ""}`} />
             Làm mới
@@ -146,92 +147,109 @@ export default function PlatformRefundsPage() {
 
         {/* Alerts */}
         {message.text && (
-          <EduxAlert
-            type={message.type}
-            message={message.text}
-            onClose={() => setMessage({ type: "", text: "" })}
-          />
+          <div className="shrink-0 mb-3">
+            <EduxAlert
+              type={message.type}
+              message={message.text}
+              onClose={() => setMessage({ type: "", text: "" })}
+            />
+          </div>
         )}
 
         {/* Filter Tabs & Search */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-[#f5ebe1] pb-3">
-          <div className="flex space-x-2 overflow-x-auto">
+        <div className="shrink-0 flex flex-wrap items-center justify-between gap-3 mb-3">
+          <div className="flex items-center gap-1.5 overflow-x-auto">
             {STATUS_TABS.map((tab) => (
               <button
                 key={tab.id}
                 type="button"
                 onClick={() => setStatusTab(tab.id)}
-                className={`rounded-xl px-3.5 py-2 text-xs font-bold transition ${statusTab === tab.id
-                  ? "bg-[#f27024] text-white shadow-xs"
-                  : "bg-white text-[#545f73] border border-[#f5ebe1] hover:bg-[#fff8f5] hover:text-[#f27024]"
-                  }`}
+                className={`h-9 px-3.5 text-xs font-medium rounded-xl transition ${
+                  statusTab === tab.id
+                    ? "bg-[#f27024] text-white shadow-xs font-semibold"
+                    : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:text-[#f27024]"
+                }`}
               >
                 {tab.label}
               </button>
             ))}
           </div>
 
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#8c7166]" />
-            <input
-              type="text"
-              placeholder="Tìm theo trường, mã đơn…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="rounded-xl border border-[#f5ebe1] bg-white pl-8 pr-3 py-1.5 text-xs text-[#1f1b17] focus:border-[#f27024] focus:outline-hidden"
-            />
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Tìm theo trường, mã đơn…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="h-9 w-60 sm:w-64 rounded-xl border border-slate-200 bg-white pl-8 pr-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-[#f27024] focus:outline-hidden"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                if (statusTab !== "" || search !== "") {
+                  setStatusTab("");
+                  setSearch("");
+                }
+              }}
+              className="h-9 px-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-xs font-medium text-slate-600 shrink-0 transition cursor-pointer"
+            >
+              Xóa lọc
+            </button>
           </div>
         </div>
 
-        {/* Table */}
-        <div className="overflow-hidden rounded-3xl border border-[#f5ebe1] bg-white shadow-xs">
-          <div className="overflow-x-auto">
+        {/* Table Card */}
+        <div className="flex-1 min-h-0 bg-white rounded-2xl border border-slate-200 shadow-xs flex flex-col overflow-hidden">
+          <div className="flex-1 min-h-0 overflow-y-auto">
             <table className="w-full text-left text-xs">
-              <thead className="border-b border-[#f5ebe1] bg-[#fff8f5] font-bold uppercase tracking-wider text-[#8c7166]">
+              <thead className="sticky top-0 bg-white z-10 border-b border-slate-200 font-bold uppercase tracking-wider text-slate-500 shadow-xs">
                 <tr>
-                  <th className="px-6 py-4">Trường học</th>
-                  <th className="px-6 py-4">Giao dịch gốc</th>
-                  <th className="px-6 py-4">Số tiền hoàn</th>
-                  <th className="px-6 py-4">Tài khoản thụ hưởng</th>
-                  <th className="px-6 py-4">Lý do</th>
-                  <th className="px-6 py-4">Trạng thái</th>
-                  <th className="px-6 py-4 text-right">Thao tác</th>
+                  <th className="px-5 py-3">Trường học</th>
+                  <th className="px-5 py-3">Giao dịch gốc</th>
+                  <th className="px-5 py-3">Số tiền hoàn</th>
+                  <th className="px-5 py-3">Tài khoản thụ hưởng</th>
+                  <th className="px-5 py-3">Lý do</th>
+                  <th className="px-5 py-3">Trạng thái</th>
+                  <th className="px-5 py-3 text-right">Thao tác</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#f5ebe1]">
+              <tbody className="divide-y divide-slate-100">
                 {loading ? (
                   <tr>
-                    <td colSpan="7" className="py-12 text-center text-[#545f73]">
+                    <td colSpan="7" className="py-12 text-center text-slate-500">
                       <RefreshCw className="mx-auto h-6 w-6 animate-spin text-[#f27024] mb-2" />
                       Đang tải yêu cầu hoàn tiền…
                     </td>
                   </tr>
                 ) : refunds.length === 0 ? (
                   <tr>
-                    <td colSpan="7" className="py-12 text-center text-[#8c7166]">
+                    <td colSpan="7" className="py-12 text-center text-slate-400">
                       Không có yêu cầu hoàn tiền nào ở trạng thái này.
                     </td>
                   </tr>
                 ) : (
                   refunds.map((r) => (
-                    <tr key={r.id} className="hover:bg-[#fff8f5] transition">
-                      <td className="px-6 py-4">
-                        <p className="font-semibold text-[#1f1b17]">{r.school_name}</p>
-                        <p className="text-[11px] text-[#8c7166] font-mono">{r.school_code}</p>
+                    <tr key={r.id} className="hover:bg-slate-50/70 transition">
+                      <td className="px-5 py-3">
+                        <p className="font-semibold text-slate-900">{r.school_name}</p>
+                        <p className="text-[11px] text-slate-400 font-mono">{r.school_code}</p>
                       </td>
-                      <td className="px-6 py-4">
-                        <p className="font-mono text-[#1f1b17] font-medium">{r.order_reference}</p>
-                        <p className="text-[11px] text-[#8c7166]">Gốc: {formatCurrency(r.transaction_amount)}</p>
+                      <td className="px-5 py-3">
+                        <p className="font-mono text-slate-900 font-medium">{r.order_reference}</p>
+                        <p className="text-[11px] text-slate-400">Gốc: {formatCurrency(r.transaction_amount)}</p>
                       </td>
-                      <td className="px-6 py-4 font-black text-[#1f1b17] text-sm">
+                      <td className="px-5 py-3 font-bold text-slate-900 text-sm">
                         {formatCurrency(r.amount)}
                       </td>
-                      <td className="px-6 py-4">
-                        <p className="font-semibold text-[#1f1b17]">{r.bank_name || "Ngân hàng thụ hưởng"}</p>
-                        <p className="text-[11px] text-[#545f73] font-mono">{r.bank_account_number || "—"}</p>
-                        <p className="text-[10px] uppercase text-[#8c7166]">{r.bank_account_name || "—"}</p>
+                      <td className="px-5 py-3">
+                        <p className="font-semibold text-slate-900">{r.bank_name || "Ngân hàng thụ hưởng"}</p>
+                        <p className="text-[11px] text-slate-500 font-mono">{r.bank_account_number || "—"}</p>
+                        <p className="text-[10px] uppercase text-slate-400">{r.bank_account_name || "—"}</p>
                       </td>
-                      <td className="px-6 py-4 max-w-xs text-[#545f73]">
+                      <td className="px-5 py-3 max-w-xs text-slate-600">
                         <p className="truncate" title={r.reason}>{r.reason}</p>
                         {r.rejection_reason && (
                           <p className="text-[11px] text-red-600 italic">Lý do từ chối: {r.rejection_reason}</p>
@@ -240,37 +258,37 @@ export default function PlatformRefundsPage() {
                           <p className="text-[11px] text-emerald-700 font-mono">Ref chi: {r.payout_reference}</p>
                         )}
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-5 py-3">
                         {r.status === "requested" ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-700">
                             <Clock className="h-3 w-3" />
                             Chờ duyệt
                           </span>
                         ) : r.status === "approved" ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-[#fff8f5] border border-[#ffdbcc] px-2.5 py-1 text-xs font-semibold text-[#f27024]">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-orange-50 border border-orange-200 px-2.5 py-0.5 text-xs font-semibold text-[#f27024]">
                             <CheckCircle2 className="h-3 w-3" />
                             Đã duyệt
                           </span>
                         ) : r.status === "succeeded" ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">
                             <CheckCircle2 className="h-3 w-3" />
                             Đã hoàn tất
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-600">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-semibold text-red-600">
                             <XCircle className="h-3 w-3" />
                             Đã từ chối
                           </span>
                         )}
                       </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
+                      <td className="px-5 py-3 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
                           {r.status === "requested" && (
                             <>
                               <button
                                 type="button"
                                 onClick={() => handleApprove(r)}
-                                className="rounded-lg bg-[#f27024] px-3 py-1.5 font-bold text-white hover:bg-[#d95c14] transition"
+                                className="rounded-lg bg-[#f27024] px-2.5 py-1 text-xs font-bold text-white hover:bg-[#d95c14] transition"
                               >
                                 Phê duyệt
                               </button>
@@ -280,7 +298,7 @@ export default function PlatformRefundsPage() {
                                   setRejectingRefund(r);
                                   setRejectionReason("");
                                 }}
-                                className="rounded-lg border border-red-200 bg-white px-3 py-1.5 font-semibold text-red-600 hover:bg-red-50 transition"
+                                className="rounded-lg border border-red-200 bg-white px-2.5 py-1 text-xs font-semibold text-red-600 hover:bg-red-50 transition"
                               >
                                 Từ chối
                               </button>
@@ -294,7 +312,7 @@ export default function PlatformRefundsPage() {
                                 setExecutingRefund(r);
                                 setExecuteForm({ payoutReference: "", notes: "" });
                               }}
-                              className="rounded-lg bg-emerald-600 px-3 py-1.5 font-bold text-white hover:bg-emerald-700 transition shadow-xs"
+                              className="rounded-lg bg-emerald-600 px-2.5 py-1 text-xs font-bold text-white hover:bg-emerald-700 transition shadow-xs"
                             >
                               Thực hiện lệnh chi
                             </button>
@@ -310,14 +328,14 @@ export default function PlatformRefundsPage() {
 
           {/* Pagination */}
           {pagination.totalPages > 1 && (
-            <div className="flex items-center justify-between border-t border-[#f5ebe1] bg-[#fff8f5] px-6 py-3 text-xs text-[#545f73]">
+            <div className="shrink-0 flex items-center justify-between border-t border-slate-200 bg-white px-5 py-2.5 text-xs text-slate-500">
               <p>Trang {pagination.page} / {pagination.totalPages} (Tổng {pagination.total} yêu cầu)</p>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
                   disabled={pagination.page <= 1}
                   onClick={() => loadRefunds(pagination.page - 1)}
-                  className="rounded-lg border border-[#f5ebe1] bg-white px-3 py-1 font-medium hover:bg-[#fff8f5] disabled:opacity-40"
+                  className="rounded-lg border border-slate-200 bg-white px-3 py-1 font-medium hover:bg-slate-50 disabled:opacity-40"
                 >
                   ← Trước
                 </button>
@@ -325,7 +343,7 @@ export default function PlatformRefundsPage() {
                   type="button"
                   disabled={pagination.page >= pagination.totalPages}
                   onClick={() => loadRefunds(pagination.page + 1)}
-                  className="rounded-lg border border-[#f5ebe1] bg-white px-3 py-1 font-medium hover:bg-[#fff8f5] disabled:opacity-40"
+                  className="rounded-lg border border-slate-200 bg-white px-3 py-1 font-medium hover:bg-slate-50 disabled:opacity-40"
                 >
                   Sau →
                 </button>
@@ -336,132 +354,144 @@ export default function PlatformRefundsPage() {
       </div>
 
       {/* Modal: Từ chối hoàn tiền */}
-      {rejectingRefund && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl border border-[#f5ebe1]">
-            <div className="flex items-center justify-between border-b border-[#f5ebe1] pb-3">
-              <h2 className="text-base font-bold text-[#1f1b17]">Từ chối yêu cầu hoàn tiền</h2>
-              <button onClick={() => setRejectingRefund(null)} className="rounded-lg p-1 text-[#8c7166] hover:bg-[#fff8f5]">
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleRejectSubmit} className="mt-4 space-y-4">
-              <p className="text-xs text-[#545f73]">
-                Trường: <strong>{rejectingRefund.school_name}</strong> — Số tiền: <strong>{formatCurrency(rejectingRefund.amount)}</strong>
-              </p>
-
-              <div>
-                <label className="block text-xs font-semibold text-[#1f1b17]">Lý do từ chối (Bắt buộc)</label>
-                <textarea
-                  rows="3"
-                  required
-                  placeholder="Ghi rõ lý do không đủ điều kiện hoàn tiền theo điều khoản…"
-                  value={rejectionReason}
-                  onChange={(e) => setRejectionReason(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-[#f5ebe1] bg-white p-2.5 text-xs text-[#1f1b17] focus:border-[#f27024] focus:outline-hidden"
-                />
-              </div>
-
-              <div className="flex items-center justify-end gap-2 border-t border-[#f5ebe1] pt-4">
+      {rejectingRefund &&
+        createPortal(
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 overflow-y-auto">
+            <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-slate-200 my-auto max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h2 className="text-base font-bold text-slate-900">Từ chối yêu cầu hoàn tiền</h2>
                 <button
                   type="button"
                   onClick={() => setRejectingRefund(null)}
-                  className="rounded-xl border border-[#f5ebe1] bg-white px-3.5 py-2 text-xs font-semibold text-[#545f73] hover:bg-[#fff8f5]"
+                  className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition"
                 >
-                  Hủy
-                </button>
-                <button
-                  type="submit"
-                  disabled={rejectSubmitting}
-                  className="rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-white hover:bg-red-700 disabled:opacity-50 transition"
-                >
-                  {rejectSubmitting ? "Đang xử lý…" : "Xác nhận từ chối"}
+                  <X className="h-5 w-5" />
                 </button>
               </div>
-            </form>
-          </div>
-        </div>
-      )}
+
+              <form onSubmit={handleRejectSubmit} className="mt-4 space-y-4">
+                <p className="text-xs text-slate-600">
+                  Trường: <strong className="text-slate-900">{rejectingRefund.school_name}</strong> — Số tiền: <strong className="text-red-600">{formatCurrency(rejectingRefund.amount)}</strong>
+                </p>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700">Lý do từ chối (Bắt buộc)</label>
+                  <textarea
+                    rows="3"
+                    required
+                    placeholder="Ghi rõ lý do không đủ điều kiện hoàn tiền theo điều khoản…"
+                    value={rejectionReason}
+                    onChange={(e) => setRejectionReason(e.target.value)}
+                    className="mt-1 w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs text-slate-900 focus:border-[#f27024] focus:outline-hidden"
+                  />
+                </div>
+
+                <div className="flex items-center justify-end gap-2 border-t border-slate-100 pt-3">
+                  <button
+                    type="button"
+                    onClick={() => setRejectingRefund(null)}
+                    className="rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={rejectSubmitting}
+                    className="rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-white hover:bg-red-700 disabled:opacity-50 transition"
+                  >
+                    {rejectSubmitting ? "Đang xử lý…" : "Xác nhận từ chối"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>,
+          document.body
+        )}
 
       {/* Modal: Thực hiện lệnh chi */}
-      {executingRefund && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs">
-          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl border border-[#f5ebe1]">
-            <div className="flex items-center justify-between border-b border-[#f5ebe1] pb-3">
-              <h2 className="text-base font-bold text-[#1f1b17]">Xác nhận thực hiện lệnh chi hoàn tiền</h2>
-              <button onClick={() => setExecutingRefund(null)} className="rounded-lg p-1 text-[#8c7166] hover:bg-[#fff8f5]">
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleExecuteSubmit} className="mt-4 space-y-4">
-              <div className="rounded-2xl bg-[#fff8f5] border border-[#f5ebe1] p-4 text-xs space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-[#545f73]">Trường yêu cầu:</span>
-                  <span className="font-semibold text-[#1f1b17]">{executingRefund.school_name}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-[#545f73]">Số tiền hoàn:</span>
-                  <span className="font-extrabold text-[#1f1b17] text-sm text-emerald-600">{formatCurrency(executingRefund.amount)}</span>
-                </div>
-                <div className="flex justify-between border-t border-[#f5ebe1] pt-2">
-                  <span className="text-[#545f73]">Ngân hàng thụ hưởng:</span>
-                  <span className="font-semibold text-[#1f1b17]">{executingRefund.bank_name || "—"}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-[#545f73]">Số tài khoản:</span>
-                  <span className="font-mono font-bold text-[#1f1b17]">{executingRefund.bank_account_number || "—"}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-[#545f73]">Chủ tài khoản:</span>
-                  <span className="uppercase font-semibold text-[#1f1b17]">{executingRefund.bank_account_name || "—"}</span>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-[#1f1b17]">Mã tham chiếu chuyển khoản / Payout Ref</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Ví dụ: FT26084920239 hoặc payOS Payout ID…"
-                  value={executeForm.payoutReference}
-                  onChange={(e) => setExecuteForm({ ...executeForm, payoutReference: e.target.value })}
-                  className="mt-1 w-full rounded-xl border border-[#f5ebe1] bg-white p-2.5 font-mono text-xs text-[#1f1b17] focus:border-[#f27024] focus:outline-hidden"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-[#1f1b17]">Ghi chú đối soát / chứng từ</label>
-                <textarea
-                  rows="2"
-                  placeholder="Ghi chú đối soát nội bộ…"
-                  value={executeForm.notes}
-                  onChange={(e) => setExecuteForm({ ...executeForm, notes: e.target.value })}
-                  className="mt-1 w-full rounded-xl border border-[#f5ebe1] bg-white p-2.5 text-xs text-[#1f1b17] focus:border-[#f27024] focus:outline-hidden"
-                />
-              </div>
-
-              <div className="flex items-center justify-end gap-2 border-t border-[#f5ebe1] pt-4">
+      {executingRefund &&
+        createPortal(
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 overflow-y-auto">
+            <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl border border-slate-200 my-auto max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h2 className="text-base font-bold text-slate-900">Xác nhận thực hiện lệnh chi hoàn tiền</h2>
                 <button
                   type="button"
                   onClick={() => setExecutingRefund(null)}
-                  className="rounded-xl border border-[#f5ebe1] bg-white px-3.5 py-2 text-xs font-semibold text-[#545f73] hover:bg-[#fff8f5]"
+                  className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition"
                 >
-                  Hủy
-                </button>
-                <button
-                  type="submit"
-                  disabled={executeSubmitting}
-                  className="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700 disabled:opacity-50 transition"
-                >
-                  {executeSubmitting ? "Đang xác nhận…" : "Xác nhận đã chuyển tiền"}
+                  <X className="h-5 w-5" />
                 </button>
               </div>
-            </form>
-          </div>
-        </div>
-      )}
+
+              <form onSubmit={handleExecuteSubmit} className="mt-4 space-y-4">
+                <div className="rounded-xl bg-orange-50/40 border border-orange-100/60 p-3.5 text-xs space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Trường yêu cầu:</span>
+                    <span className="font-semibold text-slate-900">{executingRefund.school_name}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Số tiền hoàn:</span>
+                    <span className="font-bold text-emerald-600 text-sm">{formatCurrency(executingRefund.amount)}</span>
+                  </div>
+                  <div className="flex justify-between border-t border-orange-100/60 pt-2">
+                    <span className="text-slate-500">Ngân hàng thụ hưởng:</span>
+                    <span className="font-semibold text-slate-900">{executingRefund.bank_name || "—"}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Số tài khoản:</span>
+                    <span className="font-mono font-bold text-slate-900">{executingRefund.bank_account_number || "—"}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Chủ tài khoản:</span>
+                    <span className="uppercase font-semibold text-slate-900">{executingRefund.bank_account_name || "—"}</span>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700">Mã tham chiếu chuyển khoản / Payout Ref</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Ví dụ: FT26084920239 hoặc payOS Payout ID…"
+                    value={executeForm.payoutReference}
+                    onChange={(e) => setExecuteForm({ ...executeForm, payoutReference: e.target.value })}
+                    className="mt-1 w-full rounded-xl border border-slate-200 bg-white p-2.5 font-mono text-xs text-slate-900 focus:border-[#f27024] focus:outline-hidden"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700">Ghi chú đối soát / chứng từ</label>
+                  <textarea
+                    rows="2"
+                    placeholder="Ghi chú đối soát nội bộ…"
+                    value={executeForm.notes}
+                    onChange={(e) => setExecuteForm({ ...executeForm, notes: e.target.value })}
+                    className="mt-1 w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs text-slate-900 focus:border-[#f27024] focus:outline-hidden"
+                  />
+                </div>
+
+                <div className="flex items-center justify-end gap-2 border-t border-slate-100 pt-3">
+                  <button
+                    type="button"
+                    onClick={() => setExecutingRefund(null)}
+                    className="rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={executeSubmitting}
+                    className="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700 disabled:opacity-50 transition"
+                  >
+                    {executeSubmitting ? "Đang xác nhận…" : "Xác nhận đã chuyển tiền"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>,
+          document.body
+        )}
     </SuperadminLayout>
   );
 }
