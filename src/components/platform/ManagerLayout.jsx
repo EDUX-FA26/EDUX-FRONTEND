@@ -117,6 +117,18 @@ export default function ManagerLayout({ children }) {
     location.pathname === "/manager/schools" ||
     location.pathname.startsWith("/manager/schools");
 
+  const isManagerSubscriptions =
+    location.pathname === "/manager/subscriptions" ||
+    location.pathname.startsWith("/manager/subscriptions");
+
+  const isManagerPayments =
+    location.pathname === "/manager/payments" ||
+    location.pathname.startsWith("/manager/payments");
+
+  const isManagerNotifications =
+    location.pathname === "/manager/notifications" ||
+    location.pathname.startsWith("/manager/notifications");
+
   const initials = user?.full_name
     ? user.full_name.split(" ").slice(-1)[0][0].toUpperCase()
     : (user?.username?.[0] || user?.email?.[0] || "M").toUpperCase();
@@ -628,7 +640,7 @@ export default function ManagerLayout({ children }) {
         <main
           className="flex-1 min-w-0 w-full overflow-x-hidden"
           style={
-            isManagerSchools
+            isManagerSchools || isManagerSubscriptions || isManagerPayments || isManagerNotifications
               ? {
                   flex: 1,
                   width: "100%",
@@ -656,7 +668,11 @@ export default function ManagerLayout({ children }) {
         </main>
 
         {/* Standard Footer */}
-        {!isManagerDashboard && !isManagerSchools && (
+        {!isManagerDashboard &&
+          !isManagerSchools &&
+          !isManagerSubscriptions &&
+          !isManagerPayments &&
+          !isManagerNotifications && (
           <footer
             style={{
               background: "var(--color-surface)",
