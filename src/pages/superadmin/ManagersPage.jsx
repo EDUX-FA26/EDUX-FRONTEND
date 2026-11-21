@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
+import { createPortal } from "react-dom";
 import SuperadminLayout from "../../components/platform/SuperadminLayout";
 import EduxAlert from "../../components/common/EduxAlert";
 import {
@@ -22,6 +23,7 @@ import {
   X,
   Shield,
   Key,
+  RotateCcw,
 } from "lucide-react";
 
 export default function ManagersPage() {
@@ -74,6 +76,13 @@ export default function ManagersPage() {
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     loadData(1);
+  };
+
+  const handleClearFilter = () => {
+    if (search || statusFilter) {
+      setSearch("");
+      setStatusFilter("");
+    }
   };
 
   const handleCreateSubmit = async (e) => {
@@ -151,19 +160,21 @@ export default function ManagersPage() {
 
   return (
     <SuperadminLayout>
-      <div className="space-y-6">
+      <div className="w-full max-w-7xl mx-auto h-[calc(100vh-var(--dashboard-header-height,64px))] overflow-hidden flex flex-col px-6 pt-4 pb-4 box-border">
         {/* Header */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="shrink-0 flex flex-wrap items-center justify-between gap-3 mb-3">
           <div>
-            <h1 className="text-2xl font-extrabold tracking-tight text-[#1f1b17]">Quản lý Manager Nền tảng</h1>
-            <p className="mt-1 text-sm text-[#545f73]">
+            <h1 className="text-xl font-bold tracking-tight text-slate-900">
+              Quản lý Manager Nền tảng
+            </h1>
+            <p className="mt-0.5 text-xs text-slate-500">
               Phân quyền và quản lý danh sách tài khoản Manager (quản trị viên vận hành các trường học).
             </p>
           </div>
           <button
             type="button"
             onClick={() => setShowCreateModal(true)}
-            className="inline-flex items-center gap-2 rounded-xl bg-[#f27024] px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-orange-500/20 hover:bg-[#d95c14] transition"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-[#f27024] px-3.5 h-9 text-xs sm:text-sm font-semibold text-white shadow-sm shadow-orange-500/20 hover:bg-[#d95c14] transition cursor-pointer"
           >
             <Plus className="h-4 w-4" />
             Tạo Manager mới
@@ -172,100 +183,106 @@ export default function ManagersPage() {
 
         {/* Alerts */}
         {message.text && (
-          <EduxAlert
-            type={message.type === "success" ? "success" : "error"}
-            title={message.type === "success" ? "Thành công" : "Thông báo lỗi"}
-            message={message.text}
-            onClose={() => setMessage({ type: "", text: "" })}
-          />
+          <div className="shrink-0 mb-3">
+            <EduxAlert
+              type={message.type === "success" ? "success" : "error"}
+              title={message.type === "success" ? "Thành công" : "Thông báo lỗi"}
+              message={message.text}
+              onClose={() => setMessage({ type: "", text: "" })}
+            />
+          </div>
         )}
 
-        {/* Stat Cards */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <div className="rounded-2xl border border-[#f5ebe1] bg-white p-5 shadow-xs">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-[#8c7166]">Tổng số Manager</p>
-                <p className="mt-2 text-3xl font-extrabold text-[#1f1b17]">{pagination.total || managers.length}</p>
-              </div>
-              <div className="rounded-xl bg-[#fff8f5] p-3 text-[#f27024]">
-                <Users className="h-6 w-6" />
-              </div>
+        {/* 3 KPI Cards */}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 shrink-0 mb-3">
+          <div className="py-2.5 px-4 bg-white rounded-xl border border-slate-200/80 flex items-center justify-between shadow-xs">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Tổng số Manager</p>
+              <p className="mt-0.5 text-xl font-bold text-slate-900">{pagination.total || managers.length}</p>
+            </div>
+            <div className="w-9 h-9 rounded-lg bg-[#fff8f5] text-[#f27024] flex items-center justify-center shrink-0">
+              <Users className="h-5 w-5" />
             </div>
           </div>
 
-          <div className="rounded-2xl border border-[#f5ebe1] bg-white p-5 shadow-xs">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-[#8c7166]">Đang hoạt động</p>
-                <p className="mt-2 text-3xl font-extrabold text-emerald-600">{activeCount}</p>
-              </div>
-              <div className="rounded-xl bg-emerald-50 p-3 text-emerald-600">
-                <UserCheck className="h-6 w-6" />
-              </div>
+          <div className="py-2.5 px-4 bg-white rounded-xl border border-slate-200/80 flex items-center justify-between shadow-xs">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Đang hoạt động</p>
+              <p className="mt-0.5 text-xl font-bold text-emerald-600">{activeCount}</p>
+            </div>
+            <div className="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+              <UserCheck className="h-5 w-5" />
             </div>
           </div>
 
-          <div className="rounded-2xl border border-[#f5ebe1] bg-white p-5 shadow-xs">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-[#8c7166]">Đã tạm khóa</p>
-                <p className="mt-2 text-3xl font-extrabold text-[#8c7166]">{inactiveCount}</p>
-              </div>
-              <div className="rounded-xl bg-[#fcf2eb] p-3 text-[#8c7166]">
-                <UserX className="h-6 w-6" />
-              </div>
+          <div className="py-2.5 px-4 bg-white rounded-xl border border-slate-200/80 flex items-center justify-between shadow-xs">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Đã tạm khóa</p>
+              <p className="mt-0.5 text-xl font-bold text-slate-500">{inactiveCount}</p>
+            </div>
+            <div className="w-9 h-9 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center shrink-0">
+              <UserX className="h-5 w-5" />
             </div>
           </div>
         </div>
 
-        {/* Search & Filter Bar */}
-        <div className="flex flex-col gap-3 rounded-2xl border border-[#f5ebe1] bg-white p-4 shadow-xs sm:flex-row sm:items-center sm:justify-between">
-          <form onSubmit={handleSearchSubmit} className="relative flex-1 max-w-md">
-            <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8c7166]" />
+        {/* Search & Filter Bar (Direct 1 row without thick wrapper) */}
+        <div className="shrink-0 flex flex-wrap items-center gap-2.5 mb-3">
+          <form onSubmit={handleSearchSubmit} className="relative flex-1 min-w-[240px]">
+            <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-400" />
             <input
               type="text"
               placeholder="Tìm theo họ tên, email hoặc username…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full rounded-xl border border-[#f5ebe1] bg-white pl-10 pr-4 py-2 text-sm text-[#1f1b17] focus:border-[#f27024] focus:outline-hidden"
+              className="h-9 w-full rounded-xl border border-slate-200 bg-white pl-9 pr-3.5 text-xs shadow-xs focus:border-[#f27024] focus:outline-none focus:ring-1 focus:ring-[#f27024] text-slate-800 placeholder-slate-400"
             />
           </form>
 
-          <div className="flex items-center gap-3">
+          <div className="relative">
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="rounded-xl border border-[#f5ebe1] bg-white px-3 py-2 text-sm text-[#1f1b17] focus:border-[#f27024] focus:outline-hidden"
+              className="h-9 w-44 rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 shadow-xs focus:border-[#f27024] focus:outline-none"
             >
               <option value="">Tất cả trạng thái</option>
               <option value="true">Đang hoạt động</option>
               <option value="false">Đã tạm khóa</option>
             </select>
-
-            <button
-              type="button"
-              onClick={() => loadData(pagination.page)}
-              className="rounded-xl border border-[#f5ebe1] bg-white p-2 text-[#545f73] hover:bg-[#fff8f5] hover:text-[#f27024] transition"
-              title="Tải lại danh sách"
-            >
-              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin text-[#f27024]" : ""}`} />
-            </button>
           </div>
+
+          <button
+            type="button"
+            onClick={handleClearFilter}
+            className="h-9 px-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-xs font-medium text-slate-600 shrink-0 inline-flex items-center gap-1.5 transition cursor-pointer"
+            title="Xóa bộ lọc"
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+            Xóa lọc
+          </button>
+
+          <button
+            type="button"
+            onClick={() => loadData(pagination.page)}
+            className="h-9 w-9 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 flex items-center justify-center shrink-0 shadow-xs transition cursor-pointer"
+            title="Tải lại danh sách"
+          >
+            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin text-[#f27024]" : ""}`} />
+          </button>
         </div>
 
-        {/* Managers Table */}
-        <div className="overflow-hidden rounded-2xl border border-[#f5ebe1] bg-white shadow-xs">
-          <div className="overflow-x-auto">
+        {/* Managers Table Card */}
+        <div className="flex-1 min-h-0 bg-white rounded-2xl border border-slate-200 flex flex-col overflow-hidden shadow-xs">
+          <div className="flex-1 min-h-0 overflow-y-auto">
             <table className="w-full text-left text-sm">
-              <thead className="border-b border-[#f5ebe1] bg-[#fff8f5] text-xs font-bold uppercase tracking-wider text-[#8c7166]">
+              <thead className="sticky top-0 bg-[#fff8f5] z-10 text-xs font-bold uppercase tracking-wider text-[#8c7166] border-b border-[#f5ebe1]">
                 <tr>
-                  <th className="px-6 py-4">Manager</th>
-                  <th className="px-6 py-4">Username</th>
-                  <th className="px-6 py-4">Vai trò</th>
-                  <th className="px-6 py-4">Trạng thái</th>
-                  <th className="px-6 py-4">Ngày tạo</th>
-                  <th className="px-6 py-4 text-right">Thao tác</th>
+                  <th className="px-6 py-3.5">Manager</th>
+                  <th className="px-6 py-3.5">Username</th>
+                  <th className="px-6 py-3.5">Vai trò</th>
+                  <th className="px-6 py-3.5">Trạng thái</th>
+                  <th className="px-6 py-3.5">Ngày tạo</th>
+                  <th className="px-6 py-3.5 text-right">Thao tác</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#f5ebe1]">
@@ -285,7 +302,7 @@ export default function ManagersPage() {
                 ) : (
                   managers.map((m) => (
                     <tr key={m.id} className="hover:bg-[#fff8f5] transition">
-                      <td className="px-6 py-4">
+                      <td className="px-6 py-3.5">
                         <div className="flex items-center gap-3">
                           <div className="h-9 w-9 shrink-0 rounded-full bg-[#ffdbcc] text-[#a04100] flex items-center justify-center font-bold text-sm">
                             {(m.full_name || m.username || "M")[0].toUpperCase()}
@@ -296,38 +313,38 @@ export default function ManagersPage() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 font-mono text-xs text-[#1f1b17]">{m.username}</td>
-                      <td className="px-6 py-4">
-                        <span className="inline-flex items-center gap-1 rounded-md bg-[#fff8f5] border border-[#ffdbcc] px-2 py-1 text-xs font-semibold text-[#f27024]">
+                      <td className="px-6 py-3.5 font-mono text-xs text-[#1f1b17]">{m.username}</td>
+                      <td className="px-6 py-3.5">
+                        <span className="inline-flex items-center gap-1 rounded-md bg-[#fff8f5] border border-[#ffdbcc] px-2 py-0.5 text-xs font-semibold text-[#f27024]">
                           <Shield className="h-3 w-3" />
                           Platform Manager
                         </span>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-6 py-3.5">
                         {m.is_active ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">
                             <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                             Hoạt động
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-[#fcf2eb] px-2.5 py-1 text-xs font-semibold text-[#8c7166]">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-[#fcf2eb] px-2.5 py-0.5 text-xs font-semibold text-[#8c7166]">
                             <span className="h-1.5 w-1.5 rounded-full bg-[#8c7166]" />
                             Đã khóa
                           </span>
                         )}
                       </td>
-                      <td className="px-6 py-4 text-xs text-[#545f73]">
+                      <td className="px-6 py-3.5 text-xs text-[#545f73]">
                         {m.created_at ? new Date(m.created_at).toLocaleDateString("vi-VN") : "—"}
                       </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
+                      <td className="px-6 py-3.5 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
                           <button
                             type="button"
                             onClick={() => {
                               setEditingManager(m);
                               setEditForm({ fullName: m.full_name || "", username: m.username || "", password: "" });
                             }}
-                            className="rounded-lg p-1.5 text-[#545f73] hover:bg-[#fff8f5] hover:text-[#f27024] transition"
+                            className="rounded-lg p-1.5 text-[#545f73] hover:bg-[#fff8f5] hover:text-[#f27024] transition cursor-pointer"
                             title="Chỉnh sửa thông tin"
                           >
                             <Edit2 className="h-4 w-4" />
@@ -336,7 +353,7 @@ export default function ManagersPage() {
                           <button
                             type="button"
                             onClick={() => handleToggleStatus(m)}
-                            className={`rounded-lg p-1.5 transition ${m.is_active
+                            className={`rounded-lg p-1.5 transition cursor-pointer ${m.is_active
                               ? "text-amber-600 hover:bg-amber-50"
                               : "text-emerald-600 hover:bg-emerald-50"
                               }`}
@@ -348,7 +365,7 @@ export default function ManagersPage() {
                           <button
                             type="button"
                             onClick={() => handleDelete(m)}
-                            className="rounded-lg p-1.5 text-red-500 hover:bg-red-50 hover:text-red-700 transition"
+                            className="rounded-lg p-1.5 text-red-500 hover:bg-red-50 hover:text-red-700 transition cursor-pointer"
                             title="Vô hiệu hóa Manager"
                           >
                             <Trash2 className="h-4 w-4" />
@@ -364,16 +381,16 @@ export default function ManagersPage() {
 
           {/* Pagination */}
           {pagination.totalPages > 1 && (
-            <div className="flex items-center justify-between border-t border-[#f5ebe1] bg-[#fff8f5] px-6 py-3 text-xs text-[#545f73]">
+            <div className="shrink-0 flex items-center justify-between border-t border-[#f5ebe1] bg-[#fff8f5] px-6 py-2.5 text-xs text-[#545f73]">
               <p>
                 Hiển thị trang <strong>{pagination.page}</strong> / <strong>{pagination.totalPages}</strong> (Tổng cộng {pagination.total} Manager)
               </p>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
                 <button
                   type="button"
                   disabled={pagination.page <= 1}
                   onClick={() => loadData(pagination.page - 1)}
-                  className="rounded-lg border border-[#f5ebe1] bg-white px-3 py-1.5 font-medium text-[#1f1b17] hover:bg-[#fff8f5] disabled:opacity-40"
+                  className="rounded-lg border border-[#f5ebe1] bg-white px-3 py-1.5 font-medium text-[#1f1b17] hover:bg-[#fff8f5] disabled:opacity-40 cursor-pointer"
                 >
                   ← Trước
                 </button>
@@ -381,7 +398,7 @@ export default function ManagersPage() {
                   type="button"
                   disabled={pagination.page >= pagination.totalPages}
                   onClick={() => loadData(pagination.page + 1)}
-                  className="rounded-lg border border-[#f5ebe1] bg-white px-3 py-1.5 font-medium text-[#1f1b17] hover:bg-[#fff8f5] disabled:opacity-40"
+                  className="rounded-lg border border-[#f5ebe1] bg-white px-3 py-1.5 font-medium text-[#1f1b17] hover:bg-[#fff8f5] disabled:opacity-40 cursor-pointer"
                 >
                   Sau →
                 </button>
@@ -392,174 +409,180 @@ export default function ManagersPage() {
       </div>
 
       {/* Modal: Tạo Manager mới */}
-      {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs">
-          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl border border-[#f5ebe1]">
-            <div className="flex items-center justify-between border-b border-[#f5ebe1] pb-4">
-              <h2 className="text-lg font-bold text-[#1f1b17]">Tạo tài khoản Manager mới</h2>
-              <button
-                type="button"
-                onClick={() => setShowCreateModal(false)}
-                className="rounded-lg p-1 text-[#8c7166] hover:bg-[#fff8f5] hover:text-[#1f1b17]"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleCreateSubmit} className="mt-4 space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-[#1f1b17]">Họ và tên</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Ví dụ: Nguyễn Văn An"
-                  value={createForm.fullName}
-                  onChange={(e) => setCreateForm({ ...createForm, fullName: e.target.value })}
-                  className="mt-1 w-full rounded-xl border border-[#f5ebe1] bg-white p-2.5 text-sm text-[#1f1b17] focus:border-[#f27024] focus:outline-hidden"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-[#1f1b17]">Email đăng nhập</label>
-                <input
-                  type="email"
-                  required
-                  placeholder="manager@fpt.edu.vn"
-                  value={createForm.email}
-                  onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
-                  className="mt-1 w-full rounded-xl border border-[#f5ebe1] bg-white p-2.5 text-sm text-[#1f1b17] focus:border-[#f27024] focus:outline-hidden"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-[#1f1b17]">Username</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="manager_an"
-                  value={createForm.username}
-                  onChange={(e) => setCreateForm({ ...createForm, username: e.target.value })}
-                  className="mt-1 w-full rounded-xl border border-[#f5ebe1] bg-white p-2.5 text-sm text-[#1f1b17] focus:border-[#f27024] focus:outline-hidden"
-                />
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between">
-                  <label className="block text-xs font-semibold text-[#1f1b17]">Mật khẩu khởi tạo</label>
-                  <button
-                    type="button"
-                    onClick={generateRandomPassword}
-                    className="flex items-center gap-1 text-xs text-[#f27024] hover:underline font-semibold"
-                  >
-                    <Key className="h-3 w-3" />
-                    Tạo ngẫu nhiên
-                  </button>
-                </div>
-                <input
-                  type="text"
-                  required
-                  minLength={6}
-                  placeholder="Tối thiểu 6 ký tự"
-                  value={createForm.password}
-                  onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
-                  className="mt-1 w-full rounded-xl border border-[#f5ebe1] bg-white p-2.5 font-mono text-sm text-[#1f1b17] focus:border-[#f27024] focus:outline-hidden"
-                />
-              </div>
-
-              <div className="mt-6 flex items-center justify-end gap-3 border-t border-[#f5ebe1] pt-4">
+      {showCreateModal &&
+        createPortal(
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
+            <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl border border-slate-200">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h2 className="text-base font-bold text-slate-900">Tạo tài khoản Manager mới</h2>
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
-                  className="rounded-xl border border-[#f5ebe1] bg-white px-4 py-2 text-sm font-semibold text-[#545f73] hover:bg-[#fff8f5]"
+                  className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 cursor-pointer"
                 >
-                  Hủy
-                </button>
-                <button
-                  type="submit"
-                  disabled={createSubmitting}
-                  className="rounded-xl bg-[#f27024] px-5 py-2 text-sm font-semibold text-white hover:bg-[#d95c14] disabled:opacity-50 transition"
-                >
-                  {createSubmitting ? "Đang tạo…" : "Xác nhận tạo Manager"}
+                  <X className="h-5 w-5" />
                 </button>
               </div>
-            </form>
-          </div>
-        </div>
-      )}
+
+              <form onSubmit={handleCreateSubmit} className="mt-4 space-y-3.5">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Họ và tên</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Ví dụ: Nguyễn Văn An"
+                    value={createForm.fullName}
+                    onChange={(e) => setCreateForm({ ...createForm, fullName: e.target.value })}
+                    className="w-full h-9 rounded-xl border border-slate-200 bg-white px-3.5 text-xs text-slate-900 focus:border-[#f27024] focus:outline-none focus:ring-1 focus:ring-[#f27024]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Email đăng nhập</label>
+                  <input
+                    type="email"
+                    required
+                    placeholder="manager@fpt.edu.vn"
+                    value={createForm.email}
+                    onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
+                    className="w-full h-9 rounded-xl border border-slate-200 bg-white px-3.5 text-xs text-slate-900 focus:border-[#f27024] focus:outline-none focus:ring-1 focus:ring-[#f27024]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Username</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="manager_an"
+                    value={createForm.username}
+                    onChange={(e) => setCreateForm({ ...createForm, username: e.target.value })}
+                    className="w-full h-9 rounded-xl border border-slate-200 bg-white px-3.5 text-xs text-slate-900 focus:border-[#f27024] focus:outline-none focus:ring-1 focus:ring-[#f27024]"
+                  />
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-semibold text-slate-700">Mật khẩu khởi tạo</label>
+                    <button
+                      type="button"
+                      onClick={generateRandomPassword}
+                      className="flex items-center gap-1 text-xs text-[#f27024] hover:underline font-semibold cursor-pointer"
+                    >
+                      <Key className="h-3 w-3" />
+                      Tạo ngẫu nhiên
+                    </button>
+                  </div>
+                  <input
+                    type="text"
+                    required
+                    minLength={6}
+                    placeholder="Tối thiểu 6 ký tự"
+                    value={createForm.password}
+                    onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
+                    className="w-full h-9 rounded-xl border border-slate-200 bg-white px-3.5 font-mono text-xs text-slate-900 focus:border-[#f27024] focus:outline-none focus:ring-1 focus:ring-[#f27024]"
+                  />
+                </div>
+
+                <div className="mt-6 flex items-center justify-end gap-2.5 border-t border-slate-100 pt-3.5">
+                  <button
+                    type="button"
+                    onClick={() => setShowCreateModal(false)}
+                    className="rounded-xl border border-slate-200 bg-white px-4 h-9 text-xs font-semibold text-slate-600 hover:bg-slate-50 cursor-pointer"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={createSubmitting}
+                    className="rounded-xl bg-[#f27024] px-4.5 h-9 text-xs font-semibold text-white hover:bg-[#d95c14] disabled:opacity-50 transition cursor-pointer"
+                  >
+                    {createSubmitting ? "Đang tạo…" : "Xác nhận tạo Manager"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>,
+          document.body
+        )}
 
       {/* Modal: Chỉnh sửa Manager */}
-      {editingManager && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs">
-          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl border border-[#f5ebe1]">
-            <div className="flex items-center justify-between border-b border-[#f5ebe1] pb-4">
-              <h2 className="text-lg font-bold text-[#1f1b17]">Chỉnh sửa thông tin Manager</h2>
-              <button
-                type="button"
-                onClick={() => setEditingManager(null)}
-                className="rounded-lg p-1 text-[#8c7166] hover:bg-[#fff8f5] hover:text-[#1f1b17]"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleEditSubmit} className="mt-4 space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-[#1f1b17]">Họ và tên</label>
-                <input
-                  type="text"
-                  required
-                  value={editForm.fullName}
-                  onChange={(e) => setEditForm({ ...editForm, fullName: e.target.value })}
-                  className="mt-1 w-full rounded-xl border border-[#f5ebe1] bg-white p-2.5 text-sm text-[#1f1b17] focus:border-[#f27024] focus:outline-hidden"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-[#1f1b17]">Username</label>
-                <input
-                  type="text"
-                  required
-                  value={editForm.username}
-                  onChange={(e) => setEditForm({ ...editForm, username: e.target.value })}
-                  className="mt-1 w-full rounded-xl border border-[#f5ebe1] bg-white p-2.5 text-sm text-[#1f1b17] focus:border-[#f27024] focus:outline-hidden"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-[#1f1b17]">Mật khẩu mới (để trống nếu không đổi)</label>
-                <input
-                  type="password"
-                  placeholder="Nhập mật khẩu mới nếu muốn đặt lại..."
-                  value={editForm.password || ""}
-                  onChange={(e) => setEditForm({ ...editForm, password: e.target.value })}
-                  className="mt-1 w-full rounded-xl border border-[#f5ebe1] bg-white p-2.5 text-sm text-[#1f1b17] focus:border-[#f27024] focus:outline-hidden"
-                />
-              </div>
-
-              <div className="rounded-xl bg-[#fff8f5] border border-[#ffdbcc] p-3 text-xs text-[#545f73]">
-                Email hiện tại: <strong>{editingManager.email}</strong>. (Theo quy định bảo mật, thay đổi email Manager yêu cầu xác thực riêng).
-              </div>
-
-              <div className="mt-6 flex items-center justify-end gap-3 border-t border-[#f5ebe1] pt-4">
+      {editingManager &&
+        createPortal(
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
+            <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl border border-slate-200">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h2 className="text-base font-bold text-slate-900">Chỉnh sửa thông tin Manager</h2>
                 <button
                   type="button"
                   onClick={() => setEditingManager(null)}
-                  className="rounded-xl border border-[#f5ebe1] bg-white px-4 py-2 text-sm font-semibold text-[#545f73] hover:bg-[#fff8f5]"
+                  className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 cursor-pointer"
                 >
-                  Hủy
-                </button>
-                <button
-                  type="submit"
-                  disabled={editSubmitting}
-                  className="rounded-xl bg-[#f27024] px-5 py-2 text-sm font-semibold text-white hover:bg-[#d95c14] disabled:opacity-50 transition"
-                >
-                  {editSubmitting ? "Đang lưu…" : "Lưu thay đổi"}
+                  <X className="h-5 w-5" />
                 </button>
               </div>
-            </form>
-          </div>
-        </div>
-      )}
+
+              <form onSubmit={handleEditSubmit} className="mt-4 space-y-3.5">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Họ và tên</label>
+                  <input
+                    type="text"
+                    required
+                    value={editForm.fullName}
+                    onChange={(e) => setEditForm({ ...editForm, fullName: e.target.value })}
+                    className="w-full h-9 rounded-xl border border-slate-200 bg-white px-3.5 text-xs text-slate-900 focus:border-[#f27024] focus:outline-none focus:ring-1 focus:ring-[#f27024]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Username</label>
+                  <input
+                    type="text"
+                    required
+                    value={editForm.username}
+                    onChange={(e) => setEditForm({ ...editForm, username: e.target.value })}
+                    className="w-full h-9 rounded-xl border border-slate-200 bg-white px-3.5 text-xs text-slate-900 focus:border-[#f27024] focus:outline-none focus:ring-1 focus:ring-[#f27024]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Mật khẩu mới (để trống nếu không đổi)
+                  </label>
+                  <input
+                    type="password"
+                    placeholder="Nhập mật khẩu mới nếu muốn đặt lại..."
+                    value={editForm.password || ""}
+                    onChange={(e) => setEditForm({ ...editForm, password: e.target.value })}
+                    className="w-full h-9 rounded-xl border border-slate-200 bg-white px-3.5 text-xs text-slate-900 focus:border-[#f27024] focus:outline-none focus:ring-1 focus:ring-[#f27024]"
+                  />
+                </div>
+
+                <div className="rounded-xl bg-[#fff8f5] border border-[#ffdbcc] p-3 text-xs text-slate-600">
+                  Email hiện tại: <strong>{editingManager.email}</strong>. (Theo quy định bảo mật, thay đổi email Manager yêu cầu xác thực riêng).
+                </div>
+
+                <div className="mt-6 flex items-center justify-end gap-2.5 border-t border-slate-100 pt-3.5">
+                  <button
+                    type="button"
+                    onClick={() => setEditingManager(null)}
+                    className="rounded-xl border border-slate-200 bg-white px-4 h-9 text-xs font-semibold text-slate-600 hover:bg-slate-50 cursor-pointer"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={editSubmitting}
+                    className="rounded-xl bg-[#f27024] px-4.5 h-9 text-xs font-semibold text-white hover:bg-[#d95c14] disabled:opacity-50 transition cursor-pointer"
+                  >
+                    {editSubmitting ? "Đang lưu…" : "Lưu thay đổi"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>,
+          document.body
+        )}
     </SuperadminLayout>
   );
 }
