@@ -190,7 +190,7 @@ function FocusScene({ id = 'cottage', className = '', isPaused = false, children
     <div className={`relative isolate overflow-hidden ${isPaused ? 'fr-paused' : ''} ${className}`}>
       <style>{KEYFRAMES}</style>
       <Scene />
-      <div className="relative z-10 h-full w-full flex flex-col justify-between">{children}</div>
+      <div className="absolute inset-0 z-10 flex flex-col justify-between">{children}</div>
     </div>
   );
 }

@@ -413,7 +413,7 @@ export default function FocusRoomPage() {
     <FocusScene
       id={prefs?.backgroundId || 'cottage'}
       isPaused={showNewSessionModal || drawer !== null}
-      className="relative w-full h-full min-h-full flex-1 flex flex-col justify-between select-none overflow-hidden"
+      className="relative w-full h-full min-h-full flex-1 select-none overflow-hidden"
     >
       <div onClick={unlockAudio} className="absolute inset-0 z-0" />
 
@@ -522,7 +522,7 @@ export default function FocusRoomPage() {
       </header>
 
       {/* ── Main Center: Trống để nhìn trọn vẹn phòng học isometric 3D lofi ── */}
-      <main className="relative flex-1 pointer-events-none" />
+      <main className="relative flex-1 min-h-0 pointer-events-none" />
 
       {/* ── Bottom Dock Bar: Playlist Icon bên trái, Music Player ở giữa, Sound Mixer bên phải ── */}
       <footer className="
@@ -532,6 +532,7 @@ export default function FocusRoomPage() {
         px-4 sm:px-8
         pt-3 pb-5
         -translate-y-8 sm:-translate-y-10
+        pointer-events-auto
       ">
         {/* Nút Playlist bên trái: Bấm vào mở danh sách phát & tải nhạc từ máy */}
         <div className="relative" ref={playlistBtnRef}>
