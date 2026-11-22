@@ -710,27 +710,6 @@ export default function LecturerAcademicEvaluation({
     return false;
   }, [normalizedAudit]);
 
-  const isZeroAi = Boolean(
-    noAiUsedProp ||
-    (normalizedAudit as any)?.no_ai_used ||
-    (normalizedAudit as any)?.noAiUsed ||
-    auditData?.no_ai_used ||
-    auditData?.noAiUsed
-  );
-  const studentNoAiNote =
-    noAiNoteProp ||
-    (normalizedAudit as any)?.no_ai_note ||
-    (normalizedAudit as any)?.noAiNote ||
-    auditData?.no_ai_note ||
-    auditData?.noAiNote ||
-    '';
-
-  const isPendingAiSupplement = Boolean(
-    isAiRequired &&
-    !hasDeclaredAnyAi &&
-    !isZeroAi
-  );
-
   // Kiểm tra xem sinh viên có khai báo AI nào không (nếu tất cả các scope đều trống text và aiDeclarations rỗng)
   const hasAnyDeclaration = useMemo(() => {
     if (aiDeclarations && aiDeclarations.length > 0) {
@@ -749,6 +728,28 @@ export default function LecturerAcademicEvaluation({
       });
     });
   }, [scopes, aiDeclarations]);
+
+  const isZeroAi = Boolean(
+    noAiUsedProp ||
+    (normalizedAudit as any)?.no_ai_used ||
+    (normalizedAudit as any)?.noAiUsed ||
+    auditData?.no_ai_used ||
+    auditData?.noAiUsed ||
+    !hasAnyDeclaration
+  );
+  const studentNoAiNote =
+    noAiNoteProp ||
+    (normalizedAudit as any)?.no_ai_note ||
+    (normalizedAudit as any)?.noAiNote ||
+    auditData?.no_ai_note ||
+    auditData?.noAiNote ||
+    '';
+
+  const isPendingAiSupplement = Boolean(
+    isAiRequired &&
+    !hasDeclaredAnyAi &&
+    !isZeroAi
+  );
 
   const currentScopeDeclarations: AiDeclarationPhase[] = useMemo(() => {
     if (!currentScope || !currentScope.declarations) {
@@ -999,8 +1000,8 @@ export default function LecturerAcademicEvaluation({
     if (Array.isArray(rawConfigs) && rawConfigs.length > 0) {
       let enabled = rawConfigs.filter((c: any) => c.is_enabled !== false && Number(c.weight_percent || c.max_score || 0) > 0);
 
-      // Nếu bài tập KHÔNG yêu cầu AI: Tự động loại bỏ tiêu chí AI và quy đổi lại tỷ lệ tiêu chí chuyên môn về đúng tổng 10.0
-      if (!isAiRequired) {
+      // Nếu bài tập KHÔNG yêu cầu AI hoặc sinh viên cam kết Zero-AI: Tự động loại bỏ tiêu chí AI và quy đổi lại tỷ lệ tiêu chí chuyên môn về đúng tổng 10.0
+      if (!isAiRequired || isZeroAi) {
         const isAiSpecific = (c: any) => {
           const key = String(c.criterion_key || c.key || '').toUpperCase();
           const name = String(c.criterion_name || c.criteria || c.name || '').toLowerCase();
@@ -1068,7 +1069,7 @@ export default function LecturerAcademicEvaluation({
       }
     }
 
-    if (!isAiRequired) {
+    if (!isAiRequired || isZeroAi) {
       return [
         {
           ...PRESET_CRITERIA_META.decomposition,
@@ -1098,14 +1099,26 @@ export default function LecturerAcademicEvaluation({
     }
 
     return RUBRIC_CRITERIA_LIST;
-  }, [rubricConfigs, courseInfo, auditData, savedEvaluation, isAiRequired]);
+  }, [rubricConfigs, courseInfo, auditData, savedEvaluation, isAiRequired, isZeroAi]);
 
-  // Calculate Total Score (Thang 10 điểm học thuật chuyên môn: Tổng các tiêu chí đang bật)
-  const totalScore = parseFloat(
-    activeCriteriaList.reduce((acc, crit) => {
-      const currentVal = scores[crit.key] ?? (crit.altKey ? scores[crit.altKey] : undefined) ?? scores[crit.apiKey] ?? 0;
-      return acc + (Number(currentVal) || 0);
-    }, 0).toFixed(2)
+  // Calculate Total Score (Thang 10 điểm học thuật chuyên môn: Tổng các tiêu chí đang bật, khóa trần [0, 10.0])
+  const totalScore = Math.min(
+    10.0,
+    Math.max(
+      0,
+      parseFloat(
+        activeCriteriaList
+          .reduce((acc, crit) => {
+            const currentVal =
+              scores[crit.key] ??
+              (crit.altKey ? scores[crit.altKey] : undefined) ??
+              scores[crit.apiKey] ??
+              0;
+            return acc + (Number(currentVal) || 0);
+          }, 0)
+          .toFixed(2)
+      )
+    )
   );
 
   // Update Rubric Score
@@ -1122,6 +1135,10 @@ export default function LecturerAcademicEvaluation({
       if (key === 'pattern') updated.pattern_recognition = validVal;
       if (key === 'algorithmic_thinking') updated.algorithmic = validVal;
       if (key === 'algorithmic') updated.algorithmic_thinking = validVal;
+      if (isZeroAi) {
+        updated.ai_interaction = 0;
+        updated.reflection = 0;
+      }
       return updated;
     });
   };
@@ -1164,7 +1181,14 @@ export default function LecturerAcademicEvaluation({
         setRubricReasonings(savedEvaluation.rubric_reasonings);
       }
       if (savedEvaluation.rubric_scores) {
-        setScores((prev) => ({ ...prev, ...savedEvaluation.rubric_scores }));
+        const hyd = { ...savedEvaluation.rubric_scores };
+        if (isZeroAi) {
+          hyd.ai_interaction = 0;
+          hyd.reflection = 0;
+          hyd.algorithmic_thinking = 0;
+          hyd.algorithmic = 0;
+        }
+        setScores((prev) => ({ ...prev, ...hyd }));
       } else if (Array.isArray(savedEvaluation.grading_breakdown)) {
         const newSc: RubricScores = { ...scores };
         savedEvaluation.grading_breakdown.forEach((item: any) => {
@@ -1174,6 +1198,12 @@ export default function LecturerAcademicEvaluation({
           newSc[String(item.criterion_key).toLowerCase()] = val;
           newSc[String(item.criterion_key).toUpperCase()] = val;
         });
+        if (isZeroAi) {
+          newSc.ai_interaction = 0;
+          newSc.reflection = 0;
+          newSc.algorithmic_thinking = 0;
+          newSc.algorithmic = 0;
+        }
         setScores(newSc);
       }
     } else {
@@ -1215,7 +1245,8 @@ export default function LecturerAcademicEvaluation({
           no_ai_used: isZeroAi,
           no_ai_note: studentNoAiNote,
         } : null,
-        codeSnippet: actualFile.textContent || (codeLines.join('\n'))
+        codeSnippet: actualFile.textContent || (codeLines.join('\n')),
+        fileTextContent: actualFile.textContent || (codeLines.join('\n')),
       };
 
       const res = await SubmissionService.auditRubric(activeSubmissionId, payload);
@@ -1270,6 +1301,13 @@ export default function LecturerAcademicEvaluation({
         // Merge lý do rubric_reasonings
         if (aiData.rubric_reasonings) {
           Object.assign(newReasons, aiData.rubric_reasonings);
+        }
+
+        if (isZeroAi) {
+          newScores.ai_interaction = 0;
+          newScores.reflection = 0;
+          newScores.algorithmic_thinking = 0;
+          newScores.algorithmic = 0;
         }
 
         // Cập nhật state điểm và giải trình
@@ -1347,8 +1385,9 @@ export default function LecturerAcademicEvaluation({
   // Save Draft Action
   const handleSaveDraft = async () => {
     setIsSaving(true);
+    const safeScore = Math.min(10, Math.max(0, Number(totalScore.toFixed(2))));
     const payload: GradePayload = {
-      score: totalScore,
+      score: safeScore,
       feedback,
       rubrics: scores,
       aiComplianceStatus: aiCompliance,
@@ -1358,7 +1397,7 @@ export default function LecturerAcademicEvaluation({
       if (onSaveDraft) {
         await onSaveDraft(payload);
       }
-      showToastNotification('Bản nháp đã được lưu', `Đã lưu tạm điểm ${totalScore.toFixed(2)}/10.`);
+      showToastNotification('Bản nháp đã được lưu', `Đã lưu tạm điểm ${safeScore.toFixed(2)}/10.`);
     } catch (err) {
       showToastNotification('Lỗi khi lưu nháp', 'Không thể lưu bản nháp, vui lòng thử lại.', 'error');
     } finally {
@@ -1392,8 +1431,9 @@ export default function LecturerAcademicEvaluation({
         }
       }
 
+      const safeScore = Math.min(10, Math.max(0, Number(totalScore.toFixed(2))));
       const payload: GradePayload = {
-        score: totalScore,
+        score: safeScore,
         feedback,
         rubrics: scores,
         aiComplianceStatus: aiCompliance,
@@ -1404,7 +1444,7 @@ export default function LecturerAcademicEvaluation({
       if (onPublishGrade) {
         await onPublishGrade(payload);
       }
-      showToastNotification('Công bố điểm thành công', `Đã công bố điểm ${totalScore.toFixed(2)}/10.`);
+      showToastNotification('Công bố điểm thành công', `Đã công bố điểm ${safeScore.toFixed(2)}/10.`);
 
       // Tự động chuyển hướng quay về trang danh sách bài nộp sau khi công bố điểm thành công
       if (onBack) {
@@ -1582,6 +1622,7 @@ export default function LecturerAcademicEvaluation({
         <div className="lg:col-span-6 xl:col-span-7 min-w-0 w-full flex flex-col h-full overflow-hidden bg-white border-r border-gray-200">
           <SubmissionFileViewer
             file={actualFile}
+            submissionId={activeSubmissionId}
             onAiAnnotate={handleAiAnnotateClick}
             showAiAnnotationBanner={showAnnotateToast}
             onCloseAiAnnotationBanner={() => setShowAnnotateToast(false)}

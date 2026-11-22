@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { SubmissionFile, ZipTreeNode } from '../../types/submission';
 import { parseZipFileToTree } from '../../services/mockSubmissionService';
+import SubmissionService from '../../services/submission.service';
 
 /* ==========================================================================
    PROPS INTERFACE
@@ -31,6 +32,7 @@ import { parseZipFileToTree } from '../../services/mockSubmissionService';
 
 export interface SubmissionFileViewerProps {
   file: SubmissionFile | null | undefined;
+  submissionId?: string;
   onAiAnnotate?: () => void;
   showAiAnnotationBanner?: boolean;
   onCloseAiAnnotationBanner?: () => void;
@@ -90,6 +92,7 @@ function formatBytes(bytes?: number): string {
 
 export default function SubmissionFileViewer({
   file,
+  submissionId,
   onAiAnnotate,
   showAiAnnotationBanner = false,
   onCloseAiAnnotationBanner,
@@ -161,6 +164,28 @@ export default function SubmissionFileViewer({
     } else if (isCode) {
       if (file.textContent) {
         setDynamicTextContent(file.textContent);
+      } else if (submissionId) {
+        SubmissionService.getSubmissionFileContent(submissionId, (file as any)?.id)
+          .then((res: any) => {
+            const content = res?.data?.content || res?.content;
+            if (content) {
+              setDynamicTextContent(content);
+            } else if (file.url) {
+              fetch(file.url)
+                .then((r) => r.text())
+                .then((text) => setDynamicTextContent(text))
+                .catch((err) => console.warn('Could not fetch code text from file.url:', err));
+            }
+          })
+          .catch((err: any) => {
+            console.warn('[SubmissionFileViewer] Backend proxy fetch failed, trying url fallback:', err);
+            if (file.url) {
+              fetch(file.url)
+                .then((res) => res.text())
+                .then((text) => setDynamicTextContent(text))
+                .catch((uErr) => console.warn('Could not fetch code text from file.url:', uErr));
+            }
+          });
       } else if (file.url) {
         fetch(file.url)
           .then((res) => res.text())
@@ -168,7 +193,7 @@ export default function SubmissionFileViewer({
           .catch((err) => console.warn('Could not fetch code text from file.url:', err));
       }
     }
-  }, [file]);
+  }, [file, submissionId]);
 
   // Tìm file code đầu tiên trong cây thư mục để preview mặc định
   function findFirstCodeFile(nodes: ZipTreeNode[]): ZipTreeNode | null {
