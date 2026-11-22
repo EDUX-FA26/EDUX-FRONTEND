@@ -189,9 +189,23 @@ export default function LecturerAssignmentDetailPage() {
 
     // Hiển thị thông báo và làm mới dữ liệu khi vừa chuyển hướng từ trang chấm điểm Academic Grading về
     useEffect(() => {
-        if (location.state?.message || location.state?.refresh) {
+        if (location.state?.message || location.state?.refresh || location.state?.updatedScore !== undefined) {
             if (location.state?.message) {
                 showToast(location.state.message, location.state.type || 'success');
+            }
+            if (location.state?.gradedSubmissionId && location.state?.updatedScore != null) {
+                const gradedId = location.state.gradedSubmissionId;
+                const newScore = Number(location.state.updatedScore);
+                setSubmissions(prev => prev.map(s => {
+                    if (s.id === gradedId) {
+                        return {
+                            ...s,
+                            score: newScore,
+                            status: 'graded'
+                        };
+                    }
+                    return s;
+                }));
             }
             fetchDetail();
             window.history.replaceState({}, document.title);
@@ -236,7 +250,7 @@ export default function LecturerAssignmentDetailPage() {
                     }
                 }
 
-                const subData = await SubmissionService.getAssignmentSubmissions(id);
+                const subData = await SubmissionService.getAssignmentSubmissions(id, { limit: 100, _t: Date.now() });
 
                 console.log('📦 SUBMISSION API RESPONSE:', subData);
 
@@ -360,7 +374,9 @@ export default function LecturerAssignmentDetailPage() {
                             const itemTime = item.submitted_at ? new Date(item.submitted_at).getTime() : 0;
                             const existingTime = existing.submitted_at ? new Date(existing.submitted_at).getTime() : 0;
 
-                            if ((!existingIsGraded && itemIsGraded) || 
+                            if (existing.status === 'Missing' && item.status !== 'Missing') {
+                                studentMap.set(key, item);
+                            } else if ((!existingIsGraded && itemIsGraded) || 
                                 (!existingHasFiles && itemHasFiles) || 
                                 (itemTime > existingTime)) {
                                 studentMap.set(key, item);
@@ -875,7 +891,7 @@ export default function LecturerAssignmentDetailPage() {
                                             // Xác định điểm hiện tại
                                             const currentScore = sub.score ?? sub.grade?.score;
                                             const maxScore = assignment?.max_score || 10;
-                                            const isGraded = currentScore !== undefined && currentScore !== null;
+                                            const isGraded = (currentScore !== undefined && currentScore !== null) || String(sub.status).toLowerCase() === 'graded' || String(sub.status).toLowerCase() === 'published';
                                             const isSubmitted = sub.status !== 'Missing' && sub.status !== 'missing' && !String(sub.id || '').startsWith('missing-');
                                             const isZeroAi = Boolean(
                                                 sub.no_ai_used === true ||
@@ -895,7 +911,7 @@ export default function LecturerAssignmentDetailPage() {
                                                     <td style={{ padding: '8px' }}>
                                                         {isGraded ? (
                                                             <span className="badge" style={{ backgroundColor: 'rgba(79, 70, 229, 0.1)', color: '#4f46e5', padding: '4px 8px', fontSize: '10px', border: '1px solid #4f46e5', borderRadius: '4px', fontWeight: 'bold' }}>Graded</span>
-                                                        ) : sub.status === 'submitted' ? (
+                                                        ) : String(sub.status).toLowerCase() === 'submitted' ? (
                                                             <span className="badge" style={{ backgroundColor: 'rgba(34, 197, 94, 0.1)', color: '#16a34a', padding: '4px 8px', fontSize: '10px', border: '1px solid #16a34a', borderRadius: '4px' }}>Submitted</span>
                                                         ) : (
                                                             <span className="badge" style={{ backgroundColor: 'var(--color-border)', color: 'var(--color-ink-soft)', padding: '4px 8px', fontSize: '10px', borderRadius: '4px' }}>{sub.status || 'Missing'}</span>
