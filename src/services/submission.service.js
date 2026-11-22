@@ -136,6 +136,14 @@ const SubmissionService = {
         return response.data;
     },
 
+    async getSubmissionFileContent(submissionId, fileId) {
+        const query = fileId ? `?fileId=${fileId}` : '';
+        const response = await api.get(`/submissions/${submissionId}/file-content${query}`, {
+            schoolScoped: true
+        });
+        return response.data;
+    },
+
     async auditRubric(submissionId, payload = {}) {
         const response = await api.post(`/submissions/${submissionId}/ai-rubric`, payload, {
             schoolScoped: true,
