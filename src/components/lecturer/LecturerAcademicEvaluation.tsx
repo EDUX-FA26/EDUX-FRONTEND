@@ -365,6 +365,7 @@ export default function LecturerAcademicEvaluation({
   const targetClassId = courseInfo.classId;
 
   const handleBackClick = () => {
+    if (isPublishing) return;
     if (onBack) {
       onBack();
     } else if (targetAssignmentId) {
@@ -928,6 +929,20 @@ export default function LecturerAcademicEvaluation({
   const [isSaving, setIsSaving] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
 
+  // Cảnh báo rời trang khi đang công bố điểm (isPublishing === true)
+  React.useEffect(() => {
+    if (!isPublishing) return;
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = 'Đang công bố điểm, vui lòng đợi trong giây lát...';
+      return e.returnValue;
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [isPublishing]);
+
   // Modals & Popups
   const [showResubmitModal, setShowResubmitModal] = useState(false);
   const [showRegenerateModal, setShowRegenerateModal] = useState(false);
@@ -1353,48 +1368,52 @@ export default function LecturerAcademicEvaluation({
 
   // Publish Grade Action
   const handlePublishGrade = async () => {
+    if (isPublishing) return;
     if (totalScore === 0 && !window.confirm('Điểm hiện tại đang là 0.00 / 10. Bạn có chắc chắn muốn công bố?')) {
       return;
     }
     setIsPublishing(true);
 
-    let topicsPayload: any[] = [];
-    if (activeSubmissionId && displayTopicsList.length > 0) {
-      topicsPayload = displayTopicsList.map((t: any) => ({
-        topic_id: t.topic_id || t.id,
-        name: t.name || t.topic_name || '',
-        priority: t.priority || 'medium',
-        reason: t.reason || t.description || 'Giảng viên yêu cầu củng cố kiến thức.',
-        status: t.isSelected ? 'approved' : 'rejected',
-      }));
-
-      try {
-        await GradingService.updateSubmissionReviewTopics(activeSubmissionId, topicsPayload);
-      } catch (topicErr: any) {
-        console.error('[handlePublishGrade] Lưu topic thất bại nhưng tiếp tục công bố điểm:', topicErr?.message);
-      }
-    }
-
-    const payload: GradePayload = {
-      score: totalScore,
-      feedback,
-      rubrics: scores,
-      aiComplianceStatus: aiCompliance,
-      isDraft: false,
-      reviewTopics: topicsPayload,
-    };
     try {
+      let topicsPayload: any[] = [];
+      if (activeSubmissionId && displayTopicsList.length > 0) {
+        topicsPayload = displayTopicsList.map((t: any) => ({
+          topic_id: t.topic_id || t.id,
+          name: t.name || t.topic_name || '',
+          priority: t.priority || 'medium',
+          reason: t.reason || t.description || 'Giảng viên yêu cầu củng cố kiến thức.',
+          status: t.isSelected ? 'approved' : 'rejected',
+        }));
+
+        try {
+          await GradingService.updateSubmissionReviewTopics(activeSubmissionId, topicsPayload);
+        } catch (topicErr: any) {
+          console.error('[handlePublishGrade] Lưu topic thất bại nhưng tiếp tục công bố điểm:', topicErr?.message);
+        }
+      }
+
+      const payload: GradePayload = {
+        score: totalScore,
+        feedback,
+        rubrics: scores,
+        aiComplianceStatus: aiCompliance,
+        isDraft: false,
+        reviewTopics: topicsPayload,
+      };
+
       if (onPublishGrade) {
         await onPublishGrade(payload);
       }
+      showToastNotification('Công bố điểm thành công', `Đã công bố điểm ${totalScore.toFixed(2)}/10.`);
+
       // Tự động chuyển hướng quay về trang danh sách bài nộp sau khi công bố điểm thành công
       if (onBack) {
         setTimeout(() => {
           onBack();
-        }, 800);
+        }, 500);
       }
-    } catch (err) {
-      showToastNotification('Lỗi khi công bố điểm', 'Không thể hoàn tất công bố điểm.', 'error');
+    } catch (err: any) {
+      showToastNotification('Lỗi khi công bố điểm', err?.response?.data?.message || err?.message || 'Không thể hoàn tất công bố điểm.', 'error');
     } finally {
       setIsPublishing(false);
     }
@@ -1457,9 +1476,14 @@ export default function LecturerAcademicEvaluation({
         <div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
           <button
             type="button"
+            disabled={isPublishing}
             onClick={handleBackClick}
-            title="Quay lại danh sách bài nộp của bài tập này"
-            className="text-slate-300 hover:text-white p-1 rounded hover:bg-slate-800 transition cursor-pointer shrink-0"
+            title={isPublishing ? 'Đang công bố điểm, vui lòng đợi...' : 'Quay lại danh sách bài nộp của bài tập này'}
+            className={`p-1 rounded transition shrink-0 ${
+              isPublishing
+                ? 'text-slate-500 cursor-not-allowed opacity-50'
+                : 'text-slate-300 hover:text-white hover:bg-slate-800 cursor-pointer'
+            }`}
           >
             <ArrowLeft size={16} />
           </button>
@@ -1468,8 +1492,11 @@ export default function LecturerAcademicEvaluation({
           <nav aria-label="Breadcrumb" className="text-xs font-medium tracking-wide flex items-center gap-1.5 min-w-0 truncate shrink-0">
             <button
               type="button"
-              onClick={() => navigate('/lecturer/dashboard')}
-              className="cursor-pointer hover:text-blue-400 transition-colors uppercase font-semibold bg-transparent border-0 p-0 text-slate-300 shrink-0"
+              disabled={isPublishing}
+              onClick={() => !isPublishing && navigate('/lecturer/dashboard')}
+              className={`uppercase font-semibold bg-transparent border-0 p-0 shrink-0 ${
+                isPublishing ? 'text-slate-500 cursor-not-allowed opacity-50' : 'cursor-pointer hover:text-blue-400 transition-colors text-slate-300'
+              }`}
               title="Về Dashboard giảng viên"
             >
               GRADING
@@ -1477,14 +1504,18 @@ export default function LecturerAcademicEvaluation({
             <ChevronRight size={12} className="text-slate-500 shrink-0" />
             <button
               type="button"
+              disabled={isPublishing}
               onClick={() => {
+                if (isPublishing) return;
                 if (targetClassId) {
                   navigate(`/lecturer/classes/${targetClassId}`);
                 } else {
                   navigate('/lecturer/classes');
                 }
               }}
-              className="cursor-pointer hover:text-blue-400 transition-colors max-w-[120px] sm:max-w-[160px] truncate text-left bg-transparent border-0 p-0 text-slate-200"
+              className={`max-w-[120px] sm:max-w-[160px] truncate text-left bg-transparent border-0 p-0 ${
+                isPublishing ? 'text-slate-500 cursor-not-allowed opacity-50' : 'cursor-pointer hover:text-blue-400 transition-colors text-slate-200'
+              }`}
               title={displayCourseName}
             >
               {displayCourseName}
@@ -1492,8 +1523,11 @@ export default function LecturerAcademicEvaluation({
             <ChevronRight size={12} className="text-slate-500 shrink-0" />
             <button
               type="button"
+              disabled={isPublishing}
               onClick={handleBackClick}
-              className="cursor-pointer hover:text-blue-400 transition-colors max-w-[120px] sm:max-w-[160px] truncate text-left bg-transparent border-0 p-0 text-slate-300"
+              className={`max-w-[120px] sm:max-w-[160px] truncate text-left bg-transparent border-0 p-0 ${
+                isPublishing ? 'text-slate-500 cursor-not-allowed opacity-50' : 'cursor-pointer hover:text-blue-400 transition-colors text-slate-300'
+              }`}
               title={displayAssignmentTitle}
             >
               {displayAssignmentTitle}
@@ -1513,8 +1547,9 @@ export default function LecturerAcademicEvaluation({
         <div className="flex items-center gap-2.5 shrink-0">
           <button
             type="button"
+            disabled={isPublishing || isSaving}
             onClick={() => setShowResubmitModal(true)}
-            className="flex items-center gap-1.5 px-3 py-1 bg-white text-rose-600 rounded-lg text-xs font-bold hover:bg-rose-50 transition border border-rose-100 shadow-sm cursor-pointer shrink-0 whitespace-nowrap"
+            className="flex items-center gap-1.5 px-3 py-1 bg-white text-rose-600 rounded-lg text-xs font-bold hover:bg-rose-50 transition border border-rose-100 shadow-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shrink-0 whitespace-nowrap"
           >
             <RotateCcw size={13} />
             <span>Request Resubmit</span>
@@ -1522,12 +1557,21 @@ export default function LecturerAcademicEvaluation({
 
           <button
             type="button"
-            disabled={isPublishing}
+            disabled={isPublishing || isSaving}
             onClick={handlePublishGrade}
-            className="flex items-center gap-1.5 px-3.5 py-1 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-lg text-xs font-bold hover:opacity-95 shadow-md shadow-orange-500/20 transition cursor-pointer disabled:opacity-50 shrink-0 whitespace-nowrap"
+            className="flex items-center gap-1.5 px-3.5 py-1 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-lg text-xs font-bold hover:opacity-95 shadow-md shadow-orange-500/20 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shrink-0 whitespace-nowrap"
           >
-            <Send size={11} />
-            <span>{isPublishing ? 'Đang công bố...' : `Công bố điểm (${totalScore.toFixed(2)} / 10)`}</span>
+            {isPublishing ? (
+              <>
+                <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin shrink-0" />
+                <span>Đang công bố điểm...</span>
+              </>
+            ) : (
+              <>
+                <Send size={11} />
+                <span>{`Công bố điểm (${totalScore.toFixed(2)} / 10)`}</span>
+              </>
+            )}
           </button>
         </div>
       </header>
@@ -2385,16 +2429,21 @@ export default function LecturerAcademicEvaluation({
                 </div>
                 <button
                   type="button"
-                  disabled={isPublishing}
+                  disabled={isPublishing || isSaving}
                   onClick={handlePublishGrade}
-                  className="w-full py-3 px-4 bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 hover:opacity-95 text-white rounded-xl text-xs font-bold shadow-md shadow-orange-500/25 flex items-center justify-center gap-2 transition cursor-pointer disabled:opacity-50"
+                  className="w-full py-3 px-4 bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 hover:opacity-95 text-white rounded-xl text-xs font-bold shadow-md shadow-orange-500/25 flex items-center justify-center gap-2 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <Send size={14} />
-                  <span>
-                    {isPublishing
-                      ? 'ĐANG CÔNG BỐ ĐIỂM...'
-                      : `CÔNG BỐ ĐIỂM CHÍNH THỨC (${totalScore.toFixed(2)} / 10)`}
-                  </span>
+                  {isPublishing ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin shrink-0" />
+                      <span>ĐANG CÔNG BỐ ĐIỂM...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Send size={14} />
+                      <span>{`CÔNG BỐ ĐIỂM CHÍNH THỨC (${totalScore.toFixed(2)} / 10)`}</span>
+                    </>
+                  )}
                 </button>
               </div>
             </div>

@@ -550,9 +550,25 @@ export default function LecturerGradingPage() {
   };
 
   const [publishedScore, setPublishedScore] = useState<number | null>(null);
+  const [isPublishing, setIsPublishing] = useState<boolean>(false);
+
+  // Cảnh báo rời trang khi đang công bố điểm
+  useEffect(() => {
+    if (!isPublishing) return;
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = 'Đang công bố điểm, vui lòng đợi trong giây lát...';
+      return e.returnValue;
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [isPublishing]);
 
   // Handle Publish Grade
   const handlePublishGrade = async (payload: GradePayload) => {
+    setIsPublishing(true);
     setPublishedScore(payload.score);
     const gradePayload = {
       score: payload.score,
@@ -581,6 +597,8 @@ export default function LecturerGradingPage() {
     } catch (err) {
       console.warn('[ART-AI] Grade publish API failed:', err);
       throw err;
+    } finally {
+      setIsPublishing(false);
     }
   };
 
@@ -600,6 +618,7 @@ export default function LecturerGradingPage() {
 
   // Handle Back: Quay về trang danh sách các bài nộp của sinh viên
   const handleBack = (explicitScore?: number) => {
+    if (isPublishing) return; // Chặn thoát khi đang công bố điểm
     const finalScore = explicitScore ?? publishedScore;
     const targetAssignmentId =
       assignmentId ||
@@ -618,6 +637,7 @@ export default function LecturerGradingPage() {
           updatedScore: finalScore,
           gradedSubmissionId: submissionId,
         },
+        replace: true,
       });
     } else {
       navigate(-1);
