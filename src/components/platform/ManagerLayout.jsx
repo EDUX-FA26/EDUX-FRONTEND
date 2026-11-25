@@ -32,10 +32,16 @@ export default function ManagerLayout({ children }) {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    return localStorage.getItem("edux_manager_sidebar_collapsed") === "true";
+  });
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [headerSearch, setHeaderSearch] = useState("");
+
+  useEffect(() => {
+    setMobileSidebarOpen(false);
+  }, [location.pathname]);
 
   // Notification Bell States
   const [showNotifications, setShowNotifications] = useState(false);
@@ -201,7 +207,11 @@ export default function ManagerLayout({ children }) {
                 if (window.matchMedia("(max-width: 1023.98px)").matches) {
                   setMobileSidebarOpen((prev) => !prev);
                 } else {
-                  setSidebarCollapsed((collapsed) => !collapsed);
+                  setSidebarCollapsed((collapsed) => {
+                    const next = !collapsed;
+                    localStorage.setItem("edux_manager_sidebar_collapsed", String(next));
+                    return next;
+                  });
                 }
               }}
               aria-label="Toggle navigation"
