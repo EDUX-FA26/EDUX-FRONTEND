@@ -198,7 +198,7 @@ export default function ManagerLayout({ children }) {
               className="dashboard-header__menu"
               type="button"
               onClick={() => {
-                if (window.matchMedia("(max-width: 768px)").matches) {
+                if (window.matchMedia("(max-width: 1023.98px)").matches) {
                   setMobileSidebarOpen((prev) => !prev);
                 } else {
                   setSidebarCollapsed((collapsed) => !collapsed);
@@ -213,7 +213,7 @@ export default function ManagerLayout({ children }) {
               <div
                 className="dashboard-header__row"
                 style={{
-                  maxWidth: "1440px",
+                  maxWidth: "1600px",
                   margin: "0 auto",
                   padding: "0 24px",
                   height: "64px",
@@ -257,8 +257,8 @@ export default function ManagerLayout({ children }) {
 
                   {/* System role badge */}
                   <div
+                    className="hidden sm:flex"
                     style={{
-                      display: "flex",
                       alignItems: "center",
                       gap: "6px",
                       padding: "4px 12px",
@@ -286,7 +286,7 @@ export default function ManagerLayout({ children }) {
 
                 {/* Global Search */}
                 <form
-                  className="dashboard-header-search"
+                  className="dashboard-header-search flex-1 max-w-md lg:max-w-lg min-w-0"
                   role="search"
                   onSubmit={(e) => e.preventDefault()}
                 >
@@ -657,10 +657,10 @@ export default function ManagerLayout({ children }) {
                 }
               : {
                   flex: 1,
-                  maxWidth: "1440px",
+                  maxWidth: "1600px",
                   width: "100%",
                   margin: "0 auto",
-                  padding: "24px 24px 80px",
+                  padding: "0",
                 }
           }
         >
