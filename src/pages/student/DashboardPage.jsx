@@ -233,65 +233,37 @@ export default function StudentDashboardPage() {
     <div className="animate-fade-in w-full max-w-[1600px] mx-auto min-w-0" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
       {/* ── Hero Banner ── */}
-      <div style={{
-        borderRadius: '20px',
-        background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 60%, #334155 100%)',
-        color: '#ffffff', padding: '28px 32px',
-        position: 'relative', overflow: 'hidden',
-        border: '1px solid rgba(255,255,255,0.08)',
-        boxShadow: '0 8px 24px -4px rgba(15, 23, 42, 0.25)',
-      }}>
-        <div style={{ position: 'absolute', top: 0, right: 0, width: '260px', height: '260px', background: 'radial-gradient(circle, rgba(242,112,36,0.25) 0%, rgba(242,112,36,0) 70%)', borderRadius: '50%', transform: 'translate(40px, -40px)', pointerEvents: 'none' }} />
-        <div style={{ position: 'relative', zIndex: 1 }}>
-          <div style={{
-            display: 'inline-flex', alignItems: 'center', gap: '8px',
-            padding: '5px 14px', borderRadius: '9999px',
-            background: 'rgba(255,255,255,0.12)',
-            border: '1px solid rgba(255,255,255,0.2)',
-            fontSize: '0.75rem', color: '#ffedd5', fontWeight: 600, marginBottom: '12px',
-            backdropFilter: 'blur(4px)',
-          }}>
-            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--color-primary)', display: 'inline-block', animation: 'pulse-ring 1.5s ease-in-out infinite' }} />
+      <div className="bg-gradient-to-r from-[#FFEDD5] via-[#FED7AA]/90 to-[#FDBA74]/85 border border-orange-300/80 rounded-2xl px-6 py-5 shadow-xs mb-5">
+        <div>
+          <div className="inline-flex items-center gap-1.5 bg-white text-[#EA580C] border border-orange-200 text-xs font-semibold px-3 py-1 rounded-full shadow-2xs">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#EA580C] inline-block" />
             {schoolName ? `${schoolName} Student Portal` : 'Student Portal'}
           </div>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: 0, letterSpacing: '-0.02em', color: '#ffffff' }}>
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 mt-2.5 tracking-tight m-0">
             {t.dashboard?.welcomeStudent} {user?.full_name || user?.email}!
           </h1>
 
           {/* Current School */}
           {status === "ready" && schoolName && (
-            <div
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "8px",
-                marginTop: "14px",
-                padding: "8px 14px",
-                borderRadius: "10px",
-                background: "rgba(255,255,255,0.12)",
-                border: "1px solid rgba(255,255,255,0.2)",
-                color: "#ffffff",
-                fontSize: "0.875rem",
-                fontWeight: 500,
-              }}
-            >
-              <span
-                className="material-symbols-outlined"
-                style={{ fontSize: "19px" }}
-              >
-                school
-              </span>
-
-              <span>
-                Đang học tại:{" "}
-                <strong style={{ color: "#fed7aa" }}>
-                  {schoolName}
-                </strong>
-              </span>
+            <div>
+              <div className="inline-flex items-center gap-1.5 bg-white/95 text-slate-800 border border-orange-200/80 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-2xs mt-2.5">
+                <span
+                  className="material-symbols-outlined text-[#EA580C]"
+                  style={{ fontSize: "18px" }}
+                >
+                  school
+                </span>
+                <span>
+                  Đang học tại:{" "}
+                  <strong className="text-[#EA580C] font-bold">
+                    {schoolName}
+                  </strong>
+                </span>
+              </div>
             </div>
           )}
 
-          <p style={{ marginTop: '8px', color: 'rgba(255, 255, 255, 0.9)', fontSize: '0.9375rem', lineHeight: '1.5', margin: '8px 0 0 0' }}>
+          <p className="text-sm text-slate-700 font-medium mt-2 m-0">
             {t.dashboard?.welcomeDesc}
           </p>
         </div>

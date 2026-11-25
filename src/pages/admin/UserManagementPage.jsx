@@ -304,24 +304,28 @@ export default function UserManagementPage() {
       }}
     >
       {/* Header Section */}
-      <div className="shrink-0 mb-4 flex flex-wrap items-center justify-between gap-3">
+      <div className="shrink-0 bg-gradient-to-r from-[#FFEDD5] via-[#FED7AA]/90 to-[#FDBA74]/85 border border-orange-300/80 rounded-2xl px-5 py-4 shadow-xs mb-5 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: 0, color: 'var(--color-primary)' }}>
-            {uLang?.title || "Quản lý Người dùng"}
-          </h1>
-          <p style={{ fontSize: '0.95rem', color: 'var(--color-ink-muted)', marginTop: '4px' }}>
-            {uLang?.subtitle || "Xem, phân quyền và quản lý tài khoản người dùng trong hệ thống"} ({users.length} {lang === "en" ? "accounts" : "tài khoản"})
+          <div className="flex items-center gap-2 flex-wrap">
+            <h1 className="text-xl font-bold text-slate-900 m-0 tracking-tight">
+              {uLang?.title || "Quản lý Người dùng"}
+            </h1>
+            <span className="bg-white text-[#EA580C] border border-orange-200 text-xs font-semibold px-2.5 py-0.5 rounded-full shadow-2xs">
+              {users.length} {lang === "en" ? "accounts" : "tài khoản"}
+            </span>
+          </div>
+          <p className="text-sm text-slate-700 font-medium mt-1 m-0">
+            {uLang?.subtitle || "Xem, phân quyền và quản lý tài khoản người dùng trong hệ thống"}
           </p>
         </div>
-        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+        <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap shrink-0">
           <button 
             type="button"
             onClick={() => setShowGuide(!showGuide)} 
-            className="btn btn-outline" 
-            style={{ display: 'flex', alignItems: 'center', gap: '6px', border: '1px solid var(--color-border)', background: 'transparent' }}
+            className="h-9.5 px-3.5 rounded-xl bg-white hover:bg-orange-50 border border-orange-200/80 text-xs font-semibold text-slate-700 hover:text-[#EA580C] shadow-2xs shrink-0 transition inline-flex items-center gap-1.5 cursor-pointer"
           >
             <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>info</span>
-            {lang === "en" ? "Import Template" : "Mẫu file Import"}
+            <span>{lang === "en" ? "Import Template" : "Mẫu file Import"}</span>
           </button>
 
           <input 
@@ -335,31 +339,28 @@ export default function UserManagementPage() {
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={importing}
-            className="btn btn-outline" 
-            style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'transparent', border: '1px solid var(--color-border)', fontWeight: 600 }}
+            className="h-9.5 px-3.5 rounded-xl bg-white hover:bg-orange-50 border border-orange-200/80 text-xs font-semibold text-slate-700 hover:text-[#EA580C] shadow-2xs shrink-0 transition inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>upload_file</span>
-            {importing ? (lang === "en" ? "Processing..." : "Đang xử lý...") : (uLang?.btnImport || "Import Excel")}
+            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>upload_file</span>
+            <span>{importing ? (lang === "en" ? "Processing..." : "Đang xử lý...") : (uLang?.btnImport || "Import Excel")}</span>
           </button>
           
           <button 
             type="button"
             onClick={() => setShowCreateModal(true)}
-            className="btn btn-primary" 
-            style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, boxShadow: '0 4px 12px rgba(234, 88, 12, 0.25)' }}
+            className="h-9.5 px-4 rounded-xl bg-[#EA580C] hover:bg-[#C2410C] text-white text-xs font-semibold shadow-xs shrink-0 transition inline-flex items-center gap-1.5 cursor-pointer"
           >
-            <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>person_add</span>
-            {uLang?.btnCreate || "Thêm Người Dùng"}
+            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>person_add</span>
+            <span>{uLang?.btnCreate || "Thêm Người Dùng"}</span>
           </button>
 
           <button 
             type="button"
             onClick={fetchUsers} 
-            className="btn btn-outline" 
-            style={{ display: 'flex', alignItems: 'center', padding: '10px', border: '1px solid var(--color-border)' }}
+            className="h-9.5 px-3.5 rounded-xl bg-white hover:bg-orange-50 border border-orange-200/80 text-xs font-semibold text-slate-700 hover:text-[#EA580C] shadow-2xs shrink-0 transition inline-flex items-center gap-1.5 cursor-pointer"
             title={lang === "en" ? "Refresh list" : "Làm mới danh sách"}
           >
-            <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>refresh</span>
+            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>refresh</span>
           </button>
         </div>
       </div>

@@ -347,23 +347,23 @@ export default function ClassManagementPage() {
       }}
     >
       {/* Header Section */}
-      <div className="shrink-0 mb-4 flex flex-wrap items-center justify-between gap-3">
+      <div className="shrink-0 bg-gradient-to-r from-[#FFEDD5] via-[#FED7AA]/90 to-[#FDBA74]/85 border border-orange-300/80 rounded-2xl px-5 py-4 shadow-xs mb-5 flex flex-col gap-3">
         <div>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: 0, color: 'var(--color-ink)', letterSpacing: '-0.5px' }}>
+          <h1 className="text-xl font-bold text-slate-900 m-0 tracking-tight">
             Quản lý Lớp học & Phân công
           </h1>
-          <p style={{ fontSize: '0.95rem', color: 'var(--color-ink-muted)', marginTop: '4px' }}>
+          <p className="text-sm text-slate-700 font-medium mt-1 m-0">
             Tạo lớp học, phân công giảng viên theo Khoa/Bộ môn, quản lý danh sách sinh viên và đồng bộ từ Excel
           </p>
         </div>
-        <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap">
+        <div className="flex flex-wrap items-center gap-2 pt-0.5">
           <button 
+            type="button"
             onClick={() => setShowGuide(true)} 
-            className="btn btn-outline" 
-            style={{ display: 'flex', alignItems: 'center', gap: '6px', border: 'none', background: 'var(--color-surface-hover)' }}
+            className="h-9 px-3 rounded-xl bg-white/95 hover:bg-white border border-orange-200/80 text-xs font-semibold text-slate-700 hover:text-[#EA580C] shadow-2xs transition inline-flex items-center gap-1.5 cursor-pointer"
           >
-            <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>info</span>
-            Hướng dẫn Import
+            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>info</span>
+            <span>Hướng dẫn Import</span>
           </button>
           <input 
             type="file" 
@@ -380,34 +380,39 @@ export default function ClassManagementPage() {
             onChange={(e) => handleImportExcel(e, true)} 
           />
           <button 
+            type="button"
             onClick={() => autoAssignInputRef.current?.click()}
             disabled={importing}
-            className="btn btn-outline" 
-            style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600 }}
+            className="h-9 px-3 rounded-xl bg-white/95 hover:bg-white border border-orange-200/80 text-xs font-semibold text-slate-700 hover:text-[#EA580C] shadow-2xs transition inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             title="Tự động chia 30 SV/lớp và phân công giảng viên theo Khoa"
           >
-            <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>auto_Fix_high</span>
-            Tự Động Xếp Lớp
+            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>auto_Fix_high</span>
+            <span>Tự Động Xếp Lớp</span>
           </button>
           <button 
+            type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={importing}
-            className="btn btn-outline" 
-            style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600 }}
+            className="h-9 px-3 rounded-xl bg-white/95 hover:bg-white border border-orange-200/80 text-xs font-semibold text-slate-700 hover:text-[#EA580C] shadow-2xs transition inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>upload_file</span>
-            {importing ? 'Đang xử lý...' : 'Import Khung Đào Tạo'}
+            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>upload_file</span>
+            <span>{importing ? 'Đang xử lý...' : 'Import Khung Đào Tạo'}</span>
           </button>
           <button 
+            type="button"
             onClick={openCreateClassModal}
-            className="btn btn-primary" 
-            style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 18px', fontWeight: 600, boxShadow: '0 4px 12px rgba(234, 88, 12, 0.25)' }}
+            className="h-9 px-4 rounded-xl bg-[#EA580C] hover:bg-[#C2410C] text-white text-xs font-semibold shadow-xs transition inline-flex items-center gap-1.5 cursor-pointer"
           >
-            <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>add</span>
-            Tạo Lớp Học
+            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>add</span>
+            <span>Tạo Lớp Học</span>
           </button>
-          <button onClick={() => { fetchClasses(); fetchCatalogData(); }} className="btn btn-outline" style={{ display: 'flex', alignItems: 'center', gap: '6px' }} title="Làm mới">
-            <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>refresh</span>
+          <button 
+            type="button"
+            onClick={() => { fetchClasses(); fetchCatalogData(); }} 
+            className="h-9 px-3 rounded-xl bg-white/95 hover:bg-white border border-orange-200/80 text-xs font-semibold text-slate-700 hover:text-[#EA580C] shadow-2xs transition inline-flex items-center gap-1.5 cursor-pointer" 
+            title="Làm mới"
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>refresh</span>
           </button>
         </div>
       </div>

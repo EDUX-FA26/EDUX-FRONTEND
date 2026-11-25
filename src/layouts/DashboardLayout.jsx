@@ -105,6 +105,8 @@ export default function DashboardLayout() {
   const isClassesLockedPage = /^\/(lecturer|student)\/classes(?:\/[^/]+)?\/?$/.test(location.pathname);
   const isLecturerAssignmentDetail = /^\/lecturer\/assignments\/[^/]+\/?$/.test(location.pathname);
   const isStudyPlan = location.pathname.startsWith('/student/study-plan');
+  const isStudentStreak = location.pathname === '/student/streak' || location.pathname.startsWith('/student/streak');
+  const isLecturerDashboard = location.pathname === '/lecturer/dashboard' || location.pathname.startsWith('/lecturer/dashboard');
   const isAdminDashboard = location.pathname === '/admin/dashboard' || location.pathname.startsWith('/admin/dashboard');
   const isAdminUsers = location.pathname === '/admin/users' || location.pathname.startsWith('/admin/users');
   const isAdminClasses = location.pathname === '/admin/classes' || location.pathname.startsWith('/admin/classes');
@@ -918,7 +920,7 @@ export default function DashboardLayout() {
         <main
           className={`flex-1 min-w-0 w-full overflow-x-hidden ${isGradePage ? 'dashboard-layout__main--grade' : ''}`}
           style={
-            isStudentFlashcardsPage || isFocusRoom || isGradePage || isClassesLockedPage || isLecturerAssignmentDetail || isAdminUsers || isAdminClasses || isAdminNotifications || isAdminSemesters || isAdminSubjects || isAdminReports
+            isStudentFlashcardsPage || isFocusRoom || isGradePage || isClassesLockedPage || isLecturerAssignmentDetail || isStudentStreak || isAdminUsers || isAdminClasses || isAdminNotifications || isAdminSemesters || isAdminSubjects || isAdminReports
               ? {
                 flex: 1,
                 width: '100%',
@@ -962,11 +964,13 @@ export default function DashboardLayout() {
           <Outlet />
         </main>
 
-        {/* Footer: ẩn ở trang flashcard, grading, student assignment, focus room, classes, lecturer assignment detail, study-plan, admin dashboard, admin users, admin classes, admin notifications, admin logs, admin semesters và admin subjects */}
+        {/* Footer: ẩn ở trang flashcard, grading, student assignment, focus room, classes, lecturer assignment detail, study-plan, admin dashboard, admin users, admin classes, admin notifications, admin logs, admin semesters, admin subjects, lecturer dashboard và student streak */}
         {!isGradePage &&
           !isStudentAssignment &&
           !isClassesPage &&
           !isLecturerAssignmentDetail &&
+          !isLecturerDashboard &&
+          !isStudentStreak &&
           !location.pathname.startsWith('/student/flashcards') &&
           !location.pathname.startsWith('/lecturer/flashcards') &&
           !isFocusRoom &&

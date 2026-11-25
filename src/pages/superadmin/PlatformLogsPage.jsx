@@ -55,20 +55,23 @@ export default function PlatformLogsPage() {
     <SuperadminLayout>
       <div className="w-full max-w-[1600px] mx-auto min-w-0 h-[calc(100vh-var(--dashboard-header-height,64px))] overflow-hidden flex flex-col px-4 sm:px-5 lg:px-6 xl:px-8 pt-4 pb-4 box-border animate-fade-in">
         {/* Header */}
-        <div className="shrink-0 flex flex-wrap items-center justify-between gap-3 mb-3">
+        <div className="shrink-0 bg-gradient-to-r from-[#FFEDD5] via-[#FED7AA]/90 to-[#FDBA74]/85 border border-orange-300/80 rounded-2xl px-5 py-4 shadow-xs mb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-xl font-bold tracking-tight text-slate-900">Nhật ký Hệ thống (Audit Logs)</h1>
-            <p className="mt-0.5 text-xs text-slate-500">
+            <h1 className="text-xl font-bold tracking-tight text-slate-900 m-0">
+              Nhật ký Hệ thống (Audit Logs)
+            </h1>
+            <p className="text-sm text-slate-700 font-medium mt-1 m-0">
               Truy vết và kiểm tra toàn bộ hành động quản trị diễn ra trên nền tảng EDUX để phục vụ đối soát và bảo mật.
             </p>
           </div>
           <button
             type="button"
+            disabled={loading}
             onClick={() => loadLogs(pagination.page)}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white h-9 px-3.5 text-xs sm:text-sm font-semibold text-slate-600 shadow-xs hover:bg-slate-50 hover:text-[#f27024] transition"
+            className="h-10 px-3.5 rounded-xl bg-white/95 hover:bg-white border border-orange-200/80 text-xs sm:text-sm font-semibold text-slate-800 hover:text-[#EA580C] shadow-2xs transition inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
           >
-            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin text-[#f27024]" : ""}`} />
-            Làm mới
+            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin text-[#EA580C]" : ""}`} />
+            <span>Làm mới</span>
           </button>
         </div>
 
