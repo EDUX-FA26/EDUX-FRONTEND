@@ -53,7 +53,7 @@ export default function PlatformLogsPage() {
 
   return (
     <SuperadminLayout>
-      <div className="w-full max-w-7xl mx-auto h-[calc(100vh-var(--dashboard-header-height,64px))] overflow-hidden flex flex-col px-6 pt-4 pb-4 box-border">
+      <div className="w-full max-w-[1600px] mx-auto min-w-0 h-[calc(100vh-var(--dashboard-header-height,64px))] overflow-hidden flex flex-col px-4 sm:px-5 lg:px-6 xl:px-8 pt-4 pb-4 box-border animate-fade-in">
         {/* Header */}
         <div className="shrink-0 flex flex-wrap items-center justify-between gap-3 mb-3">
           <div>
@@ -90,7 +90,7 @@ export default function PlatformLogsPage() {
                   placeholder="Lọc theo hành động (ví dụ: CREATE, LOCK, PLAN, REFUND)..."
                   value={actionFilter}
                   onChange={(e) => setActionFilter(e.target.value)}
-                  className="h-9 w-80 sm:w-96 rounded-xl border border-slate-200 bg-white pl-8 pr-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-[#f27024] focus:outline-hidden"
+                  className="h-9 w-60 sm:w-96 max-w-full rounded-xl border border-slate-200 bg-white pl-8 pr-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-[#f27024] focus:outline-hidden"
                 />
               </form>
               <button
@@ -115,16 +115,16 @@ export default function PlatformLogsPage() {
           </div>
 
           {/* Table Scroll Area */}
-          <div className="flex-1 min-h-0 overflow-y-auto">
+          <div className="flex-1 min-h-0 overflow-y-auto overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead className="sticky top-0 bg-white z-10 border-b border-slate-200 font-bold uppercase tracking-wider text-slate-500 shadow-xs">
                 <tr>
-                  <th className="px-5 py-3">Thời gian</th>
-                  <th className="px-5 py-3">Người thực hiện</th>
-                  <th className="px-5 py-3">Hành động</th>
-                  <th className="px-5 py-3">Đối tượng</th>
-                  <th className="px-5 py-3">Địa chỉ IP</th>
-                  <th className="px-5 py-3 text-right">Chi tiết</th>
+                  <th className="px-5 py-3 whitespace-nowrap">Thời gian</th>
+                  <th className="px-5 py-3 whitespace-nowrap">Người thực hiện</th>
+                  <th className="px-5 py-3 whitespace-nowrap">Hành động</th>
+                  <th className="px-5 py-3 whitespace-nowrap">Đối tượng</th>
+                  <th className="px-5 py-3 whitespace-nowrap">Địa chỉ IP</th>
+                  <th className="px-5 py-3 text-right whitespace-nowrap">Chi tiết</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -144,14 +144,14 @@ export default function PlatformLogsPage() {
                 ) : (
                   logs.map((log) => (
                     <tr key={log.id} className="hover:bg-slate-50/70 transition">
-                      <td className="px-5 py-3 font-mono text-[11px] text-slate-500">
+                      <td className="px-5 py-3 font-mono text-[11px] text-slate-500 whitespace-nowrap">
                         {log.created_at ? new Date(log.created_at).toLocaleString("vi-VN") : "—"}
                       </td>
-                      <td className="px-5 py-3">
-                        <p className="font-semibold text-slate-900">{log.actor_name || log.actor_email || "System"}</p>
+                      <td className="px-5 py-3 min-w-0">
+                        <p className="font-semibold text-slate-900 truncate max-w-[180px]">{log.actor_name || log.actor_email || "System"}</p>
                         <p className="text-[10px] text-slate-400 uppercase tracking-wider">{log.actor_role || "—"}</p>
                       </td>
-                      <td className="px-5 py-3">
+                      <td className="px-5 py-3 whitespace-nowrap">
                         <span
                           className={`inline-flex items-center rounded-md border px-2 py-0.5 font-mono text-[10px] font-bold ${getActionBadgeColor(
                             log.action
@@ -160,7 +160,7 @@ export default function PlatformLogsPage() {
                           {log.action}
                         </span>
                       </td>
-                      <td className="px-5 py-3 text-slate-600">
+                      <td className="px-5 py-3 text-slate-600 min-w-0">
                         <span className="font-semibold text-slate-900">{log.target_type || "—"}</span>
                         {log.target_id && (
                           <span className="ml-1 text-[11px] font-mono text-slate-400 truncate max-w-[120px] inline-block align-bottom">
@@ -168,10 +168,10 @@ export default function PlatformLogsPage() {
                           </span>
                         )}
                       </td>
-                      <td className="px-5 py-3 font-mono text-[11px] text-slate-500">
+                      <td className="px-5 py-3 font-mono text-[11px] text-slate-500 whitespace-nowrap">
                         {log.ip_address || "—"}
                       </td>
-                      <td className="px-5 py-3 text-right">
+                      <td className="px-5 py-3 text-right whitespace-nowrap">
                         <button
                           type="button"
                           onClick={() => setInspectingLog(log)}

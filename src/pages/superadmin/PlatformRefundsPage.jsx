@@ -126,7 +126,7 @@ export default function PlatformRefundsPage() {
 
   return (
     <SuperadminLayout>
-      <div className="w-full max-w-7xl mx-auto h-[calc(100vh-var(--dashboard-header-height,64px))] overflow-hidden flex flex-col px-6 pt-4 pb-4 box-border">
+      <div className="w-full max-w-[1600px] mx-auto min-w-0 h-[calc(100vh-var(--dashboard-header-height,64px))] overflow-hidden flex flex-col px-4 sm:px-5 lg:px-6 xl:px-8 pt-4 pb-4 box-border animate-fade-in">
         {/* Header */}
         <div className="shrink-0 flex flex-wrap items-center justify-between gap-3 mb-3">
           <div>
@@ -183,7 +183,7 @@ export default function PlatformRefundsPage() {
                 placeholder="Tìm theo trường, mã đơn…"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="h-9 w-60 sm:w-64 rounded-xl border border-slate-200 bg-white pl-8 pr-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-[#f27024] focus:outline-hidden"
+                className="h-9 w-48 sm:w-64 max-w-full rounded-xl border border-slate-200 bg-white pl-8 pr-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-[#f27024] focus:outline-hidden"
               />
             </div>
             <button
@@ -203,17 +203,17 @@ export default function PlatformRefundsPage() {
 
         {/* Table Card */}
         <div className="flex-1 min-h-0 bg-white rounded-2xl border border-slate-200 shadow-xs flex flex-col overflow-hidden">
-          <div className="flex-1 min-h-0 overflow-y-auto">
+          <div className="flex-1 min-h-0 overflow-y-auto overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead className="sticky top-0 bg-white z-10 border-b border-slate-200 font-bold uppercase tracking-wider text-slate-500 shadow-xs">
                 <tr>
-                  <th className="px-5 py-3">Trường học</th>
-                  <th className="px-5 py-3">Giao dịch gốc</th>
-                  <th className="px-5 py-3">Số tiền hoàn</th>
-                  <th className="px-5 py-3">Tài khoản thụ hưởng</th>
+                  <th className="px-5 py-3 whitespace-nowrap">Trường học</th>
+                  <th className="px-5 py-3 whitespace-nowrap">Giao dịch gốc</th>
+                  <th className="px-5 py-3 whitespace-nowrap">Số tiền hoàn</th>
+                  <th className="px-5 py-3 whitespace-nowrap">Tài khoản thụ hưởng</th>
                   <th className="px-5 py-3">Lý do</th>
-                  <th className="px-5 py-3">Trạng thái</th>
-                  <th className="px-5 py-3 text-right">Thao tác</th>
+                  <th className="px-5 py-3 whitespace-nowrap">Trạng thái</th>
+                  <th className="px-5 py-3 text-right whitespace-nowrap">Thao tác</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -233,21 +233,21 @@ export default function PlatformRefundsPage() {
                 ) : (
                   refunds.map((r) => (
                     <tr key={r.id} className="hover:bg-slate-50/70 transition">
-                      <td className="px-5 py-3">
-                        <p className="font-semibold text-slate-900">{r.school_name}</p>
+                      <td className="px-5 py-3 min-w-0">
+                        <p className="font-semibold text-slate-900 truncate max-w-[180px]">{r.school_name}</p>
                         <p className="text-[11px] text-slate-400 font-mono">{r.school_code}</p>
                       </td>
-                      <td className="px-5 py-3">
+                      <td className="px-5 py-3 whitespace-nowrap">
                         <p className="font-mono text-slate-900 font-medium">{r.order_reference}</p>
                         <p className="text-[11px] text-slate-400">Gốc: {formatCurrency(r.transaction_amount)}</p>
                       </td>
-                      <td className="px-5 py-3 font-bold text-slate-900 text-sm">
+                      <td className="px-5 py-3 font-bold text-slate-900 text-sm whitespace-nowrap">
                         {formatCurrency(r.amount)}
                       </td>
-                      <td className="px-5 py-3">
-                        <p className="font-semibold text-slate-900">{r.bank_name || "Ngân hàng thụ hưởng"}</p>
+                      <td className="px-5 py-3 min-w-0">
+                        <p className="font-semibold text-slate-900 truncate max-w-[180px]">{r.bank_name || "Ngân hàng thụ hưởng"}</p>
                         <p className="text-[11px] text-slate-500 font-mono">{r.bank_account_number || "—"}</p>
-                        <p className="text-[10px] uppercase text-slate-400">{r.bank_account_name || "—"}</p>
+                        <p className="text-[10px] uppercase text-slate-400 truncate max-w-[180px]">{r.bank_account_name || "—"}</p>
                       </td>
                       <td className="px-5 py-3 max-w-xs text-slate-600">
                         <p className="truncate" title={r.reason}>{r.reason}</p>
@@ -258,7 +258,7 @@ export default function PlatformRefundsPage() {
                           <p className="text-[11px] text-emerald-700 font-mono">Ref chi: {r.payout_reference}</p>
                         )}
                       </td>
-                      <td className="px-5 py-3">
+                      <td className="px-5 py-3 whitespace-nowrap">
                         {r.status === "requested" ? (
                           <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-700">
                             <Clock className="h-3 w-3" />
@@ -281,7 +281,7 @@ export default function PlatformRefundsPage() {
                           </span>
                         )}
                       </td>
-                      <td className="px-5 py-3 text-right">
+                      <td className="px-5 py-3 text-right whitespace-nowrap">
                         <div className="flex items-center justify-end gap-1.5">
                           {r.status === "requested" && (
                             <>

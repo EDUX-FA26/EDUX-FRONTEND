@@ -161,7 +161,7 @@ export default function SubscriptionPlansPage() {
 
   return (
     <SuperadminLayout>
-      <div className="w-full max-w-7xl mx-auto h-[calc(100vh-var(--dashboard-header-height,64px))] overflow-hidden flex flex-col px-6 pt-4 pb-4 box-border">
+      <div className="w-full max-w-[1600px] mx-auto min-w-0 h-[calc(100vh-var(--dashboard-header-height,64px))] overflow-hidden flex flex-col px-4 sm:px-5 lg:px-6 xl:px-8 pt-4 pb-4 box-border animate-fade-in">
         {/* Header */}
         <div className="shrink-0 flex flex-wrap items-center justify-between gap-3 mb-3">
           <div>
@@ -196,17 +196,17 @@ export default function SubscriptionPlansPage() {
 
         {/* Stat Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 shrink-0 mb-3">
-          <div className="py-2.5 px-4 bg-white rounded-xl border border-slate-200/80 shadow-xs flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-500">Tổng số gói</span>
-            <span className="text-lg font-bold text-slate-900">{plans.length}</span>
+          <div className="py-2.5 px-4 bg-white rounded-xl border border-slate-200/80 shadow-xs flex items-center justify-between min-w-0">
+            <span className="text-xs font-medium text-slate-500 truncate mr-2">Tổng số gói</span>
+            <span className="text-lg font-bold text-slate-900 shrink-0">{plans.length}</span>
           </div>
-          <div className="py-2.5 px-4 bg-white rounded-xl border border-slate-200/80 shadow-xs flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-500">Gói đang mở bán</span>
-            <span className="text-lg font-bold text-emerald-600">{plans.filter((p) => p.is_active).length}</span>
+          <div className="py-2.5 px-4 bg-white rounded-xl border border-slate-200/80 shadow-xs flex items-center justify-between min-w-0">
+            <span className="text-xs font-medium text-slate-500 truncate mr-2">Gói đang mở bán</span>
+            <span className="text-lg font-bold text-emerald-600 shrink-0">{plans.filter((p) => p.is_active).length}</span>
           </div>
-          <div className="py-2.5 px-4 bg-white rounded-xl border border-slate-200/80 shadow-xs flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-500">Trường đang thuê dịch vụ</span>
-            <span className="text-lg font-bold text-[#f27024]">{totalActiveSchools}</span>
+          <div className="py-2.5 px-4 bg-white rounded-xl border border-slate-200/80 shadow-xs flex items-center justify-between min-w-0">
+            <span className="text-xs font-medium text-slate-500 truncate mr-2">Trường đang thuê dịch vụ</span>
+            <span className="text-lg font-bold text-[#f27024] shrink-0">{totalActiveSchools}</span>
           </div>
         </div>
 
@@ -222,7 +222,7 @@ export default function SubscriptionPlansPage() {
               Chưa có gói thuê nào được cấu hình. Nhấn &quot;Tạo gói dịch vụ mới&quot; để thêm.
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 pb-2">
               {plans.map((p) => {
                 const features = typeof p.features === "object" && p.features !== null ? p.features : {};
                 return (

@@ -98,7 +98,7 @@ export default function SuperadminNotificationsPage() {
 
   return (
     <SuperadminLayout>
-      <div className="w-full max-w-7xl mx-auto h-[calc(100vh-var(--dashboard-header-height,64px))] overflow-hidden flex flex-col px-6 pt-4 pb-4 box-border">
+      <div className="w-full max-w-[1600px] mx-auto min-w-0 h-[calc(100vh-var(--dashboard-header-height,64px))] overflow-hidden flex flex-col px-4 sm:px-5 lg:px-6 xl:px-8 pt-4 pb-4 box-border animate-fade-in">
         {/* Header */}
         <div className="shrink-0 mb-3">
           <h1 className="text-xl font-bold tracking-tight text-slate-900">
@@ -133,9 +133,9 @@ export default function SuperadminNotificationsPage() {
         )}
 
         {/* 2-Column Responsive Layout */}
-        <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-5">
+        <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-5">
           {/* Main Broadcast Form (7 Cols) */}
-          <div className="lg:col-span-7 h-full min-h-0 bg-white rounded-2xl border border-slate-200 flex flex-col overflow-hidden shadow-xs">
+          <div className="lg:col-span-7 h-full min-h-0 min-w-0 bg-white rounded-2xl border border-slate-200 flex flex-col overflow-hidden shadow-xs">
             {/* Card Header (Fixed) */}
             <div className="shrink-0 px-5 pt-3.5 pb-2.5 border-b border-slate-100 flex items-center gap-2">
               <Radio className="h-4 w-4 text-[#f27024]" />
@@ -236,7 +236,7 @@ export default function SuperadminNotificationsPage() {
           </div>
 
           {/* Quick Templates & Guidelines Sidebar (5 Cols) */}
-          <div className="lg:col-span-5 h-full min-h-0 overflow-y-auto pr-1 space-y-3.5">
+          <div className="lg:col-span-5 h-full min-h-0 min-w-0 overflow-y-auto pr-1 space-y-3.5">
             {/* Quick Templates */}
             <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
               <div className="flex items-center gap-2 border-b border-slate-100 pb-2.5">
