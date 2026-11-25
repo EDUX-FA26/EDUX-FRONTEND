@@ -2310,7 +2310,7 @@ export default function LecturerFlashcardsPage() {
         }}
       >
         {/* ── 1. Minimalist Lecturer Subject Header ── */}
-        <div className="shrink-0 flex items-center gap-3.5 pb-4 mb-4 border-b border-slate-200">
+        <div className="shrink-0 flex items-center gap-3.5 bg-gradient-to-r from-[#FFEDD5] via-[#FED7AA]/90 to-[#FDBA74]/85 border border-orange-300/80 rounded-2xl px-5 py-4 shadow-xs mb-5">
           {/* Nút quay lại */}
           <button
             type="button"
@@ -2319,7 +2319,7 @@ export default function LecturerFlashcardsPage() {
               navigate('/lecturer/flashcards');
             }}
             title="Quay lại danh sách môn học"
-            className="w-9 h-9 rounded-lg border border-slate-200 bg-white flex items-center justify-center text-slate-600 hover:bg-slate-50 shrink-0 transition cursor-pointer"
+            className="w-9 h-9 rounded-full bg-white/90 hover:bg-white border border-orange-200/80 text-slate-700 hover:text-[#EA580C] flex items-center justify-center shrink-0 transition cursor-pointer shadow-2xs"
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
@@ -2329,17 +2329,17 @@ export default function LecturerFlashcardsPage() {
             {/* Hàng 1 */}
             <div className="flex items-center gap-2.5 flex-wrap">
               {subjectInfo?.code && (
-                <span className="px-2.5 py-0.5 rounded-md text-xs font-bold bg-orange-50 text-orange-600 border border-orange-200 font-mono">
+                <span className="bg-white text-[#EA580C] border border-orange-200 text-xs font-bold px-2.5 py-0.5 rounded-md shadow-2xs font-mono">
                   {subjectInfo.code}
                 </span>
               )}
-              <h1 className="text-xl font-bold text-slate-900 m-0 tracking-tight">
+              <h1 className="text-lg sm:text-xl font-bold text-slate-900 m-0 tracking-tight">
                 {subjectInfo?.name || (subjectLoading ? 'Đang tải môn học...' : 'Bộ thẻ ghi nhớ của tôi')}
               </h1>
             </div>
 
             {/* Hàng 2 */}
-            <p className="text-sm text-slate-500 mt-0.5 m-0">
+            <p className="text-sm text-slate-700 font-medium mt-0.5 m-0">
               Quản lý và biên soạn các bộ thẻ flashcard cho môn học này.
             </p>
           </div>
