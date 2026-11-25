@@ -180,17 +180,18 @@ export default function LecturerDashboardPage() {
   return (
     <div className="animate-fade-in w-full max-w-[1600px] mx-auto min-w-0" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       {/* Hero */}
-      <div style={{ borderRadius: '20px', background: 'linear-gradient(135deg, #0f2027 0%, #1a3040 50%, #0f2027 100%)', color: 'white', padding: '28px 32px', position: 'relative', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', top: 0, right: 0, width: '240px', height: '240px', background: 'rgba(0,106,97,0.25)', borderRadius: '50%', filter: 'blur(60px)', transform: 'translate(40px, -40px)' }} />
-        <div style={{ position: 'relative', zIndex: 1 }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '4px 14px', borderRadius: '9999px', background: 'rgba(255,255,255,0.1)', fontSize: '0.75rem', color: '#a5f3fc', fontWeight: 600, marginBottom: '12px' }}>
-            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--color-accent-teal)', display: 'inline-block' }} />
+      <div className="bg-gradient-to-r from-[#FFEDD5] via-[#FED7AA]/90 to-[#FDBA74]/85 border border-orange-300/80 rounded-2xl px-6 py-5 shadow-xs mb-5">
+        <div>
+          <div className="inline-flex items-center gap-1.5 bg-white text-[#EA580C] border border-orange-200 text-xs font-semibold px-3 py-1 rounded-full shadow-2xs">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#EA580C] inline-block" />
             {`${schoolName} Lecturer Portal`}
           </div>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: 0, letterSpacing: '-0.02em', color: '#ffffff' }}>
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 mt-2.5 tracking-tight m-0">
             {t.dashboard?.welcomeStudent} {user?.full_name || user?.email}!
           </h1>
-          <p style={{ marginTop: '8px', color: 'rgba(255, 255, 255, 0.9)', fontSize: '0.9375rem', lineHeight: '1.5', margin: '8px 0 0 0' }}>{t.dashboard?.lecturerDesc}</p>
+          <p className="text-sm text-slate-700 font-medium mt-1 m-0">
+            {t.dashboard?.lecturerDesc}
+          </p>
         </div>
       </div>
 
