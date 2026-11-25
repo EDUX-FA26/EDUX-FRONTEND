@@ -100,11 +100,11 @@ export default function SuperadminNotificationsPage() {
     <SuperadminLayout>
       <div className="w-full max-w-[1600px] mx-auto min-w-0 h-[calc(100vh-var(--dashboard-header-height,64px))] overflow-hidden flex flex-col px-4 sm:px-5 lg:px-6 xl:px-8 pt-4 pb-4 box-border animate-fade-in">
         {/* Header */}
-        <div className="shrink-0 mb-3">
-          <h1 className="text-xl font-bold tracking-tight text-slate-900">
+        <div className="shrink-0 bg-gradient-to-r from-[#FFEDD5] via-[#FED7AA]/90 to-[#FDBA74]/85 border border-orange-300/80 rounded-2xl px-5 py-4 shadow-xs mb-5">
+          <h1 className="text-xl font-bold tracking-tight text-slate-900 m-0">
             Phát sóng Thông báo Toàn nền tảng
           </h1>
-          <p className="mt-0.5 text-xs text-slate-500">
+          <p className="text-sm text-slate-700 font-medium mt-1 m-0">
             Quyền quản trị cao nhất: Phát thông điệp Socket.IO thời gian thực và gửi email tự động tới người nhận trên toàn bộ hệ thống EDUX.
           </p>
         </div>

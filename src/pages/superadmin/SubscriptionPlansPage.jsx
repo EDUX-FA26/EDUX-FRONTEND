@@ -163,10 +163,12 @@ export default function SubscriptionPlansPage() {
     <SuperadminLayout>
       <div className="w-full max-w-[1600px] mx-auto min-w-0 h-[calc(100vh-var(--dashboard-header-height,64px))] overflow-hidden flex flex-col px-4 sm:px-5 lg:px-6 xl:px-8 pt-4 pb-4 box-border animate-fade-in">
         {/* Header */}
-        <div className="shrink-0 flex flex-wrap items-center justify-between gap-3 mb-3">
+        <div className="shrink-0 bg-gradient-to-r from-[#FFEDD5] via-[#FED7AA]/90 to-[#FDBA74]/85 border border-orange-300/80 rounded-2xl px-5 py-4 shadow-xs mb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-xl font-bold tracking-tight text-slate-900">Quản lý Gói dịch vụ (Subscription Plans)</h1>
-            <p className="mt-0.5 text-xs text-slate-500">
+            <h1 className="text-xl font-bold tracking-tight text-slate-900 m-0">
+              Quản lý Gói dịch vụ (Subscription Plans)
+            </h1>
+            <p className="text-sm text-slate-700 font-medium mt-1 m-0">
               Cấu hình các gói dịch vụ SaaS, giá thuê theo tháng/năm và hạn mức tài nguyên (sinh viên, dung lượng S3, yêu cầu AI).
             </p>
           </div>
@@ -176,10 +178,10 @@ export default function SubscriptionPlansPage() {
               setCreateForm(DEFAULT_PLAN_FORM);
               setShowCreateModal(true);
             }}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-[#f27024] px-3.5 h-9 text-xs sm:text-sm font-semibold text-white shadow-sm shadow-orange-500/20 hover:bg-[#d95c14] transition"
+            className="h-10 px-4 rounded-xl bg-[#EA580C] hover:bg-[#C2410C] text-white text-xs sm:text-sm font-semibold shadow-xs transition inline-flex items-center gap-2 cursor-pointer shrink-0"
           >
             <Plus className="h-4 w-4" />
-            Tạo gói dịch vụ mới
+            <span>Tạo gói dịch vụ mới</span>
           </button>
         </div>
 

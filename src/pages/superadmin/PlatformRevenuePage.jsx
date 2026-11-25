@@ -263,28 +263,29 @@ export default function PlatformRevenuePage() {
         {/* ======================================================== */}
         {/* HEADER SECTION */}
         {/* ======================================================== */}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="bg-gradient-to-r from-[#FFEDD5] via-[#FED7AA]/90 to-[#FDBA74]/85 border border-orange-300/80 rounded-2xl px-5 py-4 shadow-xs mb-5 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-[#fff8f5] border border-[#ffdbcc] px-3 py-1 text-xs font-semibold text-[#f27024]">
-                <Activity className="h-3.5 w-3.5 animate-pulse" />
+              <span className="bg-white text-[#EA580C] border border-orange-200 text-xs font-semibold px-2.5 py-0.5 rounded-full shadow-2xs inline-flex items-center gap-1">
+                <Activity className="h-3.5 w-3.5 animate-pulse text-[#EA580C]" />
                 {s?.portalBadge || "Cổng Điều Hành Cấp Cao (SuperAdmin)"}
               </span>
-              <span className="text-xs text-[#8c7166]">
+              <span className="text-xs font-medium text-slate-700">
                 {s?.lastSync || "Dòng tiền PayOS cập nhật:"} {new Date().toLocaleTimeString(lang === "en" ? "en-US" : "vi-VN", { hour: "2-digit", minute: "2-digit" })}
               </span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-[#1f1b17] mt-1.5">
+            <h1 className="text-xl font-bold tracking-tight text-slate-900 mt-1.5 m-0">
               {s?.title || "Bảng Điều Khiển & Dòng Tiền Nền Tảng"}
             </h1>
-            <p className="mt-1 text-sm text-[#545f73]">
+            <p className="text-sm text-slate-700 font-medium mt-0.5 m-0">
               {s?.subtitle || "Giám sát dòng tiền bản quyền SaaS, biến động doanh thu VietQR và sức khỏe toàn bộ mạng lưới trường học EDUX."}
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2.5">
+          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
             <button
               type="button"
+              disabled={dataLoading || txLoading}
               onClick={() => {
                 loadAllData();
                 loadTransactions(pagination.page);
@@ -294,18 +295,18 @@ export default function PlatformRevenuePage() {
                   message: s?.syncSuccessMsg || "Số liệu dòng tiền và giao dịch đã được làm mới từ cơ sở dữ liệu.",
                 });
               }}
-              className="inline-flex items-center gap-2 rounded-xl border border-[#f5ebe1] bg-white px-4 py-2.5 text-xs font-bold text-[#545f73] shadow-xs hover:bg-[#fff8f5] hover:text-[#f27024] hover:border-[#ffdbcc] transition cursor-pointer"
+              className="h-10 px-3.5 rounded-xl bg-white/95 hover:bg-white border border-orange-200/80 text-xs sm:text-sm font-semibold text-slate-800 hover:text-[#EA580C] shadow-2xs transition inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
             >
-              <RefreshCw className={`h-4 w-4 ${dataLoading || txLoading ? "animate-spin text-[#f27024]" : ""}`} />
-              {s?.btnRefresh || "Làm mới dữ liệu"}
+              <RefreshCw className={`h-4 w-4 ${dataLoading || txLoading ? "animate-spin text-[#EA580C]" : ""}`} />
+              <span>{s?.btnRefresh || "Làm mới dữ liệu"}</span>
             </button>
 
             <Link
               to="/superadmin/plans"
-              className="inline-flex items-center gap-2 rounded-xl bg-[#f27024] px-4 py-2.5 text-xs font-bold !text-white shadow-md shadow-orange-500/30 hover:bg-[#d95c14] hover:!text-white transition cursor-pointer"
+              className="h-10 px-4 rounded-xl bg-[#EA580C] hover:bg-[#C2410C] text-white text-xs sm:text-sm font-semibold shadow-xs transition inline-flex items-center gap-2 cursor-pointer"
             >
-              <Layers3 className="h-4 w-4 !text-white" />
-              <span className="!text-white font-bold">{s?.btnManagePlans || "Quản lý Gói SaaS"}</span>
+              <Layers3 className="h-4 w-4 text-white" />
+              <span className="text-white font-semibold">{s?.btnManagePlans || "Quản lý Gói SaaS"}</span>
             </Link>
           </div>
         </div>
