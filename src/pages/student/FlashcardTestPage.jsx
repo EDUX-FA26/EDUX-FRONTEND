@@ -50,6 +50,19 @@ const getSafeStringAnswer = (val) => {
   return String(val).trim();
 };
 
+const getVisibleQuestionIndices = (total, current) => {
+  if (total <= 8) {
+    return Array.from({ length: total }, (_, i) => i);
+  }
+  if (current <= 3) {
+    return [0, 1, 2, 3, 'ellipsis-end', total - 3, total - 2, total - 1];
+  }
+  if (current >= total - 4) {
+    return [0, 1, 2, 'ellipsis-start', total - 4, total - 3, total - 2, total - 1];
+  }
+  return [0, 1, 'ellipsis-start', current - 1, current, current + 1, 'ellipsis-end', total - 2, total - 1];
+};
+
 export default function FlashcardTestPage() {
   const { testId, deckId } = useParams();
   const navigate = useNavigate();
@@ -230,7 +243,7 @@ export default function FlashcardTestPage() {
 
   const currentQuestion = questions[currentIdx];
   const answeredCount = Object.values(answers).filter((a) => getSafeStringAnswer(a).length > 0).length;
-  const progressPct = questions.length > 0 ? Math.round(((currentIdx + 1) / questions.length) * 100) : 0;
+  const progressPercent = questions.length > 0 ? Math.round((answeredCount / questions.length) * 100) : 0;
 
   return (
     <div
@@ -245,88 +258,52 @@ export default function FlashcardTestPage() {
         boxSizing: 'border-box',
       }}
     >
-      {/* ── Top Bar (shrink-0 py-2.5) ── */}
-      <div className="shrink-0 py-2.5 flex items-center justify-between gap-3">
-        <button
-          type="button"
-          onClick={() => navigate(-1)}
-          className="inline-flex items-center gap-1.5 bg-transparent border-0 cursor-pointer text-xs font-semibold text-slate-500 hover:text-slate-800 transition"
-          style={{
-            fontFamily: 'var(--font-sans)',
-            color: 'var(--color-ink-muted)',
-          }}
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Thoát làm bài
-        </button>
-
+      {/* ── Single Consolidated Header Card (shrink-0 mb-2.5) ── */}
+      <div className="shrink-0 mb-2.5 bg-gradient-to-r from-[#FFF7ED] via-[#FFEDD5]/85 to-[#FED7AA]/75 border border-orange-200/90 rounded-2xl px-5 py-3.5 shadow-xs flex flex-wrap items-center justify-between gap-4">
+        {/* Left Side: Exit button + Divider + Deck Title + Badge */}
         <div className="flex items-center gap-3">
-          <span
-            className="text-xs font-semibold"
-            style={{ color: 'var(--color-ink-muted)' }}
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/95 hover:bg-white border border-orange-200/80 text-xs sm:text-sm font-semibold text-slate-700 hover:text-[#EA580C] shadow-2xs transition cursor-pointer"
           >
-            Đã làm: <strong style={{ color: 'var(--color-primary-dark)' }}>{answeredCount}/{questions.length}</strong>
+            <ArrowLeft className="w-4 h-4" />
+            <span>Thoát</span>
+          </button>
+
+          <div className="h-5 w-px bg-orange-300/70 hidden sm:block" />
+
+          <h1 className="text-base sm:text-lg font-bold text-slate-900 m-0 truncate">
+            {testData?.deck_title || 'Kiểm tra bộ thẻ'}
+          </h1>
+
+          <span className="inline-flex items-center bg-white text-[#EA580C] border border-orange-200/90 text-xs font-semibold px-2.5 py-0.5 rounded-full shadow-2xs shrink-0">
+            Flashcard Quiz
           </span>
+        </div>
+
+        {/* Right Side: Progress (answered count + bar) + Submit button */}
+        <div className="flex items-center gap-4 ml-auto">
+          <div className="flex flex-col items-end">
+            <span className="text-xs font-semibold text-slate-700 mb-1.5">
+              {answeredCount}/{questions.length} đã làm
+            </span>
+            <div className="w-28 h-2 bg-white/90 border border-orange-200/60 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-orange-500 to-indigo-600 transition-all duration-300"
+                style={{ width: `${progressPercent}%` }}
+              />
+            </div>
+          </div>
 
           <button
             type="button"
             onClick={() => setShowConfirmModal(true)}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-white font-bold text-xs cursor-pointer shadow-sm hover:opacity-95 transition"
-            style={{
-              background: 'linear-gradient(135deg, var(--color-primary, #6366f1) 0%, #4f46e5 100%)',
-            }}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2 rounded-xl shadow-sm flex items-center gap-1.5 cursor-pointer transition shrink-0"
           >
             <Send className="w-3.5 h-3.5" />
-            Nộp bài
+            <span>Nộp bài</span>
           </button>
-        </div>
-      </div>
-
-      {/* ── Card tiêu đề bộ thẻ (shrink-0 p-3.5 mb-2.5) ── */}
-      <div
-        className="shrink-0 p-3.5 mb-2.5 rounded-xl border border-slate-200 bg-white flex flex-col gap-2.5 shadow-2xs"
-        style={{
-          background: 'var(--color-surface)',
-          borderColor: 'var(--color-border)',
-        }}
-      >
-        <div className="flex items-center justify-between gap-3 flex-wrap">
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-primary-dark)' }}>
-                BÀI KIỂM TRA FLASHCARD
-              </span>
-              <span className="text-slate-300 font-bold">•</span>
-              <h1 className="text-sm font-bold m-0 truncate" style={{ color: 'var(--color-ink)' }}>
-                {testData?.deck_title || 'Kiểm tra bộ thẻ'}
-              </h1>
-            </div>
-          </div>
-
-          <div
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold shrink-0"
-            style={{
-              background: 'var(--color-primary-bg, #eef2ff)',
-              border: '1px solid var(--color-border)',
-              color: 'var(--color-ink)',
-            }}
-          >
-            <FileText className="w-3.5 h-3.5" style={{ color: 'var(--color-primary)' }} />
-            <span>
-              Câu {currentIdx + 1} / {questions.length}
-            </span>
-          </div>
-        </div>
-
-        {/* Thanh progress bar */}
-        <div className="h-1.5 w-full rounded-full overflow-hidden" style={{ background: 'var(--color-border)' }}>
-          <div
-            className="h-full rounded-full transition-all duration-300"
-            style={{
-              width: `${progressPct}%`,
-              background: 'linear-gradient(90deg, var(--color-primary, #6366f1) 0%, #4f46e5 100%)',
-            }}
-          />
         </div>
       </div>
 
@@ -426,13 +403,13 @@ export default function FlashcardTestPage() {
         </div>
       )}
 
-      {/* ── Navigation Controls & Question Palette (shrink-0 pt-2.5) ── */}
-      <div className="shrink-0 pt-2.5 flex items-center justify-between gap-3">
+      {/* ── Navigation Controls & Question Palette (shrink-0 pt-3) ── */}
+      <div className="flex items-center justify-between gap-3 pt-3 shrink-0">
         <button
           type="button"
           onClick={() => setCurrentIdx((i) => Math.max(0, i - 1))}
           disabled={currentIdx === 0}
-          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition cursor-pointer shadow-2xs"
+          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition cursor-pointer shadow-2xs shrink-0"
           style={{
             borderColor: 'var(--color-border)',
             background: 'var(--color-surface)',
@@ -443,33 +420,38 @@ export default function FlashcardTestPage() {
           Câu trước
         </button>
 
-        {/* Question Palette Grid */}
-        <div className="flex gap-1.5 flex-wrap justify-center max-h-12 overflow-y-auto">
-          {questions.map((q, idx) => {
+        {/* Question Palette Grid (Single-row sliding window, no wrap, no scroll) */}
+        <div className="flex items-center justify-center gap-1.5 flex-nowrap">
+          {getVisibleQuestionIndices(questions.length, currentIdx).map((item) => {
+            if (typeof item === 'string') {
+              return (
+                <span
+                  key={item}
+                  className="px-1 text-xs font-bold text-slate-400 select-none shrink-0"
+                >
+                  ...
+                </span>
+              );
+            }
+            const q = questions[item];
+            if (!q) return null;
             const isAnswered = getSafeStringAnswer(answers[q.id]).length > 0;
-            const isCurrent = idx === currentIdx;
+            const isCurrent = item === currentIdx;
+
+            const btnClass = isCurrent
+              ? "w-8 h-8 rounded-full border-2 border-[#EA580C] bg-orange-50 text-[#EA580C] text-xs font-bold flex items-center justify-center shrink-0 transition"
+              : isAnswered
+              ? "w-8 h-8 rounded-full bg-emerald-50 border border-emerald-300 text-emerald-700 text-xs font-semibold flex items-center justify-center shrink-0 hover:border-emerald-400 transition cursor-pointer"
+              : "w-8 h-8 rounded-full bg-white border border-slate-200 text-slate-600 text-xs font-medium flex items-center justify-center shrink-0 hover:border-orange-300 hover:text-[#EA580C] transition cursor-pointer";
+
             return (
               <button
-                key={q.id}
+                key={q.id || item}
                 type="button"
-                onClick={() => setCurrentIdx(idx)}
-                className="w-7 h-7 rounded-lg border text-xs font-bold font-mono transition cursor-pointer flex items-center justify-center"
-                style={{
-                  borderWidth: '1.5px',
-                  borderColor: isCurrent ? 'var(--color-primary)' : isAnswered ? '#16a34a' : 'var(--color-border)',
-                  background: isCurrent
-                    ? 'var(--color-primary-card)'
-                    : isAnswered
-                    ? 'rgba(22,163,74,0.12)'
-                    : 'var(--color-surface)',
-                  color: isCurrent
-                    ? 'var(--color-primary-dark)'
-                    : isAnswered
-                    ? '#16a34a'
-                    : 'var(--color-ink-muted)',
-                }}
+                onClick={() => setCurrentIdx(item)}
+                className={btnClass}
               >
-                {idx + 1}
+                {item + 1}
               </button>
             );
           })}
@@ -479,7 +461,7 @@ export default function FlashcardTestPage() {
           type="button"
           onClick={() => setCurrentIdx((i) => Math.min(questions.length - 1, i + 1))}
           disabled={currentIdx === questions.length - 1}
-          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition cursor-pointer shadow-2xs"
+          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition cursor-pointer shadow-2xs shrink-0"
           style={{
             borderColor: 'var(--color-border)',
             background: 'var(--color-surface)',

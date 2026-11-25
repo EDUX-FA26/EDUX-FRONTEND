@@ -282,58 +282,53 @@ export default function AdminDashboardPage() {
       {/* ======================================================== */}
       {/* 1. HERO EXECUTIVE HEADER */}
       {/* ======================================================== */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#1c1917] via-[#292524] to-[#1c1917] p-6 sm:p-8 text-white shadow-xl shadow-stone-900/10">
-        <div className="absolute top-0 right-0 -mr-16 -mt-16 h-72 w-72 rounded-full bg-[#f27024]/20 blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 right-1/4 -mb-16 h-48 w-48 rounded-full bg-purple-600/15 blur-2xl pointer-events-none" />
-
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-3">
-            <div className="flex flex-wrap items-center gap-2.5">
-              <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3.5 py-1 text-xs font-bold text-orange-300 backdrop-blur-md border border-white/10">
-                <School className="h-3.5 w-3.5 text-[#f27024]" />
-                {currentSchool?.name || (isEn ? 'Institution Console' : 'Cơ sở Đào tạo EDUX')}
+      <div className="bg-gradient-to-r from-[#FFEDD5] via-[#FED7AA]/90 to-[#FDBA74]/85 border border-orange-300/80 rounded-2xl px-6 py-5 shadow-xs mb-5 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div>
+          <div className="flex flex-wrap items-center gap-2.5">
+            <span className="inline-flex items-center gap-1.5 bg-white text-[#EA580C] border border-orange-200 text-xs font-semibold px-3 py-1 rounded-full shadow-2xs">
+              <School className="h-3.5 w-3.5 text-[#EA580C]" />
+              {currentSchool?.name || (isEn ? 'Institution Console' : 'Cơ sở Đào tạo EDUX')}
+            </span>
+            {currentSchool?.code && (
+              <span className="rounded-full bg-white text-[#EA580C] border border-orange-200 px-2.5 py-0.5 text-[11px] font-mono font-bold shadow-2xs">
+                {currentSchool.code}
               </span>
-              {currentSchool?.code && (
-                <span className="rounded-full bg-orange-500/20 px-2.5 py-0.5 text-[11px] font-mono font-bold text-orange-200 border border-orange-500/30">
-                  {currentSchool.code}
-                </span>
-              )}
-              <span className="rounded-full bg-emerald-500/20 px-2.5 py-0.5 text-[11px] font-bold text-emerald-300 border border-emerald-500/30 flex items-center gap-1.5">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                {isEn ? 'System Active' : 'Hệ thống Sẵn sàng'}
-              </span>
-            </div>
-
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
-              {sa?.title || (isEn ? 'School Administrator Dashboard' : 'Bảng Điều Khiển Quản Trị Trường Học')}
-            </h1>
-
-            <p className="text-sm text-stone-300 max-w-2xl leading-relaxed">
-              {sa?.welcome || (isEn ? 'Welcome' : 'Xin chào')}, <strong className="text-white">{user?.full_name || user?.email}</strong>. {sa?.welcomeSub || (isEn ? 'Supervise academic performance, enrollment scales, and curriculum operations across the campus.' : 'Giám sát toàn diện quy mô đào tạo, sinh viên, phân bổ môn học và phân tích hiệu suất học tập.')}
-            </p>
+            )}
+            <span className="inline-flex items-center gap-1.5 bg-white/95 text-emerald-700 border border-emerald-200 text-xs font-semibold px-3 py-1 rounded-full shadow-2xs">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              {isEn ? 'System Active' : 'Hệ thống Sẵn sàng'}
+            </span>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3 shrink-0">
-            <button
-              type="button"
-              onClick={() => fetchDashboardData(schoolId)}
-              disabled={loading}
-              className="inline-flex items-center gap-2 rounded-2xl bg-white/10 hover:bg-white/20 px-4 py-2.5 text-xs font-bold text-white backdrop-blur-md border border-white/10 transition cursor-pointer disabled:opacity-50"
-              title={isEn ? 'Refresh data' : 'Làm mới số liệu'}
-            >
-              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-              {isEn ? 'Refresh' : 'Làm mới'}
-            </button>
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 mt-2.5 tracking-tight m-0">
+            {sa?.title || (isEn ? 'School Administrator Dashboard' : 'Bảng Điều Khiển Quản Trị')}
+          </h1>
 
-            <button
-              type="button"
-              onClick={() => setShowBroadcastModal(true)}
-              className="inline-flex items-center gap-2.5 rounded-2xl bg-gradient-to-r from-[#f27024] to-[#ea580c] px-5 py-2.5 text-xs font-bold text-white shadow-lg shadow-orange-500/30 hover:shadow-orange-500/45 hover:scale-[1.02] active:scale-[0.98] transition cursor-pointer"
-            >
-              <Send className="h-4 w-4" />
-              {sa?.btnBroadcast || (isEn ? 'Broadcast Notice' : 'Phát Thông Báo Toàn Trường')}
-            </button>
-          </div>
+          <p className="text-sm text-slate-700 font-medium mt-1 m-0 max-w-2xl leading-relaxed">
+            {sa?.welcome || (isEn ? 'Welcome' : 'Xin chào')}, <strong className="font-semibold text-slate-900">{user?.full_name || user?.email}</strong>. {sa?.welcomeSub || (isEn ? 'Supervise academic performance, enrollment scales, and curriculum operations across the campus.' : 'Giám sát hoạt động và điều hành toàn bộ hệ thống trường học.')}
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+          <button
+            type="button"
+            onClick={() => fetchDashboardData(schoolId)}
+            disabled={loading}
+            className="h-10 px-3.5 rounded-xl bg-white/95 hover:bg-white border border-orange-200/80 text-xs sm:text-sm font-semibold text-slate-800 hover:text-[#EA580C] shadow-2xs transition inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+            title={isEn ? 'Refresh data' : 'Làm mới số liệu'}
+          >
+            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin text-[#EA580C]' : ''}`} />
+            <span>{isEn ? 'Refresh' : 'Làm mới'}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setShowBroadcastModal(true)}
+            className="h-10 px-4 rounded-xl bg-[#EA580C] hover:bg-[#C2410C] text-white text-xs sm:text-sm font-semibold shadow-xs transition inline-flex items-center gap-2 cursor-pointer"
+          >
+            <Send className="h-4 w-4 text-white" />
+            <span>{sa?.btnBroadcast || (isEn ? 'Broadcast Notice' : 'Phát Thông Báo Toàn Trường')}</span>
+          </button>
         </div>
       </div>
 

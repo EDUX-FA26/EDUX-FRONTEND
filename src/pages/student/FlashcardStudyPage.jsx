@@ -113,7 +113,7 @@ function FlipCard({
             tabIndex={0}
             aria-label={F.ariaShowAnswer || 'Hiện đáp án'}
             onClick={onFlip}
-            onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && onFlip()}
+            onKeyDown={(e) => e.key === 'Enter' && onFlip()}
             className="px-14 sm:px-16 flex-1 min-h-0 overflow-y-auto flex flex-col items-center justify-center text-center cursor-pointer my-1"
           >
             <div className="text-lg sm:text-xl font-semibold text-slate-900 leading-relaxed max-w-2xl">
@@ -195,7 +195,7 @@ function FlipCard({
             tabIndex={0}
             aria-label={F.ariaShowQuestion || 'Hiện câu hỏi'}
             onClick={onFlip}
-            onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && onFlip()}
+            onKeyDown={(e) => e.key === 'Enter' && onFlip()}
             className="px-14 sm:px-16 flex-1 min-h-0 overflow-y-auto flex flex-col items-center justify-center text-center cursor-pointer my-1"
           >
             <div className="flex flex-col items-center justify-center gap-2 w-full max-w-2xl py-1">
@@ -490,12 +490,26 @@ export default function FlashcardStudyPage() {
 
   // Keyboard shortcuts
   useEffect(() => {
-    const handler = (e) => {
+    const handleKeyDown = (e) => {
       if (completed) return;
 
+      const target = e.target;
+      if (
+        target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.tagName === 'SELECT' ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+
       // Space or F to flip card
-      if (e.key === ' ' || e.key === 'f' || e.key === 'F') {
+      if (e.code === 'Space' || e.key === ' ' || e.key === 'Spacebar' || e.key?.toLowerCase() === 'f') {
         e.preventDefault();
+        if (document.activeElement && document.activeElement.tagName === 'BUTTON') {
+          document.activeElement.blur();
+        }
         setFlipped((f) => !f);
         return;
       }
@@ -519,8 +533,9 @@ export default function FlashcardStudyPage() {
       if (e.key === '3') handleRate('good');
       if (e.key === '4') handleRate('easy');
     };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, [flipped, completed, handlePrev, handleNext]);
 
   const currentCard = queue[currentIdx];
@@ -630,6 +645,9 @@ export default function FlashcardStudyPage() {
     );
   }
 
+  const kbdClass = "inline-flex items-center justify-center px-2 py-0.5 mx-0.5 text-[11px] font-medium text-slate-600 bg-white border border-slate-200/90 rounded-md shadow-2xs";
+  const arrowKbdClass = "w-6 h-5 inline-flex items-center justify-center mx-0.5 text-[11px] font-medium text-slate-600 bg-white border border-slate-200/90 rounded-md shadow-2xs";
+
   return (
     <div
       className="w-full max-w-4xl mx-auto h-[calc(100vh-64px)] overflow-hidden flex flex-col px-6 py-3 box-border animate-fade-in"
@@ -640,72 +658,48 @@ export default function FlashcardStudyPage() {
         boxSizing: 'border-box',
       }}
     >
-      {/* ── Tầng 1: Header & Thanh tiến độ (shrink-0 mb-3) ── */}
-      <div className="shrink-0 mb-3 flex flex-col gap-2">
-        {/* Row 1: Back + Badge + Counter (h-6 flex items-center justify-between) */}
-        <div className="h-6 flex items-center justify-between gap-3">
+      {/* ── Single Consolidated Header Card (shrink-0 mb-4) ── */}
+      <div className="shrink-0 bg-gradient-to-r from-[#FFF7ED] via-[#FFEDD5]/85 to-[#FED7AA]/75 border border-orange-200/90 rounded-2xl px-5 py-3.5 shadow-xs mb-4 flex flex-wrap items-center justify-between gap-4">
+        {/* Left side: Exit button + Divider + Deck title + Subject Code Badge */}
+        <div className="flex items-center gap-3">
           <button
             id="btn-back-study"
+            type="button"
             onClick={handleBack}
-            style={{
-              display: 'inline-flex', alignItems: 'center', gap: '6px',
-              background: 'none', border: 'none', cursor: 'pointer',
-              fontSize: '0.8125rem', fontWeight: 600, color: 'var(--color-ink-muted)',
-              fontFamily: 'var(--font-sans)',
-            }}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/95 hover:bg-white border border-orange-200/80 text-xs sm:text-sm font-semibold text-slate-700 hover:text-[#EA580C] shadow-2xs transition cursor-pointer shrink-0"
           >
-            <ArrowLeft style={{ width: '16px', height: '16px' }} />
-            {F.backToDecks || 'Về danh sách'}
+            <ArrowLeft className="w-4 h-4" />
+            <span>Thoát</span>
           </button>
 
-          {/* Status badge */}
-          {currentCard?.study_status ? (
-            <span style={{
-              fontSize: '0.6875rem', fontWeight: 700, padding: '3px 12px', borderRadius: '9999px',
-              ...studyStatusColor[currentCard.study_status],
-            }}>
-              {studyStatusLabel[currentCard.study_status] || currentCard.study_status}
-            </span>
-          ) : (
-            <div className="h-4" />
-          )}
+          <div className="h-5 w-px bg-orange-300/70 hidden sm:block" />
 
-          <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--color-ink-muted)', fontFamily: 'var(--font-mono)' }}>
-            {completed ? queue.length : currentIdx + 1} / {queue.length}
-          </span>
+          <h1 className="text-base sm:text-lg font-bold text-slate-900 m-0 truncate">
+            {deck?.title || ''}
+          </h1>
+
+          {deck?.subject_code && (
+            <span className="inline-flex items-center bg-white text-[#EA580C] border border-orange-200/90 text-xs font-semibold px-2.5 py-0.5 rounded-full shadow-2xs shrink-0">
+              {deck.subject_code}
+            </span>
+          )}
         </div>
 
-        {/* Row 2: Deck title & Subject tag */}
-        {deck && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-            <h1 style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--color-ink)', margin: 0 }}>
-              {deck.title}
-            </h1>
-            {deck.subject_name && (
-              <span style={{ fontSize: '0.6875rem', fontWeight: 700, fontFamily: 'var(--font-mono)', background: 'var(--color-primary-card)', color: 'var(--color-primary-dark)', padding: '2px 8px', borderRadius: '6px' }}>
-                {deck.subject_code} · {deck.subject_name}
-              </span>
-            )}
-          </div>
-        )}
-
-        {/* Row 3: Progress Bar with safe bottom padding */}
-        <div className="pb-1">
-          <div style={{ height: '5px', borderRadius: '9999px', background: 'var(--color-border)', overflow: 'hidden' }}>
-            <div style={{
-              height: '100%', borderRadius: '9999px',
-              width: `${completed ? 100 : progress}%`,
-              background: 'linear-gradient(90deg, var(--color-primary) 0%, #6366f1 100%)',
-              transition: 'width 0.4s ease',
-            }} />
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '3px' }}>
-            <span style={{ fontSize: '0.6875rem', color: 'var(--color-ink-muted)' }}>
-              {sessionStats.good + sessionStats.easy} {F.progressCorrect || 'đúng'} · {sessionStats.again + sessionStats.hard} {F.progressWrong || 'cần ôn thêm'}
+        {/* Right side: Stats text + Percentage pill + Progress bar */}
+        <div className="flex flex-col items-end ml-auto shrink-0">
+          <div className="flex items-center gap-2 text-xs">
+            <span className="text-slate-700 font-semibold">
+              {sessionStats.good + sessionStats.easy} đúng • {sessionStats.again + sessionStats.hard} cần ôn thêm
             </span>
-            <span style={{ fontSize: '0.6875rem', color: 'var(--color-ink-muted)', fontFamily: 'var(--font-mono)' }}>
+            <span className="bg-white/95 text-[#EA580C] border border-orange-200/80 font-bold px-2 py-0.5 rounded-md shadow-2xs">
               {Math.round(completed ? 100 : progress)}%
             </span>
+          </div>
+          <div className="w-40 h-1.5 bg-white/90 border border-orange-200/60 rounded-full overflow-hidden mt-1.5">
+            <div
+              className="h-full bg-orange-500 transition-all duration-300"
+              style={{ width: `${Math.round(completed ? 100 : progress)}%` }}
+            />
           </div>
         </div>
       </div>
@@ -721,56 +715,61 @@ export default function FlashcardStudyPage() {
           t={t}
         />
       ) : (
-        <>
-          {/* ── Tầng 2: Khung chứa Thẻ Flashcard cố định vị trí (flex-1 min-h-0 flex items-center justify-center) ── */}
-          <div className="flex-1 min-h-0 flex items-center justify-center w-full">
-            <FlipCard
-              card={currentCard}
-              flipped={flipped}
-              onFlip={() => setFlipped((f) => !f)}
-              currentIdx={currentIdx}
-              totalCards={queue.length}
-              onPrev={handlePrev}
-              onNext={handleNext}
-              t={t}
-            />
+        <div className="flex-1 min-h-0 flex flex-col items-center justify-start mt-0 pt-0 w-full">
+          {/* ── Thẻ Flashcard ── */}
+          <FlipCard
+            card={currentCard}
+            flipped={flipped}
+            onFlip={() => setFlipped((f) => !f)}
+            currentIdx={currentIdx}
+            totalCards={queue.length}
+            onPrev={handlePrev}
+            onNext={handleNext}
+            t={t}
+          />
+
+          {/* ── Dòng gợi ý thao tác & phím tắt Keycap ── */}
+          <div className="mt-4 sm:mt-5 flex flex-wrap items-center justify-center gap-1 text-xs text-slate-500 select-none">
+            <span>Nhấn vào thẻ (hoặc</span>
+            <kbd className={kbdClass}>Space</kbd>
+            <span>/</span>
+            <kbd className={kbdClass}>F</kbd>
+            <span>) để lật</span>
+            <span className="mx-1.5 text-slate-400">•</span>
+            <span>Bấm</span>
+            <kbd className={arrowKbdClass}>←</kbd>
+            <span>(hoặc phím</span>
+            <kbd className={arrowKbdClass}>→</kbd>
+            <span>) để chuyển câu</span>
           </div>
 
-          {/* ── Tầng 3: Vùng điều khiển & Hoàn thành ở đáy cố định chiều cao (shrink-0 min-h-[104px] flex flex-col items-center justify-start pt-2.5 gap-2) ── */}
-          <div className="shrink-0 min-h-[104px] flex flex-col items-center justify-start pt-2.5 gap-2">
-            {/* Dòng gợi ý phím tắt */}
-            <p className="text-xs text-slate-400 text-center m-0 select-none">
-              Nhấn vào thẻ (hoặc Space / F) để lật · Bấm &lt; &gt; (hoặc phím ← →) để chuyển câu
+          {/* ── Cụm đánh giá SRS & Hoàn thành phiên học (giữ nguyên không gian, không gây giật layout) ── */}
+          <div
+            className="flex flex-col items-center gap-1.5 transition-opacity duration-200 mt-2.5 min-h-[72px]"
+            style={{
+              opacity: flipped ? 1 : 0,
+              pointerEvents: flipped ? 'auto' : 'none',
+              visibility: flipped ? 'visible' : 'hidden',
+            }}
+          >
+            <p style={{ textAlign: 'center', fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-ink-muted)', margin: 0 }}>
+              {F.ratingPrompt || 'Bạn nhớ được mức độ nào?'}
             </p>
+            <RatingButtons onRate={handleRate} disabled={submitting} t={t} />
 
-            {/* Cụm đánh giá SRS & Hoàn thành phiên học (giữ nguyên không gian, không gây giật layout) */}
-            <div
-              className="flex flex-col items-center gap-1.5 transition-opacity duration-200"
-              style={{
-                opacity: flipped ? 1 : 0,
-                pointerEvents: flipped ? 'auto' : 'none',
-                visibility: flipped ? 'visible' : 'hidden',
-              }}
-            >
-              <p style={{ textAlign: 'center', fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-ink-muted)', margin: 0 }}>
-                {F.ratingPrompt || 'Bạn nhớ được mức độ nào?'}
-              </p>
-              <RatingButtons onRate={handleRate} disabled={submitting} t={t} />
-
-              {currentIdx === queue.length - 1 && (
-                <button
-                  type="button"
-                  id="btn-finish-study"
-                  onClick={handleCompleteSession}
-                  className="text-xs font-bold text-orange-600 hover:text-orange-700 hover:underline cursor-pointer flex items-center gap-1 mt-0.5 transition"
-                >
-                  <CheckCircle className="w-3.5 h-3.5" />
-                  Hoàn thành phiên học
-                </button>
-              )}
-            </div>
+            {currentIdx === queue.length - 1 && (
+              <button
+                type="button"
+                id="btn-finish-study"
+                onClick={handleCompleteSession}
+                className="text-xs font-bold text-orange-600 hover:text-orange-700 hover:underline cursor-pointer flex items-center gap-1 mt-0.5 transition"
+              >
+                <CheckCircle className="w-3.5 h-3.5" />
+                Hoàn thành phiên học
+              </button>
+            )}
           </div>
-        </>
+        </div>
       )}
 
     </div>
