@@ -302,15 +302,13 @@ export default function AdminNotificationsPage() {
       <style>{STYLES}</style>
       
       {/* Header trang cố định */}
-      <div className="shrink-0 mb-4 flex items-center justify-between flex-wrap gap-4">
-        <div>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 800, margin: 0, color: 'var(--color-ink)' }}>
-            Quản Lý Thông Báo
-          </h1>
-          <p style={{ fontSize: '0.875rem', color: 'var(--color-ink-muted)', marginTop: '4px', margin: 0 }}>
-            Phát thông báo hệ thống và xem lịch sử các thông báo đã gửi
-          </p>
-        </div>
+      <div className="shrink-0 bg-gradient-to-r from-[#FFEDD5] via-[#FED7AA]/90 to-[#FDBA74]/85 border border-orange-300/80 rounded-2xl px-5 py-4 shadow-xs mb-5">
+        <h1 className="text-xl font-bold text-slate-900 m-0 tracking-tight">
+          Quản Lý Thông Báo
+        </h1>
+        <p className="text-sm text-slate-700 font-medium mt-1 m-0">
+          Phát thông báo hệ thống và xem lịch sử các thông báo đã gửi
+        </p>
       </div>
 
       {/* Alert Notification */}

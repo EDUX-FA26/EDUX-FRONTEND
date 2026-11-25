@@ -342,16 +342,16 @@ export default function AdminReportsPage() {
     <div className="w-full max-w-[1600px] mx-auto min-w-0 h-[calc(100vh-var(--dashboard-header-height,64px))] overflow-hidden flex flex-col px-4 sm:px-5 lg:px-6 xl:px-8 pt-4 pb-4 box-border animate-fade-in">
       <style>{styles}</style>
 
-      {/* 1. Page Header thu gọn */}
-      <header className="shrink-0 flex flex-wrap items-center justify-between gap-3 mb-2.5">
+      {/* 1. Page Header */}
+      <header className="shrink-0 bg-gradient-to-r from-[#FFEDD5] via-[#FED7AA]/90 to-[#FDBA74]/85 border border-orange-300/80 rounded-2xl px-5 py-4 shadow-xs mb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold text-slate-900 m-0">Báo cáo &amp; Thống kê</h1>
-          <p className="text-xs text-slate-500 mt-0.5 m-0">Theo dõi dữ liệu vận hành, hoạt động AI và nhật ký cảnh báo của EduTrack.</p>
+          <h1 className="text-xl font-bold text-slate-900 m-0 tracking-tight">Báo cáo &amp; Thống kê</h1>
+          <p className="text-sm text-slate-700 font-medium mt-1 m-0">Theo dõi dữ liệu vận hành, hoạt động AI và nhật ký cảnh báo của EduTrack.</p>
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex flex-wrap items-center gap-2.5 shrink-0">
           <button
             type="button"
-            className="btn btn-secondary h-9 px-3.5 text-sm font-medium rounded-xl inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+            className="h-10 px-4 rounded-xl bg-white/95 hover:bg-white border border-orange-200/80 text-xs sm:text-sm font-semibold text-slate-800 hover:text-[#EA580C] shadow-2xs transition inline-flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             onClick={() => handleExport("learning")}
             disabled={!!exporting}
           >
@@ -360,7 +360,7 @@ export default function AdminReportsPage() {
           </button>
           <button
             type="button"
-            className="btn btn-primary h-9 px-3.5 text-sm font-medium rounded-xl inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+            className="h-10 px-4 rounded-xl bg-[#EA580C] hover:bg-[#C2410C] text-white text-xs sm:text-sm font-semibold shadow-xs transition inline-flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             onClick={() => handleExport("ai")}
             disabled={!!exporting}
           >
