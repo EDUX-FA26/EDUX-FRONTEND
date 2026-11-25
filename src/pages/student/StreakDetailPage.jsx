@@ -3,8 +3,18 @@ import { useNavigate } from 'react-router-dom';
 import { useStreak } from '../../hooks/useStreak';
 import LearningService from '../../services/learning.service';
 import { useLanguage } from '../../contexts/LanguageContext';
-// Import các icon đẹp từ lucide-react
-import { Flame, Trophy, LayoutGrid, RefreshCw, BookOpen } from 'lucide-react';
+import {
+    Flame,
+    Trophy,
+    LayoutGrid,
+    RefreshCw,
+    BookOpen,
+    Calendar,
+    Clock,
+    CheckCircle2,
+    AlertCircle,
+    X
+} from 'lucide-react';
 import { generateCalendarHeatmap } from '../../helper/calendar';
 import { formatDateDMY } from '../../helper/dateFormat';
 import { getTodayVNDate } from '../../helper/VietNamDate';
@@ -21,16 +31,13 @@ export default function StreakDetailPage() {
     const [notice, setNotice] = useState(null);
     const [hoveredDay, setHoveredDay] = useState(null);
 
-
     const todayStr = getTodayVNDate();
-
 
     useEffect(() => {
         let cancelled = false;
         async function fetchAllData() {
             try {
                 setLoadingExtra(true);
-                // Gọi song song TẤT CẢ các API (streak, heatmap, activity history) cùng một lúc
                 const [heatmapRes, historyRes] = await Promise.all([
                     LearningService.getHeatmap(),
                     LearningService.getActivityHistory({ limit: 10 })
@@ -65,28 +72,8 @@ export default function StreakDetailPage() {
         }
     };
 
-    if (streakLoading) {
-        return (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%' }}>
-                <div className="skeleton" style={{ width: '100%', height: '140px', borderRadius: '20px' }} />
-                <div className="skeleton" style={{ width: '100%', height: '180px', borderRadius: '20px' }} />
-            </div>
-        );
-    }
-
-    if (streakError) {
-        return (
-            <div style={{ padding: '20px', borderRadius: '14px', background: 'rgba(220,38,38,0.08)', color: '#dc2626', fontSize: '0.875rem', width: '100%' }}>
-                <span className="material-symbols-outlined" style={{ fontSize: '24px', verticalAlign: 'middle', marginRight: '8px' }}>error</span>
-                {streakError}
-            </div>
-        );
-    }
-
-    const streakList = Array.isArray(streaks) ? streaks : (Array.isArray(streaks?.data) ? streaks.data : []);
     const S = t.streakPage || {};
 
-    // Hàm chuyển đổi activity_type sang tên hiển thị thân thiện
     function formatActivityType(type, S = {}) {
         switch (type) {
             case 'flashcard_deck_completed':
@@ -99,300 +86,486 @@ export default function StreakDetailPage() {
                 return S.typeDefault || 'Kiểm tra';
         }
     }
-    return (
-        <div className="animate-fade-in w-full max-w-[1600px] mx-auto min-w-0" style={{ display: 'flex', flexDirection: 'column', gap: '24px', boxSizing: 'border-box' }}>
 
-            {/* Header Banner */}
-            <div className="card" style={{
-                padding: '32px 36px',
-                background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 60%, #334155 100%)',
-                color: '#ffffff',
-                borderRadius: '20px',
-                width: '100%',
-                boxSizing: 'border-box',
-                border: '1px solid rgba(255,255,255,0.08)',
-                boxShadow: '0 8px 24px -4px rgba(15, 23, 42, 0.25)',
-                position: 'relative',
-                overflow: 'hidden'
-            }}>
-                <div style={{ position: 'absolute', top: 0, right: 0, width: '260px', height: '260px', background: 'radial-gradient(circle, rgba(249,115,22,0.2) 0%, rgba(249,115,22,0) 70%)', borderRadius: '50%', transform: 'translate(40px, -40px)', pointerEvents: 'none' }} />
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px', position: 'relative', zIndex: 1 }}>
+    if (streakLoading) {
+        return (
+            <div className="w-full max-w-[1600px] mx-auto min-w-0 h-[calc(100vh-var(--dashboard-header-height,64px))] overflow-hidden flex flex-col px-4 sm:px-6 pt-3 sm:pt-4 pb-3 sm:pb-4 box-border">
+                <div className="skeleton h-10 w-72 rounded-xl mb-2.5 shrink-0" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3 mb-3 shrink-0">
+                    {[1, 2, 3, 4].map(i => (
+                        <div key={i} className="skeleton h-16 rounded-xl" />
+                    ))}
+                </div>
+                <div className="flex-1 min-h-0 space-y-4">
+                    <div className="skeleton w-full h-44 rounded-2xl" />
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                        <div className="lg:col-span-6 skeleton h-72 rounded-2xl" />
+                        <div className="lg:col-span-6 skeleton h-72 rounded-2xl" />
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    if (streakError) {
+        return (
+            <div className="w-full max-w-[1600px] mx-auto min-w-0 h-[calc(100vh-var(--dashboard-header-height,64px))] overflow-hidden flex flex-col justify-center items-center px-4 box-border">
+                <div className="p-6 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-center max-w-md">
+                    <AlertCircle className="w-10 h-10 text-rose-500 mx-auto mb-2" />
+                    <h3 className="font-bold text-base mb-1">Không thể tải dữ liệu Streak</h3>
+                    <p className="text-xs text-rose-600 mb-4">{streakError}</p>
+                    <button
+                        onClick={() => refresh()}
+                        className="px-4 py-2 bg-rose-600 text-white text-xs font-semibold rounded-xl hover:bg-rose-700 cursor-pointer"
+                    >
+                        Thử lại
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    const streakList = Array.isArray(streaks) ? streaks : (Array.isArray(streaks?.data) ? streaks.data : []);
+
+    // KPI Metrics
+    const maxCurrent = streakList.length > 0 ? Math.max(...streakList.map(s => Number(s.currentStreak) || 0)) : 0;
+    const maxLongest = streakList.length > 0 ? Math.max(...streakList.map(s => Number(s.longestStreak) || 0)) : 0;
+    const activeSubjects = streakList.filter(s => (Number(s.currentStreak) || 0) > 0).length;
+    const totalActiveDays = heatmapData.filter(d => (Number(d.count) || Number(d.activity_count) || 0) > 0).length;
+
+    return (
+        <div className="animate-fade-in w-full max-w-[1600px] mx-auto min-w-0 h-[calc(100vh-var(--dashboard-header-height,64px))] overflow-hidden flex flex-col px-4 sm:px-6 pt-3 sm:pt-4 pb-4 box-border">
+
+            {/* 1. CỐ ĐỊNH TẦNG TRÊN: HEADER + HÀNG 4 THẺ KPI (SHRINK-0) */}
+            <div className="shrink-0">
+                {/* 1.1 Page Header */}
+                <div className="flex flex-wrap items-center justify-between gap-2.5 mb-2.5">
                     <div>
-                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '5px 14px', borderRadius: '9999px', background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)', fontSize: '0.75rem', color: '#ffedd5', fontWeight: 600, marginBottom: '12px' }}>
-                            <Flame style={{ width: '16px', height: '16px', color: '#f97316' }} />
-                            {S.badge || 'Hệ thống Quản lý Chuỗi Học tập (Streak)'}
+                        <div className="flex items-center gap-2">
+                            <span className="inline-flex items-center gap-1 rounded-full bg-orange-50 border border-orange-200 px-2 py-0.5 text-[10px] font-bold text-orange-600">
+                                <Flame className="w-3 h-3 text-orange-500 fill-orange-500" />
+                                {S.badge || 'Hệ thống Quản lý Chuỗi Học tập (Streak)'}
+                            </span>
+                            <h1 className="text-xl font-bold text-slate-900 tracking-tight">
+                                {S.title || 'Trung tâm Theo dõi Động lực Học tập'}
+                            </h1>
                         </div>
-                        <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: 0, letterSpacing: '-0.02em', color: '#ffffff' }}>
-                            {S.title || 'Trung tâm Theo dõi Động lực Học tập'}
-                        </h1>
-                        <p style={{ marginTop: '8px', color: 'rgba(255, 255, 255, 0.9)', fontSize: '0.9375rem', lineHeight: '1.5', margin: '8px 0 0 0', maxWidth: '850px' }}>
+                        <p className="text-xs text-slate-500 mt-0.5">
                             {S.desc || 'Duy trì học flashcard mỗi ngày theo múi giờ Việt Nam để thắp sáng ngọn lửa streak, theo dõi bản đồ nhiệt hoạt động và cứu chuỗi kịp thời.'}
                         </p>
                     </div>
-                </div>
-            </div>
 
-            {notice && (
-                <div style={{
-                    padding: '14px 20px', borderRadius: '12px', fontSize: '0.875rem', width: '100%', boxSizing: 'border-box',
-                    background: notice.type === 'success' ? 'rgba(22,163,74,0.1)' : 'rgba(220,38,38,0.1)',
-                    color: notice.type === 'success' ? '#16a34a' : '#dc2626',
-                    border: `1px solid ${notice.type === 'success' ? 'rgba(22,163,74,0.3)' : 'rgba(220,38,38,0.3)'}`
-                }}>
-                    {notice.text}
-                </div>
-            )}
-
-            {/* 1. Bản đồ nhiệt Heatmap phân theo tháng */}
-            <div className="card" style={{ padding: '24px 28px', width: '100%', boxSizing: 'border-box', position: 'relative' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <LayoutGrid style={{ color: 'var(--color-primary)', width: '20px', height: '20px' }} />
-                        <h2 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--color-ink)', margin: 0 }}>
-                            {S.heatmapTitle || 'Bản đồ nhiệt hoạt động học tập (Heatmap)'}
-                        </h2>
+                    <div className="flex items-center gap-2">
+                        <button
+                            type="button"
+                            onClick={() => refresh()}
+                            className="h-8 sm:h-9 px-3 sm:px-3.5 text-xs font-semibold rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+                            title="Làm mới dữ liệu"
+                        >
+                            <RefreshCw className={`w-3.5 h-3.5 text-slate-500 ${streakLoading ? 'animate-spin' : ''}`} />
+                            <span>Làm mới</span>
+                        </button>
                     </div>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--color-ink-muted)' }}>
-                        {S.heatmapSubtitle || 'Hiển thị 90 ngày gần nhất (Có cả ngày nghỉ)'}
-                    </span>
                 </div>
 
-                {loadingExtra ? (
-                    <div className="skeleton" style={{ width: '100%', height: '120px', borderRadius: '12px' }} />
-                ) : (
-                    <div style={{ position: 'relative' }}>
-                        {/* Custom Tooltip tối giản hiển thị khi hover */}
-                        {hoveredDay && (
-                            <div style={{
-                                position: 'absolute',
-                                top: '-38px',
-                                left: '50%',
-                                transform: 'translateX(-50%)',
-                                background: '#1e293b',
-                                color: '#fff',
-                                padding: '4px 10px',
-                                borderRadius: '6px',
-                                fontSize: '0.75rem',
-                                fontWeight: 500,
-                                whiteSpace: 'nowrap',
-                                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                                pointerEvents: 'none',
-                                zIndex: 10,
-                                fontFamily: 'var(--font-mono)'
-                            }}>
-                                {formatDateDMY(hoveredDay.date)} • <strong style={{ color: 'var(--color-primary)' }}>{hoveredDay.count}</strong> hoạt động
-                            </div>
-                        )}
-
-                        <div style={{
-                            display: 'flex', gap: '16px', overflowX: 'auto', padding: '12px 4px',
-                            background: 'var(--color-primary-bg)', borderRadius: '12px', border: '1px solid var(--color-border)'
-                        }}>
-                            {generateCalendarHeatmap(heatmapData, 90).map((group, gIdx) => (
-                                <div key={gIdx} style={{ display: 'flex', flexDirection: 'column', gap: '8px', minWidth: 'fit-content' }}>
-                                    {/* Tên tháng */}
-                                    <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--color-ink-muted)' }}>
-                                        {group.monthName}
-                                    </span>
-
-                                    {/* Lưới các ô ngày trong tháng đó */}
-                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 14px)', gap: '4px' }}>
-                                        {group.days.map((item, idx) => {
-                                            let bg = 'var(--color-border)';
-                                            if (item.count > 3) bg = 'var(--color-primary)';
-                                            else if (item.count > 0) bg = 'var(--color-accent-teal)';
-
-                                            return (
-                                                <div
-                                                    key={idx}
-                                                    onMouseEnter={() => setHoveredDay(item)}
-                                                    onMouseLeave={() => setHoveredDay(null)}
-                                                    style={{
-                                                        width: '14px', height: '14px', borderRadius: '3px', background: bg,
-                                                        opacity: item.count > 0 ? 1 : 0.35, cursor: 'pointer',
-                                                        transition: 'transform 0.15s ease, opacity 0.15s ease'
-                                                    }}
-                                                    onMouseEnterCapture={(e) => e.currentTarget.style.transform = 'scale(1.25)'}
-                                                    onMouseLeaveCapture={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                                                />
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-                            ))}
+                {/* 1.2 Thông báo Notice Alert (nếu có) */}
+                {notice && (
+                    <div className={`py-1.5 px-3 mb-2.5 rounded-lg text-xs flex items-center justify-between border ${
+                        notice.type === 'success'
+                            ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                            : 'bg-rose-50 border-rose-200 text-rose-800'
+                    }`}>
+                        <div className="flex items-center gap-1.5">
+                            {notice.type === 'success' ? (
+                                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                            ) : (
+                                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                            )}
+                            <span className="font-medium">{notice.text}</span>
                         </div>
+                        <button
+                            type="button"
+                            onClick={() => setNotice(null)}
+                            className="text-slate-400 hover:text-slate-600 p-0.5 cursor-pointer"
+                        >
+                            <X className="w-3.5 h-3.5" />
+                        </button>
                     </div>
                 )}
+
+                {/* 1.3 Hàng 4 thẻ KPI Streak */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3 mb-3">
+                    {/* Thẻ 1: Chuỗi hiện tại */}
+                    <div className="py-2.5 px-3.5 sm:px-4 bg-white rounded-xl border border-slate-200/80 flex items-center justify-between shadow-2xs">
+                        <div className="min-w-0 pr-2">
+                            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 block truncate">
+                                {S.currentStreak || 'Chuỗi hiện tại'}
+                            </span>
+                            <div className="flex items-baseline gap-1.5 mt-0.5">
+                                <span className="text-xl font-extrabold text-slate-900 font-mono">
+                                    {maxCurrent}
+                                </span>
+                                <span className="text-xs font-semibold text-orange-600">
+                                    ngày
+                                </span>
+                            </div>
+                        </div>
+                        <div className="w-9 h-9 rounded-lg bg-orange-50 border border-orange-100 flex items-center justify-center shrink-0">
+                            <Flame className="w-5 h-5 text-orange-600 fill-orange-500" />
+                        </div>
+                    </div>
+
+                    {/* Thẻ 2: Kỷ lục dài nhất */}
+                    <div className="py-2.5 px-3.5 sm:px-4 bg-white rounded-xl border border-slate-200/80 flex items-center justify-between shadow-2xs">
+                        <div className="min-w-0 pr-2">
+                            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 block truncate">
+                                {S.longestStreak || 'Kỷ lục dài nhất'}
+                            </span>
+                            <div className="flex items-baseline gap-1.5 mt-0.5">
+                                <span className="text-xl font-extrabold text-slate-900 font-mono">
+                                    {maxLongest}
+                                </span>
+                                <span className="text-xs font-semibold text-amber-600">
+                                    ngày
+                                </span>
+                            </div>
+                        </div>
+                        <div className="w-9 h-9 rounded-lg bg-amber-50 border border-amber-100 flex items-center justify-center shrink-0">
+                            <Trophy className="w-5 h-5 text-amber-600" />
+                        </div>
+                    </div>
+
+                    {/* Thẻ 3: Môn đang duy trì chuỗi */}
+                    <div className="py-2.5 px-3.5 sm:px-4 bg-white rounded-xl border border-slate-200/80 flex items-center justify-between shadow-2xs">
+                        <div className="min-w-0 pr-2">
+                            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 block truncate">
+                                {S.activeSubjects || 'Môn duy trì chuỗi'}
+                            </span>
+                            <div className="flex items-baseline gap-1.5 mt-0.5">
+                                <span className="text-xl font-extrabold text-slate-900 font-mono">
+                                    {activeSubjects}
+                                </span>
+                                <span className="text-xs font-semibold text-teal-600">
+                                    / {streakList.length} môn
+                                </span>
+                            </div>
+                        </div>
+                        <div className="w-9 h-9 rounded-lg bg-teal-50 border border-teal-100 flex items-center justify-center shrink-0">
+                            <BookOpen className="w-5 h-5 text-teal-600" />
+                        </div>
+                    </div>
+
+                    {/* Thẻ 4: Tổng ngày điểm danh */}
+                    <div className="py-2.5 px-3.5 sm:px-4 bg-white rounded-xl border border-slate-200/80 flex items-center justify-between shadow-2xs">
+                        <div className="min-w-0 pr-2">
+                            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 block truncate">
+                                {S.totalDays || 'Tổng ngày điểm danh'}
+                            </span>
+                            <div className="flex items-baseline gap-1.5 mt-0.5">
+                                <span className="text-xl font-extrabold text-slate-900 font-mono">
+                                    {totalActiveDays}
+                                </span>
+                                <span className="text-xs font-semibold text-indigo-600">
+                                    ngày học
+                                </span>
+                            </div>
+                        </div>
+                        <div className="w-9 h-9 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center shrink-0">
+                            <Calendar className="w-5 h-5 text-indigo-600" />
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            {/* 2. Danh sách các môn học & Streak */}
-            <div>
-                <h2 style={{ fontSize: '1.125rem', fontWeight: 700, color: 'var(--color-ink)', marginBottom: '16px' }}>
-                    {S.sectionTitle || 'Trạng thái Streak theo từng Môn học'}
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 w-full">
-                    {streakList.length === 0 ? (
-                        <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '60px 20px', color: 'var(--color-ink-muted)' }}>
-                            <BookOpen style={{ width: '48px', height: '48px', opacity: 0.4, display: 'block', margin: '0 auto 12px' }} />
-                            <p style={{ fontSize: '0.9375rem' }}>{S.emptySubjects || 'Chưa có dữ liệu streak môn học nào.'}</p>
+            {/* 2. VÙNG CUỘN ĐỘC LẬP CHO 3 CARD BÊN DƯỚI */}
+            <div className="flex-1 min-h-0 overflow-y-auto pr-1 flex flex-col gap-4 pb-2">
+
+                {/* TẦNG 1 — CARD BẢN ĐỒ NHIỆT HOẠT ĐỘNG HỌC TẬP (HEATMAP) FULL RỘNG */}
+                <div className="w-full bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-2xs shrink-0 flex flex-col">
+                    <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                        <div className="flex items-center gap-2">
+                            <div className="w-7 h-7 rounded-lg bg-orange-50 border border-orange-100 flex items-center justify-center">
+                                <LayoutGrid className="w-4 h-4 text-orange-500" />
+                            </div>
+                            <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wide">
+                                {S.heatmapTitle || 'Bản đồ nhiệt hoạt động học tập (Heatmap)'}
+                            </h2>
                         </div>
+                        <span className="text-xs text-slate-500 font-medium">
+                            {S.heatmapSubtitle || 'Hiển thị 90 ngày gần nhất (Có cả ngày nghỉ) • Múi giờ Việt Nam (GMT+7)'}
+                        </span>
+                    </div>
+
+                    {loadingExtra ? (
+                        <div className="skeleton w-full h-[88px] rounded-xl" />
                     ) : (
-                        streakList.map((item) => {
-                            const isRecoverable = item.status === 'broken_recoverable';
-                            const isBusy = actionLoadingId === item.subjectId;
-                            const isCompletedToday = item.currentStreak > 0 && item.lastActivityDate === todayStr;
-                            const flameColor = isCompletedToday ? 'var(--color-primary)' : 'var(--color-ink-muted)';
-
-                            return (
-                                <div
-                                    key={item.subjectId}
-                                    className="card"
-                                    onClick={() => navigate(`/student/streak/${item.subjectId}`)}
-                                    style={{
-                                        padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
-                                        gap: '20px', height: '100%', boxSizing: 'border-box', cursor: 'pointer', transition: 'transform 0.2s, box-shadow 0.2s'
-                                    }}
-                                    onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = 'var(--shadow-lg)'; }}
-                                    onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'var(--shadow-md)'; }}
-                                >
-                                    <div>
-                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-                                            <span style={{ fontSize: '0.6875rem', fontWeight: 700, fontFamily: 'var(--font-mono)', background: 'var(--color-primary-card)', color: 'var(--color-primary-dark)', padding: '3px 10px', borderRadius: '6px' }}>
-                                                {item.subjectCode || 'SUBJECT CODE'}
-                                            </span>
-                                            <div>
-                                                {isCompletedToday ? (
-                                                    <span className="badge badge-teal">{S.completedToday || 'Đã học hôm nay'}</span>
-                                                ) : isRecoverable ? (
-                                                    <span className="badge badge-orange">{S.recoverable || 'Có thể khôi phục'}</span>
-                                                ) : (
-                                                    <span className="badge" style={{ background: 'var(--color-primary-bg)', color: 'var(--color-ink-muted)' }}>
-                                                        {S.notStudiedToday || 'Chưa học hôm nay'}
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        <h3 style={{ fontSize: '1.0625rem', fontWeight: 700, color: 'var(--color-ink)', margin: '0 0 16px', lineHeight: '1.4' }}>
-                                            {item.subjectName}
-                                        </h3>
-
-                                        {/* Thống kê chỉ số với icon Flame & Trophy từ lucide-react */}
-                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', padding: '14px', borderRadius: '14px', background: 'var(--color-primary-bg)', border: '1px solid var(--color-border)' }}>
-                                            <div>
-                                                <span style={{ fontSize: '0.6875rem', color: 'var(--color-ink-muted)', fontWeight: 600 }}>{S.currentStreak || 'Chuỗi hiện tại'}</span>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
-                                                    <Flame className={isCompletedToday ? 'animate-flame' : ''} style={{ width: '22px', height: '22px', color: flameColor }} />
-                                                    <span style={{ fontSize: '1.375rem', fontWeight: 800, color: isCompletedToday ? 'var(--color-primary)' : 'var(--color-ink-muted)', fontFamily: 'var(--font-mono)' }}>
-                                                        {item.currentStreak || 0} {S.days || 'ngày'}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <span style={{ fontSize: '0.6875rem', color: 'var(--color-ink-muted)', fontWeight: 600 }}>{S.longestStreak || 'Kỷ lục dài nhất'}</span>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
-                                                    <Trophy style={{ width: '20px', height: '20px', color: '#eab308' }} />
-                                                    <span style={{ fontSize: '1.375rem', fontWeight: 700, color: 'var(--color-ink)', fontFamily: 'var(--font-mono)' }}>
-                                                        {item.longestStreak || 0} {S.days || 'ngày'}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Phần khôi phục & quota */}
-                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '12px', borderTop: '1px solid var(--color-border)' }}>
-                                        <div style={{ fontSize: '0.75rem', color: 'var(--color-ink-muted)' }}>
-                                            {S.recoveryQuota || 'Quota cứu chuỗi:'} <strong style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-ink)' }}>{item.recoveryRemaining ?? 3}/3</strong>
-                                        </div>
-
-                                        {isRecoverable && (
-                                            <button
-                                                onClick={(e) => handleRecover(e, item.subjectId)}
-                                                disabled={isBusy || (item.recoveryRemaining ?? 0) <= 0}
-                                                style={{
-                                                    display: 'inline-flex', alignItems: 'center', gap: '6px',
-                                                    padding: '8px 14px', borderRadius: '8px', background: 'var(--color-primary)', color: 'white',
-                                                    border: 'none', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer',
-                                                    opacity: isBusy || (item.recoveryRemaining ?? 0) <= 0 ? 0.6 : 1
-                                                }}
-                                            >
-                                                <RefreshCw style={{ width: '14px', height: '14px' }} className={isBusy ? 'animate-spin' : ''} />
-                                                {isBusy ? (S.rescuing || 'Đang cứu...') : (S.rescueBtn || 'Cứu Streak')}
-                                            </button>
-                                        )}
-                                    </div>
+                        <div className="relative">
+                            {/* Hover tooltip */}
+                            {hoveredDay && (
+                                <div className="absolute -top-9 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-3 py-1 rounded-md text-xs font-medium whitespace-nowrap shadow-md pointer-events-none z-20 font-mono">
+                                    {formatDateDMY(hoveredDay.date)} • <strong className="text-orange-400">{hoveredDay.count}</strong> hoạt động
                                 </div>
-                            );
-                        })
-                    )}
-                </div>
-            </div>
+                            )}
 
-            {/* 3. Lịch sử hoạt động học tập gần đây */}
-            <div className="card" style={{ padding: '24px 28px', width: '100%', boxSizing: 'border-box' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <BookOpen style={{ color: 'var(--color-primary)', width: '20px', height: '20px' }} />
-                        <h2 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--color-ink)', margin: 0 }}>
-                            {S.activityHistoryTitle || 'Lịch sử thắp chuỗi gần đây'}
-                        </h2>
-                    </div>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--color-ink-muted)' }}>
-                        {S.activityHistorySubtitle || 'Các phiên học flashcard mới nhất'}
-                    </span>
-                </div>
+                            <div className="flex gap-4 sm:gap-6 overflow-x-auto py-2 px-3 bg-slate-50/70 rounded-xl border border-slate-100">
+                                {generateCalendarHeatmap(heatmapData, 90).map((group, gIdx) => (
+                                    <div key={gIdx} className="flex flex-col gap-1.5 shrink-0">
+                                        <span className="text-[11px] font-bold text-slate-500">
+                                            {group.monthName}
+                                        </span>
+                                        <div className="grid grid-cols-7 gap-1.5">
+                                            {group.days.map((item, idx) => {
+                                                let bg = 'bg-slate-200';
+                                                if (item.count > 3) bg = 'bg-[#f97316]';
+                                                else if (item.count > 0) bg = 'bg-teal-500';
 
-                {loadingExtra ? (
-                    <div className="skeleton" style={{ width: '100%', height: '100px', borderRadius: '12px' }} />
-                ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                        {Array.isArray(activityHistory) && activityHistory.length > 0 ? (
-                            activityHistory.map((activity, idx) => (
-                                <div key={activity.id || idx} style={{
-                                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                    padding: '12px 16px', borderRadius: '10px', background: 'var(--color-primary-bg)',
-                                    border: '1px solid var(--color-border)', flexWrap: 'wrap', gap: '10px'
-                                }}>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <span style={{ fontSize: '0.6875rem', fontWeight: 700, fontFamily: 'var(--font-mono)', background: 'var(--color-primary-card)', color: 'var(--color-primary-dark)', padding: '2px 8px', borderRadius: '4px' }}>
-                                                {activity.subject_code || 'CODE'}
-                                            </span>
-                                            <span style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--color-ink)' }}>
-                                                {activity.subject_name}
-                                            </span>
+                                                return (
+                                                    <div
+                                                        key={idx}
+                                                        onMouseEnter={() => setHoveredDay(item)}
+                                                        onMouseLeave={() => setHoveredDay(null)}
+                                                        className={`w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-[3px] ${bg} cursor-pointer transition-transform hover:scale-125 ${item.count > 0 ? 'opacity-100' : 'opacity-40'}`}
+                                                    />
+                                                );
+                                            })}
                                         </div>
-                                        <span style={{ fontSize: '0.8125rem', color: 'var(--color-ink-muted)' }}>
-                                            {activity.deck_title ? `Bộ thẻ: ${activity.deck_title}` : formatActivityType(activity.activity_type, S)}
-                                        </span>
-                                        {activity.flashcard_score !== null && activity.flashcard_score !== undefined && (
-                                            <span style={{ fontSize: '0.75rem', color: Number(activity.flashcard_score) < 50 ? '#b91c1c' : '#0f766e', fontWeight: 700 }}>
-                                                Điểm FlashCard: {Number(activity.flashcard_score).toFixed(1)}%
-                                                {activity.flashcard_total_questions ? ` (${activity.flashcard_total_questions} câu)` : ''}
-                                            </span>
-                                        )}
                                     </div>
-
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                        {/* Hiển thị loại hoạt động đã được dịch thân thiện */}
-                                        <span className="badge badge-teal" style={{ fontSize: '0.75rem' }}>
-                                            {formatActivityType(activity.activity_type, S)}
-                                        </span>
-                                        {/* Ngày định dạng d/m/y */}
-                                        <span style={{ fontSize: '0.75rem', fontWeight: 600, fontFamily: 'var(--font-mono)', color: 'var(--color-ink-muted)' }}>
-                                            {formatDateDMY(activity.activity_date)}
-                                        </span>
-                                    </div>
-                                </div>
-                            ))
-                        ) : (
-                            <div style={{ textAlign: 'center', color: 'var(--color-ink-muted)', fontSize: '0.8125rem', padding: '20px' }}>
-                                {S.activityEmpty || 'Chưa ghi nhận lịch sử hoạt động nào.'}
+                                ))}
                             </div>
-                        )}
+                        </div>
+                    )}
+
+                    {/* Heatmap Legend */}
+                    <div className="flex flex-wrap items-center justify-between text-xs text-slate-500 pt-2.5 border-t border-slate-100 mt-3">
+                        <span className="font-medium">Mức độ hoàn thành flashcard:</span>
+                        <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-1.5">
+                                <div className="w-3 h-3 rounded-[2px] bg-slate-200 opacity-40" />
+                                <span>Chưa học (0 lượt)</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                                <div className="w-3 h-3 rounded-[2px] bg-teal-500" />
+                                <span>Đã học (1 - 3 lượt)</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                                <div className="w-3 h-3 rounded-[2px] bg-[#f97316]" />
+                                <span>Tích cực (&gt; 3 lượt)</span>
+                            </div>
+                        </div>
                     </div>
-                )}
+                </div>
+
+                {/* TẦNG 2 — LƯỚI 2 CỘT NGANG BẰNG CHIỀU CAO (ITEMS-STRETCH) */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 flex-1 min-h-0 items-stretch">
+
+                    {/* CỘT TRÁI (6 COLS): TRẠNG THÁI STREAK THEO TỪNG MÔN HỌC */}
+                    <div className="lg:col-span-6 h-full min-h-[360px] bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-2xs flex flex-col">
+                        {/* Header cố định */}
+                        <div className="shrink-0 pb-3 mb-3 border-b border-slate-100 flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                                <div className="w-7 h-7 rounded-lg bg-orange-50 border border-orange-100 flex items-center justify-center">
+                                    <BookOpen className="w-4 h-4 text-orange-500" />
+                                </div>
+                                <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wide">
+                                    {S.sectionTitle || 'Trạng thái Streak theo từng Môn học'}
+                                </h2>
+                            </div>
+                            <span className="text-xs font-semibold text-slate-600 bg-slate-100 px-2.5 py-0.5 rounded-full shrink-0">
+                                Tổng cộng: {streakList.length} môn
+                            </span>
+                        </div>
+
+                        {/* Danh sách thẻ môn học cuộn dọc độc lập */}
+                        <div className="flex-1 min-h-0 overflow-y-auto pr-1 pb-6">
+                            {streakList.length === 0 ? (
+                                <div className="h-full min-h-[180px] flex flex-col items-center justify-center text-center text-slate-400 py-8">
+                                    <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mb-2">
+                                        <BookOpen className="w-6 h-6 text-slate-400 opacity-60" />
+                                    </div>
+                                    <p className="text-xs font-medium text-slate-500">
+                                        {S.emptySubjects || 'Chưa có dữ liệu streak môn học nào.'}
+                                    </p>
+                                    <p className="text-[11px] text-slate-400 mt-0.5">
+                                        Hãy bắt đầu học flashcard để khởi động chuỗi ngày!
+                                    </p>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                    {streakList.map((item) => {
+                                        const isRecoverable = item.status === 'broken_recoverable';
+                                        const isBusy = actionLoadingId === item.subjectId;
+                                        const isCompletedToday = item.currentStreak > 0 && item.lastActivityDate === todayStr;
+
+                                        return (
+                                            <div
+                                                key={item.subjectId}
+                                                onClick={() => navigate(`/student/streak/${item.subjectId}`)}
+                                                className="bg-slate-50/70 hover:bg-[#fff8f5] hover:border-orange-200 transition-all rounded-xl border border-slate-200/80 p-3 flex flex-col justify-between cursor-pointer shadow-2xs group"
+                                            >
+                                                <div>
+                                                    <div className="flex items-center justify-between gap-1 mb-1.5">
+                                                        <span className="text-[10px] font-bold font-mono bg-white text-slate-700 px-1.5 py-0.5 rounded border border-slate-200">
+                                                            {item.subjectCode || 'CODE'}
+                                                        </span>
+                                                        <div>
+                                                            {isCompletedToday ? (
+                                                                <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                                                                    {S.completedToday || 'Đã học hôm nay'}
+                                                                </span>
+                                                            ) : isRecoverable ? (
+                                                                <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 animate-pulse">
+                                                                    {S.recoverable || 'Có thể cứu'}
+                                                                </span>
+                                                            ) : (
+                                                                <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-slate-200 text-slate-600">
+                                                                    {S.notStudiedToday || 'Chưa học hôm nay'}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+
+                                                    <h3 className="text-xs font-bold text-slate-900 group-hover:text-orange-600 transition-colors line-clamp-1 mb-2" title={item.subjectName}>
+                                                        {item.subjectName}
+                                                    </h3>
+
+                                                    {/* Thống kê streak & kỷ lục */}
+                                                    <div className="grid grid-cols-2 gap-1.5 p-2 rounded-lg bg-white border border-slate-100 mb-2">
+                                                        <div>
+                                                            <span className="text-[10px] text-slate-400 font-medium block">
+                                                                {S.currentStreak || 'Chuỗi hiện tại'}
+                                                            </span>
+                                                            <div className="flex items-center gap-1 mt-0.5">
+                                                                <Flame className={`w-3.5 h-3.5 ${isCompletedToday ? 'text-orange-500 fill-orange-500' : 'text-slate-400'}`} />
+                                                                <span className={`text-xs font-extrabold font-mono ${isCompletedToday ? 'text-orange-600' : 'text-slate-600'}`}>
+                                                                    {item.currentStreak || 0} ngày
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                        <div>
+                                                            <span className="text-[10px] text-slate-400 font-medium block">
+                                                                {S.longestStreak || 'Kỷ lục'}
+                                                            </span>
+                                                            <div className="flex items-center gap-1 mt-0.5">
+                                                                <Trophy className="w-3.5 h-3.5 text-amber-500" />
+                                                                <span className="text-xs font-bold font-mono text-slate-800">
+                                                                    {item.longestStreak || 0} ngày
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Footer thẻ: quota & nút cứu */}
+                                                <div className="flex items-center justify-between pt-1.5 border-t border-slate-200/60">
+                                                    <span className="text-[10px] text-slate-400">
+                                                        Quota: <strong className="font-mono text-slate-700">{item.recoveryRemaining ?? 3}/3</strong>
+                                                    </span>
+
+                                                    {isRecoverable && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={(e) => handleRecover(e, item.subjectId)}
+                                                            disabled={isBusy || (item.recoveryRemaining ?? 0) <= 0}
+                                                            className="h-6 px-2 text-[10px] font-bold rounded-md bg-orange-600 hover:bg-orange-700 text-white flex items-center gap-1 disabled:opacity-50 cursor-pointer shadow-2xs"
+                                                        >
+                                                            <RefreshCw className={`w-3 h-3 ${isBusy ? 'animate-spin' : ''}`} />
+                                                            <span>{isBusy ? (S.rescuing || 'Đang cứu...') : (S.rescueBtn || 'Cứu')}</span>
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* CARD 3 (CỘT PHẢI — 6 COLS): LỊCH SỬ HOẠT ĐỘNG GẦN ĐÂY */}
+                    <div className="lg:col-span-6 h-full min-h-[360px] bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-2xs flex flex-col">
+                        {/* Header cố định */}
+                        <div className="shrink-0 pb-3 mb-3 border-b border-slate-100 flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                                <div className="w-7 h-7 rounded-lg bg-amber-50 border border-amber-100 flex items-center justify-center">
+                                    <Clock className="w-4 h-4 text-amber-500" />
+                                </div>
+                                <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wide">
+                                    {S.activityHistoryTitle || 'Lịch sử hoạt động gần đây'}
+                                </h2>
+                            </div>
+                            <span className="text-xs text-slate-400 font-medium shrink-0">
+                                {S.activityHistorySubtitle || 'Các phiên học flashcard mới nhất'}
+                            </span>
+                        </div>
+
+                        {/* Danh sách hoạt động gần đây cuộn dọc độc lập */}
+                        <div className="flex-1 min-h-0 overflow-y-auto pr-1 space-y-2.5 pb-12">
+                            {loadingExtra ? (
+                                <div className="space-y-2.5">
+                                    {[1, 2, 3].map(i => (
+                                        <div key={i} className="skeleton h-16 rounded-xl" />
+                                    ))}
+                                </div>
+                            ) : Array.isArray(activityHistory) && activityHistory.length > 0 ? (
+                                activityHistory.map((activity, idx) => (
+                                    <div
+                                        key={activity.id || idx}
+                                        className="p-3 rounded-xl bg-slate-50/70 border border-slate-200/80 hover:bg-[#fff8f5] transition-colors flex items-center justify-between gap-3 shadow-2xs"
+                                    >
+                                        <div className="min-w-0 flex-1">
+                                            <div className="flex items-center gap-2 mb-1 min-w-0">
+                                                <span className="text-[10px] font-bold font-mono bg-white text-slate-700 px-1.5 py-0.5 rounded border border-slate-200 shrink-0">
+                                                    {activity.subject_code || 'CODE'}
+                                                </span>
+                                                <span className="text-xs font-bold text-slate-900 truncate" title={activity.subject_name}>
+                                                    {activity.subject_name}
+                                                </span>
+                                            </div>
+                                            <p className="text-[11px] text-slate-500 truncate mb-0.5">
+                                                {activity.deck_title ? `Bộ thẻ: ${activity.deck_title}` : formatActivityType(activity.activity_type, S)}
+                                            </p>
+                                            {activity.flashcard_score !== null && activity.flashcard_score !== undefined && (
+                                                <span className={`text-[11px] ${
+                                                    Number(activity.flashcard_score) >= 80
+                                                        ? 'text-emerald-600 font-medium'
+                                                        : Number(activity.flashcard_score) >= 50
+                                                        ? 'text-amber-600 font-medium'
+                                                        : 'text-rose-500 font-medium'
+                                                }`}>
+                                                    Điểm Flashcard: {Number(activity.flashcard_score).toFixed(1)}%
+                                                    {activity.flashcard_total_questions ? ` (${activity.flashcard_total_questions} câu)` : ''}
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        <div className="text-right shrink-0">
+                                            <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-teal-50 text-teal-700 border border-teal-200 mb-1">
+                                                {formatActivityType(activity.activity_type, S)}
+                                            </span>
+                                            <p className="text-[11px] font-mono text-slate-400">
+                                                {formatDateDMY(activity.activity_date)}
+                                            </p>
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="h-full min-h-[180px] flex flex-col items-center justify-center text-center text-slate-400 py-8">
+                                    <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mb-2">
+                                        <Calendar className="w-6 h-6 text-slate-400 opacity-60" />
+                                    </div>
+                                    <p className="text-xs font-medium text-slate-500">
+                                        {S.activityEmpty || 'Chưa ghi nhận lịch sử hoạt động nào.'}
+                                    </p>
+                                    <p className="text-[11px] text-slate-400 mt-0.5">
+                                        Các phiên học flashcard và kiểm tra sẽ được lưu tại đây.
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                </div>
+
             </div>
 
         </div>
