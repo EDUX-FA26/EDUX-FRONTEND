@@ -298,7 +298,7 @@ export default function AdminNotificationsPage() {
   };
 
   return (
-    <div className="w-full max-w-7xl mx-auto h-[calc(100vh-var(--dashboard-header-height,64px))] overflow-hidden flex flex-col px-6 pt-5 pb-4 box-border">
+    <div className="w-full max-w-[1600px] mx-auto min-w-0 h-[calc(100vh-var(--dashboard-header-height,64px))] overflow-hidden flex flex-col px-4 sm:px-5 lg:px-6 xl:px-8 pt-4 sm:pt-5 pb-4 box-border animate-fade-in">
       <style>{STYLES}</style>
       
       {/* Header trang cố định */}
@@ -326,9 +326,9 @@ export default function AdminNotificationsPage() {
       )}
 
       {/* Vùng lưới 2 cột cuộn nội bộ độc lập */}
-      <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+      <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 items-stretch">
         {/* Cột 1: Form tạo thông báo */}
-        <div className="lg:col-span-5 h-full min-h-0 bg-white rounded-2xl border border-slate-200 flex flex-col overflow-hidden shadow-xs">
+        <div className="lg:col-span-5 h-full min-h-0 min-w-0 bg-white rounded-2xl border border-slate-200 flex flex-col overflow-hidden shadow-xs">
           {/* Tiêu đề card cố định */}
           <div className="shrink-0 p-5 pb-3 border-b border-slate-100 flex items-center gap-3">
             <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'var(--color-primary-light)', color: 'var(--color-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -397,7 +397,7 @@ export default function AdminNotificationsPage() {
         </div>
 
         {/* Cột 2: Lịch sử thông báo */}
-        <div className="lg:col-span-7 h-full min-h-0 bg-white rounded-2xl border border-slate-200 flex flex-col overflow-hidden shadow-xs">
+        <div className="lg:col-span-7 h-full min-h-0 min-w-0 bg-white rounded-2xl border border-slate-200 flex flex-col overflow-hidden shadow-xs">
           {/* Tiêu đề card cố định */}
           <div className="shrink-0 p-5 pb-3 border-b border-slate-100 flex items-center justify-between">
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

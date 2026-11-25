@@ -446,14 +446,14 @@ export default function SubjectManagementPage() {
   });
 
   return (
-    <div className="w-full max-w-7xl mx-auto h-[calc(100vh-var(--dashboard-header-height,64px))] overflow-hidden flex flex-col px-6 pt-4 pb-4 box-border">
+    <div className="w-full max-w-[1600px] mx-auto min-w-0 h-[calc(100vh-var(--dashboard-header-height,64px))] overflow-hidden flex flex-col px-4 sm:px-5 lg:px-6 xl:px-8 pt-4 pb-4 box-border">
       {/* 1. Header thu gọn */}
       <header className="shrink-0 flex flex-wrap items-center justify-between gap-3 mb-3">
         <div>
           <h1 className="text-xl font-bold text-slate-900 m-0">Quản lý Môn học & Khoa</h1>
           <p className="text-xs text-slate-500 mt-0.5 m-0">Quản lý danh mục Khoa/Bộ môn, học phần và số tín chỉ.</p>
         </div>
-        <div className="flex items-center gap-2.5 flex-wrap">
+        <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap">
           <button
             className="btn btn-secondary h-9 px-3.5 text-sm inline-flex items-center gap-1.5 rounded-xl font-medium"
             type="button"
@@ -534,7 +534,7 @@ export default function SubjectManagementPage() {
               <label className="sr-only" htmlFor="subject-search">Tìm môn học</label>
               <input
                 id="subject-search"
-                className="h-9 w-60 bg-white border border-slate-200 rounded-xl pl-8 pr-3 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                className="h-9 w-44 sm:w-60 max-w-full bg-white border border-slate-200 rounded-xl pl-8 pr-3 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
                 value={draftSearch}
                 onChange={(event) => setDraftSearch(event.target.value)}
                 placeholder="Tìm theo mã hoặc tên môn học"
@@ -545,7 +545,7 @@ export default function SubjectManagementPage() {
             <label className="sr-only" htmlFor="subject-dept-filter">Lọc theo khoa</label>
             <select
               id="subject-dept-filter"
-              className="h-9 bg-white border border-slate-200 rounded-xl px-2.5 text-xs text-slate-700 focus:outline-none focus:border-primary"
+              className="h-9 max-w-[180px] sm:max-w-[220px] bg-white border border-slate-200 rounded-xl px-2.5 text-xs text-slate-700 focus:outline-none focus:border-primary shrink-0"
               value={departmentFilter}
               onChange={(event) => {
                 setDepartmentFilter(event.target.value);
@@ -584,7 +584,7 @@ export default function SubjectManagementPage() {
               <label className="sr-only" htmlFor="dept-search">Tìm khoa</label>
               <input
                 id="dept-search"
-                className="h-9 w-72 bg-white border border-slate-200 rounded-xl pl-8 pr-3 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                className="h-9 w-48 sm:w-72 max-w-full bg-white border border-slate-200 rounded-xl pl-8 pr-3 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
                 value={deptSearch}
                 onChange={(event) => setDeptSearch(event.target.value)}
                 placeholder="Tìm theo mã khoa (SE, AI...) hoặc tên khoa"
@@ -635,10 +635,10 @@ export default function SubjectManagementPage() {
                     <tr>
                       <th className="sticky top-0 bg-slate-50 z-10 border-b border-slate-200">Môn học</th>
                       <th className="sticky top-0 bg-slate-50 z-10 border-b border-slate-200">Khoa / Bộ môn</th>
-                      <th className="sticky top-0 bg-slate-50 z-10 border-b border-slate-200">Tín chỉ & Lớp học</th>
-                      <th className="sticky top-0 bg-slate-50 z-10 border-b border-slate-200">Trạng thái</th>
-                      <th className="sticky top-0 bg-slate-50 z-10 border-b border-slate-200 text-center">Kho Topic</th>
-                      <th className="sticky top-0 bg-slate-50 z-10 border-b border-slate-200 text-center">Thao tác</th>
+                      <th className="sticky top-0 bg-slate-50 z-10 border-b border-slate-200 whitespace-nowrap">Tín chỉ & Lớp học</th>
+                      <th className="sticky top-0 bg-slate-50 z-10 border-b border-slate-200 whitespace-nowrap">Trạng thái</th>
+                      <th className="sticky top-0 bg-slate-50 z-10 border-b border-slate-200 text-center whitespace-nowrap">Kho Topic</th>
+                      <th className="sticky top-0 bg-slate-50 z-10 border-b border-slate-200 text-center whitespace-nowrap">Thao tác</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -740,10 +740,10 @@ export default function SubjectManagementPage() {
                 <thead className="sticky top-0 bg-slate-50 z-10 border-b border-slate-200">
                   <tr>
                     <th className="sticky top-0 bg-slate-50 z-10 border-b border-slate-200">Khoa / Bộ môn</th>
-                    <th className="sticky top-0 bg-slate-50 z-10 border-b border-slate-200">Môn học trực thuộc</th>
-                    <th className="sticky top-0 bg-slate-50 z-10 border-b border-slate-200">Nhân sự & Sinh viên</th>
-                    <th className="sticky top-0 bg-slate-50 z-10 border-b border-slate-200">Trạng thái</th>
-                    <th className="sticky top-0 bg-slate-50 z-10 border-b border-slate-200 text-center" aria-label="Thao tác">Thao tác</th>
+                    <th className="sticky top-0 bg-slate-50 z-10 border-b border-slate-200 whitespace-nowrap">Môn học trực thuộc</th>
+                    <th className="sticky top-0 bg-slate-50 z-10 border-b border-slate-200 whitespace-nowrap">Nhân sự & Sinh viên</th>
+                    <th className="sticky top-0 bg-slate-50 z-10 border-b border-slate-200 whitespace-nowrap">Trạng thái</th>
+                    <th className="sticky top-0 bg-slate-50 z-10 border-b border-slate-200 text-center whitespace-nowrap" aria-label="Thao tác">Thao tác</th>
                   </tr>
                 </thead>
                 <tbody>

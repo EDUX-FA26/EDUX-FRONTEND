@@ -339,7 +339,7 @@ export default function AdminReportsPage() {
   ];
 
   return (
-    <div className="w-full max-w-7xl mx-auto h-[calc(100vh-var(--dashboard-header-height,64px))] overflow-hidden flex flex-col px-6 pt-4 pb-4 box-border">
+    <div className="w-full max-w-[1600px] mx-auto min-w-0 h-[calc(100vh-var(--dashboard-header-height,64px))] overflow-hidden flex flex-col px-4 sm:px-5 lg:px-6 xl:px-8 pt-4 pb-4 box-border animate-fade-in">
       <style>{styles}</style>
 
       {/* 1. Page Header thu gọn */}
@@ -462,7 +462,7 @@ export default function AdminReportsPage() {
                       {activeRate == null ? (
                         <div className="reports-empty-chart">Chưa có dữ liệu người dùng.</div>
                       ) : (
-                        <div className="flex items-center gap-6 my-auto">
+                        <div className="flex items-center gap-4 sm:gap-6 my-auto flex-wrap sm:flex-nowrap">
                           <div className="reports-donut" style={{ background: `conic-gradient(${palette.teal} 0% ${Math.min(activeRate, 100)}%, #edf0f4 ${Math.min(activeRate, 100)}% 100%)` }}>
                             <div><strong>{activeRate.toFixed(1)}%</strong><span>Đang hoạt động</span></div>
                           </div>
@@ -549,14 +549,14 @@ export default function AdminReportsPage() {
                 <div className="shrink-0 p-3 border-b border-slate-100 flex gap-2 flex-wrap items-center bg-slate-50/50">
                   <input
                     aria-label="Tìm kiếm audit log"
-                    className="h-9 flex-1 min-w-[200px] bg-white border border-slate-200 rounded-xl px-3 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-primary"
+                    className="h-9 flex-1 min-w-[180px] sm:min-w-[200px] bg-white border border-slate-200 rounded-xl px-3 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-primary"
                     placeholder="Tìm theo ID, loại flag, người tạo..."
                     value={auditSearch}
                     onChange={(event) => setAuditSearch(event.target.value)}
                   />
                   <select
                     aria-label="Lọc trạng thái"
-                    className="h-9 bg-white border border-slate-200 rounded-xl px-2.5 text-xs text-slate-700 focus:outline-none focus:border-primary"
+                    className="h-9 w-32 sm:w-36 bg-white border border-slate-200 rounded-xl px-2.5 text-xs text-slate-700 focus:outline-none focus:border-primary shrink-0"
                     value={auditStatus}
                     onChange={(event) => setAuditStatus(event.target.value)}
                   >
@@ -567,7 +567,7 @@ export default function AdminReportsPage() {
                   </select>
                   <select
                     aria-label="Lọc loại cảnh báo"
-                    className="h-9 bg-white border border-slate-200 rounded-xl px-2.5 text-xs text-slate-700 focus:outline-none focus:border-primary"
+                    className="h-9 w-32 sm:w-36 bg-white border border-slate-200 rounded-xl px-2.5 text-xs text-slate-700 focus:outline-none focus:border-primary shrink-0"
                     value={auditType}
                     onChange={(event) => setAuditType(event.target.value)}
                   >
@@ -578,7 +578,7 @@ export default function AdminReportsPage() {
                   </select>
                   <select
                     aria-label="Lọc khoảng thời gian"
-                    className="h-9 bg-white border border-slate-200 rounded-xl px-2.5 text-xs text-slate-700 focus:outline-none focus:border-primary"
+                    className="h-9 w-32 sm:w-36 bg-white border border-slate-200 rounded-xl px-2.5 text-xs text-slate-700 focus:outline-none focus:border-primary shrink-0"
                     value={auditRange}
                     onChange={(event) => setAuditRange(event.target.value)}
                   >
@@ -602,11 +602,11 @@ export default function AdminReportsPage() {
                   <table className="reports-table w-full">
                     <thead className="sticky top-0 bg-slate-50 z-10 border-b border-slate-200 shadow-2xs">
                       <tr>
-                        <th className="sticky top-0 bg-slate-50 z-10 border-b border-slate-200">ID</th>
-                        <th className="sticky top-0 bg-slate-50 z-10 border-b border-slate-200">Loại flag</th>
-                        <th className="sticky top-0 bg-slate-50 z-10 border-b border-slate-200">Người tạo</th>
-                        <th className="sticky top-0 bg-slate-50 z-10 border-b border-slate-200">Trạng thái</th>
-                        <th className="sticky top-0 bg-slate-50 z-10 border-b border-slate-200">Thời gian</th>
+                        <th className="sticky top-0 bg-slate-50 z-10 border-b border-slate-200 whitespace-nowrap">ID</th>
+                        <th className="sticky top-0 bg-slate-50 z-10 border-b border-slate-200 whitespace-nowrap">Loại flag</th>
+                        <th className="sticky top-0 bg-slate-50 z-10 border-b border-slate-200 whitespace-nowrap">Người tạo</th>
+                        <th className="sticky top-0 bg-slate-50 z-10 border-b border-slate-200 whitespace-nowrap">Trạng thái</th>
+                        <th className="sticky top-0 bg-slate-50 z-10 border-b border-slate-200 whitespace-nowrap">Thời gian</th>
                       </tr>
                     </thead>
                     <tbody>

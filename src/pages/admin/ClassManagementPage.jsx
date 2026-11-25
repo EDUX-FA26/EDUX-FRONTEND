@@ -335,7 +335,7 @@ export default function ClassManagementPage() {
 
   return (
     <div
-      className="w-full max-w-7xl mx-auto h-[calc(100vh-var(--dashboard-header-height,64px))] overflow-hidden flex flex-col px-6 pt-5 pb-4 box-border animate-fade-in"
+      className="w-full max-w-[1600px] mx-auto min-w-0 h-[calc(100vh-var(--dashboard-header-height,64px))] overflow-hidden flex flex-col px-4 sm:px-5 lg:px-6 xl:px-8 pt-4 sm:pt-5 pb-4 box-border animate-fade-in"
       style={{
         height: 'calc(100vh - var(--dashboard-header-height, 64px))',
         maxHeight: 'calc(100vh - var(--dashboard-header-height, 64px))',
@@ -347,7 +347,7 @@ export default function ClassManagementPage() {
       }}
     >
       {/* Header Section */}
-      <div className="shrink-0 mb-4" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+      <div className="shrink-0 mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: 0, color: 'var(--color-ink)', letterSpacing: '-0.5px' }}>
             Quản lý Lớp học & Phân công
@@ -356,7 +356,7 @@ export default function ClassManagementPage() {
             Tạo lớp học, phân công giảng viên theo Khoa/Bộ môn, quản lý danh sách sinh viên và đồng bộ từ Excel
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+        <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap">
           <button 
             onClick={() => setShowGuide(true)} 
             className="btn btn-outline" 
@@ -584,12 +584,12 @@ export default function ClassManagementPage() {
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
               <thead style={{ position: 'sticky', top: 0, zIndex: 10, background: 'var(--color-surface-hover, #f8fafc)' }}>
                 <tr style={{ borderBottom: '2px solid var(--color-border)' }}>
-                  <th style={{ padding: '14px 16px', color: 'var(--color-ink-muted)', fontWeight: 700, fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Mã Lớp</th>
+                  <th style={{ padding: '14px 16px', color: 'var(--color-ink-muted)', fontWeight: 700, fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.5px' }} className="whitespace-nowrap">Mã Lớp</th>
                   <th style={{ padding: '14px 16px', color: 'var(--color-ink-muted)', fontWeight: 700, fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Môn học & Khoa</th>
-                  <th style={{ padding: '14px 16px', color: 'var(--color-ink-muted)', fontWeight: 700, fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Kỳ học</th>
+                  <th style={{ padding: '14px 16px', color: 'var(--color-ink-muted)', fontWeight: 700, fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.5px' }} className="whitespace-nowrap">Kỳ học</th>
                   <th style={{ padding: '14px 16px', color: 'var(--color-ink-muted)', fontWeight: 700, fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Giảng viên</th>
-                  <th style={{ padding: '14px 16px', color: 'var(--color-ink-muted)', fontWeight: 700, fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Sĩ số</th>
-                  <th style={{ padding: '14px 16px', color: 'var(--color-ink-muted)', fontWeight: 700, fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'right' }}>Hành động</th>
+                  <th style={{ padding: '14px 16px', color: 'var(--color-ink-muted)', fontWeight: 700, fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.5px' }} className="whitespace-nowrap">Sĩ số</th>
+                  <th style={{ padding: '14px 16px', color: 'var(--color-ink-muted)', fontWeight: 700, fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'right' }} className="whitespace-nowrap">Hành động</th>
                 </tr>
               </thead>
               <tbody>
@@ -602,7 +602,7 @@ export default function ClassManagementPage() {
                 ) : (
                   currentClasses.map(c => (
                     <tr key={c.id} style={{ borderBottom: '1px solid var(--color-border)' }}>
-                      <td style={{ padding: '12px 16px', fontWeight: 700, color: 'var(--color-primary)' }}>{c.class_code}</td>
+                      <td style={{ padding: '12px 16px', fontWeight: 700, color: 'var(--color-primary)' }} className="whitespace-nowrap">{c.class_code}</td>
                       <td style={{ padding: '12px 16px', color: 'var(--color-ink)' }}>
                         <div style={{ fontWeight: 600 }}>{c.subject_code} - {c.subject_name}</div>
                         {c.department_name && (
@@ -611,15 +611,15 @@ export default function ClassManagementPage() {
                           </div>
                         )}
                       </td>
-                      <td style={{ padding: '12px 16px', color: 'var(--color-ink)' }}>
+                      <td style={{ padding: '12px 16px', color: 'var(--color-ink)' }} className="whitespace-nowrap">
                         <div style={{ fontWeight: 600 }}>{c.semester_code}</div>
                         {c.semester_name && <div style={{ fontSize: '0.75rem', color: 'var(--color-ink-muted)' }}>{c.semester_name}</div>}
                       </td>
                       <td style={{ padding: '12px 16px', color: 'var(--color-ink)' }}>
-                        {c.lecturer_name || <span style={{color:'var(--color-ink-muted)'}}>Chưa phân công</span>}
-                        <div style={{fontSize:'0.75rem', color:'var(--color-ink-muted)'}}>{c.lecturer_email}</div>
+                        <div className="font-semibold">{c.lecturer_name || <span style={{color:'var(--color-ink-muted)'}}>Chưa phân công</span>}</div>
+                        <div style={{fontSize:'0.75rem', color:'var(--color-ink-muted)'}} className="truncate max-w-[200px]">{c.lecturer_email}</div>
                       </td>
-                      <td style={{ padding: '12px 16px' }}>
+                      <td style={{ padding: '12px 16px' }} className="whitespace-nowrap">
                         <span style={{ 
                           padding: '4px 8px', 
                           borderRadius: '12px', 
@@ -631,7 +631,7 @@ export default function ClassManagementPage() {
                           {c.enrolled_students} / {c.max_students}
                         </span>
                       </td>
-                      <td style={{ padding: '12px 16px', textAlign: 'right' }}>
+                      <td style={{ padding: '12px 16px', textAlign: 'right' }} className="whitespace-nowrap">
                         <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
                           <button 
                             onClick={() => handleViewClass(c)}
