@@ -158,7 +158,7 @@ export default function SubmissionsTable({
 
                 const currentScore = sub.score ?? sub.grade?.score;
                 const maxScore = assignment?.max_score || 10;
-                const isGraded = currentScore !== undefined && currentScore !== null;
+                const isGraded = (currentScore !== undefined && currentScore !== null) || String(sub.status).toLowerCase() === 'graded' || String(sub.status).toLowerCase() === 'published';
 
                 return (
                   <tr key={sub.id || index} className="hover:bg-slate-50/60 transition">
@@ -174,7 +174,7 @@ export default function SubmissionsTable({
                         <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
                           Graded
                         </span>
-                      ) : sub.status === 'submitted' ? (
+                      ) : String(sub.status).toLowerCase() === 'submitted' ? (
                         <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
                           Submitted
                         </span>

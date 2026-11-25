@@ -404,6 +404,12 @@ export default function LecturerGradingPage() {
                 stateData?.noAiNote ||
                 '';
 
+              // Kiểm tra xem bài nộp có bất kỳ dữ liệu khai báo AI hợp lệ nào không
+              let hasAiDeclarations = Boolean(
+                (Array.isArray(subData.ai_interactions) && subData.ai_interactions.length > 0) ||
+                (Array.isArray(subData.ai_declarations) && subData.ai_declarations.length > 0)
+              );
+
               const rawNote = (subData.versions && subData.versions[0]?.note) || subData.note || stateData?.latest_note;
               if (rawNote) {
                 try {
@@ -413,8 +419,24 @@ export default function LecturerGradingPage() {
                     if (!studentNoAiNote && normalized.no_ai_note) {
                       studentNoAiNote = normalized.no_ai_note;
                     }
+                  } else if (normalized?.scopes && normalized.scopes.length > 0) {
+                    const anyScopeFilled = normalized.scopes.some((s: any) => {
+                      const decs = s.declarations || {};
+                      return Object.values(decs).some((d: any) => {
+                        const p = (d?.prompt || d?.prompt_used || '').trim();
+                        const ref = (d?.reflection || d?.studentReflection || '').trim();
+                        return p.length > 0 || ref.length > 0;
+                      });
+                    });
+                    if (anyScopeFilled) {
+                      hasAiDeclarations = true;
+                    }
                   }
                 } catch (e) {}
+              }
+
+              if (!hasAiDeclarations) {
+                isZeroAi = true;
               }
 
               setNoAiUsed(isZeroAi);
@@ -436,7 +458,7 @@ export default function LecturerGradingPage() {
 
                 let presignedUrl = firstFile.url || '';
                 let extractedTree = undefined;
-                let textContent = undefined;
+                let textContent = firstFile.textContent || subData.fileTextContent || subData.file_text_content || undefined;
 
                 // Lấy Presigned URL thật từ Backend S3 nếu file có ID
                 if (firstFile.id && submissionId) {
@@ -451,7 +473,20 @@ export default function LecturerGradingPage() {
                   }
                 }
 
-                // Nếu có presigned URL, tải trực tiếp dữ liệu thật để giải nén hoặc hiển thị
+                // Nếu là file code/text và chưa có textContent: Thử đọc trực tiếp qua backend proxy để tránh CORS
+                if (isCode && !textContent && submissionId) {
+                  try {
+                    const contentRes = await SubmissionService.getSubmissionFileContent(submissionId, firstFile.id);
+                    const contentData = contentRes?.data || contentRes;
+                    if (contentData?.content) {
+                      textContent = contentData.content;
+                    }
+                  } catch (cErr) {
+                    console.warn('[ART-AI] Failed to get file content via proxy:', cErr);
+                  }
+                }
+
+                // Nếu có presigned URL, tải trực tiếp dữ liệu thật để giải nén hoặc hiển thị (fallback)
                 if (presignedUrl) {
                   if (isZip) {
                     try {
@@ -463,7 +498,7 @@ export default function LecturerGradingPage() {
                     } catch (err) {
                       console.warn('[ART-AI] Could not parse zip from presigned URL:', err);
                     }
-                  } else if (isCode) {
+                  } else if (isCode && !textContent) {
                     try {
                       const textRes = await fetch(presignedUrl);
                       if (textRes.ok) {
@@ -521,8 +556,9 @@ export default function LecturerGradingPage() {
 
   // Handle Save Draft
   const handleSaveDraft = async (payload: GradePayload) => {
+    const safeScore = Math.min(10, Math.max(0, Number(Number(payload.score || 0).toFixed(2))));
     const gradePayload = {
-      score: payload.score,
+      score: safeScore,
       feedback: payload.feedback,
       maxScore: 10,
       max_score: 10,
@@ -550,12 +586,29 @@ export default function LecturerGradingPage() {
   };
 
   const [publishedScore, setPublishedScore] = useState<number | null>(null);
+  const [isPublishing, setIsPublishing] = useState<boolean>(false);
+
+  // Cảnh báo rời trang khi đang công bố điểm
+  useEffect(() => {
+    if (!isPublishing) return;
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = 'Đang công bố điểm, vui lòng đợi trong giây lát...';
+      return e.returnValue;
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [isPublishing]);
 
   // Handle Publish Grade
   const handlePublishGrade = async (payload: GradePayload) => {
-    setPublishedScore(payload.score);
+    setIsPublishing(true);
+    const safeScore = Math.min(10, Math.max(0, Number(Number(payload.score || 0).toFixed(2))));
+    setPublishedScore(safeScore);
     const gradePayload = {
-      score: payload.score,
+      score: safeScore,
       feedback: payload.feedback,
       maxScore: 10,
       max_score: 10,
@@ -581,6 +634,8 @@ export default function LecturerGradingPage() {
     } catch (err) {
       console.warn('[ART-AI] Grade publish API failed:', err);
       throw err;
+    } finally {
+      setIsPublishing(false);
     }
   };
 
@@ -600,6 +655,7 @@ export default function LecturerGradingPage() {
 
   // Handle Back: Quay về trang danh sách các bài nộp của sinh viên
   const handleBack = (explicitScore?: number) => {
+    if (isPublishing) return; // Chặn thoát khi đang công bố điểm
     const finalScore = explicitScore ?? publishedScore;
     const targetAssignmentId =
       assignmentId ||
@@ -618,6 +674,7 @@ export default function LecturerGradingPage() {
           updatedScore: finalScore,
           gradedSubmissionId: submissionId,
         },
+        replace: true,
       });
     } else {
       navigate(-1);
