@@ -242,40 +242,42 @@ export default function ManagerDashboardPage() {
     <ManagerLayout>
       <div className="w-full max-w-[1600px] mx-auto min-w-0 px-4 sm:px-5 lg:px-6 xl:px-8 py-4 sm:py-6 space-y-6 animate-fade-in">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="bg-gradient-to-r from-[#FFEDD5] via-[#FED7AA]/90 to-[#FDBA74]/85 border border-orange-300/80 rounded-2xl px-5 py-4 shadow-xs mb-5 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-[#fff8f5] border border-[#ffdbcc] px-3 py-1 text-xs font-semibold text-[#f27024]">
-                <Activity className="h-3.5 w-3.5 animate-pulse" />
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="bg-white text-[#EA580C] border border-orange-200 text-xs font-semibold px-2.5 py-0.5 rounded-full shadow-2xs inline-flex items-center gap-1">
+                <Activity className="h-3.5 w-3.5 animate-pulse text-[#EA580C]" />
                 {m?.badge || "Cổng Vận Hành Nền Tảng (Manager)"}
               </span>
-              <span className="text-xs text-[#8c7166]">
+              <span className="text-xs font-medium text-slate-700">
                 {lang === "en" ? "Updated at:" : "Cập nhật lúc:"} {new Date().toLocaleTimeString(lang === "en" ? "en-US" : "vi-VN", { hour: "2-digit", minute: "2-digit" })}
               </span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#1f1b17] mt-1">
-              {m?.title || "Bảng điều khiển Vận hành"}
+            <h1 className="text-xl font-bold text-slate-900 mt-1.5 m-0 tracking-tight">
+              {m?.title || "Bảng Điều Khiển Vận Hành"}
             </h1>
-            <p className="mt-1 text-sm text-[#545f73]">
-              {m?.subtitle || "Giám sát trực quan mạng lưới cơ sở đào tạo, phân bổ gói thuê bao và vận hành nền tảng EDUX."}
+            <p className="mt-0.5 text-sm text-slate-700 font-medium m-0">
+              {m?.subtitle || "Giám sát mạng lưới trường học, hợp đồng thuê và dòng tiền giao dịch của hệ thống."}
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
             <button
+              type="button"
               onClick={handleCreateBlankTenant}
-              className="inline-flex items-center gap-2 rounded-xl bg-[#f27024] px-4 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-sm shadow-orange-500/20 hover:bg-[#d95c14] transition cursor-pointer"
+              className="h-10 px-4 rounded-xl bg-[#EA580C] hover:bg-[#C2410C] text-white text-xs sm:text-sm font-semibold shadow-xs transition inline-flex items-center gap-2 cursor-pointer"
             >
               <PlusCircle className="h-4 w-4" />
-              {t?.manager?.schools?.btnCreate || "Khởi tạo Tenant mới"}
+              <span>{t?.manager?.schools?.btnCreate || "+ Khởi tạo Tenant trường mới"}</span>
             </button>
             <button
+              type="button"
               onClick={loadData}
               disabled={loading}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-[#f5ebe1] bg-white px-3.5 py-2 text-xs sm:text-sm font-medium text-[#545f73] shadow-xs hover:bg-[#fff8f5] hover:text-[#f27024] transition cursor-pointer"
+              className="h-10 px-3.5 rounded-xl bg-white/95 hover:bg-white border border-orange-200/80 text-xs sm:text-sm font-semibold text-slate-800 hover:text-[#EA580C] shadow-2xs transition inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin text-[#f27024]" : ""}`} />
-              {m?.btnRefresh || "Làm mới"}
+              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin text-[#EA580C]" : ""}`} />
+              <span>{m?.btnRefresh || "Làm mới"}</span>
             </button>
           </div>
         </div>
