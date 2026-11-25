@@ -291,8 +291,8 @@ export default function StreakDetailBySubjectPage() {
                     </div>
                 )}
 
-                {/* 1.1 Header môn học nền cam thương hiệu EDUX */}
-                <div className="bg-gradient-to-r from-[#EA580C] via-[#F97316] to-[#FB923C] border border-orange-500/80 rounded-2xl px-4 py-3.5 mb-3 shadow-sm text-white">
+                {/* 1.1 Header môn học nền tone cam EDUX dịu nhẹ */}
+                <div className="bg-gradient-to-r from-[#FFEDD5] via-[#FED7AA]/90 to-[#FDBA74]/85 border border-orange-300/80 rounded-2xl px-4 py-3.5 mb-3 shadow-xs">
                     <div className="flex items-center justify-between gap-3 flex-wrap">
                         <div className="flex items-center gap-3 min-w-0">
                             {/* Nút icon Back bên trái ngoài cùng */}
@@ -301,29 +301,29 @@ export default function StreakDetailBySubjectPage() {
                                 onClick={() => navigate('/student/streak')}
                                 title="Quay lại danh sách Streak"
                                 aria-label="Quay lại danh sách Streak"
-                                className="w-9 h-9 rounded-xl bg-white/15 hover:bg-white/25 border border-white/25 text-white flex items-center justify-center shrink-0 transition cursor-pointer backdrop-blur-2xs"
+                                className="w-9 h-9 rounded-xl bg-white/90 hover:bg-white border border-orange-200/80 text-slate-700 hover:text-[#EA580C] flex items-center justify-center shrink-0 transition cursor-pointer shadow-2xs"
                             >
                                 <ArrowLeft className="w-4 h-4" />
                             </button>
 
                             {/* Icon ngọn lửa tròn */}
-                            <div className="w-10 h-10 rounded-xl bg-white/15 border border-white/25 text-white flex items-center justify-center shrink-0">
+                            <div className="w-10 h-10 rounded-xl bg-white border border-orange-200/80 text-[#EA580C] flex items-center justify-center shrink-0 shadow-2xs">
                                 <Flame
-                                    className={`w-5 h-5 ${isCompletedToday ? 'text-white fill-white animate-pulse' : 'text-white/80'}`}
+                                    className={`w-5 h-5 ${isCompletedToday ? 'text-[#EA580C] fill-[#EA580C] animate-pulse' : 'text-[#EA580C]'}`}
                                 />
                             </div>
 
                             {/* Khối tiêu đề môn học */}
                             <div className="min-w-0 flex flex-col justify-center">
                                 <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-                                    <span className="text-[11px] font-semibold uppercase tracking-wider text-orange-100">
+                                    <span className="text-[11px] font-semibold uppercase tracking-wider text-orange-900/70">
                                         {S.detailTitle || 'CHI TIẾT MÔN HỌC'}
                                     </span>
-                                    <span className="bg-white text-[#EA580C] text-[11px] font-extrabold px-2.5 py-0.5 rounded-md shadow-2xs font-mono">
+                                    <span className="bg-white text-[#EA580C] border border-orange-200 text-[11px] font-bold px-2.5 py-0.5 rounded-md shadow-2xs font-mono">
                                         {subjectData?.subjectCode || S.codePlaceholder || 'MÃ MÔN HỌC'}
                                     </span>
                                 </div>
-                                <h1 className="text-lg sm:text-xl font-bold text-white truncate drop-shadow-2xs" title={subjectData?.subjectName}>
+                                <h1 className="text-lg sm:text-xl font-bold text-slate-900 truncate" title={subjectData?.subjectName}>
                                     {subjectData?.subjectName || S.subjectDefault || 'Môn học'}
                                 </h1>
                             </div>
@@ -334,7 +334,7 @@ export default function StreakDetailBySubjectPage() {
                             <button
                                 onClick={handleRecover}
                                 disabled={recovering}
-                                className="bg-white hover:bg-orange-50 text-[#EA580C] h-9 px-4 rounded-xl text-xs font-bold shadow-xs shrink-0 transition inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                                className="bg-white hover:bg-orange-50 border border-orange-200/80 text-[#EA580C] h-9 px-4 rounded-xl text-xs font-bold shadow-2xs shrink-0 transition inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                             >
                                 <RefreshCw className={`w-3.5 h-3.5 ${recovering ? 'animate-spin' : ''}`} />
                                 <span>{recovering ? (S.recovering || 'Đang khôi phục...') : (S.recoverBtn || 'Khôi phục Chuỗi')}</span>

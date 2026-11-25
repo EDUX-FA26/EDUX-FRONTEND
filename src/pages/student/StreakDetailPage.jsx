@@ -139,27 +139,32 @@ export default function StreakDetailPage() {
             {/* 1. CỐ ĐỊNH TẦNG TRÊN: HEADER + HÀNG 4 THẺ KPI (SHRINK-0) */}
             <div className="shrink-0">
                 {/* 1.1 Page Header */}
-                <div className="flex flex-wrap items-center justify-between gap-2.5 mb-2.5">
+                <div className="bg-gradient-to-r from-[#FFEDD5] via-[#FED7AA]/90 to-[#FDBA74]/85 border border-orange-300/80 rounded-2xl px-5 py-3.5 shadow-xs mb-3 flex flex-wrap items-center justify-between gap-3">
                     <div>
-                        <div className="flex items-center gap-2">
-                            <span className="inline-flex items-center gap-1 rounded-full bg-orange-50 border border-orange-200 px-2 py-0.5 text-[10px] font-bold text-orange-600">
-                                <Flame className="w-3 h-3 text-orange-500 fill-orange-500" />
-                                {S.badge || 'Hệ thống Quản lý Chuỗi Học tập (Streak)'}
-                            </span>
-                            <h1 className="text-xl font-bold text-slate-900 tracking-tight">
-                                {S.title || 'Trung tâm Theo dõi Động lực Học tập'}
+                        <div className="flex flex-wrap items-center gap-2">
+                            <h1 className="text-xl font-bold text-slate-900 tracking-tight m-0 inline-flex items-center gap-1.5">
+                                <span>🔥</span>
+                                <span>Duy trì chuỗi học tập mỗi ngày!</span>
                             </h1>
+                            {/* <div className="flex items-center gap-1.5 shrink-0">
+                                <span className="bg-white text-[#EA580C] border border-orange-200 text-xs font-semibold px-2.5 py-0.5 rounded-full shadow-2xs shrink-0">
+                                    Giữ vững phong độ
+                                </span>
+                                <span className="bg-white text-[#EA580C] border border-orange-200 text-xs font-semibold px-2.5 py-0.5 rounded-full shadow-2xs shrink-0">
+                                    Múi giờ Việt Nam
+                                </span>
+                            </div> */}
                         </div>
-                        <p className="text-xs text-slate-500 mt-0.5">
+                        <p className="mt-1 text-xs sm:text-sm text-slate-700 font-medium m-0">
                             {S.desc || 'Duy trì học flashcard mỗi ngày theo múi giờ Việt Nam để thắp sáng ngọn lửa streak, theo dõi bản đồ nhiệt hoạt động và cứu chuỗi kịp thời.'}
                         </p>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 shrink-0">
                         <button
                             type="button"
                             onClick={() => refresh()}
-                            className="h-8 sm:h-9 px-3 sm:px-3.5 text-xs font-semibold rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+                            className="h-9 px-3.5 rounded-xl bg-white hover:bg-orange-50 border border-orange-200/80 text-xs font-semibold text-slate-700 hover:text-[#EA580C] shadow-2xs shrink-0 transition inline-flex items-center gap-1.5 cursor-pointer"
                             title="Làm mới dữ liệu"
                         >
                             <RefreshCw className={`w-3.5 h-3.5 text-slate-500 ${streakLoading ? 'animate-spin' : ''}`} />
@@ -170,11 +175,10 @@ export default function StreakDetailPage() {
 
                 {/* 1.2 Thông báo Notice Alert (nếu có) */}
                 {notice && (
-                    <div className={`py-1.5 px-3 mb-2.5 rounded-lg text-xs flex items-center justify-between border ${
-                        notice.type === 'success'
+                    <div className={`py-1.5 px-3 mb-2.5 rounded-lg text-xs flex items-center justify-between border ${notice.type === 'success'
                             ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
                             : 'bg-rose-50 border-rose-200 text-rose-800'
-                    }`}>
+                        }`}>
                         <div className="flex items-center gap-1.5">
                             {notice.type === 'success' ? (
                                 <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
@@ -525,13 +529,12 @@ export default function StreakDetailPage() {
                                                 {activity.deck_title ? `Bộ thẻ: ${activity.deck_title}` : formatActivityType(activity.activity_type, S)}
                                             </p>
                                             {activity.flashcard_score !== null && activity.flashcard_score !== undefined && (
-                                                <span className={`text-[11px] ${
-                                                    Number(activity.flashcard_score) >= 80
+                                                <span className={`text-[11px] ${Number(activity.flashcard_score) >= 80
                                                         ? 'text-emerald-600 font-medium'
                                                         : Number(activity.flashcard_score) >= 50
-                                                        ? 'text-amber-600 font-medium'
-                                                        : 'text-rose-500 font-medium'
-                                                }`}>
+                                                            ? 'text-amber-600 font-medium'
+                                                            : 'text-rose-500 font-medium'
+                                                    }`}>
                                                     Điểm Flashcard: {Number(activity.flashcard_score).toFixed(1)}%
                                                     {activity.flashcard_total_questions ? ` (${activity.flashcard_total_questions} câu)` : ''}
                                                 </span>
