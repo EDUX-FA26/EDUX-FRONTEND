@@ -99,7 +99,7 @@ export default function ManagerSubscriptionsPage() {
 
   return (
     <ManagerLayout>
-      <div className="w-full max-w-7xl mx-auto h-[calc(100vh-var(--dashboard-header-height,64px))] overflow-hidden flex flex-col px-6 pt-4 pb-4 box-border">
+      <div className="w-full max-w-[1600px] mx-auto min-w-0 h-[calc(100vh-var(--dashboard-header-height,64px))] overflow-hidden flex flex-col px-4 sm:px-5 lg:px-6 xl:px-8 pt-4 pb-4 box-border animate-fade-in">
         {/* Header */}
         <div className="shrink-0 flex flex-wrap items-center justify-between gap-3 mb-3">
           <div>
@@ -155,7 +155,7 @@ export default function ManagerSubscriptionsPage() {
         <div className="flex-1 min-h-0 bg-white rounded-2xl border border-slate-200 flex flex-col overflow-hidden shadow-xs">
           {/* Filter and Search Bar */}
           <div className="shrink-0 p-3.5 border-b border-slate-100 flex flex-wrap items-center gap-2.5">
-            <form onSubmit={handleSearchSubmit} className="relative flex-1 min-w-[240px]">
+            <form onSubmit={handleSearchSubmit} className="relative flex-1 min-w-[180px] sm:min-w-[200px]">
               <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-400" />
               <input
                 type="text"
@@ -191,18 +191,18 @@ export default function ManagerSubscriptionsPage() {
           </div>
 
           {/* Contracts Table: Scrollable independently */}
-          <div className="flex-1 min-h-0 overflow-y-auto">
+          <div className="flex-1 min-h-0 overflow-y-auto overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead className="sticky top-0 bg-[#fff8f5] z-10 text-xs font-bold text-[#8c7166] uppercase tracking-wider border-b border-[#f5ebe1]">
                 <tr>
                   <th className="py-3 px-4">Trường học</th>
-                  <th className="py-3 px-4">Gói dịch vụ</th>
-                  <th className="py-3 px-4">Chu kỳ</th>
-                  <th className="py-3 px-4">Giá chốt hợp đồng</th>
-                  <th className="py-3 px-4">Thời hạn thuê</th>
-                  <th className="py-3 px-4">Thời gian còn lại</th>
-                  <th className="py-3 px-4">Trạng thái</th>
-                  <th className="py-3 px-4 text-right">Thao tác</th>
+                  <th className="py-3 px-4 whitespace-nowrap">Gói dịch vụ</th>
+                  <th className="py-3 px-4 whitespace-nowrap">Chu kỳ</th>
+                  <th className="py-3 px-4 whitespace-nowrap">Giá chốt hợp đồng</th>
+                  <th className="py-3 px-4 whitespace-nowrap">Thời hạn thuê</th>
+                  <th className="py-3 px-4 whitespace-nowrap">Thời gian còn lại</th>
+                  <th className="py-3 px-4 whitespace-nowrap">Trạng thái</th>
+                  <th className="py-3 px-4 text-right whitespace-nowrap">Thao tác</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#f5ebe1] text-[#1f1b17]">
@@ -224,9 +224,9 @@ export default function ManagerSubscriptionsPage() {
                     return (
                       <tr key={sub.id} className="hover:bg-[#fff8f5] transition-colors">
                         {/* School */}
-                        <td className="py-3.5 px-4">
+                        <td className="py-3.5 px-4 min-w-0">
                           <div>
-                            <p className="font-semibold text-[#1f1b17] leading-tight">
+                            <p className="font-semibold text-[#1f1b17] leading-tight truncate max-w-[200px]">
                               {sub.school_name || "—"}
                             </p>
                             <span className="font-mono text-xs text-[#8c7166]">
@@ -236,24 +236,24 @@ export default function ManagerSubscriptionsPage() {
                         </td>
 
                         {/* Plan */}
-                        <td className="py-3.5 px-4">
+                        <td className="py-3.5 px-4 whitespace-nowrap">
                           <span className="inline-flex items-center rounded-md bg-[#fff8f5] border border-[#ffdbcc] px-2 py-1 text-xs font-semibold text-[#f27024]">
                             {sub.plan_name || "Gói tiêu chuẩn"}
                           </span>
                         </td>
 
                         {/* Cycle */}
-                        <td className="py-3.5 px-4 text-xs font-medium text-[#545f73]">
+                        <td className="py-3.5 px-4 text-xs font-medium text-[#545f73] whitespace-nowrap">
                           {sub.billing_cycle === "yearly" ? "Theo năm" : "Theo tháng"}
                         </td>
 
                         {/* Price */}
-                        <td className="py-3.5 px-4 font-semibold text-[#1f1b17]">
+                        <td className="py-3.5 px-4 font-semibold text-[#1f1b17] whitespace-nowrap">
                           {Number(sub.price_snapshot || 0).toLocaleString("vi-VN")} đ
                         </td>
 
                         {/* Dates */}
-                        <td className="py-3.5 px-4 text-xs text-[#545f73]">
+                        <td className="py-3.5 px-4 text-xs text-[#545f73] whitespace-nowrap">
                           <div className="flex items-center gap-1">
                             <Calendar className="h-3.5 w-3.5 text-[#8c7166]" />
                             <span>
@@ -264,12 +264,12 @@ export default function ManagerSubscriptionsPage() {
                         </td>
 
                         {/* Remaining */}
-                        <td className="py-3.5 px-4 text-xs">
+                        <td className="py-3.5 px-4 text-xs whitespace-nowrap">
                           <span className={remaining.color}>{remaining.label}</span>
                         </td>
 
                         {/* Status */}
-                        <td className="py-3.5 px-4">
+                        <td className="py-3.5 px-4 whitespace-nowrap">
                           <span
                             className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${
                               sub.status === "active"
@@ -284,7 +284,7 @@ export default function ManagerSubscriptionsPage() {
                         </td>
 
                         {/* Remind Renewal */}
-                        <td className="py-3.5 px-4 text-right">
+                        <td className="py-3.5 px-4 text-right whitespace-nowrap">
                           <button
                             onClick={() => handleRemind(sub.id, sub.school_name)}
                             disabled={remindingId === sub.id}

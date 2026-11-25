@@ -157,7 +157,7 @@ export default function SchoolProfilePage() {
 
   if (loading) {
     return (
-      <main className="p-6 md:p-8 max-w-6xl mx-auto space-y-5 animate-pulse">
+      <main className="p-4 sm:p-5 lg:p-6 xl:p-8 max-w-[1600px] mx-auto min-w-0 w-full space-y-5 animate-pulse">
         <div className="h-9 bg-slate-200 rounded-xl w-1/3"></div>
         <div className="h-4 bg-slate-200 rounded w-1/2"></div>
         <div className="h-24 bg-slate-200 rounded-2xl mt-5"></div>
@@ -170,7 +170,7 @@ export default function SchoolProfilePage() {
   }
 
   return (
-    <main className="p-6 md:p-8 max-w-6xl mx-auto text-slate-800">
+    <main className="p-4 sm:p-5 lg:p-6 xl:p-8 max-w-[1600px] mx-auto min-w-0 w-full text-slate-800 animate-fade-in">
       {/* Sticky Action Bar / Page Header */}
       <div className="sticky top-0 z-20 bg-[#FDF8F5]/95 backdrop-blur py-3 mb-5 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
         <div>
@@ -314,9 +314,9 @@ export default function SchoolProfilePage() {
       </section>
 
       {/* 2-Column Balanced Form Grid */}
-      <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
+      <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-5 items-start">
         {/* Left Column */}
-        <div className="space-y-5">
+        <div className="space-y-4 sm:space-y-5 min-w-0">
           {/* Card 1: School Identity */}
           <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm space-y-3.5">
             <div className="flex items-center gap-2 pb-2.5 border-b border-slate-100">
@@ -401,7 +401,7 @@ export default function SchoolProfilePage() {
         </div>
 
         {/* Right Column */}
-        <div className="space-y-5">
+        <div className="space-y-4 sm:space-y-5 min-w-0">
           {/* Card 3: Contact & Address */}
           <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm space-y-3.5">
             <div className="flex items-center gap-2 pb-2.5 border-b border-slate-100">

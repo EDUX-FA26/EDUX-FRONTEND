@@ -210,7 +210,7 @@ export default function LecturerProjectsPage() {
     // ======================================
 
     return (
-        <main className="edux-projects-page">
+        <main className="edux-projects-page w-full max-w-[1600px] mx-auto min-w-0 px-4 sm:px-5 lg:px-6 xl:px-8">
 
             {/* BREADCRUMB */}
 

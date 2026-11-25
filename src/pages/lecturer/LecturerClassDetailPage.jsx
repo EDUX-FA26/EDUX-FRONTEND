@@ -395,13 +395,13 @@ export default function LecturerClassDetailPage() {
         }
 
         return (
-            <div className="animate-fade-in h-[calc(100vh-64px)] w-full max-w-full min-w-0 overflow-hidden flex flex-col px-6 pt-4 pb-5 box-border">
+            <div className="animate-fade-in h-[calc(100vh-64px)] w-full max-w-[1600px] mx-auto min-w-0 overflow-hidden flex flex-col px-4 sm:px-5 lg:px-6 xl:px-8 pt-4 pb-5 box-border">
                 <div className="skeleton mb-2" style={{ width: '200px', height: '20px' }}></div>
                 <div className="skeleton mb-3" style={{ width: '400px', height: '36px' }}></div>
                 <div className="skeleton mb-4" style={{ width: '500px', height: '32px' }}></div>
-                <div className="flex-1 min-h-0 flex gap-5 w-full overflow-hidden">
-                    <div className="w-48 shrink-0 h-full skeleton rounded-2xl"></div>
-                    <div className="w-56 shrink-0 h-full skeleton rounded-2xl"></div>
+                <div className="flex-1 min-h-0 flex gap-3.5 lg:gap-5 w-full overflow-hidden">
+                    <div className="w-40 xl:w-48 shrink-0 h-full skeleton rounded-2xl"></div>
+                    <div className="w-48 xl:w-56 shrink-0 h-full skeleton rounded-2xl"></div>
                     <div className="flex-1 min-w-0 h-full skeleton rounded-3xl"></div>
                 </div>
             </div>
@@ -414,7 +414,7 @@ export default function LecturerClassDetailPage() {
     const displayedSlots = viewAll ? slots : slots.slice((currentPage - 1) * 10, currentPage * 10);
 
     return (
-        <div className="animate-fade-in h-[calc(100vh-64px)] w-full max-w-full min-w-0 overflow-hidden flex flex-col px-6 pt-4 pb-5 box-border relative">
+        <div className="animate-fade-in h-[calc(100vh-64px)] w-full max-w-[1600px] mx-auto min-w-0 overflow-hidden flex flex-col px-4 sm:px-5 lg:px-6 xl:px-8 pt-4 pb-5 box-border relative">
             {/* Header trên cùng: Breadcrumb + Tiêu đề + Actions Bar */}
             <div className="shrink-0 mb-4 flex flex-col gap-2.5">
                 {/* Breadcrumb */}
@@ -525,9 +525,9 @@ export default function LecturerClassDetailPage() {
             </div>
 
             {/* Layout 3 cột: Classes | Slots | Class sessions */}
-            <div className="flex-1 min-h-0 flex gap-5 w-full overflow-hidden">
+            <div className="flex-1 min-h-0 flex gap-3.5 lg:gap-5 w-full overflow-hidden">
                 {/* Cột 1: Classes */}
-                <div className="w-48 shrink-0 h-full flex flex-col overflow-hidden">
+                <div className="w-40 xl:w-48 shrink-0 h-full flex flex-col overflow-hidden">
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '12px', marginBottom: '10px' }} className="shrink-0">
                         <span style={{ fontWeight: 'bold', color: 'var(--color-ink)' }}>Classes</span>
                         <span style={{ color: 'var(--color-ink-muted)', fontSize: '11px' }}>1 class</span>
@@ -541,7 +541,7 @@ export default function LecturerClassDetailPage() {
                 </div>
 
                 {/* Cột 2: Slots list */}
-                <div className="w-56 shrink-0 h-full flex flex-col overflow-hidden">
+                <div className="w-48 xl:w-56 shrink-0 h-full flex flex-col overflow-hidden">
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '12px', marginBottom: '10px' }} className="shrink-0">
                         <span style={{ fontWeight: 'bold', color: 'var(--color-ink)' }}>Slots</span>
                         <span style={{ color: 'var(--color-ink-muted)', fontSize: '11px' }}>{slots.length} sessions</span>

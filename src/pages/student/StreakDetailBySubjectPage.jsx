@@ -232,7 +232,7 @@ export default function StreakDetailBySubjectPage() {
     );
 
     return (
-        <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '24px', width: '100%', boxSizing: 'border-box' }}>
+        <div className="animate-fade-in w-full max-w-[1600px] mx-auto min-w-0" style={{ display: 'flex', flexDirection: 'column', gap: '24px', boxSizing: 'border-box' }}>
 
             {/* Nút quay lại */}
             <div>

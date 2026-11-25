@@ -160,7 +160,7 @@ export default function ManagersPage() {
 
   return (
     <SuperadminLayout>
-      <div className="w-full max-w-7xl mx-auto h-[calc(100vh-var(--dashboard-header-height,64px))] overflow-hidden flex flex-col px-6 pt-4 pb-4 box-border">
+      <div className="w-full max-w-[1600px] mx-auto min-w-0 h-[calc(100vh-var(--dashboard-header-height,64px))] overflow-hidden flex flex-col px-4 sm:px-5 lg:px-6 xl:px-8 pt-4 pb-4 box-border animate-fade-in">
         {/* Header */}
         <div className="shrink-0 flex flex-wrap items-center justify-between gap-3 mb-3">
           <div>
@@ -228,7 +228,7 @@ export default function ManagersPage() {
 
         {/* Search & Filter Bar (Direct 1 row without thick wrapper) */}
         <div className="shrink-0 flex flex-wrap items-center gap-2.5 mb-3">
-          <form onSubmit={handleSearchSubmit} className="relative flex-1 min-w-[240px]">
+          <form onSubmit={handleSearchSubmit} className="relative flex-1 min-w-[180px] sm:min-w-[200px]">
             <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-400" />
             <input
               type="text"
@@ -273,16 +273,16 @@ export default function ManagersPage() {
 
         {/* Managers Table Card */}
         <div className="flex-1 min-h-0 bg-white rounded-2xl border border-slate-200 flex flex-col overflow-hidden shadow-xs">
-          <div className="flex-1 min-h-0 overflow-y-auto">
+          <div className="flex-1 min-h-0 overflow-y-auto overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead className="sticky top-0 bg-[#fff8f5] z-10 text-xs font-bold uppercase tracking-wider text-[#8c7166] border-b border-[#f5ebe1]">
                 <tr>
                   <th className="px-6 py-3.5">Manager</th>
-                  <th className="px-6 py-3.5">Username</th>
-                  <th className="px-6 py-3.5">Vai trò</th>
-                  <th className="px-6 py-3.5">Trạng thái</th>
-                  <th className="px-6 py-3.5">Ngày tạo</th>
-                  <th className="px-6 py-3.5 text-right">Thao tác</th>
+                  <th className="px-6 py-3.5 whitespace-nowrap">Username</th>
+                  <th className="px-6 py-3.5 whitespace-nowrap">Vai trò</th>
+                  <th className="px-6 py-3.5 whitespace-nowrap">Trạng thái</th>
+                  <th className="px-6 py-3.5 whitespace-nowrap">Ngày tạo</th>
+                  <th className="px-6 py-3.5 text-right whitespace-nowrap">Thao tác</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#f5ebe1]">
@@ -302,25 +302,25 @@ export default function ManagersPage() {
                 ) : (
                   managers.map((m) => (
                     <tr key={m.id} className="hover:bg-[#fff8f5] transition">
-                      <td className="px-6 py-3.5">
+                      <td className="px-6 py-3.5 min-w-0">
                         <div className="flex items-center gap-3">
                           <div className="h-9 w-9 shrink-0 rounded-full bg-[#ffdbcc] text-[#a04100] flex items-center justify-center font-bold text-sm">
                             {(m.full_name || m.username || "M")[0].toUpperCase()}
                           </div>
-                          <div>
-                            <p className="font-semibold text-[#1f1b17]">{m.full_name || m.username}</p>
-                            <p className="text-xs text-[#545f73]">{m.email}</p>
+                          <div className="min-w-0">
+                            <p className="font-semibold text-[#1f1b17] truncate max-w-[180px] sm:max-w-[220px]">{m.full_name || m.username}</p>
+                            <p className="text-xs text-[#545f73] truncate max-w-[180px] sm:max-w-[220px]">{m.email}</p>
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-3.5 font-mono text-xs text-[#1f1b17]">{m.username}</td>
-                      <td className="px-6 py-3.5">
+                      <td className="px-6 py-3.5 font-mono text-xs text-[#1f1b17] whitespace-nowrap">{m.username}</td>
+                      <td className="px-6 py-3.5 whitespace-nowrap">
                         <span className="inline-flex items-center gap-1 rounded-md bg-[#fff8f5] border border-[#ffdbcc] px-2 py-0.5 text-xs font-semibold text-[#f27024]">
                           <Shield className="h-3 w-3" />
                           Platform Manager
                         </span>
                       </td>
-                      <td className="px-6 py-3.5">
+                      <td className="px-6 py-3.5 whitespace-nowrap">
                         {m.is_active ? (
                           <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">
                             <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
@@ -333,10 +333,10 @@ export default function ManagersPage() {
                           </span>
                         )}
                       </td>
-                      <td className="px-6 py-3.5 text-xs text-[#545f73]">
+                      <td className="px-6 py-3.5 text-xs text-[#545f73] whitespace-nowrap">
                         {m.created_at ? new Date(m.created_at).toLocaleDateString("vi-VN") : "—"}
                       </td>
-                      <td className="px-6 py-3.5 text-right">
+                      <td className="px-6 py-3.5 text-right whitespace-nowrap">
                         <div className="flex items-center justify-end gap-1.5">
                           <button
                             type="button"
@@ -411,8 +411,8 @@ export default function ManagersPage() {
       {/* Modal: Tạo Manager mới */}
       {showCreateModal &&
         createPortal(
-          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
-            <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl border border-slate-200">
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 overflow-y-auto">
+            <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl border border-slate-200 my-auto max-h-[90vh] overflow-y-auto">
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <h2 className="text-base font-bold text-slate-900">Tạo tài khoản Manager mới</h2>
                 <button
@@ -509,8 +509,8 @@ export default function ManagersPage() {
       {/* Modal: Chỉnh sửa Manager */}
       {editingManager &&
         createPortal(
-          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
-            <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl border border-slate-200">
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 overflow-y-auto">
+            <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl border border-slate-200 my-auto max-h-[90vh] overflow-y-auto">
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <h2 className="text-base font-bold text-slate-900">Chỉnh sửa thông tin Manager</h2>
                 <button

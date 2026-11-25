@@ -379,7 +379,7 @@ export default function DashboardLayout() {
               className="dashboard-header__menu"
               type="button"
               onClick={() => {
-                if (window.matchMedia('(max-width: 768px)').matches) {
+                if (window.matchMedia('(max-width: 1023px)').matches) {
                   setMobileSidebarOpen((prev) => !prev);
                 } else {
                   setSidebarCollapsed((collapsed) => !collapsed);
@@ -394,12 +394,12 @@ export default function DashboardLayout() {
               }
               aria-controls="dashboard-sidebar"
               aria-expanded={
-                window.matchMedia('(max-width: 760px)').matches
+                window.matchMedia('(max-width: 1023px)').matches
                   ? mobileSidebarOpen
                   : !sidebarCollapsed
               }
               title={
-                window.matchMedia('(max-width: 760px)').matches
+                window.matchMedia('(max-width: 1023px)').matches
                   ? 'Open navigation'
                   : sidebarCollapsed
                     ? 'Expand sidebar'
@@ -413,7 +413,7 @@ export default function DashboardLayout() {
               <div
                 className="dashboard-header__row"
                 style={{
-                  maxWidth: '1440px',
+                  maxWidth: '1600px',
                   margin: '0 auto',
                   padding: '0 24px',
                   height: '64px',
@@ -468,6 +468,7 @@ export default function DashboardLayout() {
 
                   {/* Semester badge */}
                   <div
+                    className="hidden sm:flex"
                     style={{
                       display: 'flex',
                       alignItems: 'center',
@@ -479,6 +480,8 @@ export default function DashboardLayout() {
                       color: 'var(--color-primary-dark)',
                       fontSize: '0.6875rem',
                       fontWeight: 700,
+                      whiteSpace: 'nowrap',
+                      flexShrink: 0,
                     }}
                   >
                     <span
@@ -497,7 +500,7 @@ export default function DashboardLayout() {
 
                 {/* Global search */}
                 <form
-                  className="dashboard-header-search"
+                  className="dashboard-header-search flex-1 max-w-md lg:max-w-lg min-w-0"
                   role="search"
                   onSubmit={handleHeaderSearch}
                 >
@@ -619,6 +622,7 @@ export default function DashboardLayout() {
                       </div>
 
                       <div
+                        className="hidden sm:block"
                         style={{
                           textAlign: 'left',
                           minWidth: 0,
@@ -948,10 +952,10 @@ export default function DashboardLayout() {
                 }
                 : {
                   flex: 1,
-                  maxWidth: '1440px',
+                  maxWidth: '1600px',
                   width: '100%',
                   margin: '0 auto',
-                  padding: '24px 24px 80px',
+                  padding: 'clamp(16px, 2vw, 24px) clamp(16px, 2.5vw, 32px) 80px',
                 }
           }
         >
@@ -985,7 +989,7 @@ export default function DashboardLayout() {
             >
               <div
                 style={{
-                  maxWidth: '1440px',
+                  maxWidth: '1600px',
                   margin: '0 auto',
                   display: 'flex',
                   flexWrap: 'wrap',

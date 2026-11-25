@@ -259,7 +259,7 @@ export default function PlatformRevenuePage() {
 
   return (
     <SuperadminLayout>
-      <div className="space-y-7">
+      <div className="w-full max-w-[1600px] mx-auto min-w-0 px-4 sm:px-5 lg:px-6 xl:px-8 py-4 sm:py-6 space-y-6 sm:space-y-7 animate-fade-in">
         {/* ======================================================== */}
         {/* HEADER SECTION */}
         {/* ======================================================== */}
@@ -325,9 +325,9 @@ export default function PlatformRevenuePage() {
         {/* ======================================================== */}
         {/* TOP EXECUTIVE METRIC CARDS (5 GIANT KPI CARDS) */}
         {/* ======================================================== */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 lg:gap-4">
           {/* Card 1: Doanh thu thực (Net Revenue) */}
-          <div className="relative overflow-hidden rounded-3xl border border-emerald-200/80 bg-gradient-to-br from-emerald-50 via-white to-white p-5 shadow-xs hover:shadow-md transition">
+          <div className="relative overflow-hidden rounded-3xl border border-emerald-200/80 bg-gradient-to-br from-emerald-50 via-white to-white p-5 shadow-xs hover:shadow-md transition min-w-0">
             <div className="flex items-center justify-between">
               <span className="text-xs font-black uppercase tracking-wider text-emerald-800">{s?.kpi?.netRevenue || "Doanh thu thực (Net)"}</span>
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 shadow-xs">
@@ -345,7 +345,7 @@ export default function PlatformRevenuePage() {
           </div>
 
           {/* Card 2: Doanh thu gộp (Gross Revenue) */}
-          <div className="relative overflow-hidden rounded-3xl border border-[#ffdbcc] bg-gradient-to-br from-[#fff8f5] via-white to-white p-5 shadow-xs hover:shadow-md transition">
+          <div className="relative overflow-hidden rounded-3xl border border-[#ffdbcc] bg-gradient-to-br from-[#fff8f5] via-white to-white p-5 shadow-xs hover:shadow-md transition min-w-0">
             <div className="flex items-center justify-between">
               <span className="text-xs font-black uppercase tracking-wider text-[#a04100]">{s?.kpi?.grossRevenue || "Doanh thu gộp (Gross)"}</span>
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#ffdbcc] text-[#f27024] shadow-xs">
@@ -363,7 +363,7 @@ export default function PlatformRevenuePage() {
           </div>
 
           {/* Card 3: Cơ sở Đào tạo (Schools) */}
-          <div className="relative overflow-hidden rounded-3xl border border-[#f5ebe1] bg-white p-5 shadow-xs hover:shadow-md transition">
+          <div className="relative overflow-hidden rounded-3xl border border-[#f5ebe1] bg-white p-5 shadow-xs hover:shadow-md transition min-w-0">
             <div className="flex items-center justify-between">
               <span className="text-xs font-black uppercase tracking-wider text-[#545f73]">{s?.kpi?.schools || "Mạng lưới Cơ sở"}</span>
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600 shadow-xs">
@@ -381,7 +381,7 @@ export default function PlatformRevenuePage() {
           </div>
 
           {/* Card 4: Thành viên toàn hệ sinh thái */}
-          <div className="relative overflow-hidden rounded-3xl border border-[#f5ebe1] bg-white p-5 shadow-xs hover:shadow-md transition">
+          <div className="relative overflow-hidden rounded-3xl border border-[#f5ebe1] bg-white p-5 shadow-xs hover:shadow-md transition min-w-0">
             <div className="flex items-center justify-between">
               <span className="text-xs font-black uppercase tracking-wider text-[#545f73]">{s?.kpi?.users || "Thành viên Active"}</span>
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 shadow-xs">
@@ -400,7 +400,7 @@ export default function PlatformRevenuePage() {
           </div>
 
           {/* Card 5: Quản trị viên Vận hành */}
-          <div className="relative overflow-hidden rounded-3xl border border-purple-200/80 bg-gradient-to-br from-purple-50/70 via-white to-white p-5 shadow-xs hover:shadow-md transition">
+          <div className="relative overflow-hidden rounded-3xl border border-purple-200/80 bg-gradient-to-br from-purple-50/70 via-white to-white p-5 shadow-xs hover:shadow-md transition min-w-0">
             <div className="flex items-center justify-between">
               <span className="text-xs font-black uppercase tracking-wider text-purple-800">{s?.kpi?.team || "Đội ngũ Vận hành"}</span>
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-purple-100 text-purple-700 shadow-xs">
@@ -425,7 +425,7 @@ export default function PlatformRevenuePage() {
         {/* ======================================================== */}
         <div className="rounded-3xl border border-[#f5ebe1] bg-white p-6 sm:p-7 shadow-xs">
           {/* Chart Header with Controls */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-[#f5ebe1]">
+          <div className="flex flex-wrap items-center justify-between gap-3 sm:gap-4 pb-5 border-b border-[#f5ebe1]">
             <div className="flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#fff8f5] text-[#f27024] shadow-xs">
                 <BarChart3 className="h-6 w-6" />
@@ -656,9 +656,9 @@ export default function PlatformRevenuePage() {
         {/* ======================================================== */}
         {/* ROW 2: PLAN REVENUE DONUT & TOP CONTRIBUTING SCHOOLS */}
         {/* ======================================================== */}
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+        <div className="grid grid-cols-1 gap-4 lg:gap-6 lg:grid-cols-12">
           {/* CHART 2: REVENUE DISTRIBUTION BY SAAS PLAN (DONUT & METERS) */}
-          <div className="col-span-12 lg:col-span-5 rounded-3xl border border-[#f5ebe1] bg-white p-6 sm:p-7 shadow-xs flex flex-col justify-between">
+          <div className="col-span-12 lg:col-span-5 min-w-0 rounded-3xl border border-[#f5ebe1] bg-white p-6 sm:p-7 shadow-xs flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between pb-4 border-b border-[#f5ebe1]">
                 <div className="flex items-center gap-2.5">
@@ -772,7 +772,7 @@ export default function PlatformRevenuePage() {
           </div>
 
           {/* CHART 3: TOP CONTRIBUTING SCHOOLS (REVENUE & TRANSACTIONS) */}
-          <div className="col-span-12 lg:col-span-7 rounded-3xl border border-[#f5ebe1] bg-white p-6 sm:p-7 shadow-xs flex flex-col justify-between">
+          <div className="col-span-12 lg:col-span-7 min-w-0 rounded-3xl border border-[#f5ebe1] bg-white p-6 sm:p-7 shadow-xs flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between pb-4 border-b border-[#f5ebe1]">
                 <div className="flex items-center gap-2.5">
@@ -885,13 +885,13 @@ export default function PlatformRevenuePage() {
               <table className="w-full text-left text-xs">
                 <thead className="border-b border-[#f5ebe1] bg-[#fff8f5] font-bold uppercase tracking-wider text-[#8c7166]">
                   <tr>
-                    <th className="px-5 py-3.5">Mã đơn hàng</th>
+                    <th className="px-5 py-3.5 whitespace-nowrap">Mã đơn hàng</th>
                     <th className="px-5 py-3.5">Cơ sở đào tạo</th>
-                    <th className="px-5 py-3.5">Gói dịch vụ</th>
-                    <th className="px-5 py-3.5">Số tiền</th>
-                    <th className="px-5 py-3.5">Cổng</th>
-                    <th className="px-5 py-3.5">Trạng thái</th>
-                    <th className="px-5 py-3.5">Thời gian</th>
+                    <th className="px-5 py-3.5 whitespace-nowrap">Gói dịch vụ</th>
+                    <th className="px-5 py-3.5 whitespace-nowrap">Số tiền</th>
+                    <th className="px-5 py-3.5 whitespace-nowrap">Cổng</th>
+                    <th className="px-5 py-3.5 whitespace-nowrap">Trạng thái</th>
+                    <th className="px-5 py-3.5 whitespace-nowrap">Thời gian</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#f5ebe1]">
@@ -911,16 +911,16 @@ export default function PlatformRevenuePage() {
                   ) : (
                     transactions.map((tx) => (
                       <tr key={tx.id} className="hover:bg-[#fff8f5] transition">
-                        <td className="px-5 py-3 font-mono font-medium text-[#1f1b17]">
+                        <td className="px-5 py-3 font-mono font-medium text-[#1f1b17] whitespace-nowrap">
                           {tx.order_reference}
                         </td>
-                        <td className="px-5 py-3">
-                          <p className="font-semibold text-[#1f1b17]">{tx.school_name || "—"}</p>
+                        <td className="px-5 py-3 min-w-0">
+                          <p className="font-semibold text-[#1f1b17] truncate max-w-[200px]">{tx.school_name || "—"}</p>
                           <p className="text-[11px] text-[#8c7166] font-mono">{tx.school_code}</p>
                         </td>
-                        <td className="px-5 py-3 text-[#545f73]">{tx.plan_name || tx.plan_id || "—"}</td>
-                        <td className="px-5 py-3 font-bold text-[#1f1b17]">{formatCurrency(tx.amount)}</td>
-                        <td className="px-5 py-3">
+                        <td className="px-5 py-3 text-[#545f73] whitespace-nowrap">{tx.plan_name || tx.plan_id || "—"}</td>
+                        <td className="px-5 py-3 font-bold text-[#1f1b17] whitespace-nowrap">{formatCurrency(tx.amount)}</td>
+                        <td className="px-5 py-3 whitespace-nowrap">
                           <span
                             className={`rounded-md px-2 py-0.5 font-bold uppercase text-[10px] ${
                               tx.payment_method === "payos"
@@ -931,7 +931,7 @@ export default function PlatformRevenuePage() {
                             {tx.payment_method || "payos"}
                           </span>
                         </td>
-                        <td className="px-5 py-3">
+                        <td className="px-5 py-3 whitespace-nowrap">
                           {tx.status === "success" ? (
                             <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 font-semibold text-emerald-700">
                               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
@@ -954,7 +954,7 @@ export default function PlatformRevenuePage() {
                             </span>
                           )}
                         </td>
-                        <td className="px-5 py-3 text-[#8c7166] text-[11px]">
+                        <td className="px-5 py-3 text-[#8c7166] text-[11px] whitespace-nowrap">
                           {tx.paid_at || tx.created_at
                             ? new Date(tx.paid_at || tx.created_at).toLocaleString("vi-VN")
                             : "—"}

@@ -228,7 +228,7 @@ export default function SemesterManagementPage() {
   const lockedCount = allSemesters.filter((item) => item.is_locked).length;
 
   return (
-    <div className="w-full max-w-7xl mx-auto h-[calc(100vh-var(--dashboard-header-height,64px))] overflow-hidden flex flex-col px-6 pt-4 pb-4 box-border">
+    <div className="w-full max-w-[1600px] mx-auto min-w-0 h-[calc(100vh-var(--dashboard-header-height,64px))] overflow-hidden flex flex-col px-4 sm:px-5 lg:px-6 xl:px-8 pt-4 pb-4 box-border animate-fade-in">
       {/* 2. Page Header thu gọn */}
       <header className="shrink-0 flex flex-wrap items-center justify-between gap-3 mb-3">
         <div>
@@ -292,7 +292,7 @@ export default function SemesterManagementPage() {
           setSearch(draftSearch.trim());
         }}
       >
-        <div className="relative flex-1 min-w-[240px]">
+        <div className="relative flex-1 min-w-[180px] sm:min-w-[220px]">
           <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-base" style={{ fontSize: '18px' }} aria-hidden="true">
             search
           </span>
@@ -339,10 +339,10 @@ export default function SemesterManagementPage() {
               <thead className="sticky top-0 bg-white z-10 border-b border-slate-200">
                 <tr>
                   <th className="sticky top-0 bg-slate-50 z-10 border-b border-slate-200">Học kỳ</th>
-                  <th className="sticky top-0 bg-slate-50 z-10 border-b border-slate-200">Thời gian</th>
-                  <th className="sticky top-0 bg-slate-50 z-10 border-b border-slate-200">Quy mô lớp học</th>
-                  <th className="sticky top-0 bg-slate-50 z-10 border-b border-slate-200">Trạng thái</th>
-                  <th className="sticky top-0 bg-slate-50 z-10 border-b border-slate-200 text-right" aria-label="Thao tác" />
+                  <th className="sticky top-0 bg-slate-50 z-10 border-b border-slate-200 whitespace-nowrap">Thời gian</th>
+                  <th className="sticky top-0 bg-slate-50 z-10 border-b border-slate-200 whitespace-nowrap">Quy mô lớp học</th>
+                  <th className="sticky top-0 bg-slate-50 z-10 border-b border-slate-200 whitespace-nowrap">Trạng thái</th>
+                  <th className="sticky top-0 bg-slate-50 z-10 border-b border-slate-200 text-right whitespace-nowrap" aria-label="Thao tác" />
                 </tr>
               </thead>
               <tbody>

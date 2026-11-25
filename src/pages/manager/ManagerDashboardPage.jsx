@@ -240,7 +240,7 @@ export default function ManagerDashboardPage() {
 
   return (
     <ManagerLayout>
-      <div className="space-y-6">
+      <div className="w-full max-w-[1600px] mx-auto min-w-0 px-4 sm:px-5 lg:px-6 xl:px-8 py-4 sm:py-6 space-y-6 animate-fade-in">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
@@ -314,9 +314,9 @@ export default function ManagerDashboardPage() {
         {/* ======================================================== */}
         {/* KEY METRICS WITH MODERN CARDS & HERO REVENUE CARD */}
         {/* ======================================================== */}
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 lg:gap-4">
           {/* Card 1: TỔNG DÒNG TIỀN THU VỀ (HERO CARD) */}
-          <div className="relative overflow-hidden rounded-2xl border border-emerald-200/90 bg-gradient-to-br from-emerald-50/90 via-white to-white p-4 shadow-sm hover:border-emerald-300 hover:shadow-md transition">
+          <div className="relative overflow-hidden rounded-2xl border border-emerald-200/90 bg-gradient-to-br from-emerald-50/90 via-white to-white p-4 shadow-sm hover:border-emerald-300 hover:shadow-md transition min-w-0">
             <div className="flex items-center justify-between">
               <span className="text-xs font-black uppercase tracking-wider text-emerald-800">
                 {lang === "en" ? "Total Cash Flow" : "Dòng Tiền Thu Về"}
@@ -338,7 +338,7 @@ export default function ManagerDashboardPage() {
           </div>
 
           {/* Card 2: Tổng số trường */}
-          <div className="relative overflow-hidden rounded-2xl border border-[#f5ebe1] bg-white p-4 shadow-xs hover:border-[#ffdbcc] hover:shadow-md transition">
+          <div className="relative overflow-hidden rounded-2xl border border-[#f5ebe1] bg-white p-4 shadow-xs hover:border-[#ffdbcc] hover:shadow-md transition min-w-0">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-[#545f73]">
                 {lang === "en" ? "Total Schools" : "Mạng lưới trường"}
@@ -358,7 +358,7 @@ export default function ManagerDashboardPage() {
           </div>
 
           {/* Card 3: Hợp đồng hiệu lực */}
-          <div className="relative overflow-hidden rounded-2xl border border-[#ffdbcc] bg-gradient-to-br from-[#fff8f5] to-white p-4 shadow-xs hover:shadow-md transition">
+          <div className="relative overflow-hidden rounded-2xl border border-[#ffdbcc] bg-gradient-to-br from-[#fff8f5] to-white p-4 shadow-xs hover:shadow-md transition min-w-0">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-[#f27024]">
                 {lang === "en" ? "Subscriptions" : "Hợp đồng mở"}
@@ -375,7 +375,7 @@ export default function ManagerDashboardPage() {
           </div>
 
           {/* Card 4: Sắp hết hạn */}
-          <div className="relative overflow-hidden rounded-2xl border border-orange-200 bg-gradient-to-br from-orange-50/60 to-white p-4 shadow-xs hover:shadow-md transition">
+          <div className="relative overflow-hidden rounded-2xl border border-orange-200 bg-gradient-to-br from-orange-50/60 to-white p-4 shadow-xs hover:shadow-md transition min-w-0">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-orange-800">
                 {lang === "en" ? "Expiring Soon" : "Sắp hết hạn"}
@@ -392,7 +392,7 @@ export default function ManagerDashboardPage() {
           </div>
 
           {/* Card 5: Chờ thiết lập */}
-          <div className="relative overflow-hidden rounded-2xl border border-amber-100 bg-gradient-to-br from-amber-50/60 to-white p-4 shadow-xs hover:shadow-md transition">
+          <div className="relative overflow-hidden rounded-2xl border border-amber-100 bg-gradient-to-br from-amber-50/60 to-white p-4 shadow-xs hover:shadow-md transition min-w-0">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-amber-800">
                 {lang === "en" ? "Pending Setup" : "Chờ thiết lập"}
@@ -409,7 +409,7 @@ export default function ManagerDashboardPage() {
           </div>
 
           {/* Card 6: Khóa / Đình chỉ */}
-          <div className="relative overflow-hidden rounded-2xl border border-rose-100 bg-gradient-to-br from-rose-50/60 to-white p-4 shadow-xs hover:shadow-md transition">
+          <div className="relative overflow-hidden rounded-2xl border border-rose-100 bg-gradient-to-br from-rose-50/60 to-white p-4 shadow-xs hover:shadow-md transition min-w-0">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-rose-800">
                 {lang === "en" ? "Locked / Suspended" : "Khóa / Đình chỉ"}
@@ -429,9 +429,9 @@ export default function ManagerDashboardPage() {
         {/* ======================================================== */}
         {/* INTERACTIVE CHARTS & VISUAL DASHBOARD SECTION */}
         {/* ======================================================== */}
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+        <div className="grid grid-cols-1 gap-4 lg:gap-6 lg:grid-cols-12">
           {/* CHART 1: DONUT CHART - SCHOOL STATUS DISTRIBUTION */}
-          <div className="col-span-12 lg:col-span-5 rounded-3xl border border-[#f5ebe1] bg-white p-6 shadow-xs flex flex-col justify-between">
+          <div className="col-span-12 lg:col-span-5 min-w-0 rounded-3xl border border-[#f5ebe1] bg-white p-6 shadow-xs flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between pb-3 border-b border-[#f5ebe1]">
                 <div className="flex items-center gap-2">
@@ -542,7 +542,7 @@ export default function ManagerDashboardPage() {
           </div>
 
           {/* CHART 2: SUBSCRIPTION PLANS & CONTRACT METERS */}
-          <div className="col-span-12 lg:col-span-7 rounded-3xl border border-[#f5ebe1] bg-white p-6 shadow-xs flex flex-col justify-between">
+          <div className="col-span-12 lg:col-span-7 min-w-0 rounded-3xl border border-[#f5ebe1] bg-white p-6 shadow-xs flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between pb-3 border-b border-[#f5ebe1]">
                 <div className="flex items-center gap-2">
@@ -1073,13 +1073,13 @@ export default function ManagerDashboardPage() {
             <table className="w-full text-left text-sm">
               <thead className="bg-[#fff8f5] text-xs font-bold text-[#8c7166] uppercase tracking-wider border-b border-[#f5ebe1]">
                 <tr>
-                  <th className="py-2.5 px-3">Mã đơn</th>
+                  <th className="py-2.5 px-3 whitespace-nowrap">Mã đơn</th>
                   <th className="py-2.5 px-3">Cơ sở đào tạo</th>
-                  <th className="py-2.5 px-3">Gói thuê bao</th>
-                  <th className="py-2.5 px-3">Số tiền</th>
-                  <th className="py-2.5 px-3">Cổng</th>
-                  <th className="py-2.5 px-3">Trạng thái</th>
-                  <th className="py-2.5 px-3">Thời gian</th>
+                  <th className="py-2.5 px-3 whitespace-nowrap">Gói thuê bao</th>
+                  <th className="py-2.5 px-3 whitespace-nowrap">Số tiền</th>
+                  <th className="py-2.5 px-3 whitespace-nowrap">Cổng</th>
+                  <th className="py-2.5 px-3 whitespace-nowrap">Trạng thái</th>
+                  <th className="py-2.5 px-3 whitespace-nowrap">Thời gian</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#f5ebe1] text-[#1f1b17]">
@@ -1092,22 +1092,22 @@ export default function ManagerDashboardPage() {
                 ) : (
                   recentTransactions.map((tx) => (
                     <tr key={tx.id} className="hover:bg-[#fff8f5] transition-colors">
-                      <td className="py-3 px-3 font-mono text-xs font-semibold text-[#1f1b17]">
+                      <td className="py-3 px-3 font-mono text-xs font-semibold text-[#1f1b17] whitespace-nowrap">
                         {tx.order_reference || tx.id?.slice(0, 8)}
                       </td>
-                      <td className="py-3 px-3 font-medium text-[#1f1b17]">
-                        {tx.school_name || tx.school_code}
+                      <td className="py-3 px-3 font-medium text-[#1f1b17] min-w-0">
+                        <span className="truncate max-w-[200px] block">{tx.school_name || tx.school_code}</span>
                       </td>
-                      <td className="py-3 px-3 text-xs text-[#545f73]">{tx.plan_name || "—"}</td>
-                      <td className="py-3 px-3 font-bold text-[#1f1b17]">
+                      <td className="py-3 px-3 text-xs text-[#545f73] whitespace-nowrap">{tx.plan_name || "—"}</td>
+                      <td className="py-3 px-3 font-bold text-[#1f1b17] whitespace-nowrap">
                         {Number(tx.amount || 0).toLocaleString("vi-VN")} đ
                       </td>
-                      <td className="py-3 px-3">
+                      <td className="py-3 px-3 whitespace-nowrap">
                         <span className="rounded bg-[#fff8f5] border border-[#ffdbcc] px-2 py-0.5 text-[11px] font-semibold text-[#f27024] uppercase">
                           {tx.payment_method || "payos"}
                         </span>
                       </td>
-                      <td className="py-3 px-3">
+                      <td className="py-3 px-3 whitespace-nowrap">
                         <span
                           className={`inline-block rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
                             tx.status === "success"
@@ -1120,7 +1120,7 @@ export default function ManagerDashboardPage() {
                           {tx.status === "success" ? "Thành công" : tx.status === "pending" ? "Đang chờ" : tx.status}
                         </span>
                       </td>
-                      <td className="py-3 px-3 text-xs text-[#8c7166]">
+                      <td className="py-3 px-3 text-xs text-[#8c7166] whitespace-nowrap">
                         {tx.created_at ? new Date(tx.created_at).toLocaleString("vi-VN") : "—"}
                       </td>
                     </tr>
@@ -1133,8 +1133,8 @@ export default function ManagerDashboardPage() {
 
         {/* Modal: Invite School Admin */}
         {inviteModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs">
-            <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl border border-[#f5ebe1]">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs overflow-y-auto">
+            <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl border border-[#f5ebe1] my-auto max-h-[90vh] overflow-y-auto">
               <div className="flex items-center justify-between border-b border-[#f5ebe1] pb-3">
                 <h3 className="text-base font-bold text-[#1f1b17]">Mời School Admin</h3>
                 <button

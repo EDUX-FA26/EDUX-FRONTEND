@@ -176,7 +176,7 @@ export default function StudyResultPage() {
   const submittedAt = result?.submittedAt ? new Date(result.submittedAt).toLocaleString('vi-VN') : '';
 
   return (
-    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+    <div className="animate-fade-in w-full max-w-[1600px] mx-auto min-w-0" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
       {/* Back button */}
       <button

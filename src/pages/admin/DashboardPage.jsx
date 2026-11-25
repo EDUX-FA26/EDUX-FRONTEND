@@ -278,7 +278,7 @@ export default function AdminDashboardPage() {
   const adminPct = Math.max(0, 100 - studentPct - lecturerPct);
 
   return (
-    <div className="flex flex-col gap-6 animate-fade-in text-[#1f1b17] pb-10">
+    <div className="flex flex-col gap-6 animate-fade-in text-[#1f1b17] pb-10 w-full max-w-[1600px] mx-auto min-w-0">
       {/* ======================================================== */}
       {/* 1. HERO EXECUTIVE HEADER */}
       {/* ======================================================== */}
@@ -361,7 +361,7 @@ export default function AdminDashboardPage() {
       {/* ======================================================== */}
       {/* 2. TOP 4 EXECUTIVE METRIC CARDS */}
       {/* ======================================================== */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 lg:gap-4">
         {/* Card 1: Students */}
         <div className="relative overflow-hidden rounded-3xl border border-orange-200/80 bg-gradient-to-br from-orange-50/70 via-white to-white p-5 shadow-xs hover:shadow-md transition">
           <div className="flex items-center justify-between">
@@ -490,9 +490,9 @@ export default function AdminDashboardPage() {
       {/* ======================================================== */}
       {/* 3. CHART GRID 1: ENROLLMENT BY SEMESTER & PERSONNEL BREAKDOWN */}
       {/* ======================================================== */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6">
         {/* Left Column: Interactive Column Chart (Classes & Students by Semester) */}
-        <div className="lg:col-span-8 rounded-3xl border border-[#f5ebe1] bg-white p-6 shadow-xs flex flex-col justify-between">
+        <div className="lg:col-span-8 rounded-3xl border border-[#f5ebe1] bg-white p-6 shadow-xs flex flex-col justify-between min-w-0">
           <div>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#f5ebe1] pb-5">
               <div>
@@ -690,7 +690,7 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* Right Column: Personnel Donut & Health Ratio */}
-        <div className="lg:col-span-4 rounded-3xl border border-[#f5ebe1] bg-white p-6 shadow-xs flex flex-col justify-between">
+        <div className="lg:col-span-4 rounded-3xl border border-[#f5ebe1] bg-white p-6 shadow-xs flex flex-col justify-between min-w-0">
           <div>
             <div className="flex items-center gap-2 border-b border-[#f5ebe1] pb-5">
               <div className="h-8 w-8 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center">
@@ -824,9 +824,9 @@ export default function AdminDashboardPage() {
       {/* ======================================================== */}
       {/* 4. CHART GRID 2: DEPARTMENT DISTRIBUTION & ACADEMIC PERFORMANCE */}
       {/* ======================================================== */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6">
         {/* Left: Department Distribution (Horizontal Bars) */}
-        <div className="lg:col-span-6 rounded-3xl border border-[#f5ebe1] bg-white p-6 shadow-xs flex flex-col justify-between">
+        <div className="lg:col-span-6 rounded-3xl border border-[#f5ebe1] bg-white p-6 shadow-xs flex flex-col justify-between min-w-0">
           <div>
             <div className="flex items-center justify-between border-b border-[#f5ebe1] pb-5">
               <div className="flex items-center gap-2">
@@ -900,7 +900,7 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* Right: Academic Performance & Submission Funnel */}
-        <div className="lg:col-span-6 rounded-3xl border border-[#f5ebe1] bg-white p-6 shadow-xs flex flex-col justify-between">
+        <div className="lg:col-span-6 rounded-3xl border border-[#f5ebe1] bg-white p-6 shadow-xs flex flex-col justify-between min-w-0">
           <div>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#f5ebe1] pb-5">
               <div className="flex items-center gap-2">
@@ -1049,7 +1049,7 @@ export default function AdminDashboardPage() {
       {/* ======================================================== */}
       {/* 5. QUICK ACCESS LINKS CARDS */}
       {/* ======================================================== */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 lg:gap-4">
         <Link
           to="/admin/users"
           className="group rounded-3xl border border-[#f5ebe1] bg-white p-5 shadow-xs hover:border-[#f27024] hover:shadow-md transition flex items-center gap-4"
@@ -1122,9 +1122,9 @@ export default function AdminDashboardPage() {
       {/* ======================================================== */}
       {/* 6. MAIN LOWER GRID: RECENT USERS & NOTIFICATIONS & SYSTEM STATUS */}
       {/* ======================================================== */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6">
         {/* Left: Recent Users List (7 cols) */}
-        <div className="lg:col-span-7 rounded-3xl border border-[#f5ebe1] bg-white p-6 shadow-xs">
+        <div className="lg:col-span-7 rounded-3xl border border-[#f5ebe1] bg-white p-6 shadow-xs min-w-0">
           <div className="flex items-center justify-between border-b border-[#f5ebe1] pb-4 mb-4">
             <div className="flex items-center gap-2">
               <div className="h-8 w-8 rounded-xl bg-orange-100 text-[#f27024] flex items-center justify-center">
@@ -1194,7 +1194,7 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* Right: Notifications & Infrastructure Status (5 cols) */}
-        <div className="lg:col-span-5 flex flex-col gap-6">
+        <div className="lg:col-span-5 flex flex-col gap-6 min-w-0">
           {/* Notifications Card */}
           <div className="rounded-3xl border border-[#f5ebe1] bg-white p-6 shadow-xs">
             <div className="flex items-center justify-between border-b border-[#f5ebe1] pb-4 mb-4">

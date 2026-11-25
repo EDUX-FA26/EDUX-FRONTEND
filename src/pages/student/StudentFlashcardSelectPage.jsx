@@ -175,7 +175,7 @@ export default function StudentFlashcardSelectPage() {
 
   return (
     <div
-      className="w-full max-w-7xl mx-auto h-[calc(100vh-64px)] overflow-hidden flex flex-col px-6 pt-5 pb-4 box-border"
+      className="w-full max-w-[1600px] mx-auto h-[calc(100vh-64px)] min-w-0 overflow-hidden flex flex-col px-4 sm:px-5 lg:px-6 xl:px-8 pt-4 sm:pt-5 pb-4 box-border"
       style={{
         height: 'calc(100vh - var(--dashboard-header-height, 64px))',
         overflow: 'hidden',
@@ -204,7 +204,7 @@ export default function StudentFlashcardSelectPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Tìm môn học theo tên hoặc mã môn..."
-              className="w-72 bg-white border border-slate-200 rounded-xl pl-9 pr-8 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition"
+              className="w-48 sm:w-64 md:w-72 bg-white border border-slate-200 rounded-xl pl-9 pr-8 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition"
             />
             {search && (
               <button

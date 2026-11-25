@@ -816,7 +816,7 @@ export default function PersonalizedLearningSection() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   <div style={{
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(7, 1fr)',
+                    gridTemplateColumns: 'repeat(7, minmax(72px, 1fr))',
                     gap: '8px',
                     overflowX: 'auto', paddingBottom: '4px'
                   }}>

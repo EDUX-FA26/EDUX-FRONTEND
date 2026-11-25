@@ -2301,7 +2301,7 @@ export default function LecturerFlashcardsPage() {
       )}
 
       <div
-        className="w-full max-w-7xl mx-auto h-[calc(100vh-64px)] overflow-hidden flex flex-col px-6 pt-5 pb-4 box-border animate-fade-in"
+        className="w-full max-w-[1600px] mx-auto h-[calc(100vh-64px)] min-w-0 overflow-hidden flex flex-col px-4 sm:px-5 lg:px-6 xl:px-8 pt-4 sm:pt-5 pb-4 box-border animate-fade-in"
         style={{
           height: 'calc(100vh - var(--dashboard-header-height, 64px))',
           overflow: 'hidden',

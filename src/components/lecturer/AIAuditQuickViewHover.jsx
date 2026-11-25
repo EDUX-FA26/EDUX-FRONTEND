@@ -557,16 +557,17 @@ export function AIAuditDetailModal({
         }
       `}</style>
 
-      {/* MODAL CARD: w-[80vw] max-w-5xl h-[75vh] flex flex-col overflow-hidden */}
+      {/* MODAL CARD: responsive width & height */}
       <div
-        className="pointer-events-auto flex flex-col h-[75vh] w-[80vw] max-w-5xl bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden"
+        className="pointer-events-auto flex flex-col h-[85vh] max-h-[90vh] w-[92vw] lg:w-[85vw] max-w-5xl bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden"
         onMouseEnter={onMouseEnter}
         onMouseLeave={onMouseLeave}
         style={{
           pointerEvents: 'auto',
-          width: '80vw',
+          width: 'min(92vw, 1080px)',
           maxWidth: '1080px',
-          height: '75vh',
+          height: 'min(85vh, 780px)',
+          maxHeight: '90vh',
           backgroundColor: '#ffffff',
           borderRadius: '18px',
           border: '1px solid #e2e8f0',

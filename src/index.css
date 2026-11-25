@@ -860,7 +860,7 @@ div[style*="linear-gradient"] p,
   display: none;
 }
 
-@media (max-width: 760px) {
+@media (max-width: 1023.98px) {
   .dashboard-sidebar-backdrop {
     position: fixed;
     inset: 0;
@@ -869,6 +869,10 @@ div[style*="linear-gradient"] p,
     border: 0;
     background: rgba(31, 27, 23, .38);
     opacity: 1;
+  }
+
+  .dashboard-layout__main {
+    padding-left: 0 !important;
   }
 
   .dashboard-sidebar,
@@ -965,6 +969,16 @@ div[style*="linear-gradient"] p,
   .dashboard-header__row>div:last-child>div[style*="position: relative"]>button>div:first-child {
     width: 36px !important;
     height: 36px !important;
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1279.98px) {
+  .dashboard-layout {
+    --dashboard-sidebar-width: 224px;
+  }
+  .dashboard-sidebar:not(.dashboard-sidebar--collapsed) {
+    width: 224px;
+    flex-basis: 224px;
   }
 }
 

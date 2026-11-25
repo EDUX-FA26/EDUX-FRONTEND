@@ -16,17 +16,17 @@ function UserRow({ user: u, onEdit, onToggleStatus }) {
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 0', borderBottom: '1px solid var(--color-border)', opacity: isSuspended ? 0.65 : 1 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }} className="min-w-0 flex-1 pr-3">
         <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: u.role === 'student' ? '#fff1e7' : (u.role === 'admin' ? '#f3e8ff' : 'var(--color-accent-teal-light)'), display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
           <span className="material-symbols-outlined" style={{ fontSize: '20px', color: u.role === 'student' ? 'var(--color-primary)' : (u.role === 'admin' ? '#7c3aed' : 'var(--color-accent-teal)') }}>
             {u.role === 'student' ? 'school' : (u.role === 'admin' ? 'shield' : 'person_book')}
           </span>
         </div>
-        <div>
-          <p style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--color-ink)', margin: '0 0 2px' }}>
+        <div className="min-w-0 flex-1">
+          <p className="truncate" style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--color-ink)', margin: '0 0 2px' }}>
             {u.full_name || '—'} {u.student_code && <span style={{ fontSize: '0.75rem', color: 'var(--color-ink-muted)', fontWeight: 500 }}>({u.student_code})</span>} {u.department_name && <span style={{ fontSize: '0.72rem', padding: '2px 7px', borderRadius: '10px', background: 'var(--color-surface-hover)', color: 'var(--color-ink-muted)', fontWeight: 600, marginLeft: '4px' }}>{u.department_code ? `${u.department_code} • ` : ''}{u.department_name}</span>} {isSuspended && <span style={{ color: '#ef4444', fontSize: '0.75rem', fontWeight: 600 }}>• Bị tạm khóa</span>}
           </p>
-          <p style={{ fontSize: '0.75rem', color: 'var(--color-ink-muted)', margin: 0, fontFamily: 'var(--font-mono)' }}>{u.email}</p>
+          <p className="truncate" style={{ fontSize: '0.75rem', color: 'var(--color-ink-muted)', margin: 0, fontFamily: 'var(--font-mono)' }}>{u.email}</p>
         </div>
       </div>
       <div style={{ textAlign: 'right', flexShrink: 0, display: 'flex', alignItems: 'center', gap: '14px' }}>
@@ -292,7 +292,7 @@ export default function UserManagementPage() {
 
   return (
     <div
-      className="w-full max-w-7xl mx-auto h-[calc(100vh-var(--dashboard-header-height,64px))] overflow-hidden flex flex-col px-6 pt-5 pb-4 box-border animate-fade-in"
+      className="w-full max-w-[1600px] mx-auto min-w-0 h-[calc(100vh-var(--dashboard-header-height,64px))] overflow-hidden flex flex-col px-4 sm:px-5 lg:px-6 xl:px-8 pt-4 sm:pt-5 pb-4 box-border animate-fade-in"
       style={{
         height: 'calc(100vh - var(--dashboard-header-height, 64px))',
         maxHeight: 'calc(100vh - var(--dashboard-header-height, 64px))',
@@ -304,7 +304,7 @@ export default function UserManagementPage() {
       }}
     >
       {/* Header Section */}
-      <div className="shrink-0 mb-4" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+      <div className="shrink-0 mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: 0, color: 'var(--color-primary)' }}>
             {uLang?.title || "Quản lý Người dùng"}
@@ -313,7 +313,7 @@ export default function UserManagementPage() {
             {uLang?.subtitle || "Xem, phân quyền và quản lý tài khoản người dùng trong hệ thống"} ({users.length} {lang === "en" ? "accounts" : "tài khoản"})
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
           <button 
             type="button"
             onClick={() => setShowGuide(!showGuide)} 
@@ -404,22 +404,22 @@ export default function UserManagementPage() {
       {/* Main Table Card (SRS 3.7.8) */}
       <div className="card flex-1 min-h-0 bg-white rounded-2xl border border-slate-200 flex flex-col overflow-hidden" style={{ padding: '0', display: 'flex', flexDirection: 'column' }}>
         {/* Toolbar */}
-        <div className="shrink-0" style={{ padding: '16px 20px', borderBottom: '1px solid var(--color-border)', display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', background: 'var(--color-surface-hover)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: '320px', flexWrap: 'wrap' }}>
-            <div style={{ position: 'relative', flex: 1, minWidth: '240px', maxWidth: '380px' }}>
+        <div className="shrink-0 p-3.5 sm:p-4 border-b border-slate-200 flex flex-wrap gap-2.5 sm:gap-3 items-center justify-between bg-slate-50/50">
+          <div className="flex items-center gap-2.5 flex-1 min-w-[200px] flex-wrap">
+            <div className="relative flex-1 min-w-[180px] max-w-sm">
               <span className="material-symbols-outlined" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--color-ink-muted)', fontSize: '20px' }}>search</span>
               <input 
                 type="text" 
                 placeholder={uLang?.searchPlaceholder || "Tìm theo tên, email hoặc MSSV..."} 
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                style={{ width: '100%', padding: '10px 12px 10px 40px', borderRadius: '8px', border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-ink)', outline: 'none', fontSize: '0.9rem' }}
+                style={{ width: '100%', padding: '9px 12px 9px 38px', borderRadius: '8px', border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-ink)', outline: 'none', fontSize: '0.875rem' }}
               />
             </div>
             <select 
               value={roleFilter} 
               onChange={e => setRoleFilter(e.target.value)}
-              style={{ padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-ink)', outline: 'none', fontWeight: 600, fontSize: '0.875rem', cursor: 'pointer' }}
+              className="h-9 px-3 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 cursor-pointer focus:outline-none shrink-0"
             >
               <option value="all">{uLang?.filterRoleAll || "Tất cả vai trò"}</option>
               <option value="student">{uLang?.filterRoleStudent || "Sinh viên"}</option>
@@ -429,14 +429,14 @@ export default function UserManagementPage() {
             <select 
               value={statusFilter} 
               onChange={e => setStatusFilter(e.target.value)}
-              style={{ padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-ink)', outline: 'none', fontWeight: 600, fontSize: '0.875rem', cursor: 'pointer' }}
+              className="h-9 px-3 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 cursor-pointer focus:outline-none shrink-0"
             >
               <option value="all">{uLang?.filterStatusAll || "Tất cả trạng thái"}</option>
               <option value="active">{uLang?.filterStatusActive || "Đang hoạt động"}</option>
               <option value="suspended">{uLang?.filterStatusSuspended || "Bị tạm khóa"}</option>
             </select>
           </div>
-          <div style={{ fontSize: '0.875rem', color: 'var(--color-ink-muted)', fontWeight: 600 }}>
+          <div style={{ fontSize: '0.8125rem', color: 'var(--color-ink-muted)', fontWeight: 600 }} className="shrink-0">
             {lang === "en" ? "Showing" : "Hiển thị"} <strong>{filteredUsers.length}</strong> {lang === "en" ? "results" : "kết quả"}
           </div>
         </div>

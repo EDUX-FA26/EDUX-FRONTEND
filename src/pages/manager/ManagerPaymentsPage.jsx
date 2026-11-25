@@ -108,7 +108,7 @@ export default function ManagerPaymentsPage() {
 
   return (
     <ManagerLayout>
-      <div className="w-full max-w-7xl mx-auto h-[calc(100vh-var(--dashboard-header-height,64px))] overflow-hidden flex flex-col px-6 pt-4 pb-4 box-border">
+      <div className="w-full max-w-[1600px] mx-auto min-w-0 h-[calc(100vh-var(--dashboard-header-height,64px))] overflow-hidden flex flex-col px-4 sm:px-5 lg:px-6 xl:px-8 pt-4 pb-4 box-border animate-fade-in">
         {/* Header */}
         <div className="shrink-0 flex flex-wrap items-center justify-between gap-3 mb-3">
           <div>
@@ -154,7 +154,7 @@ export default function ManagerPaymentsPage() {
         )}
 
         {/* Merged Tabs + Search/Filter Row */}
-        <div className="shrink-0 flex flex-wrap items-center justify-between gap-3 mb-3">
+        <div className="shrink-0 flex flex-wrap items-center justify-between gap-2.5 sm:gap-3 mb-3">
           {/* Left: Tab Switcher */}
           <div className="flex items-center gap-2">
             <button
@@ -185,8 +185,8 @@ export default function ManagerPaymentsPage() {
           </div>
 
           {/* Right: Search & Filter Toolbar */}
-          <div className="flex items-center gap-2.5">
-            <form onSubmit={handleSearchSubmit} className="relative w-64 sm:w-72">
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <form onSubmit={handleSearchSubmit} className="relative flex-1 min-w-[200px] sm:w-72">
               <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-400" />
               <input
                 type="text"
@@ -245,18 +245,18 @@ export default function ManagerPaymentsPage() {
           {activeTab === "transactions" ? (
             <>
               {/* Transactions Table: Scrollable independently */}
-              <div className="flex-1 min-h-0 overflow-y-auto">
+              <div className="flex-1 min-h-0 overflow-y-auto overflow-x-auto">
                 <table className="w-full text-left text-sm">
                   <thead className="sticky top-0 bg-[#fff8f5] z-10 text-xs font-bold text-[#8c7166] uppercase tracking-wider border-b border-[#f5ebe1]">
                     <tr>
-                      <th className="py-3 px-4">Mã tham chiếu / ID</th>
+                      <th className="py-3 px-4 whitespace-nowrap">Mã tham chiếu / ID</th>
                       <th className="py-3 px-4">Trường học</th>
-                      <th className="py-3 px-4">Gói dịch vụ</th>
-                      <th className="py-3 px-4">Số tiền thu</th>
-                      <th className="py-3 px-4">Đã hoàn</th>
-                      <th className="py-3 px-4">Phương thức</th>
-                      <th className="py-3 px-4">Trạng thái</th>
-                      <th className="py-3 px-4">Thời gian</th>
+                      <th className="py-3 px-4 whitespace-nowrap">Gói dịch vụ</th>
+                      <th className="py-3 px-4 whitespace-nowrap">Số tiền thu</th>
+                      <th className="py-3 px-4 whitespace-nowrap">Đã hoàn</th>
+                      <th className="py-3 px-4 whitespace-nowrap">Phương thức</th>
+                      <th className="py-3 px-4 whitespace-nowrap">Trạng thái</th>
+                      <th className="py-3 px-4 whitespace-nowrap">Thời gian</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#f5ebe1] text-[#1f1b17]">
@@ -275,22 +275,22 @@ export default function ManagerPaymentsPage() {
                     ) : (
                       transactions.map((tx) => (
                         <tr key={tx.id} className="hover:bg-[#fff8f5] transition-colors">
-                          <td className="py-3.5 px-4 font-mono text-xs font-semibold text-[#1f1b17]">
+                          <td className="py-3.5 px-4 font-mono text-xs font-semibold text-[#1f1b17] whitespace-nowrap">
                             {tx.order_reference || tx.id?.slice(0, 8)}
                           </td>
-                          <td className="py-3.5 px-4">
-                            <p className="font-semibold text-[#1f1b17]">{tx.school_name || "—"}</p>
+                          <td className="py-3.5 px-4 min-w-0">
+                            <p className="font-semibold text-[#1f1b17] truncate max-w-[200px]">{tx.school_name || "—"}</p>
                             <span className="font-mono text-xs text-[#8c7166]">{tx.school_code}</span>
                           </td>
-                          <td className="py-3.5 px-4">
+                          <td className="py-3.5 px-4 whitespace-nowrap">
                             <span className="rounded bg-[#fff8f5] border border-[#ffdbcc] px-2 py-0.5 text-xs font-semibold text-[#f27024]">
                               {tx.plan_name || "Gói thuê"}
                             </span>
                           </td>
-                          <td className="py-3.5 px-4 font-bold text-[#1f1b17]">
+                          <td className="py-3.5 px-4 font-bold text-[#1f1b17] whitespace-nowrap">
                             {Number(tx.amount || 0).toLocaleString("vi-VN")} đ
                           </td>
-                          <td className="py-3.5 px-4 text-xs">
+                          <td className="py-3.5 px-4 text-xs whitespace-nowrap">
                             {Number(tx.refunded_amount || 0) > 0 ? (
                               <span className="font-semibold text-rose-600">
                                 {Number(tx.refunded_amount).toLocaleString("vi-VN")} đ
@@ -299,12 +299,12 @@ export default function ManagerPaymentsPage() {
                               <span className="text-[#8c7166]">0 đ</span>
                             )}
                           </td>
-                          <td className="py-3.5 px-4">
+                          <td className="py-3.5 px-4 whitespace-nowrap">
                             <span className="rounded bg-[#fff8f5] border border-[#ffdbcc] px-2 py-0.5 text-[11px] font-semibold text-[#f27024] uppercase">
                               {tx.payment_method || "payos"}
                             </span>
                           </td>
-                          <td className="py-3.5 px-4">
+                          <td className="py-3.5 px-4 whitespace-nowrap">
                             <span
                               className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${
                                 tx.status === "success"
@@ -317,7 +317,7 @@ export default function ManagerPaymentsPage() {
                               {tx.status === "success" ? "Thành công" : tx.status === "pending" ? "Chờ xử lý" : tx.status}
                             </span>
                           </td>
-                          <td className="py-3.5 px-4 text-xs text-[#8c7166]">
+                          <td className="py-3.5 px-4 text-xs text-[#8c7166] whitespace-nowrap">
                             {tx.created_at ? new Date(tx.created_at).toLocaleString("vi-VN") : "—"}
                           </td>
                         </tr>
@@ -355,17 +355,17 @@ export default function ManagerPaymentsPage() {
           ) : (
             <>
               {/* Refunds Table: Scrollable independently */}
-              <div className="flex-1 min-h-0 overflow-y-auto">
+              <div className="flex-1 min-h-0 overflow-y-auto overflow-x-auto">
                 <table className="w-full text-left text-sm">
                   <thead className="sticky top-0 bg-[#fff8f5] z-10 text-xs font-bold text-[#8c7166] uppercase tracking-wider border-b border-[#f5ebe1]">
                     <tr>
-                      <th className="py-3 px-4">Mã yêu cầu</th>
+                      <th className="py-3 px-4 whitespace-nowrap">Mã yêu cầu</th>
                       <th className="py-3 px-4">Trường học</th>
-                      <th className="py-3 px-4">Số tiền yêu cầu hoàn</th>
+                      <th className="py-3 px-4 whitespace-nowrap">Số tiền yêu cầu hoàn</th>
                       <th className="py-3 px-4">Lý do hoàn tiền</th>
-                      <th className="py-3 px-4">Người yêu cầu</th>
-                      <th className="py-3 px-4">Trạng thái</th>
-                      <th className="py-3 px-4">Thời gian</th>
+                      <th className="py-3 px-4 whitespace-nowrap">Người yêu cầu</th>
+                      <th className="py-3 px-4 whitespace-nowrap">Trạng thái</th>
+                      <th className="py-3 px-4 whitespace-nowrap">Thời gian</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#f5ebe1] text-[#1f1b17]">
@@ -384,23 +384,23 @@ export default function ManagerPaymentsPage() {
                     ) : (
                       refunds.map((rf) => (
                         <tr key={rf.id} className="hover:bg-[#fff8f5] transition-colors">
-                          <td className="py-3.5 px-4 font-mono text-xs font-semibold text-[#1f1b17]">
+                          <td className="py-3.5 px-4 font-mono text-xs font-semibold text-[#1f1b17] whitespace-nowrap">
                             {rf.id?.slice(0, 8)}
                           </td>
-                          <td className="py-3.5 px-4">
-                            <p className="font-semibold text-[#1f1b17]">{rf.school_name || "—"}</p>
+                          <td className="py-3.5 px-4 min-w-0">
+                            <p className="font-semibold text-[#1f1b17] truncate max-w-[200px]">{rf.school_name || "—"}</p>
                             <span className="font-mono text-xs text-[#8c7166]">{rf.school_code}</span>
                           </td>
-                          <td className="py-3.5 px-4 font-bold text-rose-600">
+                          <td className="py-3.5 px-4 font-bold text-rose-600 whitespace-nowrap">
                             {Number(rf.amount || 0).toLocaleString("vi-VN")} đ
                           </td>
                           <td className="py-3.5 px-4 text-xs text-[#545f73] max-w-xs truncate" title={rf.reason}>
                             {rf.reason || "—"}
                           </td>
-                          <td className="py-3.5 px-4 text-xs text-[#545f73]">
+                          <td className="py-3.5 px-4 text-xs text-[#545f73] whitespace-nowrap">
                             {rf.requester_email || rf.requester_name || "School Admin"}
                           </td>
-                          <td className="py-3.5 px-4">
+                          <td className="py-3.5 px-4 whitespace-nowrap">
                             <span
                               className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${
                                 rf.status === "succeeded"
@@ -425,7 +425,7 @@ export default function ManagerPaymentsPage() {
                                 : rf.status}
                             </span>
                           </td>
-                          <td className="py-3.5 px-4 text-xs text-[#8c7166]">
+                          <td className="py-3.5 px-4 text-xs text-[#8c7166] whitespace-nowrap">
                             {rf.created_at ? new Date(rf.created_at).toLocaleString("vi-VN") : "—"}
                           </td>
                         </tr>

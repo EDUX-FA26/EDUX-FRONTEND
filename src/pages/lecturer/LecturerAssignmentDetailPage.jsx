@@ -488,7 +488,7 @@ export default function LecturerAssignmentDetailPage() {
     if (loading || !assignment) {
         if (error) {
             return (
-                <div className="animate-fade-in h-[calc(100vh-64px)] w-full max-w-full min-w-0 overflow-hidden flex flex-col px-6 pt-4 pb-5 box-border">
+                <div className="animate-fade-in h-[calc(100vh-64px)] w-full max-w-[1600px] mx-auto min-w-0 overflow-hidden flex flex-col px-4 sm:px-5 lg:px-6 xl:px-8 pt-4 pb-5 box-border">
                     <div className="w-full flex items-center justify-between gap-4" style={{ width: '100%', padding: '16px', backgroundColor: '#fee2e2', color: '#dc2626', border: '1px solid rgba(220, 38, 38, 0.2)', borderRadius: 'var(--radius-md)' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <AlertCircle size={20} />
@@ -503,10 +503,10 @@ export default function LecturerAssignmentDetailPage() {
         }
 
         return (
-            <div className="animate-fade-in h-[calc(100vh-64px)] w-full max-w-full min-w-0 overflow-hidden flex flex-col px-6 pt-4 pb-5 box-border">
+            <div className="animate-fade-in h-[calc(100vh-64px)] w-full max-w-[1600px] mx-auto min-w-0 overflow-hidden flex flex-col px-4 sm:px-5 lg:px-6 xl:px-8 pt-4 pb-5 box-border">
                 <div className="skeleton mb-2" style={{ width: '220px', height: '18px' }}></div>
                 <div className="skeleton mb-4" style={{ width: '450px', height: '32px' }}></div>
-                <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-6 w-full overflow-hidden">
+                <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 w-full overflow-hidden">
                     <div className="lg:col-span-4 h-full skeleton rounded-2xl"></div>
                     <div className="lg:col-span-8 h-full skeleton rounded-3xl"></div>
                 </div>
@@ -517,7 +517,7 @@ export default function LecturerAssignmentDetailPage() {
     const title = assignment?.title || 'Assignment Detail';
 
     return (
-        <div className="animate-fade-in h-[calc(100vh-64px)] w-full max-w-full min-w-0 overflow-hidden flex flex-col px-6 pt-4 pb-5 box-border relative">
+        <div className="animate-fade-in h-[calc(100vh-64px)] w-full max-w-[1600px] mx-auto min-w-0 overflow-hidden flex flex-col px-4 sm:px-5 lg:px-6 xl:px-8 pt-4 pb-5 box-border relative">
 
             {/* TOAST ALERT TỰ ĐỘNG THÔNG BÁO */}
             {toast.show && createPortal(
@@ -694,7 +694,7 @@ export default function LecturerAssignmentDetailPage() {
             `}</style>
 
             {/* Khu vực nội dung chính 2 cột bên dưới */}
-            <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-6 w-full overflow-hidden">
+            <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 w-full overflow-hidden">
                 {/* CỘT TRÁI — Thông tin bài tập */}
                 <div className="lg:col-span-4 min-w-0 h-full overflow-y-auto pr-1.5 space-y-4 custom-scrollbar">
                     <div className="card h-auto" style={{ padding: '20px' }}>
@@ -859,13 +859,13 @@ export default function LecturerAssignmentDetailPage() {
                         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left' }}>
                             <thead className="sticky top-0 bg-white z-10 shadow-sm">
                                 <tr style={{ borderBottom: '1px solid var(--color-border)', color: 'var(--color-ink-muted)' }}>
-                                    <th style={{ padding: '10px 8px', backgroundColor: '#fff' }}>Student</th>
-                                    <th style={{ padding: '10px 8px', backgroundColor: '#fff' }}>Status</th>
-                                    <th style={{ padding: '10px 8px', backgroundColor: '#fff' }}>Submitted At</th>
-                                    <th style={{ padding: '10px 8px', backgroundColor: '#fff' }}>File/Link</th>
-                                    <th style={{ padding: '10px 8px', textAlign: 'center', backgroundColor: '#fff' }}>AI Audit</th>
-                                    <th style={{ padding: '10px 8px', backgroundColor: '#fff' }}>Score</th>
-                                    <th style={{ padding: '10px 8px', backgroundColor: '#fff' }}>Action</th>
+                                    <th style={{ padding: '10px 8px', backgroundColor: '#fff' }} className="whitespace-nowrap">Student</th>
+                                    <th style={{ padding: '10px 8px', backgroundColor: '#fff' }} className="whitespace-nowrap">Status</th>
+                                    <th style={{ padding: '10px 8px', backgroundColor: '#fff' }} className="whitespace-nowrap">Submitted At</th>
+                                    <th style={{ padding: '10px 8px', backgroundColor: '#fff' }} className="whitespace-nowrap">File/Link</th>
+                                    <th style={{ padding: '10px 8px', textAlign: 'center', backgroundColor: '#fff' }} className="whitespace-nowrap">AI Audit</th>
+                                    <th style={{ padding: '10px 8px', backgroundColor: '#fff' }} className="whitespace-nowrap">Score</th>
+                                    <th style={{ padding: '10px 8px', backgroundColor: '#fff' }} className="whitespace-nowrap">Action</th>
                                 </tr>
                             </thead>
                                 <tbody>
@@ -908,7 +908,7 @@ export default function LecturerAssignmentDetailPage() {
                                                         {sub.student_name || sub.student_email || 'Unknown Student'}
                                                         <div style={{ fontSize: '10px', color: 'var(--color-ink-muted)' }}>{sub.student_code || ''}</div>
                                                     </td>
-                                                    <td style={{ padding: '8px' }}>
+                                                    <td style={{ padding: '8px' }} className="whitespace-nowrap">
                                                         {isGraded ? (
                                                             <span className="badge" style={{ backgroundColor: 'rgba(79, 70, 229, 0.1)', color: '#4f46e5', padding: '4px 8px', fontSize: '10px', border: '1px solid #4f46e5', borderRadius: '4px', fontWeight: 'bold' }}>Graded</span>
                                                         ) : String(sub.status).toLowerCase() === 'submitted' ? (
@@ -917,7 +917,7 @@ export default function LecturerAssignmentDetailPage() {
                                                             <span className="badge" style={{ backgroundColor: 'var(--color-border)', color: 'var(--color-ink-soft)', padding: '4px 8px', fontSize: '10px', borderRadius: '4px' }}>{sub.status || 'Missing'}</span>
                                                         )}
                                                     </td>
-                                                    <td style={{ padding: '8px' }}>
+                                                    <td style={{ padding: '8px' }} className="whitespace-nowrap">
                                                         {sub.submitted_at ? formatDateDMY(sub.submitted_at) : 'N/A'}
                                                     </td>
 
@@ -1050,7 +1050,7 @@ export default function LecturerAssignmentDetailPage() {
                                                     </td>
 
                                                     {/* CỘT HIỂN THỊ ĐIỂM SỐ */}
-                                                    <td style={{ padding: '8px' }}>
+                                                    <td style={{ padding: '8px' }} className="whitespace-nowrap">
                                                         {isGraded ? (
                                                             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                                                                 <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
@@ -1078,7 +1078,7 @@ export default function LecturerAssignmentDetailPage() {
                                                     </td>
 
                                                     {/* CỘT THAO TÁC */}
-                                                    <td style={{ padding: '8px' }}>
+                                                    <td style={{ padding: '8px' }} className="whitespace-nowrap">
                                                         <button
                                                             className="btn btn-primary"
                                                             style={{

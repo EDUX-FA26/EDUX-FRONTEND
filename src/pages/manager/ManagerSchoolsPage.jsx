@@ -151,7 +151,7 @@ export default function ManagerSchoolsPage() {
 
   return (
     <ManagerLayout>
-      <div className="w-full max-w-7xl mx-auto h-[calc(100vh-var(--dashboard-header-height,64px))] overflow-hidden flex flex-col px-6 pt-4 pb-4 box-border">
+      <div className="w-full max-w-[1600px] mx-auto min-w-0 h-[calc(100vh-var(--dashboard-header-height,64px))] overflow-hidden flex flex-col px-4 sm:px-5 lg:px-6 xl:px-8 pt-4 pb-4 box-border animate-fade-in">
         {/* Header */}
         <div className="shrink-0 flex flex-wrap items-center justify-between gap-3 mb-3">
           <div>
@@ -215,7 +215,7 @@ export default function ManagerSchoolsPage() {
         <div className="flex-1 min-h-0 bg-white rounded-2xl border border-slate-200 flex flex-col overflow-hidden shadow-xs">
           {/* Filter and Search Bar */}
           <div className="shrink-0 p-3.5 border-b border-slate-100 flex flex-wrap items-center gap-2.5">
-            <form onSubmit={handleSearchSubmit} className="relative flex-1 min-w-[240px]">
+            <form onSubmit={handleSearchSubmit} className="relative flex-1 min-w-[180px] sm:min-w-[200px]">
               <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-400" />
               <input
                 type="text"
@@ -253,17 +253,17 @@ export default function ManagerSchoolsPage() {
           </div>
 
           {/* Schools Table: Scrollable independently */}
-          <div className="flex-1 min-h-0 overflow-y-auto">
+          <div className="flex-1 min-h-0 overflow-y-auto overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead className="sticky top-0 bg-[#fff8f5] z-10 text-xs font-bold text-[#8c7166] uppercase tracking-wider border-b border-[#f5ebe1]">
                 <tr>
                   <th className="py-3 px-4">Trường học</th>
-                  <th className="py-3 px-4">Mã Tenant</th>
-                  <th className="py-3 px-4">Nguồn đăng ký</th>
-                  <th className="py-3 px-4">Gói dịch vụ</th>
-                  <th className="py-3 px-4">Thành viên</th>
-                  <th className="py-3 px-4">Trạng thái</th>
-                  <th className="py-3 px-4 text-right">Thao tác Vận hành</th>
+                  <th className="py-3 px-4 whitespace-nowrap">Mã Tenant</th>
+                  <th className="py-3 px-4 whitespace-nowrap">Nguồn đăng ký</th>
+                  <th className="py-3 px-4 whitespace-nowrap">Gói dịch vụ</th>
+                  <th className="py-3 px-4 whitespace-nowrap">Thành viên</th>
+                  <th className="py-3 px-4 whitespace-nowrap">Trạng thái</th>
+                  <th className="py-3 px-4 text-right whitespace-nowrap">Thao tác Vận hành</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#f5ebe1] text-[#1f1b17]">
@@ -285,19 +285,19 @@ export default function ManagerSchoolsPage() {
                     return (
                       <tr key={school.id} className="hover:bg-[#fff8f5] transition-colors">
                         {/* Name & Display */}
-                        <td className="py-3.5 px-4">
+                        <td className="py-3.5 px-4 min-w-0">
                           <div className="flex items-center gap-3">
                             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#ffdbcc] text-[#a04100] font-bold text-sm">
                               {(school.name?.[0] || school.code?.[0] || "T").toUpperCase()}
                             </div>
-                            <div>
-                              <p className="font-semibold text-[#1f1b17] leading-tight">
+                            <div className="min-w-0">
+                              <p className="font-semibold text-[#1f1b17] leading-tight truncate max-w-[200px]">
                                 {school.name || <span className="italic text-[#8c7166]">Chưa đặt tên</span>}
                               </p>
                               {school.display_name && school.display_name !== school.name && (
-                                <p className="text-xs text-[#545f73] mt-0.5">{school.display_name}</p>
+                                <p className="text-xs text-[#545f73] mt-0.5 truncate max-w-[200px]">{school.display_name}</p>
                               )}
-                              <p className="text-[11px] text-[#8c7166] mt-0.5">
+                              <p className="text-[11px] text-[#8c7166] mt-0.5 whitespace-nowrap">
                                 Tạo: {new Date(school.created_at).toLocaleDateString("vi-VN")}
                               </p>
                             </div>
@@ -305,12 +305,12 @@ export default function ManagerSchoolsPage() {
                         </td>
 
                         {/* Code */}
-                        <td className="py-3.5 px-4 font-mono text-xs font-semibold text-[#1f1b17]">
+                        <td className="py-3.5 px-4 font-mono text-xs font-semibold text-[#1f1b17] whitespace-nowrap">
                           {school.code}
                         </td>
 
                         {/* Source */}
-                        <td className="py-3.5 px-4">
+                        <td className="py-3.5 px-4 whitespace-nowrap">
                           {isSelfRegistered ? (
                             <span className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 border border-emerald-200">
                               Tự đăng ký
@@ -323,7 +323,7 @@ export default function ManagerSchoolsPage() {
                         </td>
 
                         {/* Plan */}
-                        <td className="py-3.5 px-4">
+                        <td className="py-3.5 px-4 whitespace-nowrap">
                           <div>
                             <span className="font-medium text-[#1f1b17]">
                               {school.plan_name || <span className="text-[#8c7166]">Chưa kích hoạt</span>}
@@ -337,7 +337,7 @@ export default function ManagerSchoolsPage() {
                         </td>
 
                         {/* Members */}
-                        <td className="py-3.5 px-4 text-xs text-[#545f73]">
+                        <td className="py-3.5 px-4 text-xs text-[#545f73] whitespace-nowrap">
                           <div><strong>{school.total_members ?? 0}</strong> thành viên</div>
                           <div className="text-[11px] text-[#8c7166] mt-0.5">
                             {school.admin_count ?? 0} admin • {school.lecturer_count ?? 0} gv • {school.student_count ?? 0} sv
@@ -345,7 +345,7 @@ export default function ManagerSchoolsPage() {
                         </td>
 
                         {/* Status */}
-                        <td className="py-3.5 px-4">
+                        <td className="py-3.5 px-4 whitespace-nowrap">
                           <span
                             className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${
                               school.status === "active"
@@ -372,7 +372,7 @@ export default function ManagerSchoolsPage() {
                         </td>
 
                         {/* Operational Actions */}
-                        <td className="py-3.5 px-4 text-right">
+                        <td className="py-3.5 px-4 text-right whitespace-nowrap">
                           <div className="inline-flex items-center gap-1">
                             {/* Invite School Admin */}
                             <button
@@ -517,8 +517,8 @@ export default function ManagerSchoolsPage() {
         {/* Modal: Invite School Admin */}
         {inviteModal.open &&
           createPortal(
-            <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
-              <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-slate-200">
+            <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 overflow-y-auto">
+              <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-slate-200 my-auto max-h-[90vh] overflow-y-auto">
                 <div className="flex items-center justify-between border-b border-[#f5ebe1] pb-3">
                   <h3 className="text-base font-bold text-[#1f1b17]">
                     Mời School Admin: {inviteModal.schoolName}
@@ -604,8 +604,8 @@ export default function ManagerSchoolsPage() {
         {/* Modal: Status Action (Lock, Unlock, Suspend, Restore, Delete) */}
         {statusModal.open &&
           createPortal(
-            <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
-              <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-slate-200">
+            <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 overflow-y-auto">
+              <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-slate-200 my-auto max-h-[90vh] overflow-y-auto">
                 <h3 className="text-base font-bold text-[#1f1b17]">
                   {statusModal.action === "lock" && "Khóa trường tạm thời"}
                   {statusModal.action === "unlock" && "Mở khóa trường"}
