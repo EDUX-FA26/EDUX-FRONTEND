@@ -178,7 +178,7 @@ export default function LecturerDashboardPage() {
   const S = t.stats;
 
   return (
-    <div className="animate-fade-in w-full max-w-[1600px] mx-auto min-w-0 px-4 sm:px-5 lg:px-6 xl:px-8 py-5" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+    <div className="animate-fade-in w-full max-w-[1600px] mx-auto min-w-0" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       {/* Hero */}
       <div style={{ borderRadius: '20px', background: 'linear-gradient(135deg, #0f2027 0%, #1a3040 50%, #0f2027 100%)', color: 'white', padding: '28px 32px', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', top: 0, right: 0, width: '240px', height: '240px', background: 'rgba(0,106,97,0.25)', borderRadius: '50%', filter: 'blur(60px)', transform: 'translate(40px, -40px)' }} />

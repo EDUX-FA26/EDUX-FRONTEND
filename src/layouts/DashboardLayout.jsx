@@ -105,6 +105,7 @@ export default function DashboardLayout() {
   const isClassesLockedPage = /^\/(lecturer|student)\/classes(?:\/[^/]+)?\/?$/.test(location.pathname);
   const isLecturerAssignmentDetail = /^\/lecturer\/assignments\/[^/]+\/?$/.test(location.pathname);
   const isStudyPlan = location.pathname.startsWith('/student/study-plan');
+  const isLecturerDashboard = location.pathname === '/lecturer/dashboard' || location.pathname.startsWith('/lecturer/dashboard');
   const isAdminDashboard = location.pathname === '/admin/dashboard' || location.pathname.startsWith('/admin/dashboard');
   const isAdminUsers = location.pathname === '/admin/users' || location.pathname.startsWith('/admin/users');
   const isAdminClasses = location.pathname === '/admin/classes' || location.pathname.startsWith('/admin/classes');
@@ -962,11 +963,12 @@ export default function DashboardLayout() {
           <Outlet />
         </main>
 
-        {/* Footer: ẩn ở trang flashcard, grading, student assignment, focus room, classes, lecturer assignment detail, study-plan, admin dashboard, admin users, admin classes, admin notifications, admin logs, admin semesters và admin subjects */}
+        {/* Footer: ẩn ở trang flashcard, grading, student assignment, focus room, classes, lecturer assignment detail, study-plan, admin dashboard, admin users, admin classes, admin notifications, admin logs, admin semesters, admin subjects và lecturer dashboard */}
         {!isGradePage &&
           !isStudentAssignment &&
           !isClassesPage &&
           !isLecturerAssignmentDetail &&
+          !isLecturerDashboard &&
           !location.pathname.startsWith('/student/flashcards') &&
           !location.pathname.startsWith('/lecturer/flashcards') &&
           !isFocusRoom &&
